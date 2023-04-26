@@ -1,0 +1,12 @@
+{
+"package_name" : "tribol_devtools",
+"package_version" : "fakeversion",
+"package_source_dir" : "../..",
+"package_final_phase" : "",
+"spack_url": "https://github.com/spack/spack.git",
+"spack_commit": "22f3ef0a212676a16d9ece2562dedb50de7f1999",
+"spack_configs_path": "scripts/spack/devtools_configs",
+"spack_packages_path": "scripts/spack/packages",
+"spack_activate" : {"py-sphinx" : [""],"py-shroud" : [""]},
+"spack_concretizer": "clingo"
+}

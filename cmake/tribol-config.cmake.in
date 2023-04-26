@@ -1,0 +1,93 @@
+# Copyright (c) 2017-2023, Lawrence Livermore National Security, LLC and
+# other Tribol Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: (MIT)
+
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+
+@PACKAGE_INIT@
+
+if(NOT TRIBOL_FOUND)
+
+  #----------------------------------------------------------------------------
+  # Set version and paths
+  #----------------------------------------------------------------------------
+  
+  set(TRIBOL_VERSION              "@TRIBOL_VERSION_FULL@")
+  set(TRIBOL_VERSION_MAJOR        "@TRIBOL_VERSION_MAJOR@")
+  set(TRIBOL_VERSION_MINOR        "@TRIBOL_VERSION_MINOR@")
+  set(TRIBOL_VERSION_PATCH        "@TRIBOL_VERSION_PATCH@")
+  
+  set(TRIBOL_INSTALL_PREFIX       "@TRIBOL_INSTALL_PREFIX@")
+  set(TRIBOL_INCLUDE_DIRS         "${TRIBOL_INSTALL_PREFIX}/include")
+
+  #----------------------------------------------------------------------------
+  # Set user configuration options and features
+  #----------------------------------------------------------------------------
+
+  # Language features
+  set(TRIBOL_USE_FORTRAN          "@ENABLE_FORTRAN@")
+  set(TRIBOL_USE_MPI              "@ENABLE_MPI@")
+  #set(TRIBOL_USE_CUDA            "@TRIBOL_USE_CUDA@")
+  #set(TRIBOL_USE_OPENMP          "@TRIBOL_USE_OPENMP@")
+
+  # Config options
+  set(TRIBOL_USE_SINGLE_PRECISION "@TRIBOL_USE_SINGLE_PRECISION@")
+  set(TRIBOL_USE_64BIT_INDEXTYPE  "@TRIBOL_USE_64BIT_INDEXTYPE@")
+  set(TRIBOL_ENABLE_SIDRE         "@TRIBOL_ENABLE_SIDRE@")
+  set(TRIBOL_ENABLE_SLIC          "@TRIBOL_ENABLE_SLIC@")
+  
+  #----------------------------------------------------------------------------
+  # Bring in required dependencies for this axom configuration
+  #----------------------------------------------------------------------------
+  include(CMakeFindDependencyMacro)
+
+  # axom is a required TPL. It is either external, or built-in
+  set(TRIBOL_AXOM_DIR  "@AXOM_DIR@")
+  if(NOT TRIBOL_AXOM_DIR) 
+    set(TRIBOL_AXOM_DIR "@TRIBOL_INSTALL_PREFIX@")
+  endif()
+  find_dependency(axom REQUIRED NO_DEFAULT_PATH PATHS "${TRIBOL_AXOM_DIR}/lib/cmake")
+
+  # mfem is also a required TPL
+  if(TRIBOL_USE_MFEM)
+    set(TRIBOL_MFEM_DIR              "@MFEM_DIR@")
+    if(NOT TRIBOL_MFEM_DIR)
+      set(TRIBOL_MFEM_DIR "@TRIBOL_INSTALL_PREFIX@")
+    endif()
+    set(TRIBOL_MFEM_BUILT_WITH_CMAKE @MFEM_BUILT_WITH_CMAKE@)
+
+    if(TRIBOL_MFEM_BUILT_WITH_CMAKE)
+      # Allow user to override with MFEM_DIR
+      if(NOT MFEM_DIR)
+        set(MFEM_DIR ${TRIBOL_MFEM_DIR}) 
+      endif()
+      find_dependency(mfem REQUIRED NO_DEFAULT_PATH PATHS "${MFEM_DIR}/lib/cmake/mfem" NAMES MFEM)
+    else()
+      set(TRIBOL_MFEM_INCLUDE_DIRS     "@MFEM_INCLUDE_DIRS@")
+      if(NOT MFEM_INCLUDE_DIRS) 
+        set(MFEM_INCLUDE_DIRS ${TRIBOL_MFEM_INCLUDE_DIRS}) 
+      endif()
+      set(TRIBOL_MFEM_LIBRARIES        "@MFEM_LIBRARIES@")
+      if(NOT MFEM_LIBRARIES) 
+        set(MFEM_LIBRARIES ${TRIBOL_MFEM_LIBRARIES}) 
+      endif()
+
+      # TODO: Construct CMake target from GNU Make-build MFEM
+    endif()
+  endif()
+
+
+  #----------------------------------------------------------------------------
+  # Include targets exported by cmake
+  #----------------------------------------------------------------------------
+  get_filename_component(TRIBOL_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+  include(${TRIBOL_CMAKE_CONFIG_DIR}/tribol-targets.cmake)
+
+  #----------------------------------------------------------------------------
+  # Indicate that tribol is correctly set up
+  #----------------------------------------------------------------------------
+  set(TRIBOL_FOUND TRUE)
+
+endif()
+

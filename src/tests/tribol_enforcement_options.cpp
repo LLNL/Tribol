@@ -1,0 +1,515 @@
+// Copyright (c) 2017-2023, Lawrence Livermore National Security, LLC and
+// other Tribol Project Developers. See the top-level LICENSE file for details.
+//
+// SPDX-License-Identifier: (MIT)
+
+// Tribol includes
+#include "tribol/types.hpp"
+#include "tribol/interface/tribol.hpp"
+#include "tribol/utils/TestUtils.hpp"
+#include "tribol/utils/Math.hpp"
+#include "tribol/common/Parameters.hpp"
+#include "tribol/mesh/MethodCouplingData.hpp"
+#include "tribol/mesh/CouplingSchemeManager.hpp"
+#include "tribol/mesh/CouplingScheme.hpp"
+#include "tribol/mesh/InterfacePairs.hpp"
+#include "tribol/mesh/MeshData.hpp"
+#include "tribol/mesh/MeshManager.hpp"
+#include "tribol/geom/GeomUtilities.hpp"
+
+// Axom includes
+#include "axom/slic.hpp"
+
+// gtest includes
+#include "gtest/gtest.h"
+
+// c++ includes
+#include <cmath> // std::abs, std::cos, std::sin
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <fstream>
+
+using real = tribol::real;
+
+/*!
+ * Test fixture class to test valid enforcement options
+ * These tests have to be written and run with registering 
+ * a valid coupling scheme with valid meshes.
+ *
+ */
+class EnforcementOptionsTest : public ::testing::Test
+{
+   
+public:
+
+protected:
+
+   void SetUp() override
+   {
+      // no-op
+   }
+
+   // Setup boiler plate data and register mesh, nodal response, and coupling scheme
+   void SetupTest( tribol::TestMesh* mesh )
+   {
+      ////////////////////////////////////////////////
+      // setup simple non-null contacting test mesh //
+      ////////////////////////////////////////////////
+      mesh->masterMeshId = 0;
+      mesh->slaveMeshId = 1;
+
+      int nMasterElems = 1; 
+      int nElemsXM = nMasterElems;
+      int nElemsYM = nMasterElems;
+      int nElemsZM = nMasterElems;
+
+      int nSlaveElems = 1; 
+      int nElemsXS = nSlaveElems;
+      int nElemsYS = nSlaveElems;
+      int nElemsZS = nSlaveElems;
+
+      // mesh bounding box with 0.1 interpenetration gap
+      real x_min1 = 0.;
+      real y_min1 = 0.;
+      real z_min1 = 0.; 
+      real x_max1 = 1.;
+      real y_max1 = 1.;
+      real z_max1 = 1.05;
+
+      real x_min2 = 0.;
+      real y_min2 = 0.;
+      real z_min2 = 0.95;
+      real x_max2 = 1.;
+      real y_max2 = 1.;
+      real z_max2 = 2.;
+
+      mesh->setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
+                                 x_min1, y_min1, z_min1,
+                                 x_max1, y_max1, z_max1,
+                                 nElemsXS, nElemsYS, nElemsZS,
+                                 x_min2, y_min2, z_min2,
+                                 x_max2, y_max2, z_max2,
+                                 0., 0. );
+
+      // register meshes
+      tribol::registerMesh( mesh->masterMeshId,
+                            mesh->numMasterFaces,
+                            mesh->numTotalNodes,
+                            mesh->faceConn1, 3, 
+                            mesh->x, mesh->y, mesh->z );
+
+      tribol::registerMesh( mesh->slaveMeshId,
+                            mesh->numSlaveFaces,
+                            mesh->numTotalNodes,
+                            mesh->faceConn2, 3,
+                            mesh->x, mesh->y, mesh->z );
+
+      // register nodal responses (i.e. nodal forces)
+      tribol::allocRealArray( &mesh->fx1, mesh->numTotalNodes, 0. );
+      tribol::allocRealArray( &mesh->fy1, mesh->numTotalNodes, 0. );
+      tribol::allocRealArray( &mesh->fz1, mesh->numTotalNodes, 0. );
+      tribol::allocRealArray( &mesh->fx2, mesh->numTotalNodes, 0. );
+      tribol::allocRealArray( &mesh->fy2, mesh->numTotalNodes, 0. );
+      tribol::allocRealArray( &mesh->fz2, mesh->numTotalNodes, 0. );
+
+      tribol::registerNodalResponse( mesh->masterMeshId,
+                                     mesh->fx1, mesh->fy1, mesh->fz1 );
+
+      tribol::registerNodalResponse( mesh->slaveMeshId,
+                                     mesh->fx2, mesh->fy2, mesh->fz2 );
+
+
+      // allocate velocity arrays on test mesh
+      real velX1 = 0.;
+      real velY1 = 0.;
+      real velZ1 = -1.;
+      real velX2 = 0.;
+      real velY2 = 0.;
+      real velZ2 = 1.;
+      mesh->allocateAndSetVelocities( mesh->masterMeshId, velX1, velY1, velZ1 );
+      mesh->allocateAndSetVelocities( mesh->slaveMeshId,  velX2, velY2, velZ2 );
+
+      // register velocities with Tribol
+      tribol::registerNodalVelocities(mesh->masterMeshId, mesh->vx1, mesh->vy1, mesh->vz1);
+      tribol::registerNodalVelocities(mesh->slaveMeshId, mesh->vx2, mesh->vy2, mesh->vz2);
+      
+      // register the coupling scheme
+      const int csIndex = 0;
+      tribol::registerCouplingScheme(csIndex, 0, 1, 
+                                     tribol::SURFACE_TO_SURFACE,
+                                     tribol::AUTO,
+                                     tribol::COMMON_PLANE,
+                                     tribol::FRICTIONLESS,
+                                     tribol::PENALTY,
+                                     tribol::BINNING_GRID );
+  
+   }
+
+   void TearDown() override
+   {
+      clear();
+   }
+
+   void clear()
+   {
+      // no-op
+   }
+};
+
+// TESTS1
+// Coupling schemes with errors
+TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_error )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   // incorrectly set penalty options with KINEMATIC_ELEMENT instead of the set KINEMATIC_CONSTANT
+   int csIndex = 0;
+   tribol::KinematicPenaltyCalculation wrong_calculation = tribol::KINEMATIC_ELEMENT;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, wrong_calculation ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+
+   delete mesh;
+}
+
+TEST_F( EnforcementOptionsTest, penalty_kinematic_element_error )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real* bulk_modulus_1;
+   real* bulk_modulus_2;
+   real* element_thickness_1;
+   real* element_thickness_2;
+
+   tribol::allocRealArray( &bulk_modulus_1, mesh->numMasterFaces, 0. );
+   tribol::allocRealArray( &bulk_modulus_2, mesh->numSlaveFaces, 0. );
+   tribol::allocRealArray( &element_thickness_1, mesh->numMasterFaces, 0. );
+   tribol::allocRealArray( &element_thickness_2, mesh->numSlaveFaces, 0. );
+
+   tribol::setKinematicElementPenalty( mesh->masterMeshId, bulk_modulus_1, element_thickness_1 );
+   tribol::setKinematicElementPenalty( mesh->slaveMeshId, bulk_modulus_2, element_thickness_2 );
+
+   // 'incorrectly' set penalty options with KINEMATIC_CONSTANT instead of the set KINEMATIC_ELEMENT
+   int csIndex = 0;
+   tribol::KinematicPenaltyCalculation wrong_calculation = tribol::KINEMATIC_CONSTANT;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, wrong_calculation ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+
+   delete bulk_modulus_1;
+   delete bulk_modulus_2;
+   delete element_thickness_1;
+   delete element_thickness_2;
+   delete mesh;
+}
+
+TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_error )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   real rate_penalty = 0.5;
+   tribol::setRateConstantPenalty( 0, rate_penalty );
+   tribol::setRateConstantPenalty( 1, rate_penalty );
+
+   // incorrectly set penalty options with RATE_PERCENT instead of the set RATE_CONSTANT
+   int csIndex = 0;
+   tribol::RatePenaltyCalculation wrong_calculation = tribol::RATE_PERCENT;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC_AND_RATE,
+                              tribol::KINEMATIC_CONSTANT, wrong_calculation ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+
+   delete mesh;
+}
+
+TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_1 )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   real rate_percent = 0.5;
+   tribol::setRatePercentPenalty( 0, rate_percent );
+   tribol::setRatePercentPenalty( 1, rate_percent );
+
+   // incorrectly set penalty options with RATE_CONSTANT instead of the set RATE_PERCENT
+   int csIndex = 0;
+   tribol::RatePenaltyCalculation wrong_calculation = tribol::RATE_CONSTANT;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC_AND_RATE,
+                              tribol::KINEMATIC_CONSTANT, wrong_calculation ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+
+   delete mesh;
+}
+
+TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_2 )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   // incorrectly set the rate_percent value outside of acceptable bounds
+   real rate_percent = 1.2;
+   tribol::setRatePercentPenalty( 0, rate_percent );
+   tribol::setRatePercentPenalty( 1, rate_percent );
+
+   // (correctly) set penalty options with KINEMATIC_CONSTANT and RATE_PERCENT
+   int csIndex = 0;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC_AND_RATE,
+                              tribol::KINEMATIC_CONSTANT, tribol::RATE_PERCENT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+
+   delete mesh;
+}
+
+// TESTS2
+// Coupling schemes with no errors
+TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_pass )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   // set penalty options with KINEMATIC_CONSTANT
+   int csIndex = 0;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, true );
+
+   delete mesh;
+}
+
+TEST_F( EnforcementOptionsTest, penalty_kinematic_element_pass )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real* bulk_modulus_1;
+   real* bulk_modulus_2;
+   real* element_thickness_1;
+   real* element_thickness_2;
+
+   tribol::allocRealArray( &bulk_modulus_1, mesh->numMasterFaces, 1. );
+   tribol::allocRealArray( &bulk_modulus_2, mesh->numSlaveFaces, 1. );
+   tribol::allocRealArray( &element_thickness_1, mesh->numMasterFaces, 1. );
+   tribol::allocRealArray( &element_thickness_2, mesh->numSlaveFaces, 1. );
+
+   tribol::setKinematicElementPenalty( mesh->masterMeshId, bulk_modulus_1, element_thickness_1 );
+   tribol::setKinematicElementPenalty( mesh->slaveMeshId, bulk_modulus_2, element_thickness_2 );
+
+   // set penalty options with KINEMATIC_ELEMENT
+   int csIndex = 0;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_ELEMENT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, true );
+
+   delete bulk_modulus_1;
+   delete bulk_modulus_2;
+   delete element_thickness_1;
+   delete element_thickness_2;
+   delete mesh;
+}
+
+TEST_F( EnforcementOptionsTest, penalty_kinematic_element_invalid_element_input )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real* bulk_modulus_1;
+   real* bulk_modulus_2;
+   real* element_thickness_1;
+   real* element_thickness_2;
+
+   tribol::allocRealArray( &bulk_modulus_1, mesh->numMasterFaces, 0. );
+   tribol::allocRealArray( &bulk_modulus_2, mesh->numSlaveFaces, 0. );
+   tribol::allocRealArray( &element_thickness_1, mesh->numMasterFaces, 0. );
+   tribol::allocRealArray( &element_thickness_2, mesh->numSlaveFaces, 0. );
+
+   tribol::setKinematicElementPenalty( mesh->masterMeshId, bulk_modulus_1, element_thickness_1 );
+   tribol::setKinematicElementPenalty( mesh->slaveMeshId, bulk_modulus_2, element_thickness_2 );
+
+   // set penalty options with KINEMATIC_ELEMENT
+   int csIndex = 0;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_ELEMENT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+
+   delete bulk_modulus_1;
+   delete bulk_modulus_2;
+   delete element_thickness_1;
+   delete element_thickness_2;
+   delete mesh;
+}
+
+TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_pass )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   real rate_penalty = 0.5;
+   tribol::setRateConstantPenalty( 0, rate_penalty );
+   tribol::setRateConstantPenalty( 1, rate_penalty );
+
+   // set penalty options with KINEMATIC_CONSTANT and RATE_CONSTANT
+   int csIndex = 0;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC_AND_RATE,
+                              tribol::KINEMATIC_CONSTANT, tribol::RATE_CONSTANT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, true );
+
+   delete mesh;
+}
+
+TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_pass )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   // Setup boiler plate test data etc.
+   tribol::TestMesh* mesh = new tribol::TestMesh();
+   SetupTest(mesh);
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   real rate_percent = 0.5;
+   tribol::setRatePercentPenalty( 0, rate_percent );
+   tribol::setRatePercentPenalty( 1, rate_percent );
+
+   // set penalty options with KINEMATIC_CONSTANT and RATE_PERCENT
+   int csIndex = 0;
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC_AND_RATE,
+                              tribol::KINEMATIC_CONSTANT, tribol::RATE_PERCENT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, true );
+
+   delete mesh;
+}
+
+int main(int argc, char* argv[])
+{
+  int result = 0;
+
+  ::testing::InitGoogleTest(&argc, argv);
+
+  axom::slic::SimpleLogger logger;  // create & initialize logger,
+  tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
+
+  result = RUN_ALL_TESTS();
+
+  return result;
+}
