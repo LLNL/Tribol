@@ -1,0 +1,7 @@
+
+/build*/
+/install*/
+/uberenv_libs*
+/spack*
+/*.cmake
+.vscode/
