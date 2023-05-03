@@ -14,7 +14,7 @@ algorithms.
 ### Clone the repository
 
 ```
-git clone git@github.com:LLNL/Tribol.git
+git clone --recursive git@github.com:LLNL/Tribol.git
 ```
 
 ### Setup for Development
