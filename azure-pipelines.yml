@@ -7,6 +7,7 @@ variables:
   Clang_10_ImageName: 'seracllnl/tpls:clang-10_05-03-23_16h-04m'
   GCC_9_ImageName: 'seracllnl/tpls:gcc-9_05-03-23_16h-04m'
   GCC_11_ImageName: 'seracllnl/tpls:gcc-11_05-03-23_16h-04m'
+  HOME_DIR: '/home/serac'
 
 jobs:
 - job: Build_and_Test
@@ -58,7 +59,7 @@ jobs:
     submodules: recursive
   - script:  |
       echo " -e $TEST_TARGET -e HOST_CONFIG $(Compiler_ImageName) ./scripts/llnl/build_src.py $BUILD_SRC_OPTS -v --host-config $HOST_CONFIG --extra-cmake-options \"${CMAKE_OPTS} -DCMAKE_BUILD_TYPE=$BUILD_TYPE\""
-      docker run --rm -v `pwd`:/home/serac/serac -e TEST_TARGET -e HOST_CONFIG $(Compiler_ImageName) ./serac/scripts/llnl/build_src.py $BUILD_SRC_OPTS -v --host-config $HOST_CONFIG --extra-cmake-options "${CMAKE_OPTS} -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+      docker run --rm -v `pwd`:$(HOME_DIR)/tribol -e TEST_TARGET -e HOST_CONFIG $(Compiler_ImageName) ./tribol/scripts/llnl/build_src.py $BUILD_SRC_OPTS -v --host-config $HOST_CONFIG --extra-cmake-options "${CMAKE_OPTS} -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
 
     displayName: '$(TEST_TARGET) Build & Test'
   - task: PublishTestResults@2
@@ -103,5 +104,5 @@ jobs:
   - script:  |
       ci_env=`bash <(curl -s https://codecov.io/env)`
       echo "  -e DO_COVERAGE_CHECK  -e DO_DOCS_CHECK -e DO_STYLE_CHECK -e HOST_CONFIG ./tribol/scripts/azure-pipelines/linux-check.sh"
-      docker run --rm -v `pwd`:/home/serac/tribol $ci_env -e DO_COVERAGE_CHECK  -e DO_DOCS_CHECK -e DO_STYLE_CHECK -e HOST_CONFIG $(Compiler_ImageName) ./tribol/scripts/azure-pipelines/linux-check.sh
+      docker run --rm -v `pwd`:$(HOME_DIR)/tribol $ci_env -e DO_COVERAGE_CHECK  -e DO_DOCS_CHECK -e DO_STYLE_CHECK -e HOST_CONFIG $(Compiler_ImageName) ./tribol/scripts/azure-pipelines/linux-check.sh
     displayName: '$(TEST_TARGET) Check'
