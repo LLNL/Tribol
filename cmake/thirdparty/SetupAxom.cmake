@@ -10,9 +10,9 @@
 # Check paths
 tribol_assert_path_exists( ${AXOM_DIR} )
 
-find_package(axom REQUIRED
-             NO_DEFAULT_PATH 
-             PATHS ${AXOM_DIR}/lib/cmake)
+find_dependency(axom REQUIRED
+                NO_DEFAULT_PATH 
+                PATHS ${AXOM_DIR}/lib/cmake)
 
 #[==[
 blt_print_target_properties(TARGET axom)
