@@ -36,11 +36,14 @@ constexpr integer ANY_MESH = -1;
 enum InterfaceElementType
 {
    UNDEFINED_ELEMENT, ///! Undefined
-   NODE,              ///! 0D node
-   EDGE,              ///! 1D edge
-   FACE,              ///! 2D face
-   CELL,              ///! 3D volume
-   NUM_CONTACT_ELEMENTS = CELL
+//   NODE,              ///! 0D node
+//   EDGE,              ///! 1D edge
+//   FACE,              ///! 2D face
+//   CELL,              ///! 3D volume
+   LINEAR_EDGE,       ///! 1D linear edge
+   LINEAR_TRIANGLE,   ///! 2D linear triangle
+   LINEAR_QUAD,       ///! 2D linear quadrilateral
+   NUM_CONTACT_ELEMENTS = LINEAR_QUAD
 };
 
 /*!
