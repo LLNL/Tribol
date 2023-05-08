@@ -27,17 +27,17 @@ namespace tribol
 ////////////////////////////////
 TestMesh::TestMesh()
    : mfem_mesh    ( nullptr ) 
-   , masterMeshId       ( 0 )
-   , slaveMeshId        ( 0 )
+   , mortarMeshId       ( 0 )
+   , nonmortarMeshId        ( 0 )
    , numTotalNodes      ( 0 )
-   , numMasterNodes     ( 0 )
-   , numSlaveNodes      ( 0 )
+   , numMortarNodes     ( 0 )
+   , numNonmortarNodes      ( 0 )
    , numTotalElements   ( 0 )
-   , numMasterElements  ( 0 )
-   , numSlaveElements   ( 0 )
+   , numMortarElements  ( 0 )
+   , numNonmortarElements   ( 0 )
    , numTotalFaces      ( 0 )
-   , numMasterFaces     ( 0 )
-   , numSlaveFaces      ( 0 )
+   , numMortarFaces     ( 0 )
+   , numNonmortarFaces      ( 0 )
    , numNodesPerFace    ( 4 )
    , numNodesPerElement ( 8 )
    , dim                ( 3 )
@@ -79,10 +79,10 @@ TestMesh::TestMesh()
    , vals       ( nullptr )
    , gaps       ( nullptr )
    , pressures  ( nullptr )
-   , master_bulk_mod          ( nullptr )
-   , master_element_thickness ( nullptr )
-   , slave_bulk_mod           ( nullptr )
-   , slave_element_thickness  ( nullptr )
+   , mortar_bulk_mod          ( nullptr )
+   , mortar_element_thickness ( nullptr )
+   , nonmortar_bulk_mod           ( nullptr )
+   , nonmortar_element_thickness  ( nullptr )
    , registered_velocities1 (false)
    , registered_velocities2 (false)
 { }
@@ -307,25 +307,25 @@ void TestMesh::clear()
    }
 
    // penalty data
-   if (this->master_bulk_mod != nullptr)
+   if (this->mortar_bulk_mod != nullptr)
    {
-      delete [] this->master_bulk_mod;
-      this->master_bulk_mod = nullptr;
+      delete [] this->mortar_bulk_mod;
+      this->mortar_bulk_mod = nullptr;
    }
-   if (this->slave_bulk_mod != nullptr)
+   if (this->nonmortar_bulk_mod != nullptr)
    {
-      delete [] this->slave_bulk_mod;
-      this->slave_bulk_mod = nullptr;
+      delete [] this->nonmortar_bulk_mod;
+      this->nonmortar_bulk_mod = nullptr;
    }
-   if (this->master_element_thickness != nullptr)
+   if (this->mortar_element_thickness != nullptr)
    {
-      delete [] this->master_element_thickness;
-      this->master_element_thickness = nullptr;
+      delete [] this->mortar_element_thickness;
+      this->mortar_element_thickness = nullptr;
    }
-   if (this->slave_element_thickness != nullptr)
+   if (this->nonmortar_element_thickness != nullptr)
    {
-      delete [] this->slave_element_thickness;
-      this->slave_element_thickness = nullptr;
+      delete [] this->nonmortar_element_thickness;
+      this->nonmortar_element_thickness = nullptr;
    }
 
 } // end TestMesh::clear()
@@ -337,7 +337,7 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
                                     int numElemsX2, int numElemsY2, int numElemsZ2,
                                     real xMin2, real yMin2, real zMin2, 
                                     real xMax2, real yMax2, real zMax2,
-                                    real thetaMaster, real thetaSlave )
+                                    real thetaMortar, real thetaNonmortar )
 {
    // NOTE: ONLY CONTACT INTERACTIONS IN THE Z-DIRECTION ARE SUPPORTED 
    // AT THE MOMENT.
@@ -369,28 +369,28 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
       {
          numElementsBlock1 = numElemsX1 * numElemsY1 * numElemsZ1;
          numNodesBlock1 = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1);
-         this->numMasterFaces = numElemsX1 * numElemsY1;
+         this->numMortarFaces = numElemsX1 * numElemsY1;
       }
       else
       {
          numElementsBlock2 = numElemsX2 * numElemsY2 * numElemsZ2;
          numNodesBlock2 = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
-         this->numSlaveFaces = numElemsX2 * numElemsY2;
+         this->numNonmortarFaces = numElemsX2 * numElemsY2;
       }
    }
 
-   this->numMasterNodes = numNodesBlock1;
-   this->numSlaveNodes = numNodesBlock2;
-   this->numSlaveSurfaceNodes = (numElemsX2+1) * (numElemsY2+1);
+   this->numMortarNodes = numNodesBlock1;
+   this->numNonmortarNodes = numNodesBlock2;
+   this->numNonmortarSurfaceNodes = (numElemsX2+1) * (numElemsY2+1);
    this->numTotalNodes = numNodesBlock1 + numNodesBlock2;
-   this->numMasterElements = numElementsBlock1;
-   this->numSlaveElements = numElementsBlock2;
+   this->numMortarElements = numElementsBlock1;
+   this->numNonmortarElements = numElementsBlock2;
    this->numTotalElements = numElementsBlock1 + numElementsBlock2;
 
-   this->elConn1 = new int[ this->numNodesPerElement * this->numMasterElements ];
-   this->elConn2 = new int[ this->numNodesPerElement * this->numSlaveElements ];
-   this->faceConn1 = new int[ this->numNodesPerFace * this->numMasterFaces ];
-   this->faceConn2 = new int[ this->numNodesPerFace * this->numSlaveFaces ];
+   this->elConn1 = new int[ this->numNodesPerElement * this->numMortarElements ];
+   this->elConn2 = new int[ this->numNodesPerElement * this->numNonmortarElements ];
+   this->faceConn1 = new int[ this->numNodesPerFace * this->numMortarFaces ];
+   this->faceConn2 = new int[ this->numNodesPerFace * this->numNonmortarFaces ];
    this->x = new real[ this->numTotalNodes ];
    this->y = new real[ this->numTotalNodes ];
    this->z = new real[ this->numTotalNodes ];
@@ -417,7 +417,7 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
          zMax = zMax1;
          elConn = this->elConn1;
          faceConn = this->faceConn1;
-         theta = thetaMaster;
+         theta = thetaMortar;
       }
       else
       {
@@ -433,7 +433,7 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
          zMax = zMax2;
          elConn = this->elConn2;
          faceConn = this->faceConn2;
-         theta = thetaSlave;
+         theta = thetaNonmortar;
       }
 
       int numNodesX = numElemsX + 1;
@@ -531,7 +531,7 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
                faceConn[ this->numNodesPerFace * ctr + 3 ] = icr + numNodesX;
                ++ctr;
             }
-            if (ndOffset != 0) // reorient slave face connectivity per outward unit normal requirement
+            if (ndOffset != 0) // reorient nonmortar face connectivity per outward unit normal requirement
             {
                int yIdOffset = j * numNodesX;
                int icr = ndOffset + yIdOffset + i; // bottom surface
@@ -553,15 +553,15 @@ void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real 
 {
    // check mesh Ids. Tribol supports autocontact, but for the TestMesh 
    // class the Ids have to be different
-   if (masterMeshId == slaveMeshId)
+   if (mortarMeshId == nonmortarMeshId)
    {
       SLIC_WARNING("TestMesh::allocateAndSetVelocities(): please set unique " << 
-                   "masterMeshId and slaveMeshId prior to calling this routine.");
+                   "mortarMeshId and nonmortarMeshId prior to calling this routine.");
    }
 
    // check to see if pointers have been set
    bool deleteVels = false;
-   if (meshId == this->masterMeshId)
+   if (meshId == this->mortarMeshId)
    {
       if (this->vx1 != nullptr)
       {
@@ -585,7 +585,7 @@ void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real 
 
       registered_velocities1 = true;
    }
-   else if (meshId == this->slaveMeshId)
+   else if (meshId == this->nonmortarMeshId)
    {
       if (this->vx2 != nullptr)
       {
@@ -628,33 +628,33 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
 {
    // check mesh ids. While Tribol supports auto-contact, the TestMesh class 
    // has to have unique mesh Ids set prior to calling this routine
-   if (masterMeshId == slaveMeshId)
+   if (mortarMeshId == nonmortarMeshId)
    {
       SLIC_WARNING("TestMesh::allocateAndSetVelocities(): please set unique " << 
-                   "masterMeshId and slaveMeshId prior to calling this routine.");
+                   "mortarMeshId and nonmortarMeshId prior to calling this routine.");
    }
 
    // check to see if pointers have been set
    bool deleteData = false;
-   if (meshId == this->masterMeshId)
+   if (meshId == this->mortarMeshId)
    {
-      if (this->master_bulk_mod != nullptr)
+      if (this->mortar_bulk_mod != nullptr)
       {
-         delete [] this->master_bulk_mod;
+         delete [] this->mortar_bulk_mod;
          deleteData = true;
       }
 
-      allocRealArray( &this->master_bulk_mod, this->numMasterFaces, val );
+      allocRealArray( &this->mortar_bulk_mod, this->numMortarFaces, val );
    }
-   else if (meshId == this->slaveMeshId)
+   else if (meshId == this->nonmortarMeshId)
    {
-      if (this->slave_bulk_mod != nullptr)
+      if (this->nonmortar_bulk_mod != nullptr)
       {
-         delete [] this->slave_bulk_mod;
+         delete [] this->nonmortar_bulk_mod;
          deleteData = true;
       }
 
-      allocRealArray( &this->slave_bulk_mod, this->numSlaveFaces, val );
+      allocRealArray( &this->nonmortar_bulk_mod, this->numNonmortarFaces, val );
    }
    else
    {
@@ -674,25 +674,25 @@ void TestMesh::allocateAndSetElementThickness( int meshId, real t )
 {
    // check to see if pointers have been set
    bool deleteData = false; 
-   if (meshId == this->masterMeshId)
+   if (meshId == this->mortarMeshId)
    {
-      if (this->master_element_thickness != nullptr)
+      if (this->mortar_element_thickness != nullptr)
       {
-         delete [] this->master_element_thickness;
+         delete [] this->mortar_element_thickness;
          deleteData = true;
       }
 
-      allocRealArray( &this->master_element_thickness, this->numMasterFaces, t );
+      allocRealArray( &this->mortar_element_thickness, this->numMortarFaces, t );
    }
-   else if (meshId == this->slaveMeshId)
+   else if (meshId == this->nonmortarMeshId)
    {
-      if (this->slave_element_thickness != nullptr)
+      if (this->nonmortar_element_thickness != nullptr)
       {
-         delete [] this->slave_element_thickness;
+         delete [] this->nonmortar_element_thickness;
          deleteData = true;
       }
 
-      allocRealArray( &this->slave_element_thickness, this->numSlaveFaces, t );
+      allocRealArray( &this->nonmortar_element_thickness, this->numNonmortarFaces, t );
    }
    else
    {
@@ -742,11 +742,11 @@ int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
 
    SimpleCouplingSetup( this->dim,
                         method,
-                        this->numMasterFaces,
+                        this->numMortarFaces,
                         this->numTotalNodes,
                         this->faceConn1,
                         x, y, z,
-                        this->numSlaveFaces,
+                        this->numNonmortarFaces,
                         this->numTotalNodes,
                         this->faceConn2,
                         x, y, z,
@@ -784,12 +784,12 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    // register the mesh with tribol
    const int cellType = (this->dim == 3) ? (int)(FACE) : 
                                            (int)(EDGE);
-   // set master/slave mesh ids. Note, master/slave designation can 
+   // set mortar/nonmortar mesh ids. Note, mortar/nonmortar designation can 
    // still work for common plane
-   if (this->masterMeshId == 0 && this->slaveMeshId == 0)
+   if (this->mortarMeshId == 0 && this->nonmortarMeshId == 0)
    {
-      this->masterMeshId = 0;
-      this->slaveMeshId = 1;
+      this->mortarMeshId = 0;
+      this->nonmortarMeshId = 1;
    }
 
    // initialize tribol
@@ -798,10 +798,10 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 
    // register mesh. Note: Tribol will still work with global integer 
    // ids for the connectivity and array lengths of numTotalNodes. 
-   registerMesh( this->masterMeshId, this->numMasterFaces, 
+   registerMesh( this->mortarMeshId, this->numMortarFaces, 
                  this->numTotalNodes,
                  this->faceConn1, cellType, x, y, z );
-   registerMesh( this->slaveMeshId, this->numSlaveFaces, 
+   registerMesh( this->nonmortarMeshId, this->numNonmortarFaces, 
                  this->numTotalNodes,
                  this->faceConn2, cellType, x, y, z );
 
@@ -818,12 +818,12 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    allocRealArray( &this->fy2, this->numTotalNodes, 0. );
    allocRealArray( &this->fz2, this->numTotalNodes, 0. );
 
-   registerNodalResponse( this->masterMeshId, 
+   registerNodalResponse( this->mortarMeshId, 
                           this->fx1, 
                           this->fy1, 
                           this->fz1 );
 
-   registerNodalResponse( this->slaveMeshId, 
+   registerNodalResponse( this->nonmortarMeshId, 
                           this->fx2, 
                           this->fy2, 
                           this->fz2 );
@@ -831,7 +831,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    // register nodal velocities
    if (registered_velocities1)
    {
-      registerNodalVelocities( this->masterMeshId,
+      registerNodalVelocities( this->mortarMeshId,
                                this->vx1, 
                                this->vy1,
                                this->vz1 );
@@ -839,13 +839,13 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 
    if (registered_velocities2)
    {
-      registerNodalVelocities( this->slaveMeshId,
+      registerNodalVelocities( this->nonmortarMeshId,
                                this->vx2, 
                                this->vy2,
                                this->vz2 );
    }
 
-   // register nodal pressure and nodal gap array for the slave mesh
+   // register nodal pressure and nodal gap array for the nonmortar mesh
    // for mortar based methods
    if ( method == SINGLE_MORTAR  ||
         method == ALIGNED_MORTAR )
@@ -854,8 +854,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
       allocRealArray( &this->pressures, this->numTotalNodes, 1. );
 
       // register nodal gaps and pressures
-      registerRealNodalField( slaveMeshId, MORTAR_GAPS, this->gaps );
-      registerRealNodalField( slaveMeshId, MORTAR_PRESSURES, this->pressures );
+      registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
+      registerRealNodalField( nonmortarMeshId, MORTAR_PRESSURES, this->pressures );
 
    }
    else if (method == MORTAR_WEIGHTS)
@@ -863,7 +863,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
       allocRealArray( &this->gaps, this->numTotalNodes, 0. );
       this->pressures = nullptr;
 
-      registerRealNodalField( slaveMeshId, MORTAR_GAPS, this->gaps );
+      registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
    }
 
    // if enforcement is penalty, register penalty parameters
@@ -871,76 +871,76 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    {
       if (!params.penalty_ratio)
       {
-         setKinematicConstantPenalty( this->masterMeshId, params.const_penalty );
-         setKinematicConstantPenalty( this->slaveMeshId, params.const_penalty );
+         setKinematicConstantPenalty( this->mortarMeshId, params.const_penalty );
+         setKinematicConstantPenalty( this->nonmortarMeshId, params.const_penalty );
       }
       else
       {
-         if (this->master_bulk_mod == nullptr)
+         if (this->mortar_bulk_mod == nullptr)
          {
             SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "master_bulk_mod not set; registering default value." );
-            this->master_bulk_mod = new real[ this->numMasterFaces ];
-            for (int i=0; i<this->numMasterFaces; ++i)
+                       "mortar_bulk_mod not set; registering default value." );
+            this->mortar_bulk_mod = new real[ this->numMortarFaces ];
+            for (int i=0; i<this->numMortarFaces; ++i)
             {
-               this->master_bulk_mod[i] = params.const_penalty; // non-physical for testing 
+               this->mortar_bulk_mod[i] = params.const_penalty; // non-physical for testing 
             }
          }
-         if (this->master_element_thickness == nullptr)
+         if (this->mortar_element_thickness == nullptr)
          {
             SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "master_element_thickness not set; registering default value." );
-            this->master_element_thickness = new real[ this->numMasterFaces ];
-            for (int i=0; i<this->numMasterFaces; ++i)
+                       "mortar_element_thickness not set; registering default value." );
+            this->mortar_element_thickness = new real[ this->numMortarFaces ];
+            for (int i=0; i<this->numMortarFaces; ++i)
             {
-               this->master_element_thickness[i] = 1.; // non-physical for testing
+               this->mortar_element_thickness[i] = 1.; // non-physical for testing
             }
          }
 
-         if (this->slave_bulk_mod == nullptr)
+         if (this->nonmortar_bulk_mod == nullptr)
          { 
             SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "slave_bulk_mod not set; registering default value." );
-            this->slave_bulk_mod = new real[ this->numSlaveFaces ];
-            for (int i=0; i<this->numSlaveFaces; ++i)
+                       "nonmortar_bulk_mod not set; registering default value." );
+            this->nonmortar_bulk_mod = new real[ this->numNonmortarFaces ];
+            for (int i=0; i<this->numNonmortarFaces; ++i)
             {
-               this->slave_bulk_mod[i] = params.const_penalty; // non-physical for testing
+               this->nonmortar_bulk_mod[i] = params.const_penalty; // non-physical for testing
             }
          }
-         if (this->slave_element_thickness == nullptr)
+         if (this->nonmortar_element_thickness == nullptr)
          {  
             SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "slave_element_thickness not set; registering default value." );
-            this->slave_element_thickness = new real[ this->numSlaveFaces ];
-            for (int i=0; i<this->numSlaveFaces; ++i)
+                       "nonmortar_element_thickness not set; registering default value." );
+            this->nonmortar_element_thickness = new real[ this->numNonmortarFaces ];
+            for (int i=0; i<this->numNonmortarFaces; ++i)
             {
-               this->slave_element_thickness[i] = 1.; // non-physical for testing
+               this->nonmortar_element_thickness[i] = 1.; // non-physical for testing
             }
          }
 
-         // register master penalty data
-         registerRealElementField( this->masterMeshId, BULK_MODULUS, 
-                                   this->master_bulk_mod );
-         registerRealElementField( this->masterMeshId, ELEMENT_THICKNESS,
-                                   this->master_element_thickness );
+         // register mortar penalty data
+         registerRealElementField( this->mortarMeshId, BULK_MODULUS, 
+                                   this->mortar_bulk_mod );
+         registerRealElementField( this->mortarMeshId, ELEMENT_THICKNESS,
+                                   this->mortar_element_thickness );
   
-         // register slave penalty data
-         registerRealElementField( this->slaveMeshId, BULK_MODULUS, 
-                                   this->slave_bulk_mod );
-         registerRealElementField( this->slaveMeshId, ELEMENT_THICKNESS,
-                                   this->slave_element_thickness );
+         // register nonmortar penalty data
+         registerRealElementField( this->nonmortarMeshId, BULK_MODULUS, 
+                                   this->nonmortar_bulk_mod );
+         registerRealElementField( this->nonmortarMeshId, ELEMENT_THICKNESS,
+                                   this->nonmortar_element_thickness );
       } // end if-penalty-ratio
 
       // check for gap rate penalty enforcement
       if (params.constant_rate_penalty)
       {
-         setRateConstantPenalty( this->masterMeshId, params.constant_rate_penalty );
-         setRateConstantPenalty( this->slaveMeshId, params.constant_rate_penalty );
+         setRateConstantPenalty( this->mortarMeshId, params.constant_rate_penalty );
+         setRateConstantPenalty( this->nonmortarMeshId, params.constant_rate_penalty );
       }
       else if (params.percent_rate_penalty)
       {
-         setRatePercentPenalty( this->masterMeshId, params.rate_penalty_ratio );
-         setRatePercentPenalty( this->slaveMeshId,  params.rate_penalty_ratio );
+         setRatePercentPenalty( this->mortarMeshId, params.rate_penalty_ratio );
+         setRatePercentPenalty( this->nonmortarMeshId,  params.rate_penalty_ratio );
       }
 
       // set the penetration fraction for timestep votes computed with penalty enforcements
@@ -958,8 +958,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    // register coupling scheme
    const int csIndex = 0;
    registerCouplingScheme( csIndex,
-                           this->masterMeshId,
-                           this->slaveMeshId,
+                           this->mortarMeshId,
+                           this->nonmortarMeshId,
                            SURFACE_TO_SURFACE,
                            AUTO,
                            method,
@@ -1018,7 +1018,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 void TestMesh::setupPatchTestDirichletBCs( int numElemsX, 
                                            int numElemsY, 
                                            int numElemsZ, 
-                                           bool master, 
+                                           bool mortar, 
                                            int nodeIdOffset, 
                                            bool inHomogeneousGap, 
                                            real inHomogeneousZVal )
@@ -1034,7 +1034,7 @@ void TestMesh::setupPatchTestDirichletBCs( int numElemsX,
 
    int* nodeIdsX, *nodeIdsY, *nodeIdsZ;
    real* valX, *valY, *valZ;
-   if (master) // master BCs
+   if (mortar) // mortar BCs
    {
       this->dirNodesX1 = new int[ numNodes ];
       this->dirNodesY1 = new int[ numNodes ];
@@ -1050,7 +1050,7 @@ void TestMesh::setupPatchTestDirichletBCs( int numElemsX,
       valY     = this->iDirValY1;
       valZ     = this->iDirValZ1;
    }
-   else // slave BCs
+   else // nonmortar BCs
    {
       this->dirNodesX2 = new int[ numNodes ];
       this->dirNodesY2 = new int[ numNodes ];
@@ -1075,8 +1075,8 @@ void TestMesh::setupPatchTestDirichletBCs( int numElemsX,
    initRealArray( valY, numNodes, 0. );
    initRealArray( valZ, numNodes, 0. );
 
-   // setup the boundary conditions for master (bottom) block
-   if (master) 
+   // setup the boundary conditions for mortar (bottom) block
+   if (mortar) 
    {
       // setup BCs in the x-direction
       int ctr = 0;
@@ -1131,7 +1131,7 @@ void TestMesh::setupPatchTestDirichletBCs( int numElemsX,
          }
       }
    }
-   else // BCs for slave (top) block 
+   else // BCs for nonmortar (top) block 
    {
       // setup BCs in the x-direction
       int ctr = 0;
@@ -1199,19 +1199,19 @@ void TestMesh::setupPatchTestPressureDofs( int numElemsX,
                                            int numElemsZ, 
                                            int nodeIdOffset, 
                                            bool contact, 
-                                           bool master )
+                                           bool mortar )
 {
-   // this routine hard codes slave pressure dofs for the bottom surface 
-   // of the top (slave) block
+   // this routine hard codes nonmortar pressure dofs for the bottom surface 
+   // of the top (nonmortar) block
    int numNodes = (numElemsX+1) * (numElemsY+1) * (numElemsZ+1);
    int * presDofs;
   
-   if (master) // master dofs
+   if (mortar) // mortar dofs
    {
       this->presDofs1 = new int[ numNodes ]; 
       presDofs = this->presDofs1; 
    }
-   else // slave pressure dofs
+   else // nonmortar pressure dofs
    {
       this->presDofs2 = new int[ numNodes ]; 
       presDofs = this->presDofs2;
@@ -1248,11 +1248,11 @@ void TestMesh::setupMfemMesh( )
                                      this->numTotalNodes,
                                      this->numTotalElements );
 
-   // add master elements and vertices. Not sure if order of adding 
+   // add mortar elements and vertices. Not sure if order of adding 
    // elements matters, but adding vertices should probably correspond 
    // to the global contiguous id system
    int mConn[ this->numNodesPerElement ];
-   for (int iel=0; iel<this->numMasterElements; ++iel)
+   for (int iel=0; iel<this->numMortarElements; ++iel)
    {
       for (int idx=0; idx<this->numNodesPerElement; ++idx)
       {
@@ -1262,7 +1262,7 @@ void TestMesh::setupMfemMesh( )
       this->mfem_mesh->AddHex( &mConn[0] );
    }
 
-   for (int i=0; i<this->numMasterNodes; ++i)
+   for (int i=0; i<this->numMortarNodes; ++i)
    {
       double vert[3] = {0., 0., 0.}; 
       vert[ 0 ] = this->x[ i ];
@@ -1272,11 +1272,11 @@ void TestMesh::setupMfemMesh( )
       this->mfem_mesh->AddVertex( &vert[0] );
    } 
 
-   // add slave elements and vertices. Not sure if order of adding 
+   // add nonmortar elements and vertices. Not sure if order of adding 
    // elements matters, but adding vertices should probably correspond 
    // to the global contiguous id system
    int sConn[ this->numNodesPerElement ]; 
-   for (int iel=0; iel<this->numSlaveElements; ++iel)
+   for (int iel=0; iel<this->numNonmortarElements; ++iel)
    {
       for (int idx=0; idx<this->numNodesPerElement; ++idx)
       {
@@ -1286,10 +1286,10 @@ void TestMesh::setupMfemMesh( )
       this->mfem_mesh->AddHex( &sConn[0] );
    }
 
-   for (int i=0; i<this->numSlaveNodes; ++i)
+   for (int i=0; i<this->numNonmortarNodes; ++i)
    { 
       double vert[3] = {0., 0., 0.}; 
-      int offset = this->numMasterNodes;
+      int offset = this->numMortarNodes;
       vert[ 0 ] = this->x[ offset + i ];
       vert[ 1 ] = this->y[ offset + i ];
       vert[ 2 ] = this->z[ offset + i ];
@@ -1394,13 +1394,13 @@ void TestMesh::computeElementJacobianContributions( mfem::SparseMatrix * const A
          for (int j=0; j<fe->GetDof(); ++j)
          {
             // get global indices
-            if ( idel < this->numMasterElements )
+            if ( idel < this->numMortarElements )
             {
                el_conn = this->elConn1 + idel * fe->GetDof();
             }
             else 
             {
-               el_conn = this->elConn2 + (idel - this->numMasterElements) * fe->GetDof();
+               el_conn = this->elConn2 + (idel - this->numMortarElements) * fe->GetDof();
             } 
 
             int glb_i = fe->GetDim() * el_conn[i];
@@ -1437,7 +1437,7 @@ void TestMesh::tribolMatrixToSystemMatrix( mfem::DenseMatrix * const ATribol,
    SLIC_ERROR_IF( ATribol == nullptr, "TestMesh::tribolMatrixToSystemMatrix(): " 
                   << "ASystem pointer is null." );
 
-   int solveSize = this->dim * this->numTotalNodes + this->numSlaveSurfaceNodes;
+   int solveSize = this->dim * this->numTotalNodes + this->numNonmortarSurfaceNodes;
 
    // initialize matrix
    for (int i=0; i<solveSize; ++i)
@@ -1462,11 +1462,11 @@ void TestMesh::tribolMatrixToSystemMatrix( mfem::DenseMatrix * const ATribol,
    } // end of upper diagonal block loop
 
    // compose off-diagonal blocks
-   for (int i=0; i<this->numSlaveSurfaceNodes; ++i)
+   for (int i=0; i<this->numNonmortarSurfaceNodes; ++i)
    {
       int newOffset = this->dim * this->numTotalNodes;
       int oldOffset = this->dim * this->numTotalNodes + 
-                      this->numMasterNodes;
+                      this->numMortarNodes;
       int col_id = newOffset + i;
       int row_id = col_id;
 
@@ -1483,11 +1483,11 @@ void TestMesh::tribolMatrixToSystemMatrix( mfem::DenseMatrix * const ATribol,
    // KEEP this as debug code for unit tests, but in general 
    // there should be no contributions
    // TEST compose bottom-diagonal block diagonal elements
-//   for (int i=0; i<this->m_mesh.numSlaveSurfaceNodes; ++i)
+//   for (int i=0; i<this->m_mesh.numNonmortarSurfaceNodes; ++i)
 //   {
 //      int newOffset = this->m_mesh.dim * this->m_mesh.numTotalNodes;
 //      int oldOffset = this->m_mesh.dim * this->m_mesh.numTotalNodes + 
-//                      this->m_mesh.numMasterNodes;
+//                      this->m_mesh.numMortarNodes;
 //      int idx = newOffset + i;
 //         ASystem->Add(idx,idx, (*ATribol)( oldOffset + i, oldOffset + i ));
 //   }
@@ -1498,14 +1498,14 @@ void TestMesh::tribolMatrixToSystemMatrix( mfem::DenseMatrix * const ATribol,
 void TestMesh::getGapEvals( real * const v )
 {
    int presDofCtr = 0;
-   for (int a=0; a<this->numSlaveNodes; ++a)
+   for (int a=0; a<this->numNonmortarNodes; ++a)
    {
       // pressure dofs
       int presOffset = this->dim * this->numTotalNodes;
       if ( this->presDofs2[a] >= 0) // note: pressure dofs ordered sequentially
       {
          v[ presOffset + presDofCtr ] = 
-             -this->gaps[ this->numMasterNodes + a ]; // we have negative rhs
+             -this->gaps[ this->numMortarNodes + a ]; // we have negative rhs
          ++presDofCtr;
       }
    }
@@ -1525,7 +1525,7 @@ void TestMesh::enforceDirichletBCs( mfem::SparseMatrix * const A,
    // enforcing BCs
    for (int iblk=0; iblk<2; ++iblk)
    {
-      // point to master data if iblk == 0
+      // point to mortar data if iblk == 0
       if (iblk == 0)
       {
          dirBCX      = this->dirNodesX1;
@@ -1535,9 +1535,9 @@ void TestMesh::enforceDirichletBCs( mfem::SparseMatrix * const A,
          dirValY     = this->iDirValY1;
          dirValZ     = this->iDirValZ1;
          presDofs    = this->presDofs1;
-         numBlkNodes = this->numMasterNodes;
+         numBlkNodes = this->numMortarNodes;
       }
-      // point to slave data if iblk != 0
+      // point to nonmortar data if iblk != 0
       else
       {
          dirBCX      = this->dirNodesX2;
@@ -1547,7 +1547,7 @@ void TestMesh::enforceDirichletBCs( mfem::SparseMatrix * const A,
          dirValY     = this->iDirValY2;
          dirValZ     = this->iDirValZ2;
          presDofs    = this->presDofs2;
-         numBlkNodes = this->numSlaveNodes;
+         numBlkNodes = this->numNonmortarNodes;
       }
 
       // loop over all block nodes. 
@@ -1637,7 +1637,7 @@ void TestMesh::testMeshToVtk( const std::string& dir, int cycle, double time )
    mesh << "CELLS " << this->numTotalElements << " " 
         << this->numTotalElements+this->numTotalElements*this->numNodesPerElement << std::endl;
 
-   for (int i=0; i<this->numMasterElements; ++i)
+   for (int i=0; i<this->numMortarElements; ++i)
    {
       mesh << this->numNodesPerElement; 
       for (int a=0; a<this->numNodesPerElement; ++a)
@@ -1648,7 +1648,7 @@ void TestMesh::testMeshToVtk( const std::string& dir, int cycle, double time )
       mesh << std::endl;
    }
 
-   for (int i=0; i<this->numSlaveElements; ++i)
+   for (int i=0; i<this->numNonmortarElements; ++i)
    {
       mesh << this->numNodesPerElement; 
       for (int a=0; a<this->numNodesPerElement; ++a)

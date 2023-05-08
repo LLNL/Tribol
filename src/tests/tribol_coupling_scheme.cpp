@@ -477,18 +477,18 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    // setup simple non-null contacting test mesh //
    ////////////////////////////////////////////////
    tribol::TestMesh mesh;
-   mesh.masterMeshId = 0;
-   mesh.slaveMeshId = 1;
+   mesh.mortarMeshId = 0;
+   mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 1; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 1; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
    real x_min1 = 0.;
@@ -514,14 +514,14 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
                              0., 0. );
 
    // register meshes
-   tribol::registerMesh( mesh.masterMeshId,
-                         mesh.numMasterFaces,
+   tribol::registerMesh( mesh.mortarMeshId,
+                         mesh.numMortarFaces,
                          mesh.numTotalNodes,
                          mesh.faceConn1, 3, 
                          mesh.x, mesh.y, mesh.z );
 
-   tribol::registerMesh( mesh.slaveMeshId,
-                         mesh.numSlaveFaces,
+   tribol::registerMesh( mesh.nonmortarMeshId,
+                         mesh.numNonmortarFaces,
                          mesh.numTotalNodes,
                          mesh.faceConn2, 3,
                          mesh.x, mesh.y, mesh.z );
@@ -539,10 +539,10 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    tribol::allocRealArray( &mesh.fy2, mesh.numTotalNodes, 0. );
    tribol::allocRealArray( &mesh.fz2, mesh.numTotalNodes, 0. );
 
-   tribol::registerNodalResponse( mesh.masterMeshId,
+   tribol::registerNodalResponse( mesh.mortarMeshId,
                                   mesh.fx1, mesh.fy1, mesh.fz1 );
 
-   tribol::registerNodalResponse( mesh.slaveMeshId,
+   tribol::registerNodalResponse( mesh.nonmortarMeshId,
                                   mesh.fx2, mesh.fy2, mesh.fz2 );
 
    // register the coupling scheme
@@ -689,18 +689,18 @@ TEST_F( CouplingSchemeTest, finalize )
    // setup simple non-null contacting test mesh //
    ////////////////////////////////////////////////
    tribol::TestMesh mesh;
-   mesh.masterMeshId = 0;
-   mesh.slaveMeshId = 1;
+   mesh.mortarMeshId = 0;
+   mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 1; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 1; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
    real x_min1 = 0.;
@@ -726,14 +726,14 @@ TEST_F( CouplingSchemeTest, finalize )
                              0., 0. );
 
    // register meshes
-   tribol::registerMesh( mesh.masterMeshId,
-                         mesh.numMasterFaces,
+   tribol::registerMesh( mesh.mortarMeshId,
+                         mesh.numMortarFaces,
                          mesh.numTotalNodes,
                          mesh.faceConn1, 3, 
                          mesh.x, mesh.y, mesh.z );
 
-   tribol::registerMesh( mesh.slaveMeshId,
-                         mesh.numSlaveFaces,
+   tribol::registerMesh( mesh.nonmortarMeshId,
+                         mesh.numNonmortarFaces,
                          mesh.numTotalNodes,
                          mesh.faceConn2, 3,
                          mesh.x, mesh.y, mesh.z );
@@ -751,10 +751,10 @@ TEST_F( CouplingSchemeTest, finalize )
    tribol::allocRealArray( &mesh.fy2, mesh.numTotalNodes, 0. );
    tribol::allocRealArray( &mesh.fz2, mesh.numTotalNodes, 0. );
 
-   tribol::registerNodalResponse( mesh.masterMeshId,
+   tribol::registerNodalResponse( mesh.mortarMeshId,
                                   mesh.fx1, mesh.fy1, mesh.fz1 );
 
-   tribol::registerNodalResponse( mesh.slaveMeshId,
+   tribol::registerNodalResponse( mesh.nonmortarMeshId,
                                   mesh.fx2, mesh.fy2, mesh.fz2 );
 
    // register the coupling scheme

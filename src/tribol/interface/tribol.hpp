@@ -249,10 +249,10 @@ void registerNodalResponse( integer meshId,
  * \pre *sMat = nullptr
  *
  * \note Mortar Method: The sizing of the sparse matrix assumes that all 
- *       slave and master nodes may have a Lagrange multiplier associated 
+ *       nonmortar and mortar nodes may have a Lagrange multiplier associated 
  *       with them. This allows us to use the global connectivity array, 
- *       which assumes contiguous and unique node ids between master and 
- *       slave meshes registered in a given coupling scheme.
+ *       which assumes contiguous and unique node ids between mortar and 
+ *       nonmortar meshes registered in a given coupling scheme.
  */
 int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
 
@@ -283,9 +283,9 @@ int getCSRMatrix( int** I, int** J, real** vals, int csId,
 /*!
  * \brief Get element Jacobian matrix contributions for a given block
  *
- * The element Jacobians are stored in blocks associated with the master
- * surface, slave surface, and Lagrange multipliers (if applicable).  The
- * master-master, slave-slave, master-slave, and slave-master blocks are
+ * The element Jacobians are stored in blocks associated with the mortar
+ * surface, nonmortar surface, and Lagrange multipliers (if applicable).  The
+ * mortar-mortar, nonmortar-nonmortar, mortar-nonmortar, and nonmortar-mortar blocks are
  * associated with the equilibrium contributions (derivative of the weak form
  * contact integral with respect to displacement degrees of freedom) and the
  * blocks involving the Lagrange multiplier field are associated with the
@@ -294,25 +294,25 @@ int getCSRMatrix( int** I, int** J, real** vals, int csId,
  *
  * The structure of the blocks is:
  *       M    S    LM
- *     ----------------  M  = BlockSpace::MASTER
+ *     ----------------  M  = BlockSpace::MORTAR
  *   M | 00 | 01 | 02 |
- *     |----|----|----|  S  = BlockSpace::SLAVE
+ *     |----|----|----|  S  = BlockSpace::NONMORTAR
  *   S | 10 | 11 | 12 |
  *     |----|----|----|  LM = BlockSpace::LAGRANGE_MULTIPLIER
  *  LM | 20 | 21 | 22 |
  *     ----------------
- * For example, requesting row_block = BlockSpace::MASTER and col_block =
+ * For example, requesting row_block = BlockSpace::MORTAR and col_block =
  * BlockSpace::LAGRANGE_MULTIPLIER will return the block Jacobians in position
- * 02. row_elem_idx will be an array of master element indices and col_elem_idx
+ * 02. row_elem_idx will be an array of mortar element indices and col_elem_idx
  * will be an array of Lagrange multiplier element indices. The length of 
  * row_elem_idx, col_elem_idx, and jacobians will match.  Each entry in the
  * array corresponds to a single coupled element pair, so element indices will
- * not be unique, in general.  For instance, if a slave face interacts with
- * multiple master faces and vice-versa.
+ * not be unique, in general.  For instance, if a nonmortar face interacts with
+ * multiple mortar faces and vice-versa.
  *
  * \param [in]  csId Coupling scheme id
- * \param [in]  row_block Row Jacobian block (MASTER, SLAVE, or LAGRANGE_MULTIPLIER)
- * \param [in]  col_block Column Jacobian block (MASTER, SLAVE, or LAGRANGE_MULTIPLIER)
+ * \param [in]  row_block Row Jacobian block (MORTAR, NONMORTAR, or LAGRANGE_MULTIPLIER)
+ * \param [in]  col_block Column Jacobian block (MORTAR, NONMORTAR, or LAGRANGE_MULTIPLIER)
  * \param [out] row_elem_idx Reference to array of element indices for the row block
  * \param [out] col_elem_idx Reference to array of element indices for the column block
  * \param [out] jacobians Reference to array of Jacobian dense matrices

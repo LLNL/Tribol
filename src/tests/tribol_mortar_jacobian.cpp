@@ -86,19 +86,19 @@ public:
       // register the mesh with tribol
       const int cellType = (dim == 3) ? (int)(tribol::FACE) : 
                                         (int)(tribol::EDGE);
-      const int masterMeshId = 0;
-      const int slaveMeshId = 1;
+      const int mortarMeshId = 0;
+      const int nonmortarMeshId = 1;
 
       // initialize tribol
       tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
       tribol::initialize( dim, problem_comm );
 
       // register mesh
-      tribol::registerMesh( masterMeshId, 1, 
+      tribol::registerMesh( mortarMeshId, 1, 
                             this->numNodes,
                             conn1, cellType, 
                             x, y, z );
-      tribol::registerMesh( slaveMeshId, 1, 
+      tribol::registerMesh( nonmortarMeshId, 1, 
                             this->numNodes,
                             conn2, cellType, 
                             x, y, z );
@@ -140,17 +140,17 @@ public:
          fz2[i] = 0.;
       }
 
-      tribol::registerNodalResponse( masterMeshId, fx1, fy1, fz1 );
-      tribol::registerNodalResponse( slaveMeshId, fx2, fy2, fz2 );
+      tribol::registerNodalResponse( mortarMeshId, fx1, fy1, fz1 );
+      tribol::registerNodalResponse( nonmortarMeshId, fx2, fy2, fz2 );
 
-      // register nodal pressure and nodal gap array for the slave mesh
+      // register nodal pressure and nodal gap array for the nonmortar mesh
       real *gaps, *pressures;
 
       gaps = new real [ this->numNodes ]; // length of total mesh to use global connectivity to index
       pressures = new real [ this->numNodes ]; // length of total mesh to use global connectivity to index
 
       // initialize gaps and pressures. Initialize all 
-      // slave pressures to 1.0
+      // nonmortar pressures to 1.0
       for (int i=0; i<this->numNodes; ++i)
       {
          gaps[i] = 0.;
@@ -158,14 +158,14 @@ public:
       }
 
       // register nodal gaps and pressures
-      tribol::registerRealNodalField( slaveMeshId, tribol::MORTAR_GAPS, gaps );
-      tribol::registerRealNodalField( slaveMeshId, tribol::MORTAR_PRESSURES, pressures );
+      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, gaps );
+      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_PRESSURES, pressures );
 
       // register coupling scheme
       const int csIndex = 0;
       tribol::registerCouplingScheme( csIndex,
-                                      masterMeshId,
-                                      slaveMeshId,
+                                      mortarMeshId,
+                                      nonmortarMeshId,
                                       tribol::SURFACE_TO_SURFACE,
                                       tribol::AUTO,
                                       method,
@@ -324,21 +324,21 @@ TEST_F( MortarJacTest, jac_input_test )
    int numCols = jac->NumCols();
    EXPECT_EQ( numCols, my_num_rows );
 
-   // delete the slave mesh pressure and gap arrays. Normally the host code will 
+   // delete the nonmortar mesh pressure and gap arrays. Normally the host code will 
    // manage this memory
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( 1 );
+   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
 
-   if (slaveMesh.m_nodalFields.m_node_gap != nullptr)
+   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
    {
-      delete [] slaveMesh.m_nodalFields.m_node_gap;
-      slaveMesh.m_nodalFields.m_node_gap = nullptr;
+      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
+      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
    }
 
-   if (slaveMesh.m_nodalFields.m_node_pressure != nullptr)
+   if (nonmortarMesh.m_nodalFields.m_node_pressure != nullptr)
    {
-      delete [] slaveMesh.m_nodalFields.m_node_pressure; 
-      slaveMesh.m_nodalFields.m_node_pressure = nullptr;
+      delete [] nonmortarMesh.m_nodalFields.m_node_pressure; 
+      nonmortarMesh.m_nodalFields.m_node_pressure = nullptr;
    }
 
    // delete the jacobian matrix
@@ -435,21 +435,21 @@ TEST_F( MortarJacTest, update_jac_test )
 
    tribol::finalize();
 
-   // delete the slave mesh pressure and gap arrays. Normally the host code will 
+   // delete the nonmortar mesh pressure and gap arrays. Normally the host code will 
    // manage this memory
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( 1 );
+   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
 
-   if (slaveMesh.m_nodalFields.m_node_gap != nullptr)
+   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
    {
-      delete [] slaveMesh.m_nodalFields.m_node_gap;
-      slaveMesh.m_nodalFields.m_node_gap = nullptr;
+      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
+      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
    }
 
-   if (slaveMesh.m_nodalFields.m_node_pressure != nullptr)
+   if (nonmortarMesh.m_nodalFields.m_node_pressure != nullptr)
    {
-      delete [] slaveMesh.m_nodalFields.m_node_pressure; 
-      slaveMesh.m_nodalFields.m_node_pressure = nullptr;
+      delete [] nonmortarMesh.m_nodalFields.m_node_pressure; 
+      nonmortarMesh.m_nodalFields.m_node_pressure = nullptr;
    }
 
    // delete the jacobian matrix

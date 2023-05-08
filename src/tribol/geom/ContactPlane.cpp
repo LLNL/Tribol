@@ -846,18 +846,18 @@ ContactPlane3D CheckAlignedFacePair( InterfacePair& pair )
    ContactPlane3D cp( pair, areaFrac, interpenOverlap, intermediatePlane, 3 );
 
    // TODO should probably stay consistent with the mortar convention and change 
-   // the plane point and normal to the slave surface. These calculations are only 
+   // the plane point and normal to the nonmortar surface. These calculations are only 
    // geometry calculations intended to determine if the face-pair should be included 
    // so there isn't much consequence to choosing until we talk about integration. 
-   // If the master data is switched to slave data, the calculations must be chased 
+   // If the mortar data is switched to nonmortar data, the calculations must be chased 
    // through to make sure contacting face pairs are included.
   
-   // set the common plane "point" to the master face vertex averaged centroid
+   // set the common plane "point" to the mortar face vertex averaged centroid
    cp.m_cX = mesh1.m_cX[ faceId1 ];
    cp.m_cY = mesh1.m_cY[ faceId1 ];
    cp.m_cZ = mesh1.m_cZ[ faceId1 ];
 
-   // set the common plane "normal" to the master outward unit normal
+   // set the common plane "normal" to the mortar outward unit normal
    cp.m_nX = mesh1.m_nX[ faceId1 ];
    cp.m_nY = mesh1.m_nY[ faceId1 ];
    cp.m_nZ = mesh1.m_nZ[ faceId1 ];
@@ -950,7 +950,7 @@ void ContactPlane3D::computeNormal()
    }
    else // for mortar
    {
-      // the projection plane is the slave (i.e. mesh id 2) surface so 
+      // the projection plane is the nonmortar (i.e. mesh id 2) surface so 
       // we use the outward normal for face 2 on mesh 2 
       m_nX = m2.m_nX[ fId2 ];
       m_nY = m2.m_nY[ fId2 ];
@@ -991,7 +991,7 @@ void ContactPlane3D::computePlanePoint()
       m_cZ = 0.5 * ( m1.m_cZ[fId1] + m2.m_cZ[fId2] );
    }
    // ELSE: MORTAR calculation using the vertex averaged 
-   // centroid of the slave face
+   // centroid of the nonmortar face
    else
    {
       m_cX = m2.m_cX[ fId2 ];
@@ -2097,7 +2097,7 @@ void ContactPlane2D::computeNormal()
    }
    else
    {
-      // MORTAR normal calculation. This is the normal of the slave surface
+      // MORTAR normal calculation. This is the normal of the nonmortar surface
       m_nX = m2.m_nX[ m_pair.pairIndex2 ];
       m_nY = m2.m_nY[ m_pair.pairIndex2 ];
       m_nZ = 0.;

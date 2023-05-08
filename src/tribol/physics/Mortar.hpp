@@ -39,7 +39,7 @@ void ComputeMortarWeights( SurfaceContactElem & elem );
 
 /*!
  *
- * \brief computes all of the slave gaps to determine active set of contact constraints
+ * \brief computes all of the nonmortar gaps to determine active set of contact constraints
  *
  * \param [in] cs pointer to coupling scheme
  *

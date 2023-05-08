@@ -68,18 +68,18 @@ int Finalize(bool finalize_slic)
 
 void SimpleCouplingSetup( const int dim, 
                           int contact_method,           
-                          int master_numCells,
-                          int master_lengthNodalData,
-                          const int* master_connectivity,
-                          const double* master_x,
-                          const double* master_y,
-                          const double* master_z,
-                          int slave_numCells,
-                          int slave_lengthNodalData,
-                          const int* slave_connectivity,
-                          const double* slave_x,
-                          const double* slave_y,
-                          const double* slave_z,
+                          int mortar_numCells,
+                          int mortar_lengthNodalData,
+                          const int* mortar_connectivity,
+                          const double* mortar_x,
+                          const double* mortar_y,
+                          const double* mortar_z,
+                          int nonmortar_numCells,
+                          int nonmortar_lengthNodalData,
+                          const int* nonmortar_connectivity,
+                          const double* nonmortar_x,
+                          const double* nonmortar_y,
+                          const double* nonmortar_z,
                           const double area_frac,
                           double* mortar_gaps,
                           double* mortar_pressures)
@@ -93,28 +93,28 @@ void SimpleCouplingSetup( const int dim,
    int cellType = (dim == 3) ? (int)(tribol::FACE) :
                                (int)(tribol::EDGE);
 
-   // register master mesh
-   int masterMeshId = 0;
-   tribol::registerMesh( masterMeshId, master_numCells, 
-                         master_lengthNodalData,
-                         master_connectivity, cellType,
-                         master_x, master_y, master_z );
+   // register mortar mesh
+   int mortarMeshId = 0;
+   tribol::registerMesh( mortarMeshId, mortar_numCells, 
+                         mortar_lengthNodalData,
+                         mortar_connectivity, cellType,
+                         mortar_x, mortar_y, mortar_z );
 
-   // register slave mesh
-   int slaveMeshId = 1;
-   tribol::registerMesh( slaveMeshId, slave_numCells,
-                         slave_lengthNodalData,
-                         slave_connectivity, cellType,
-                         slave_x, slave_y, slave_z );
+   // register nonmortar mesh
+   int nonmortarMeshId = 1;
+   tribol::registerMesh( nonmortarMeshId, nonmortar_numCells,
+                         nonmortar_lengthNodalData,
+                         nonmortar_connectivity, cellType,
+                         nonmortar_x, nonmortar_y, nonmortar_z );
 
    // Register mortar gaps and pressures, if provided
    if( mortar_gaps != nullptr)
    {
-      tribol::registerRealNodalField( slaveMeshId, tribol::MORTAR_GAPS, mortar_gaps);
+      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, mortar_gaps);
    }
    if( mortar_pressures != nullptr)
    {
-      tribol::registerRealNodalField( slaveMeshId, tribol::MORTAR_PRESSURES, mortar_pressures);
+      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_PRESSURES, mortar_pressures);
    }
 
    // set contact area fraction 
@@ -123,7 +123,7 @@ void SimpleCouplingSetup( const int dim,
 
    // note the use of NULL_ENFORCEMENT reflects that this routine is used 
    // to initially setup tests for MORTAR_WEIGHTS only!
-   tribol::registerCouplingScheme( 0, masterMeshId, slaveMeshId,
+   tribol::registerCouplingScheme( 0, mortarMeshId, nonmortarMeshId,
                                    tribol::SURFACE_TO_SURFACE,
                                    tribol::AUTO,
                                    contact_method,

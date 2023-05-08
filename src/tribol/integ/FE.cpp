@@ -325,7 +325,7 @@ void InvIso( const real  x[3],
       real cm_22 = JTJ_22; //- (djde_22 * f_x + djde_22 * f_y + djde_22 * f_z);
 
       // do exact Newton for steps beyond first few
-      if (k > 2)  // set to 2 per Mike Puso comment
+      if (k > 2)  // set to 2 per mortar method testing 
       {
        cm_11 += - (djde_11 * f_x + djde_11 * f_y + djde_11 * f_z);
        cm_12 += - (djde_x_12 * f_x + djde_y_12 * f_y + djde_z_12 * f_z);

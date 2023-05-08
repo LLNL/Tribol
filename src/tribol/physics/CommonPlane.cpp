@@ -37,7 +37,6 @@ real ComputePenaltyStiffnessPerArea( const real K1,
    // equivalent spring stiffness as, 
    // k_eq = A*(K1/t1)*(K2/t2) / ((K1/t1)+(K2/t2). Note, the host 
    // code registers each face's (K/t) as a penalty scale.
-   // This penalty calculation is based on advice provided by Mike Puso
    //
    // UNITS: we multiply k_eq above by the overlap area A, to get a 
    // stiffness per unit area. This will make the force calculations 

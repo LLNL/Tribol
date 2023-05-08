@@ -57,12 +57,12 @@ public:
    mfem::Array<int> v_ixm;
    mfem::Array<int> v_ixs;
 
-   int lengthMasterConn;
-   int lengthSlaveConn;
-   int lengthMasterNodes;
-   int lengthSlaveNodes;
-   int numMasterCells;
-   int numSlaveCells;
+   int lengthMortarConn;
+   int lengthNonmortarConn;
+   int lengthMortarNodes;
+   int lengthNonmortarNodes;
+   int numMortarCells;
+   int numNonmortarCells;
 
    tribol::TestMesh m_mesh;
 
@@ -95,12 +95,12 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    std::string ys_file =  axom_fs::joinPath(TRIBOL_DATA_DIR,"mortar_good_patch/ys.txt");
    std::string zs_file =  axom_fs::joinPath(TRIBOL_DATA_DIR,"mortar_good_patch/zs.txt");
 
-   this->lengthMasterConn  = 64;
-   this->lengthSlaveConn   = 36;
-   this->lengthMasterNodes = 189;
-   this->lengthSlaveNodes  = 189;
-   this->numMasterCells = 16;
-   this->numSlaveCells = 9;
+   this->lengthMortarConn  = 64;
+   this->lengthNonmortarConn   = 36;
+   this->lengthMortarNodes = 189;
+   this->lengthNonmortarNodes  = 189;
+   this->numMortarCells = 16;
+   this->numNonmortarCells = 9;
 
    std::ifstream i_ixm( ixm_file ); 
    std::ifstream i_ixs( ixs_file );
@@ -111,17 +111,17 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    std::ifstream i_ys( ys_file );
    std::ifstream i_zs( zs_file );
 
-   this->v_ixm.SetSize( this->lengthMasterConn );
-   this->v_ixs.SetSize( this->lengthSlaveConn );
+   this->v_ixm.SetSize( this->lengthMortarConn );
+   this->v_ixs.SetSize( this->lengthNonmortarConn );
 
    this->v_ixm.Load( i_ixm, 1 );
    this->v_ixs.Load( i_ixs, 1 );
-   this->v_xm.Load( i_xm, this->lengthMasterNodes );
-   this->v_ym.Load( i_ym, this->lengthMasterNodes );
-   this->v_zm.Load( i_zm, this->lengthMasterNodes );
-   this->v_xs.Load( i_xs, this->lengthSlaveNodes );
-   this->v_ys.Load( i_ys, this->lengthSlaveNodes );
-   this->v_zs.Load( i_zs, this->lengthSlaveNodes );
+   this->v_xm.Load( i_xm, this->lengthMortarNodes );
+   this->v_ym.Load( i_ym, this->lengthMortarNodes );
+   this->v_zm.Load( i_zm, this->lengthMortarNodes );
+   this->v_xs.Load( i_xs, this->lengthNonmortarNodes );
+   this->v_ys.Load( i_ys, this->lengthNonmortarNodes );
+   this->v_zs.Load( i_zs, this->lengthNonmortarNodes );
 
    i_ixm.close();
    i_ixs.close();
@@ -145,11 +145,11 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    double* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
-   // the length of the slave nodes array is the same as the master, 
+   // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
    double* gaps, * pressures;
-   int numTotalNodes = this->lengthSlaveNodes;
+   int numTotalNodes = this->lengthNonmortarNodes;
    gaps = new double[ numTotalNodes ];
    pressures = new double[ numTotalNodes ];
 
@@ -166,14 +166,14 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         tribol::MORTAR_WEIGHTS,
-                        this->numMasterCells,
-                        this->lengthMasterNodes,
+                        this->numMortarCells,
+                        this->lengthMortarNodes,
                         ixm_data,
                         xm_data,
                         ym_data,
                         zm_data,
-                        this->numSlaveCells,
-                        this->lengthSlaveNodes, 
+                        this->numNonmortarCells,
+                        this->lengthNonmortarNodes, 
                         ixs_data,
                         xs_data,
                         ys_data,
@@ -208,12 +208,12 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
    std::string ys_file =  axom_fs::joinPath(TRIBOL_DATA_DIR,"mortar_bad_patch/ys.txt");
    std::string zs_file =  axom_fs::joinPath(TRIBOL_DATA_DIR,"mortar_bad_patch/zs.txt");
 
-   this->lengthMasterConn  = 64;
-   this->lengthSlaveConn   = 36;
-   this->lengthMasterNodes = 189;
-   this->lengthSlaveNodes  = 189;
-   this->numMasterCells = 16;
-   this->numSlaveCells = 9;
+   this->lengthMortarConn  = 64;
+   this->lengthNonmortarConn   = 36;
+   this->lengthMortarNodes = 189;
+   this->lengthNonmortarNodes  = 189;
+   this->numMortarCells = 16;
+   this->numNonmortarCells = 9;
 
    std::ifstream i_ixm( ixm_file ); 
    std::ifstream i_ixs( ixs_file );
@@ -224,17 +224,17 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
    std::ifstream i_ys( ys_file );
    std::ifstream i_zs( zs_file );
 
-   this->v_ixm.SetSize( this->lengthMasterConn );
-   this->v_ixs.SetSize( this->lengthSlaveConn );
+   this->v_ixm.SetSize( this->lengthMortarConn );
+   this->v_ixs.SetSize( this->lengthNonmortarConn );
 
    this->v_ixm.Load( i_ixm, 1 );
    this->v_ixs.Load( i_ixs, 1 );
-   this->v_xm.Load( i_xm, this->lengthMasterNodes );
-   this->v_ym.Load( i_ym, this->lengthMasterNodes );
-   this->v_zm.Load( i_zm, this->lengthMasterNodes );
-   this->v_xs.Load( i_xs, this->lengthSlaveNodes );
-   this->v_ys.Load( i_ys, this->lengthSlaveNodes );
-   this->v_zs.Load( i_zs, this->lengthSlaveNodes );
+   this->v_xm.Load( i_xm, this->lengthMortarNodes );
+   this->v_ym.Load( i_ym, this->lengthMortarNodes );
+   this->v_zm.Load( i_zm, this->lengthMortarNodes );
+   this->v_xs.Load( i_xs, this->lengthNonmortarNodes );
+   this->v_ys.Load( i_ys, this->lengthNonmortarNodes );
+   this->v_zs.Load( i_zs, this->lengthNonmortarNodes );
 
    i_ixm.close();
    i_ixs.close();
@@ -258,11 +258,11 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
    double* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
-   // the length of the slave nodes array is the same as the master, 
+   // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
    double* gaps, * pressures;
-   int numTotalNodes = this->lengthSlaveNodes;
+   int numTotalNodes = this->lengthNonmortarNodes;
    gaps = new double[ numTotalNodes ];
    pressures = new double[ numTotalNodes ];
 
@@ -279,14 +279,14 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         tribol::MORTAR_WEIGHTS,
-                        this->numMasterCells,
-                        this->lengthMasterNodes,
+                        this->numMortarCells,
+                        this->lengthMortarNodes,
                         ixm_data,
                         xm_data,
                         ym_data,
                         zm_data,
-                        this->numSlaveCells,
-                        this->lengthSlaveNodes, 
+                        this->numNonmortarCells,
+                        this->lengthNonmortarNodes, 
                         ixs_data,
                         xs_data,
                         ys_data,
@@ -322,12 +322,12 @@ TEST_F( MortarGeomTest, mortar_ironing )
    std::string ys_file =  axom_fs::joinPath(TRIBOL_DATA_DIR,"mortar_ironing_3/ys.txt");
    std::string zs_file =  axom_fs::joinPath(TRIBOL_DATA_DIR,"mortar_ironing_3/zs.txt");
 
-   this->lengthMasterConn  = 480;
-   this->lengthSlaveConn   = 160;
-   this->lengthMasterNodes = 696;
-   this->lengthSlaveNodes  = 696;
-   this->numMasterCells = 120;
-   this->numSlaveCells = 40;
+   this->lengthMortarConn  = 480;
+   this->lengthNonmortarConn   = 160;
+   this->lengthMortarNodes = 696;
+   this->lengthNonmortarNodes  = 696;
+   this->numMortarCells = 120;
+   this->numNonmortarCells = 40;
 
    std::ifstream i_ixm( ixm_file ); 
    std::ifstream i_ixs( ixs_file );
@@ -338,17 +338,17 @@ TEST_F( MortarGeomTest, mortar_ironing )
    std::ifstream i_ys( ys_file );
    std::ifstream i_zs( zs_file );
 
-   this->v_ixm.SetSize( this->lengthMasterConn );
-   this->v_ixs.SetSize( this->lengthSlaveConn );
+   this->v_ixm.SetSize( this->lengthMortarConn );
+   this->v_ixs.SetSize( this->lengthNonmortarConn );
 
    this->v_ixm.Load( i_ixm, 1 );
    this->v_ixs.Load( i_ixs, 1 );
-   this->v_xm.Load( i_xm, this->lengthMasterNodes );
-   this->v_ym.Load( i_ym, this->lengthMasterNodes );
-   this->v_zm.Load( i_zm, this->lengthMasterNodes );
-   this->v_xs.Load( i_xs, this->lengthSlaveNodes );
-   this->v_ys.Load( i_ys, this->lengthSlaveNodes );
-   this->v_zs.Load( i_zs, this->lengthSlaveNodes );
+   this->v_xm.Load( i_xm, this->lengthMortarNodes );
+   this->v_ym.Load( i_ym, this->lengthMortarNodes );
+   this->v_zm.Load( i_zm, this->lengthMortarNodes );
+   this->v_xs.Load( i_xs, this->lengthNonmortarNodes );
+   this->v_ys.Load( i_ys, this->lengthNonmortarNodes );
+   this->v_zs.Load( i_zs, this->lengthNonmortarNodes );
 
    i_ixm.close();
    i_ixs.close();
@@ -372,11 +372,11 @@ TEST_F( MortarGeomTest, mortar_ironing )
    double* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
-   // the length of the slave nodes array is the same as the master, 
+   // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
    double* gaps, * pressures;
-   int numTotalNodes = this->lengthSlaveNodes;
+   int numTotalNodes = this->lengthNonmortarNodes;
    gaps = new double[ numTotalNodes ];
    pressures = new double[ numTotalNodes ];
 
@@ -393,14 +393,14 @@ TEST_F( MortarGeomTest, mortar_ironing )
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         tribol::MORTAR_WEIGHTS,
-                        this->numMasterCells,
-                        this->lengthMasterNodes,
+                        this->numMortarCells,
+                        this->lengthMortarNodes,
                         ixm_data,
                         xm_data,
                         ym_data,
                         zm_data,
-                        this->numSlaveCells,
-                        this->lengthSlaveNodes, 
+                        this->numNonmortarCells,
+                        this->lengthNonmortarNodes, 
                         ixs_data,
                         xs_data,
                         ys_data,
@@ -419,17 +419,17 @@ TEST_F( MortarGeomTest, mortar_ironing )
   
    tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
 
-   tribol::IndexType const masterId = couplingScheme->getMeshId1();
-   //tribol::IndexType const slaveId = couplingScheme->getMeshId2();
+   tribol::IndexType const mortarId = couplingScheme->getMeshId1();
+   //tribol::IndexType const nonmortarId = couplingScheme->getMeshId2();
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& masterMesh = meshManager.GetMeshInstance( masterId );
+   tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
 
-   if (masterMesh.m_sortedSurfaceNodeIds == nullptr)
+   if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
    {
-      masterMesh.sortSurfaceNodeIds();
+      mortarMesh.sortSurfaceNodeIds();
    }
 
-   //int nodeOffset = masterMesh.m_sortedSurfaceNodeIds[ masterMesh.m_numSurfaceNodes-1 ] + 1;
+   //int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
 
    int *I = nullptr;
    int *J = nullptr;
@@ -456,7 +456,7 @@ TEST_F( MortarGeomTest, mortar_ironing )
       } // end loop over nonzero columns, I[a]
    } // end loop over matrix rows
 
-   SLIC_INFO("Total number of ACTIVE slave nodes: " << num_total_active_nodes );
+   SLIC_INFO("Total number of ACTIVE nonmortar nodes: " << num_total_active_nodes );
 
    EXPECT_EQ( num_total_active_nodes, 54 );
 
@@ -480,12 +480,12 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
    std::string ys_file =  axom_fs::joinPath(TRIBOL_DATA_DIR,"mortar_ironing_sub_mesh/ys.txt");
    std::string zs_file =  axom_fs::joinPath(TRIBOL_DATA_DIR,"mortar_ironing_sub_mesh/zs.txt");
 
-   this->lengthMasterConn  = 28;
-   this->lengthSlaveConn   = 8;
-   this->lengthMasterNodes = 663;
-   this->lengthSlaveNodes  = 663;
-   this->numMasterCells = 7;
-   this->numSlaveCells = 2;
+   this->lengthMortarConn  = 28;
+   this->lengthNonmortarConn   = 8;
+   this->lengthMortarNodes = 663;
+   this->lengthNonmortarNodes  = 663;
+   this->numMortarCells = 7;
+   this->numNonmortarCells = 2;
 
    std::ifstream i_ixm( ixm_file ); 
    std::ifstream i_ixs( ixs_file );
@@ -496,17 +496,17 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
    std::ifstream i_ys( ys_file );
    std::ifstream i_zs( zs_file );
 
-   this->v_ixm.SetSize( this->lengthMasterConn );
-   this->v_ixs.SetSize( this->lengthSlaveConn );
+   this->v_ixm.SetSize( this->lengthMortarConn );
+   this->v_ixs.SetSize( this->lengthNonmortarConn );
 
    this->v_ixm.Load( i_ixm, 1 );
    this->v_ixs.Load( i_ixs, 1 );
-   this->v_xm.Load( i_xm, this->lengthMasterNodes );
-   this->v_ym.Load( i_ym, this->lengthMasterNodes );
-   this->v_zm.Load( i_zm, this->lengthMasterNodes );
-   this->v_xs.Load( i_xs, this->lengthSlaveNodes );
-   this->v_ys.Load( i_ys, this->lengthSlaveNodes );
-   this->v_zs.Load( i_zs, this->lengthSlaveNodes );
+   this->v_xm.Load( i_xm, this->lengthMortarNodes );
+   this->v_ym.Load( i_ym, this->lengthMortarNodes );
+   this->v_zm.Load( i_zm, this->lengthMortarNodes );
+   this->v_xs.Load( i_xs, this->lengthNonmortarNodes );
+   this->v_ys.Load( i_ys, this->lengthNonmortarNodes );
+   this->v_zs.Load( i_zs, this->lengthNonmortarNodes );
 
    i_ixm.close();
    i_ixs.close();
@@ -530,11 +530,11 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
    double* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
-   // the length of the slave nodes array is the same as the master, 
+   // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
    double* gaps, * pressures;
-   int numTotalNodes = this->lengthSlaveNodes;
+   int numTotalNodes = this->lengthNonmortarNodes;
    gaps = new double[ numTotalNodes ];
    pressures = new double[ numTotalNodes ];
 
@@ -551,14 +551,14 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         tribol::MORTAR_WEIGHTS,
-                        this->numMasterCells,
-                        this->lengthMasterNodes,
+                        this->numMortarCells,
+                        this->lengthMortarNodes,
                         ixm_data,
                         xm_data,
                         ym_data,
                         zm_data,
-                        this->numSlaveCells,
-                        this->lengthSlaveNodes, 
+                        this->numNonmortarCells,
+                        this->lengthNonmortarNodes, 
                         ixs_data,
                         xs_data,
                         ys_data,
