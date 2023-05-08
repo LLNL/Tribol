@@ -361,14 +361,16 @@ void MeshData::computeFaceData( int const dim )
   real nrmlMagTol = 1.E-6;
 
   // loop over all cells in the mesh
-  for (int i=0; i<m_numCells; ++i) {
+  for (int i=0; i<m_numCells; ++i)
+  {
 
      // compute the vertex average centroid. This will lie in the 
      // plane of the face for planar faces, and will be used as 
      // an approximate centroid for warped faces, both in 3D.
 
      // loop over the nodes per cell
-     for (int j=0; j<m_numCellNodes; ++j) {
+     for (int j=0; j<m_numCellNodes; ++j)
+     {
         nodeIndex = m_numCellNodes * i + j;
         nodeId = m_connectivity[ nodeIndex ];
         // always compute the x and y components for 2D and 3D
@@ -379,7 +381,8 @@ void MeshData::computeFaceData( int const dim )
      m_cX[i] = fac * m_cX[i];
      m_cY[i] = fac * m_cY[i];
 
-     if (dim == 3) {
+     if (dim == 3)
+     {
         for (int j=0; j<m_numCellNodes; ++j) {
            nodeIndex = m_numCellNodes * i + j;
            nodeId = m_connectivity[ nodeIndex ];
@@ -387,83 +390,117 @@ void MeshData::computeFaceData( int const dim )
         } // end loop over nodes
         m_cZ[i] = fac * m_cZ[i];
      } // end if-dim
-     else { // dim == 2, nullify just in case
+     else // dim == 2, nullify just in case
+     {
         m_cZ = nullptr;
      }
 
-     // compute the outward facing normal
-     if (dim == 2) {
-
-        // the 2D calculation over a 2-node, 1D segment assumes a 
-        // counter-clockwise ordering of the quad4 area element
-        // to which the 1D line segment belongs. This is to properly 
-        // orient the normal outward
-        nodeIndex = m_numCellNodes * i;
-        nodeId = m_connectivity[ nodeIndex ];
-        nextNodeId = m_connectivity[ nodeIndex+1 ];
-        real lambdaX = m_positionX[ nextNodeId ] - m_positionX[ nodeId ];
-        real lambdaY = m_positionY[ nextNodeId ] - m_positionY[ nodeId ];
-   
-        m_nX[i] = lambdaY;
-        m_nY[i] = -lambdaX;
-
-        m_nZ = nullptr;
-
-        // compute the length of the segment
-        m_area[i] = magnitude( lambdaX, lambdaY );
-
-        // normalize normal vector
-        mag = magnitude( m_nX[i], m_nY[i] );
-        if (mag >= nrmlMagTol) {
-           invMag = 1.0 / mag;
-        }
-        m_nX[i] *= invMag;
-        m_nY[i] *= invMag;
-
-     }
-        
      // compute face radius for both 2D and 3D. For 2D, this is a duplicate of 
      // the length, but allows for some uniformity in accessing this value 
      // for tolerance ratios
      m_faceRadius[i] = this->computeFaceRadius(i);
 
-     if (dim == 3) {
-
-        // this method of computing an outward unit normal breaks the 
-        // face into triangular pallets by connecting two consecutive 
-        // nodes with the approximate centroid.
-        // The average outward unit normal for the face is the average of 
-        // those of the pallets. This is exact for non-warped faces. To 
-        // compute the pallet normal, you only need edge vectors for the 
-        // pallet. These are constructed from the face centroid and the face 
-        // edge's first node and the face edge's two nodes
-
-        // declare triangle edge vector components and normal components
-        real vX1, vY1, vZ1;
-        real vX2, vY2, vZ2;
-        real nX, nY, nZ; 
-
-        // loop over m_numCellNodes-1 cell edges and compute pallet normal
-        for (int j=0; j<(m_numCellNodes-1); ++j) 
+     // compute the outward facing normal
+     switch (m_elementType)
+     { 
+     
+        case LINEAR_EDGE:
         {
-           nodeIndex = m_numCellNodes * i + j;
-           nodeId = m_connectivity[ nodeIndex ];
-           nextNodeId = m_connectivity[ nodeIndex + 1 ];
-           // first triangle edge vector between the face's two 
-           // edge nodes
-           vX1 = m_positionX[ nextNodeId ] - m_positionX[ nodeId ];
-           vY1 = m_positionY[ nextNodeId ] - m_positionY[ nodeId ];
-           vZ1 = m_positionZ[ nextNodeId ] - m_positionZ[ nodeId ];
-          
-           // second triangle edge vector between the face centroid 
-           // and the face edge's first node
-           vX2 = m_cX[i] - m_positionX[ nodeId ];
-           vY2 = m_cY[i] - m_positionY[ nodeId ];
-           vZ2 = m_cZ[i] - m_positionZ[ nodeId ];
 
-           // compute the contribution to the pallet normal as v1 x v2. Sum 
-           // these into the face normal component variables stored on the mesh data 
-           // object
+           // the 2D calculation over a 2-node, 1D segment assumes a 
+           // counter-clockwise ordering of the quad4 area element
+           // to which the 1D line segment belongs. This is to properly 
+           // orient the normal outward
+           nodeIndex = m_numCellNodes * i;
+           nodeId = m_connectivity[ nodeIndex ];
+           nextNodeId = m_connectivity[ nodeIndex+1 ];
+           real lambdaX = m_positionX[ nextNodeId ] - m_positionX[ nodeId ];
+           real lambdaY = m_positionY[ nextNodeId ] - m_positionY[ nodeId ];
+   
+           m_nX[i] = lambdaY;
+           m_nY[i] = -lambdaX;
+
+           m_nZ = nullptr;
+
+           // compute the length of the segment
+           m_area[i] = magnitude( lambdaX, lambdaY );
+
+           // normalize normal vector
+           mag = magnitude( m_nX[i], m_nY[i] );
+           if (mag >= nrmlMagTol) {
+              invMag = 1.0 / mag;
+           }
+           m_nX[i] *= invMag;
+           m_nY[i] *= invMag;
+ 
+           break;
+        } // end case LINEAR_EDGE
+           
+        case LINEAR_QUAD:
+        {
+
+           // this method of computing an outward unit normal breaks the 
+           // face into triangular pallets by connecting two consecutive 
+           // nodes with the approximate centroid.
+           // The average outward unit normal for the face is the average of 
+           // those of the pallets. This is exact for non-warped faces. To 
+           // compute the pallet normal, you only need edge vectors for the 
+           // pallet. These are constructed from the face centroid and the face 
+           // edge's first node and the face edge's two nodes
+
+           // declare triangle edge vector components and normal components
+           real vX1, vY1, vZ1;
+           real vX2, vY2, vZ2;
+           real nX, nY, nZ; 
+
+           // loop over m_numCellNodes-1 cell edges and compute pallet normal
+           for (int j=0; j<(m_numCellNodes-1); ++j) 
+           {
+              nodeIndex = m_numCellNodes * i + j;
+              nodeId = m_connectivity[ nodeIndex ];
+              nextNodeId = m_connectivity[ nodeIndex + 1 ];
+              // first triangle edge vector between the face's two 
+              // edge nodes
+              vX1 = m_positionX[ nextNodeId ] - m_positionX[ nodeId ];
+              vY1 = m_positionY[ nextNodeId ] - m_positionY[ nodeId ];
+              vZ1 = m_positionZ[ nextNodeId ] - m_positionZ[ nodeId ];
+             
+              // second triangle edge vector between the face centroid 
+              // and the face edge's first node
+              vX2 = m_cX[i] - m_positionX[ nodeId ];
+              vY2 = m_cY[i] - m_positionY[ nodeId ];
+              vZ2 = m_cZ[i] - m_positionZ[ nodeId ];
+
+              // compute the contribution to the pallet normal as v1 x v2. Sum 
+              // these into the face normal component variables stored on the mesh data 
+              // object
+              nX = (vY1 * vZ2) - (vZ1 * vY2);
+              nY = (vZ1 * vX2) - (vX1 * vZ2);
+              nZ = (vX1 * vY2) - (vY1 * vX2);
+
+              // sum the normal component contributions into the component variables
+              m_nX[i] += nX;
+              m_nY[i] += nY;
+              m_nZ[i] += nZ;
+
+              // half the magnitude of the computed normal is the pallet area. Note: this is exact 
+              // for planar faces and approximate for warped faces. Face areas are used in a general 
+              // sense to create a face-overlap tolerance
+              m_area[i] += 0.5 * magnitude( nX, nY, nZ );
+           }
+
+           // compute the pallet normal contribution for the last pallet
+           nodeIndex = m_numCellNodes * i;
+           nodeId = m_connectivity[ nodeIndex ];
+           nextNodeId = m_connectivity[ nodeIndex + m_numCellNodes - 1 ];
+           vX1 = m_positionX[ nodeId ] - m_positionX[ nextNodeId ];
+           vY1 = m_positionY[ nodeId ] - m_positionY[ nextNodeId ];
+           vZ1 = m_positionZ[ nodeId ] - m_positionZ[ nextNodeId ];
+
+           vX2 = m_cX[i] - m_positionX[ nextNodeId ];
+           vY2 = m_cY[i] - m_positionY[ nextNodeId ];
+           vZ2 = m_cZ[i] - m_positionZ[ nextNodeId ];
+           
            nX = (vY1 * vZ2) - (vZ1 * vY2);
            nY = (vZ1 * vX2) - (vX1 * vZ2);
            nZ = (vX1 * vY2) - (vY1 * vX2);
@@ -477,51 +514,32 @@ void MeshData::computeFaceData( int const dim )
            // for planar faces and approximate for warped faces. Face areas are used in a general 
            // sense to create a face-overlap tolerance
            m_area[i] += 0.5 * magnitude( nX, nY, nZ );
+
+           // multiply the pallet normal components by fac to obtain avg.
+           m_nX[i] = fac * m_nX[i];
+           m_nY[i] = fac * m_nY[i];
+           m_nZ[i] = fac * m_nZ[i];
+
+           // compute the magnitude of the average pallet normal
+           mag = magnitude(m_nX[i], m_nY[i], m_nZ[i] );
+           if (mag >= nrmlMagTol) {
+              invMag = 1.0 / mag;
+           }
+
+           // normalize the average normal
+           m_nX[i] *= invMag;
+           m_nY[i] *= invMag;
+           m_nZ[i] *= invMag;
+
+           break;
+        } // end case LINEAR_QUAD 
+
+        case LINEAR_TRIANGLE:
+        {
+           // TODO compute outward facing normal for linear triangle, SRW
         }
 
-        // compute the pallet normal contribution for the last pallet
-        nodeIndex = m_numCellNodes * i;
-        nodeId = m_connectivity[ nodeIndex ];
-        nextNodeId = m_connectivity[ nodeIndex + m_numCellNodes - 1 ];
-        vX1 = m_positionX[ nodeId ] - m_positionX[ nextNodeId ];
-        vY1 = m_positionY[ nodeId ] - m_positionY[ nextNodeId ];
-        vZ1 = m_positionZ[ nodeId ] - m_positionZ[ nextNodeId ];
-
-        vX2 = m_cX[i] - m_positionX[ nextNodeId ];
-        vY2 = m_cY[i] - m_positionY[ nextNodeId ];
-        vZ2 = m_cZ[i] - m_positionZ[ nextNodeId ];
-        
-        nX = (vY1 * vZ2) - (vZ1 * vY2);
-        nY = (vZ1 * vX2) - (vX1 * vZ2);
-        nZ = (vX1 * vY2) - (vY1 * vX2);
-
-        // sum the normal component contributions into the component variables
-        m_nX[i] += nX;
-        m_nY[i] += nY;
-        m_nZ[i] += nZ;
-
-        // half the magnitude of the computed normal is the pallet area. Note: this is exact 
-        // for planar faces and approximate for warped faces. Face areas are used in a general 
-        // sense to create a face-overlap tolerance
-        m_area[i] += 0.5 * magnitude( nX, nY, nZ );
-
-        // multiply the pallet normal components by fac to obtain avg.
-        m_nX[i] = fac * m_nX[i];
-        m_nY[i] = fac * m_nY[i];
-        m_nZ[i] = fac * m_nZ[i];
-
-        // compute the magnitude of the average pallet normal
-        mag = magnitude(m_nX[i], m_nY[i], m_nZ[i] );
-        if (mag >= nrmlMagTol) {
-           invMag = 1.0 / mag;
-        }
-
-        // normalize the average normal
-        m_nX[i] *= invMag;
-        m_nY[i] *= invMag;
-        m_nZ[i] *= invMag;
-
-     } // end if (dim == 3)
+     } // end switch on element type
 
   } // end cell loop
 
