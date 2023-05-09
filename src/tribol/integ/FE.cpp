@@ -16,26 +16,40 @@
 namespace tribol
 {
 
-int GetNumFaceNodes( int dim, FaceOrderType order_type )
+int GetNumFaceNodes( int dim, InterfaceElementType elem_type )
 {
    // SRW consider consolidating this to take a tribol topology and 
    // order for consistency
    int numNodes = 0;
-   switch (order_type)
+   switch (elem_type)
    {
-      case LINEAR :
-         numNodes = (dim == 3) ? 4 : 2; // segments and quads
+      case LINEAR_EDGE:
+      {
+         numNodes = 2;
          break;
-      default : 
-         SLIC_ERROR("GetNumFaceNodes(): order_type not supported.");
+      }
+      case LINEAR_TRIANGLE:
+      {
+         numNodes = 3;
          break;
+      }
+      case LINEAR_QUAD:
+      {
+         numNodes = 4;
+         break;
+      }
+      default: 
+      {
+         SLIC_ERROR("GetNumFaceNodes(): elem_type not supported.");
+         break;
+      }
    } 
    return numNodes;
 }
 
 void GalerkinEval( const real* const RESTRICT x, 
                    const real pX, const real pY, const real pZ, 
-                   FaceOrderType order_type, BasisEvalType basis_type, 
+                   InterfaceElementType element_type, BasisEvalType basis_type, 
                    int dim, int galerkinDim, real* nodeVals, real* galerkinVal )
 {
    if (x == nullptr)
@@ -58,7 +72,7 @@ void GalerkinEval( const real* const RESTRICT x,
       SLIC_ERROR( "GalerkinEval(): scalar approximations not yet supported." );
    }
 
-   int numNodes = GetNumFaceNodes( dim, order_type );
+   int numNodes = GetNumFaceNodes( dim, element_type );
    switch (basis_type)
    {
       case PHYSICAL :

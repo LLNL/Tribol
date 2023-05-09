@@ -33,6 +33,7 @@ constexpr integer ANY_MESH = -1;
 /*!
  * \brief Enumerates the interface element types  
  */
+// TODO workout how best to encode node count or order into this
 enum InterfaceElementType
 {
    UNDEFINED_ELEMENT, ///! Undefined
@@ -262,19 +263,6 @@ enum class SparseMode
    MFEM_INDEX_SET,     ///! initialize mfem sparse matrix with I, J, and data
    MFEM_LINKED_LIST,   ///! initialize mfem sparse matrix with flexible, linked list option
    MFEM_ELEMENT_DENSE  ///! Stores element Jacobian contributions in an axom::Array of mfem::DenseMatrixs
-};
-
-/*!
- * \brief Enumerates the order and type of the finite element face
- */
-enum FaceOrderType
-{
-   LINEAR,                ///! Linear Lagrange (default)
-   QUADRATIC_LAGRANGE,    ///! Quadratic 9-node Lagrange face
-   QUADRATIC_SERENDIPITY, ///! Quadratic 8-node serendipity face
-   CUBIC_LAGRANGE,        ///! Cubic Lagrange face
-   NUM_ORDERS_TYPES,
-   UNDEFINED_ORDER_TYPE = NUM_ORDERS_TYPES
 };
 
 /*!

@@ -21,8 +21,8 @@ namespace tribol
  * \param [in] pX x-coordinate of point at which to evaluate shape function
  * \param [in] pX y-coordinate of point at which to evaluate shape function
  * \param [in] pZ z-coordinate of point at which to evaluate shape function (3D only)
- * \param [in] order_type the order of the Lagrangian finite element
- * \param [in] basis_type either current configuration physical or canonical reference basis
+ * \param [in] element_type the type of finite element face 
+ * \param [in] basis_type either current configuration physical or canonical reference basis (experimental)
  * \param [in] dim the dimension of the overall contact problem
  * \param [in] galerkinDim the vector-dim of the Galerkin coefficients
  * \param [in] nodeVals the nodal values for the Galerkin approximation
@@ -33,7 +33,7 @@ namespace tribol
  */
 void GalerkinEval( const real* const RESTRICT x, 
                    const real pX, const real pY, const real pZ, 
-                   FaceOrderType order_type, BasisEvalType basis_type, 
+                   InterfaceElementType element_type, BasisEvalType basis_type, 
                    int dim, int galerkinDim, real* nodeVals, real* galerkinVal );
 
 /*!

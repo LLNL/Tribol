@@ -1210,7 +1210,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       double cYf1 = cpMgr.m_cYf1[cpID];
       double cZf1 = (dim == 3) ? cpMgr.m_cZf1[cpID] : 0.;
       GalerkinEval( &x1[0], cXf1, cYf1, cZf1,
-                    LINEAR, PHYSICAL, dim, dim, 
+                    mesh1.m_elementType, PHYSICAL, dim, dim, 
                     &v1[0], &vel_f1[0] );
 
       // interpolate nodal velocity at overlap centroid as projected 
@@ -1219,7 +1219,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       double cYf2 = cpMgr.m_cYf2[cpID];
       double cZf2 = (dim == 3) ? cpMgr.m_cZf2[cpID] : 0.;
       GalerkinEval( &x2[0], cXf2, cYf2, cZf2,
-                    LINEAR, PHYSICAL, dim, dim, 
+                    mesh2.m_elementType, PHYSICAL, dim, dim, 
                     &v2[0], &vel_f2[0] );
 
       ////////////////////////////////////////////////
