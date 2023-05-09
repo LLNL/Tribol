@@ -225,13 +225,14 @@ public:
   *
   * \param [in] id contact plane id
   * \param [in] faceId local face integer id
+  * \param [in] numFaceNodes number of nodes for given face
   * \param [in/out] coords pointer to array of stacked (x,y,z) coordinates of projected face vertices 
   *
   * \pre coords points to a 1D array of size (problem dimension) x number of face vertices
   * \pre faceId is 0 or 1 for first or second face, respectively
   */
   void getProjectedFaceCoords( int const id, int const faceId,
-                               real * coords );
+                               int const numFaceNodes, real * coords );
 
   /*!
   * \brief Delete contact plane manager 

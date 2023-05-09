@@ -172,7 +172,6 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    ////////////////////////////////
    // Grab pointers to mesh data //
@@ -182,6 +181,10 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 
    MeshData& mesh1 = meshManager.GetMeshInstance( meshId1 );
    MeshData& mesh2 = meshManager.GetMeshInstance( meshId2 );
+
+   // assume number of cell nodes is equal between meshes, 
+   // i.e. same element type
+   IndexType const numNodesPerFace = mesh1.m_numCellNodes;
 
    real * const fx1 = mesh1.m_forceX;
    real * const fy1 = mesh1.m_forceY; 
@@ -325,8 +328,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       initRealArray( &xVert[0], dim*cpManager.m_numPolyVert[cpID], 0. );
 
 //      // get projected face coordinates
-//      cpManager.getProjectedFaceCoords( cpID, 0, &xf1[0] ); // face 0 = first face
-//      cpManager.getProjectedFaceCoords( cpID, 1, &xf2[0] ); // face 1 = second face
+//      cpManager.getProjectedFaceCoords( cpID, 0, numNodesPerFace, &xf1[0] ); // face 0 = first face
+//      cpManager.getProjectedFaceCoords( cpID, 1, numNodesPerFace, &xf2[0] ); // face 1 = second face
 
       // get current configuration, physical coordinates of each face
       mesh1.getFaceCoords( index1, &xf1[0] );

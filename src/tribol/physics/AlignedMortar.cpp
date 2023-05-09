@@ -197,7 +197,6 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    ////////////////////////////////////////////////////////////////////////
    //
@@ -209,6 +208,9 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
+
+   // assume same element type per surface for cell nodes
+   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
 
    real const * const x1 = mortarMesh.m_positionX;
    real const * const y1 = mortarMesh.m_positionY; 
@@ -310,7 +312,6 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    ////////////////////////////////////////////////////////////////////////
    //
@@ -322,6 +323,9 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
+
+   // assume same element type on each surface for number of cell nodes
+   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
 
    real const * const x1 = mortarMesh.m_positionX;
    real const * const y1 = mortarMesh.m_positionY; 
@@ -451,8 +455,8 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
 
          // get projected face coordinates for computing mortar weights and 
          // Jacobian contributions
-         cpManager.getProjectedFaceCoords( cpID, 0, &mortarX[0] ); // face 0 = first face
-         cpManager.getProjectedFaceCoords( cpID, 1, &nonmortarX[0] ); // face 1 = second face
+         cpManager.getProjectedFaceCoords( cpID, 0, numNodesPerFace, &mortarX[0] ); // face 0 = first face
+         cpManager.getProjectedFaceCoords( cpID, 1, numNodesPerFace, &nonmortarX[0] ); // face 1 = second face
 
          // instantiate a new surface contact element with projected face 
          // coordinates

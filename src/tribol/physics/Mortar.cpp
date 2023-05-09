@@ -200,7 +200,6 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    ////////////////////////////////////////////////////////////////////////
    //
@@ -212,6 +211,9 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+
+   // assume same element type per surface for cell node count
+   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
 
    real const * const x1 = mortarMesh.m_positionX;
    real const * const y1 = mortarMesh.m_positionY; 
@@ -282,8 +284,8 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
       initRealArray( overlapX, dim*cpManager.m_numPolyVert[cpID], 0. );
 
       // get projected face coordinates
-      cpManager.getProjectedFaceCoords( cpID, 0, &mortarX_bar[0] ); // face 0 = first face
-      cpManager.getProjectedFaceCoords( cpID, 1, &nonmortarX_bar[0] ); // face 1 = second face
+      cpManager.getProjectedFaceCoords( cpID, 0, numNodesPerFace, &mortarX_bar[0] ); // face 0 = first face
+      cpManager.getProjectedFaceCoords( cpID, 1, numNodesPerFace, &nonmortarX_bar[0] ); // face 1 = second face
 
       // construct array of polygon overlap vertex coordinates
       cpManager.getContactPlaneOverlapVerts( cpID, cpManager.m_numPolyVert[cpID], &overlapX[0] );
@@ -336,7 +338,6 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    ////////////////////////////////
    //                            //
@@ -348,6 +349,9 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+
+   // assume same element type on each surface for number of cell nodes
+   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
 
    real const * const x1 = mortarMesh.m_positionX;
    real const * const y1 = mortarMesh.m_positionY; 
@@ -437,8 +441,8 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
       initRealArray( overlapX, dim*cpManager.m_numPolyVert[cpID], 0. );
 
       // get projected face coordinates
-      cpManager.getProjectedFaceCoords( cpID, 0, &mortarX_bar[0] ); // face 0 = first face
-      cpManager.getProjectedFaceCoords( cpID, 1, &nonmortarX_bar[0] ); // face 1 = second face
+      cpManager.getProjectedFaceCoords( cpID, 0, numNodesPerFace, &mortarX_bar[0] ); // face 0 = first face
+      cpManager.getProjectedFaceCoords( cpID, 1, numNodesPerFace, &nonmortarX_bar[0] ); // face 1 = second face
 
       // construct array of polygon overlap vertex coordinates
       cpManager.getContactPlaneOverlapVerts( cpID, cpManager.m_numPolyVert[cpID], &overlapX[0] );
@@ -738,10 +742,13 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    IndexType const mortarId = cs->getMeshId1();
    IndexType const nonmortarId = cs->getMeshId2();
+
+   MeshManager& meshManager = MeshManager::getInstance();
+   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
+   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
 
    ////////////////////////////////
    //                            //
@@ -789,8 +796,8 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
       initRealArray( overlapX, dim*cpManager.m_numPolyVert[cpID], 0. );
 
       // get projected face coordinates
-      cpManager.getProjectedFaceCoords( cpID, 0, &mortarX_bar[0] ); // face 0 = first face
-      cpManager.getProjectedFaceCoords( cpID, 1, &nonmortarX_bar[0] ); // face 1 = second face
+      cpManager.getProjectedFaceCoords( cpID, 0, numNodesPerFace, &mortarX_bar[0] ); // face 0 = first face
+      cpManager.getProjectedFaceCoords( cpID, 1, numNodesPerFace, &nonmortarX_bar[0] ); // face 1 = second face
 
       // construct array of polygon overlap vertex coordinates
       cpManager.getContactPlaneOverlapVerts( cpID, cpManager.m_numPolyVert[cpID], &overlapX[0] );

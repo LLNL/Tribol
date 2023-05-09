@@ -794,12 +794,12 @@ void ContactPlaneManager::getContactPlaneNormal( int const id,
 //------------------------------------------------------------------------------
 void ContactPlaneManager::getProjectedFaceCoords( int const id,
                                                   int const faceId,
+                                                  int const numFaceNodes,
                                                   real * coords )
 {
    // Note: at the moment there is no bounds check for coords.
    // Doxygen comments in the function prototype have been added
    // to note the expected length of the coords array.
-   IndexType const numNodesPerFace = (m_spaceDim == 3) ? 4 : 2;
    IndexType meshId, fId;
 
    if ( faceId == 0 )
@@ -823,11 +823,11 @@ void ContactPlaneManager::getProjectedFaceCoords( int const id,
       fId = m_fId2[ id ];
    }
 
-   real projX[ numNodesPerFace ];
-   real projY[ numNodesPerFace ];
-   real projZ[ numNodesPerFace ];
+   real projX[ numFaceNodes ];
+   real projY[ numFaceNodes ];
+   real projZ[ numFaceNodes ];
 
-   for (int i=0; i<numNodesPerFace; ++i)
+   for (int i=0; i<numFaceNodes; ++i)
    {
       projX[i] = 0.;
       projY[i] = 0.;
@@ -849,7 +849,7 @@ void ContactPlaneManager::getProjectedFaceCoords( int const id,
                                &projX[0], &projY[0], &projZ[0] );
    }
 
-   for (int i=0; i<numNodesPerFace; ++i)
+   for (int i=0; i<numFaceNodes; ++i)
    {
       coords[ m_spaceDim * i ] = projX[i];
       coords[ m_spaceDim * i + 1 ] = projY[i];
@@ -857,7 +857,7 @@ void ContactPlaneManager::getProjectedFaceCoords( int const id,
 
    if (m_spaceDim == 3)
    {
-      for (int i=0; i<numNodesPerFace; ++i)
+      for (int i=0; i<numFaceNodes; ++i)
       {
          coords[ m_spaceDim * i + 2 ] = projZ[i];
       }
