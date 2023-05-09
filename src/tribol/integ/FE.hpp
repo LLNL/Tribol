@@ -14,15 +14,6 @@ namespace tribol
 
 /*!
  *
- * \brief returns the number of finite element nodes for a Lagrangian element of \A order_type
- *
- * \param [in] order_type the order of the Lagrangian finite element
- *
- */
-int GetNumFENodes( FaceOrderType order_type );
-
-/*!
- *
  * \brief wrapper routine for evaluation of 2D or 3D shape functions on projected 
  *        surface element topologies
  *
