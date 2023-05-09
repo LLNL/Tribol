@@ -38,8 +38,8 @@ TestMesh::TestMesh()
    , numTotalFaces      ( 0 )
    , numMortarFaces     ( 0 )
    , numNonmortarFaces      ( 0 )
-   , numNodesPerFace    ( 4 )
-   , numNodesPerElement ( 8 )
+   , numNodesPerFace    ( 4 ) // TODO fix this
+   , numNodesPerElement ( 8 ) // TODO fix this
    , dim                ( 3 )
    , dirNodesX1 ( nullptr )
    , dirNodesY1 ( nullptr )
@@ -343,8 +343,8 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
    // AT THE MOMENT.
 
    // allocate mesh data arrays
-   this->numNodesPerElement = 8; // hard coded for hex8 elements
-   this->numNodesPerFace = 4; // hard code for quad4 faces
+   this->numNodesPerElement = 8; // hard coded for hex8 elements, TODO fix
+   this->numNodesPerFace = 4; // hard code for quad4 faces, TODO fix
    int numElementsBlock1, numNodesBlock1;
    int numElementsBlock2, numNodesBlock2;
 
@@ -515,7 +515,7 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
          } // end loop over y elements
       } // end loop over z elements
 
-      // populate contact surface connectivity
+      // populate contact surface connectivity. TODO this assumes quad4 faces. Fix
       ctr = 0;
       for (int j=0; j<numElemsY; ++j)
       { 
@@ -714,7 +714,7 @@ int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
                                           bool TRIBOL_UNUSED_PARAM(visualization),
                                           TestControlParameters& params )
 {
-   if (this->numNodesPerFace != 4)
+   if (this->numNodesPerFace != 4) // TODO fix this check
    {
       SLIC_ERROR("simpleTribolSetupAndUpdate: number of nodes per face not equal to 4.");
    }
@@ -771,7 +771,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    // nodes encompassing the two meshes that will be registered 
    // with tribol, and that the conn1 and conn2 connectivity arrays 
    // reflect a global, contiguous index space
-   if (this->numNodesPerFace != 4)
+   if (this->numNodesPerFace != 4) // TODO fix this check
    {
       SLIC_ERROR("tribolSetupAndUpdate: number of nodes per face not equal to 4.");
    }
