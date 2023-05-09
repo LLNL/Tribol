@@ -43,12 +43,12 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
    // also initializes the array
    elem.allocateMortarWts();
 
-   real phiSlaveA, phiSlaveB, phiMasterA;
+   real phiNonmortarA, phiNonmortarB, phiMortarA;
 
-   // loop over nodes "a", where node "a" can be a slave node or a master node
+   // loop over nodes "a", where node "a" can be a nonmortar node or a mortar node
    for (int a=0; a<elem.numFaceVert; ++a)
    {
-      // loop over slave nodes
+      // loop over nonmortar nodes
       for (int b=0; b<elem.numFaceVert; ++b)
       {
 
@@ -59,27 +59,27 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
             real xi[2]; 
             xi[0] = integ.xy[ integ.ipDim * ip ];
             xi[1] = integ.xy[ integ.ipDim * ip + 1 ];
-            LinIsoQuadShapeFunc( xi[0], xi[1], a, phiMasterA );
-            LinIsoQuadShapeFunc( xi[0], xi[1], a, phiSlaveA );
-            LinIsoQuadShapeFunc( xi[0], xi[1], b, phiSlaveB );
+            LinIsoQuadShapeFunc( xi[0], xi[1], a, phiMortarA );
+            LinIsoQuadShapeFunc( xi[0], xi[1], a, phiNonmortarA );
+            LinIsoQuadShapeFunc( xi[0], xi[1], b, phiNonmortarB );
 
-            // set slave/slave and slave/master ids
-            int slaveSlaveId = elem.numFaceVert * a + b;
-            int masterSlaveId = elem.numFaceVert * elem.numFaceVert + 
+            // set nonmortar/nonmortar and nonmortar/mortar ids
+            int nonmortarNonmortarId = elem.numFaceVert * a + b;
+            int mortarNonmortarId = elem.numFaceVert * elem.numFaceVert + 
                                 elem.numFaceVert * a + b;
  
             #ifdef TRIBOL_DEBUG_LOG
-               if (slaveSlaveId > elem.numWts || masterSlaveId > elem.numWts)
+               if (nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts)
                {
                   TRIBOL_ERROR("ComputeAlignedMortarWeights: integer ids for weights exceed elem.numWts");
                }
             #endif /* TRIBOL_DEBUG_LOG */
 
-            // compute slave/slave mortar weight
-            elem.mortarWts[ slaveSlaveId ]  += integ.wts[ip] * phiSlaveA * phiSlaveB;
+            // compute nonmortar/nonmortar mortar weight
+            elem.mortarWts[ nonmortarNonmortarId ]  += integ.wts[ip] * phiNonmortarA * phiNonmortarB;
  
-            // compute slave/master mortar weight
-            elem.mortarWts[ masterSlaveId ] += integ.wts[ip] * phiMasterA * phiSlaveB;
+            // compute nonmortar/mortar mortar weight
+            elem.mortarWts[ mortarNonmortarId ] += integ.wts[ip] * phiMortarA * phiNonmortarB;
  
          } // end loop over integration points
       } // end loop over nodes on side 2
@@ -102,27 +102,27 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& slaveMesh = meshManager.GetMeshInstance( elem.meshId2 );
-   IndexType const * const slaveConn = slaveMesh.m_connectivity;
+   MeshData& nonmortarMesh = meshManager.GetMeshInstance( elem.meshId2 );
+   IndexType const * const nonmortarConn = nonmortarMesh.m_connectivity;
 
 
    #ifdef TRIBOL_DEBUG_LOG
-      // will populate local gaps on slave face on slave mesh data object
-      real* meshGaps = slaveMesh.m_nodalFields.m_node_gap;
+      // will populate local gaps on nonmortar face on nonmortar mesh data object
+      real* meshGaps = nonmortarMesh.m_nodalFields.m_node_gap;
       if (meshGaps == nullptr)
       {
          TRIBOL_ERROR("ComputeNodalGap< ALIGNED_MORTAR >: allocate gaps on mesh data object.");   
       }
    #endif /* TRIBOL_DEBUG_LOG */
 
-   // allocate local space for local gap computation on slave face
+   // allocate local space for local gap computation on nonmortar face
 //   real localGaps[ elem.numFaceVert ];
 
    // compute gap contributions associated with face 2 on the SurfaceContactElem 
-   // (i.e. slave surface)
+   // (i.e. nonmortar surface)
 
    // set the distance magnitude tolerance as the longest edge of 
-   // the master face
+   // the mortar face
    real magTol;
    real magTest = 0.;
    for (int k=0; k<elem.numFaceVert; ++k)
@@ -138,28 +138,28 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
       magTest = mag;
    }
 
-   // loop over nodes on slave side
+   // loop over nodes on nonmortar side
    for (int a=0; a<elem.numFaceVert; ++a)
    {
 
-      // get global slave node number from connectivity
+      // get global nonmortar node number from connectivity
       real nrml_a[elem.dim];
-      int glbId = slaveConn[ elem.numFaceVert * elem.faceId2 + a ];
-      nrml_a[0] = slaveMesh.m_node_nX[ glbId ];
-      nrml_a[1] = slaveMesh.m_node_nY[ glbId ];
+      int glbId = nonmortarConn[ elem.numFaceVert * elem.faceId2 + a ];
+      nrml_a[0] = nonmortarMesh.m_node_nX[ glbId ];
+      nrml_a[1] = nonmortarMesh.m_node_nY[ glbId ];
       if (elem.dim == 3 )
       {
-         nrml_a[2] = slaveMesh.m_node_nZ[ glbId ];
+         nrml_a[2] = nonmortarMesh.m_node_nZ[ glbId ];
       }
 
       //////////////////////////////////////////////
-      // determine which master node is aligned with 
-      // slave node "a" 
+      // determine which mortar node is aligned with 
+      // nonmortar node "a" 
       //////////////////////////////////////////////
-      int masterNodeId;
+      int mortarNodeId;
       real v[3] = {0., 0., 0.};
       real magTest = magTol; 
-      // loop over nodes on the master side 
+      // loop over nodes on the mortar side 
       for (int b=0; b<elem.numFaceVert; ++b)
       {
          v[0] = elem.faceCoords1[ elem.dim * b ] - elem.faceCoords2[ elem.dim * a ];
@@ -170,18 +170,18 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 
          if (magV < magTest)
          {
-            masterNodeId = b;
+            mortarNodeId = b;
             magTest = magV;
          }
       }
    
       // store local gap
-      v[0] = elem.faceCoords1[ elem.dim * masterNodeId ] - elem.faceCoords2[ elem.dim * a ] ;
-      v[1] = elem.faceCoords1[ elem.dim * masterNodeId + 1 ] - elem.faceCoords2[ elem.dim * a + 1 ] ;
-      v[2] = elem.faceCoords1[ elem.dim * masterNodeId + 2 ] - elem.faceCoords2[ elem.dim * a + 2 ] ;
+      v[0] = elem.faceCoords1[ elem.dim * mortarNodeId ] - elem.faceCoords2[ elem.dim * a ] ;
+      v[1] = elem.faceCoords1[ elem.dim * mortarNodeId + 1 ] - elem.faceCoords2[ elem.dim * a + 1 ] ;
+      v[2] = elem.faceCoords1[ elem.dim * mortarNodeId + 2 ] - elem.faceCoords2[ elem.dim * a + 2 ] ;
 
       
-      slaveMesh.m_nodalFields.m_node_gap[ glbId ] += dotProd( &v[0], &nrml_a[0], elem.dim );
+      nonmortarMesh.m_nodalFields.m_node_gap[ glbId ] += dotProd( &v[0], &nrml_a[0], elem.dim );
 
    }
 
@@ -204,33 +204,33 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   IndexType const masterId = cs->getMeshId1();
-   IndexType const slaveId =  cs->getMeshId2();
+   IndexType const mortarId = cs->getMeshId1();
+   IndexType const nonmortarId =  cs->getMeshId2();
 
-   MeshData& masterMesh = meshManager.GetMeshInstance( masterId );
-   MeshData& slaveMesh  = meshManager.GetMeshInstance( slaveId );
+   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
+   MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
 
-   real const * const x1 = masterMesh.m_positionX;
-   real const * const y1 = masterMesh.m_positionY; 
-   real const * const z1 = masterMesh.m_positionZ; 
-   IndexType const * const masterConn= masterMesh.m_connectivity;
+   real const * const x1 = mortarMesh.m_positionX;
+   real const * const y1 = mortarMesh.m_positionY; 
+   real const * const z1 = mortarMesh.m_positionZ; 
+   IndexType const * const mortarConn= mortarMesh.m_connectivity;
 
-   real const * const x2 = slaveMesh.m_positionX; 
-   real const * const y2 = slaveMesh.m_positionY;
-   real const * const z2 = slaveMesh.m_positionZ;
-   IndexType const * slaveConn = slaveMesh.m_connectivity;
+   real const * const x2 = nonmortarMesh.m_positionX; 
+   real const * const y2 = nonmortarMesh.m_positionY;
+   real const * const z2 = nonmortarMesh.m_positionZ;
+   IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
 
    // compute nodal normals (do this outside the element loop)
-   slaveMesh.computeNodalNormals( dim );
+   nonmortarMesh.computeNodalNormals( dim );
  
    // declare local variables to hold face nodal coordinates
    // and overlap vertex coordinates
-   real masterX[ dim * numNodesPerFace ];
-   real slaveX[ dim * numNodesPerFace ];
+   real mortarX[ dim * numNodesPerFace ];
+   real nonmortarX[ dim * numNodesPerFace ];
    real* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
 
    ////////////////////////
-   // compute slave gaps //
+   // compute nonmortar gaps //
    ////////////////////////
    int cpID = 0;
    for (IndexType kp = 0; kp < numPairs; ++kp)
@@ -254,12 +254,12 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
       for (int i=0; i<numNodesPerFace; ++i)
       {
          int id = dim * i;
-         masterX[ id ]   = x1[ masterConn[ numNodesPerFace * index1 + i ] ];
-         masterX[ id+1 ] = y1[ masterConn[ numNodesPerFace * index1 + i ] ];
-         masterX[ id+2 ] = z1[ masterConn[ numNodesPerFace * index1 + i ] ];
-         slaveX[ id ]   = x2[ slaveConn[ numNodesPerFace * index2 + i ] ];
-         slaveX[ id+1 ] = y2[ slaveConn[ numNodesPerFace * index2 + i ] ];
-         slaveX[ id+2 ] = z2[ slaveConn[ numNodesPerFace * index2 + i ] ];
+         mortarX[ id ]   = x1[ mortarConn[ numNodesPerFace * index1 + i ] ];
+         mortarX[ id+1 ] = y1[ mortarConn[ numNodesPerFace * index1 + i ] ];
+         mortarX[ id+2 ] = z1[ mortarConn[ numNodesPerFace * index1 + i ] ];
+         nonmortarX[ id ]   = x2[ nonmortarConn[ numNodesPerFace * index2 + i ] ];
+         nonmortarX[ id+1 ] = y2[ nonmortarConn[ numNodesPerFace * index2 + i ] ];
+         nonmortarX[ id+2 ] = z2[ nonmortarConn[ numNodesPerFace * index2 + i ] ];
       }
 
       overlapX = new real[ dim * cpManager.m_numPolyVert[ cpID ]];  
@@ -273,11 +273,11 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
       // configuration face coordinates. We need the current 
       // configuration face coordinates here in order to correctly 
       // compute the mortar gaps.
-      SurfaceContactElem elem_for_gap( dim, &masterX[0], &slaveX[0], 
+      SurfaceContactElem elem_for_gap( dim, &mortarX[0], &nonmortarX[0], 
                                        &overlapX[0],
                                        numNodesPerFace, 
                                        cpManager.m_numPolyVert[cpID],
-                                       masterId, slaveId, index1, index2 );
+                                       mortarId, nonmortarId, index1, index2 );
 
       /////////////////////////
       // compute mortar gaps //
@@ -285,16 +285,16 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
       ComputeNodalGap< ALIGNED_MORTAR >( elem_for_gap );
 
       // HAVE TO set the number of active constraints. For now set to 
-      // all slave face nodes.
+      // all nonmortar face nodes.
       elem_for_gap.numActiveGaps = numNodesPerFace;
 
       ++cpID;
 
       delete [] overlapX;
 
-   } // end loop over pairs for slave gap calculations
+   } // end loop over pairs for nonmortar gap calculations
 
-   slaveMesh.m_nodalFields.m_isGapComputed = true;
+   nonmortarMesh.m_nodalFields.m_isGapComputed = true;
 
 } // end ComputeAlignedMortarGaps()
 
@@ -317,27 +317,27 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   IndexType const masterId = cs->getMeshId1();
-   IndexType const slaveId =  cs->getMeshId2();
+   IndexType const mortarId = cs->getMeshId1();
+   IndexType const nonmortarId =  cs->getMeshId2();
 
-   MeshData& masterMesh = meshManager.GetMeshInstance( masterId );
-   MeshData& slaveMesh  = meshManager.GetMeshInstance( slaveId );
+   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
+   MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
 
-   real const * const x1 = masterMesh.m_positionX;
-   real const * const y1 = masterMesh.m_positionY; 
-   real const * const z1 = masterMesh.m_positionZ; 
-   real * const fx1 = masterMesh.m_forceX;
-   real * const fy1 = masterMesh.m_forceY; 
-   real * const fz1 = masterMesh.m_forceZ; 
-   IndexType const * const masterConn= masterMesh.m_connectivity;
+   real const * const x1 = mortarMesh.m_positionX;
+   real const * const y1 = mortarMesh.m_positionY; 
+   real const * const z1 = mortarMesh.m_positionZ; 
+   real * const fx1 = mortarMesh.m_forceX;
+   real * const fy1 = mortarMesh.m_forceY; 
+   real * const fz1 = mortarMesh.m_forceZ; 
+   IndexType const * const mortarConn= mortarMesh.m_connectivity;
 
-   real const * const x2 = slaveMesh.m_positionX; 
-   real const * const y2 = slaveMesh.m_positionY;
-   real const * const z2 = slaveMesh.m_positionZ;
-   real * const fx2 = slaveMesh.m_forceX; 
-   real * const fy2 = slaveMesh.m_forceY;
-   real * const fz2 = slaveMesh.m_forceZ;
-   IndexType const * slaveConn = slaveMesh.m_connectivity;
+   real const * const x2 = nonmortarMesh.m_positionX; 
+   real const * const y2 = nonmortarMesh.m_positionY;
+   real const * const z2 = nonmortarMesh.m_positionZ;
+   real * const fx2 = nonmortarMesh.m_forceX; 
+   real * const fy2 = nonmortarMesh.m_forceY;
+   real * const fz2 = nonmortarMesh.m_forceZ;
+   IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
 
    ////////////////////////////////
    //                            //
@@ -371,40 +371,40 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
       // compute equilibrium residual //
       //////////////////////////////////
 
-      // loop over face nodes (BOTH MASTER and SLAVE 
+      // loop over face nodes (BOTH MORTAR and NONMORTAR 
       // contributions). NOTE: mortar weights aren't required for 
       // the residual contributions for ALIGNED_MORTAR. As a result, 
       // a SurfaceContactElem is not required
       for (int a=0; a<numNodesPerFace; ++a)
       {
-         int masterIdA = masterConn[ index1 * numNodesPerFace + a];
-         int slaveIdA = slaveConn[ index2 * numNodesPerFace + a ];
+         int mortarIdA = mortarConn[ index1 * numNodesPerFace + a];
+         int nonmortarIdA = nonmortarConn[ index2 * numNodesPerFace + a ];
 
-         // Note, we assemble residual for all slave nodes, even if the gap 
+         // Note, we assemble residual for all nonmortar nodes, even if the gap 
          // is in separation. NOTE: Per testing, we 
-         // assemble ALL slave node contributions for faces with positive 
+         // assemble ALL nonmortar node contributions for faces with positive 
          // areas of overlap that have passed the geometric filtering. We judge 
          // contact activity by gaps AND the pressure solution.
 
-         // note: we don't have to interpolate the nodal pressure for master and slave 
+         // note: we don't have to interpolate the nodal pressure for mortar and nonmortar 
          // sides for the aligned mortar case (i.e. no interpolation necessary for coincident 
-         // master and slave nodes).
-         real forceX = slaveMesh.m_nodalFields.m_node_pressure[ slaveIdA ] * 
-                       slaveMesh.m_node_nX[ slaveIdA ];
-         real forceY = slaveMesh.m_nodalFields.m_node_pressure[ slaveIdA ] *
-                       slaveMesh.m_node_nY[ slaveIdA ];
-         real forceZ = slaveMesh.m_nodalFields.m_node_pressure[ slaveIdA ] * 
-                       slaveMesh.m_node_nZ[ slaveIdA ];
+         // mortar and nonmortar nodes).
+         real forceX = nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarIdA ] * 
+                       nonmortarMesh.m_node_nX[ nonmortarIdA ];
+         real forceY = nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarIdA ] *
+                       nonmortarMesh.m_node_nY[ nonmortarIdA ];
+         real forceZ = nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarIdA ] * 
+                       nonmortarMesh.m_node_nZ[ nonmortarIdA ];
 
-         fx2[ slaveIdA ]  -= forceX;
-         fy2[ slaveIdA ]  -= forceY;
-         fz2[ slaveIdA ]  -= forceZ;
+         fx2[ nonmortarIdA ]  -= forceX;
+         fy2[ nonmortarIdA ]  -= forceY;
+         fz2[ nonmortarIdA ]  -= forceZ;
 
-         fx1[ masterIdA ] += forceX;
-         fy1[ masterIdA ] += forceY;
-         fz1[ masterIdA ] += forceZ;
+         fx1[ mortarIdA ] += forceX;
+         fy1[ mortarIdA ] += forceY;
+         fz1[ mortarIdA ] += forceZ;
 
-      } // end outer loop over slave and master nodes
+      } // end outer loop over nonmortar and mortar nodes
 
       /////////////////////////////////////////////////////////////
       // compute tangent stiffness contributions; Note, the      //
@@ -422,8 +422,8 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
       {
          // declare local variables to hold face nodal coordinates
          // and overlap vertex coordinates
-         real masterX[ dim * numNodesPerFace ];
-         real slaveX[ dim * numNodesPerFace ];
+         real mortarX[ dim * numNodesPerFace ];
+         real nonmortarX[ dim * numNodesPerFace ];
          real* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
 
          // populate nodal coordinates array. For the aligned mortar 
@@ -434,12 +434,12 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
          for (int i=0; i<numNodesPerFace; ++i)
          {
             int id = dim * i;
-            masterX[ id ]   = x1[ masterConn[ numNodesPerFace * index1 + i ] ];
-            masterX[ id+1 ] = y1[ masterConn[ numNodesPerFace * index1 + i ] ];
-            masterX[ id+2 ] = z1[ masterConn[ numNodesPerFace * index1 + i ] ];
-            slaveX[ id ]   = x2[ slaveConn[ numNodesPerFace * index2 + i ] ];
-            slaveX[ id+1 ] = y2[ slaveConn[ numNodesPerFace * index2 + i ] ];
-            slaveX[ id+2 ] = z2[ slaveConn[ numNodesPerFace * index2 + i ] ];
+            mortarX[ id ]   = x1[ mortarConn[ numNodesPerFace * index1 + i ] ];
+            mortarX[ id+1 ] = y1[ mortarConn[ numNodesPerFace * index1 + i ] ];
+            mortarX[ id+2 ] = z1[ mortarConn[ numNodesPerFace * index1 + i ] ];
+            nonmortarX[ id ]   = x2[ nonmortarConn[ numNodesPerFace * index2 + i ] ];
+            nonmortarX[ id+1 ] = y2[ nonmortarConn[ numNodesPerFace * index2 + i ] ];
+            nonmortarX[ id+2 ] = z2[ nonmortarConn[ numNodesPerFace * index2 + i ] ];
          }
 
          overlapX = new real[ dim * cpManager.m_numPolyVert[ cpID ]];  
@@ -451,19 +451,19 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
 
          // get projected face coordinates for computing mortar weights and 
          // Jacobian contributions
-         cpManager.getProjectedFaceCoords( cpID, 0, &masterX[0] ); // face 0 = first face
-         cpManager.getProjectedFaceCoords( cpID, 1, &slaveX[0] ); // face 1 = second face
+         cpManager.getProjectedFaceCoords( cpID, 0, &mortarX[0] ); // face 0 = first face
+         cpManager.getProjectedFaceCoords( cpID, 1, &nonmortarX[0] ); // face 1 = second face
 
          // instantiate a new surface contact element with projected face 
          // coordinates
-         SurfaceContactElem elem_for_jac( dim, &masterX[0], &slaveX[0], 
+         SurfaceContactElem elem_for_jac( dim, &mortarX[0], &nonmortarX[0], 
                                           &overlapX[0],
                                           numNodesPerFace, 
                                           cpManager.m_numPolyVert[cpID],
-                                          masterId, slaveId, index1, index2 );
+                                          mortarId, nonmortarId, index1, index2 );
 
          // HAVE TO set the number of active constraints. For now set to 
-         // all slave face nodes.
+         // all nonmortar face nodes.
          elem_for_jac.numActiveGaps = numNodesPerFace; 
 
          // we need mortar weights for Jacobian contribution calculations

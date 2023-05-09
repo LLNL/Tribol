@@ -18,7 +18,7 @@ struct SurfaceContactElem;
 
 /*!
  *
- * \brief compute all aligned mortar slave gaps
+ * \brief compute all aligned mortar nonmortar gaps
  *
  * \param [in] cs pointer to coupling scheme
  *

@@ -49,11 +49,11 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   tribol::IndexType const masterId = cs->getMeshId1();
-   tribol::IndexType const slaveId = cs->getMeshId2();
+   tribol::IndexType const mortarId = cs->getMeshId1();
+   tribol::IndexType const nonmortarId = cs->getMeshId2();
 
-   tribol::MeshData& masterMesh = meshManager.GetMeshInstance( masterId );
-   tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( slaveId );
+   tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
+   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
 
    // get mortar weights in CSR format. Note this simple API function 
    // calls tribol::getCSRMatrix() so this API function in the Tribol 
@@ -72,68 +72,68 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
       SLIC_ERROR("Mortar wts test, I is null.");
    }
 
-   // get master node id offset to distinguish master from slave column contributions
-   if (masterMesh.m_sortedSurfaceNodeIds == nullptr)
+   // get mortar node id offset to distinguish mortar from nonmortar column contributions
+   if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
    {
-      SLIC_INFO("computeGapsFromSparseWts(): sorting unique master surface node ids.");
-      masterMesh.sortSurfaceNodeIds();
+      SLIC_INFO("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
+      mortarMesh.sortSurfaceNodeIds();
    }
-   int nodeOffset = masterMesh.m_sortedSurfaceNodeIds[ masterMesh.m_numSurfaceNodes-1 ] + 1;
+   int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
 
    ////////////////////////////////////////////////////////////////
-   // compute slave gaps to determine active set of contact dofs //
+   // compute nonmortar gaps to determine active set of contact dofs //
    ////////////////////////////////////////////////////////////////
-   // loop over total number of nodes. Note, only the active slave "rows" should 
+   // loop over total number of nodes. Note, only the active nonmortar "rows" should 
    // have nonzero contributions
    int numTotalNodes = static_cast<tribol::MortarData*>( cs->getMethodData() )->m_numTotalNodes;
    for (int a=0; a<numTotalNodes; ++a)
    {
-      // get slave nodal normal
+      // get nonmortar nodal normal
       real nrml_a[dim];
-      nrml_a[0] = slaveMesh.m_node_nX[ a ]; // array is global length; no index out (?)
-      nrml_a[1] = slaveMesh.m_node_nY[ a ];
+      nrml_a[0] = nonmortarMesh.m_node_nX[ a ]; // array is global length; no index out (?)
+      nrml_a[1] = nonmortarMesh.m_node_nY[ a ];
       if (dim == 3 )
       {
-         nrml_a[2] = slaveMesh.m_node_nZ[ a ];
+         nrml_a[2] = nonmortarMesh.m_node_nZ[ a ];
       }
 
       // loop over range of nonzero column entries
       for (int b=I[a]; b<I[a+1]; ++b)
       {
          // get face coordinates for node J[b], i.e. column node id
-         real master_xyz[ dim ]; 
-         real slave_xyz[ dim ]; 
+         real mortar_xyz[ dim ]; 
+         real nonmortar_xyz[ dim ]; 
 
          for (int i=0; i<dim; ++i)
          {
-            master_xyz[i] = 0.;
-            slave_xyz[i]  = 0.;
+            mortar_xyz[i] = 0.;
+            nonmortar_xyz[i]  = 0.;
          }
 
          real n_ab = wts[b];
 
-         if ( J[b] < nodeOffset ) // slave/master  weight
+         if ( J[b] < nodeOffset ) // nonmortar/mortar  weight
          {
-            master_xyz[0] = masterMesh.m_positionX[ J[b] ];
-            master_xyz[1] = masterMesh.m_positionY[ J[b] ];
+            mortar_xyz[0] = mortarMesh.m_positionX[ J[b] ];
+            mortar_xyz[1] = mortarMesh.m_positionY[ J[b] ];
             if ( dim == 3 )
             { 
-               master_xyz[2] = masterMesh.m_positionZ[ J[b] ];
+               mortar_xyz[2] = mortarMesh.m_positionZ[ J[b] ];
             }
  
-            gaps[a] += tribol::dotProd( &nrml_a[0], &master_xyz[0], dim ) *
+            gaps[a] += tribol::dotProd( &nrml_a[0], &mortar_xyz[0], dim ) *
                        n_ab;
 
          }
-         else // slave/slave weight
+         else // nonmortar/nonmortar weight
          {
-            slave_xyz[0] = slaveMesh.m_positionX[ J[b] ];
-            slave_xyz[1] = slaveMesh.m_positionY[ J[b] ];
+            nonmortar_xyz[0] = nonmortarMesh.m_positionX[ J[b] ];
+            nonmortar_xyz[1] = nonmortarMesh.m_positionY[ J[b] ];
             if ( dim == 3 )
             { 
-               slave_xyz[2] = slaveMesh.m_positionZ[ J[b] ];
+               nonmortar_xyz[2] = nonmortarMesh.m_positionZ[ J[b] ];
             }
-            gaps[a] -= tribol::dotProd( &nrml_a[0], &slave_xyz[0], dim ) * 
+            gaps[a] -= tribol::dotProd( &nrml_a[0], &nonmortar_xyz[0], dim ) * 
                        n_ab;
          } // end if-block
 
@@ -145,14 +145,14 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
 void compareGaps( tribol::CouplingScheme const * cs, real * gaps, const real tol )
 {
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::IndexType const slaveId = cs->getMeshId2();
-   tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( slaveId );
+   tribol::IndexType const nonmortarId = cs->getMeshId2();
+   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
 
    int numTotalNodes = cs->getNumTotalNodes();
 
    for (int i=0; i<numTotalNodes; ++i)
    {
-      real diff = slaveMesh.m_nodalFields.m_node_gap[i] - gaps[i];
+      real diff = nonmortarMesh.m_nodalFields.m_node_gap[i] - gaps[i];
       EXPECT_LE( diff, tol );
    }
 
@@ -187,15 +187,15 @@ protected:
 
 TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
 {
-   int nMasterElems = 5; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 5; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    real x_min1 = 0.;
    real y_min1 = 0.;
@@ -253,15 +253,15 @@ TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
 
 TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
 {
-   int nMasterElems = 5; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 5; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    real x_min1 = 0.;
    real y_min1 = 0.;
@@ -317,17 +317,17 @@ TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
    delete [] gaps;
 }
 
-TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_master_fine )
+TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_mortar_fine )
 {
-   int nMasterElems = 5; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 5; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 4; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 4; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    real x_min1 = 0.;
    real y_min1 = 0.;
@@ -384,17 +384,17 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_master_fine )
    delete [] gaps;
 }
 
-TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_slave_fine )
+TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_nonmortar_fine )
 {
-   int nMasterElems = 2; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 2; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 3; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 3; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    real x_min1 = 0.;
    real y_min1 = 0.;

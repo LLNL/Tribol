@@ -37,11 +37,11 @@ void TRIBOL_TEST_MESH_TestMesh_delete(TRIBOL_TEST_MESH_TestMesh * self)
     // splicer end class.TestMesh.method.delete
 }
 
-void TRIBOL_TEST_MESH_TestMesh_setup_contact_mesh_hex(TRIBOL_TEST_MESH_TestMesh * self, int numElemsX1, int numElemsY1, int numElemsZ1, double xMin1, double yMin1, double zMin1, double xMax1, double yMax1, double zMax1, int numElemsX2, int numElemsY2, int numElemsZ2, double xMin2, double yMin2, double zMin2, double xMax2, double yMax2, double zMax2, double thetaMaster, double thetaSlave)
+void TRIBOL_TEST_MESH_TestMesh_setup_contact_mesh_hex(TRIBOL_TEST_MESH_TestMesh * self, int numElemsX1, int numElemsY1, int numElemsZ1, double xMin1, double yMin1, double zMin1, double xMax1, double yMax1, double zMax1, int numElemsX2, int numElemsY2, int numElemsZ2, double xMin2, double yMin2, double zMin2, double xMax2, double yMax2, double zMax2, double thetaMortar, double thetaNonmortar)
 {
     tribol::TestMesh *SH_this = static_cast<tribol::TestMesh *>(self->addr);
     // splicer begin class.TestMesh.method.setup_contact_mesh_hex
-    SH_this->setupContactMeshHex(numElemsX1, numElemsY1, numElemsZ1, xMin1, yMin1, zMin1, xMax1, yMax1, zMax1, numElemsX2, numElemsY2, numElemsZ2, xMin2, yMin2, zMin2, xMax2, yMax2, zMax2, thetaMaster, thetaSlave);
+    SH_this->setupContactMeshHex(numElemsX1, numElemsY1, numElemsZ1, xMin1, yMin1, zMin1, xMax1, yMax1, zMax1, numElemsX2, numElemsY2, numElemsZ2, xMin2, yMin2, zMin2, xMax2, yMax2, zMax2, thetaMortar, thetaNonmortar);
     // splicer end class.TestMesh.method.setup_contact_mesh_hex
 }
 
@@ -123,74 +123,74 @@ double * TRIBOL_TEST_MESH_TestMesh_get_z_bufferify(const TRIBOL_TEST_MESH_TestMe
     // splicer end class.TestMesh.method.get_z_bufferify
 }
 
-int TRIBOL_TEST_MESH_TestMesh_get_master_face_connectivity_size(const TRIBOL_TEST_MESH_TestMesh * self)
+int TRIBOL_TEST_MESH_TestMesh_get_mortar_face_connectivity_size(const TRIBOL_TEST_MESH_TestMesh * self)
 {
     const tribol::TestMesh *SH_this = static_cast<const tribol::TestMesh *>(self->addr);
-    // splicer begin class.TestMesh.method.get_master_face_connectivity_size
-    int SHC_rv = SH_this->getMasterFaceConnectivitySize();
+    // splicer begin class.TestMesh.method.get_mortar_face_connectivity_size
+    int SHC_rv = SH_this->getMortarFaceConnectivitySize();
     return SHC_rv;
-    // splicer end class.TestMesh.method.get_master_face_connectivity_size
+    // splicer end class.TestMesh.method.get_mortar_face_connectivity_size
 }
 
-int * TRIBOL_TEST_MESH_TestMesh_get_master_face_connectivity(const TRIBOL_TEST_MESH_TestMesh * self)
+int * TRIBOL_TEST_MESH_TestMesh_get_mortar_face_connectivity(const TRIBOL_TEST_MESH_TestMesh * self)
 {
     const tribol::TestMesh *SH_this = static_cast<const tribol::TestMesh *>(self->addr);
-    // splicer begin class.TestMesh.method.get_master_face_connectivity
-    int * SHC_rv = SH_this->getMasterFaceConnectivity();
+    // splicer begin class.TestMesh.method.get_mortar_face_connectivity
+    int * SHC_rv = SH_this->getMortarFaceConnectivity();
     return SHC_rv;
-    // splicer end class.TestMesh.method.get_master_face_connectivity
+    // splicer end class.TestMesh.method.get_mortar_face_connectivity
 }
 
-int * TRIBOL_TEST_MESH_TestMesh_get_master_face_connectivity_bufferify(const TRIBOL_TEST_MESH_TestMesh * self, TRIBOL_TEST_MESH_SHROUD_array *DSHC_rv)
+int * TRIBOL_TEST_MESH_TestMesh_get_mortar_face_connectivity_bufferify(const TRIBOL_TEST_MESH_TestMesh * self, TRIBOL_TEST_MESH_SHROUD_array *DSHC_rv)
 {
     const tribol::TestMesh *SH_this = static_cast<const tribol::TestMesh *>(self->addr);
-    // splicer begin class.TestMesh.method.get_master_face_connectivity_bufferify
-    int * SHC_rv = SH_this->getMasterFaceConnectivity();
+    // splicer begin class.TestMesh.method.get_mortar_face_connectivity_bufferify
+    int * SHC_rv = SH_this->getMortarFaceConnectivity();
     DSHC_rv->cxx.addr  = SHC_rv;
     DSHC_rv->cxx.idtor = 0;
     DSHC_rv->addr.base = SHC_rv;
     DSHC_rv->type = SH_TYPE_INT;
     DSHC_rv->elem_len = sizeof(int);
     DSHC_rv->rank = 1;
-    DSHC_rv->shape[0] = SH_this->getMasterFaceConnectivitySize();
+    DSHC_rv->shape[0] = SH_this->getMortarFaceConnectivitySize();
     DSHC_rv->size = DSHC_rv->shape[0];
     return SHC_rv;
-    // splicer end class.TestMesh.method.get_master_face_connectivity_bufferify
+    // splicer end class.TestMesh.method.get_mortar_face_connectivity_bufferify
 }
 
-int TRIBOL_TEST_MESH_TestMesh_get_slave_face_connectivity_size(const TRIBOL_TEST_MESH_TestMesh * self)
+int TRIBOL_TEST_MESH_TestMesh_get_nonmortar_face_connectivity_size(const TRIBOL_TEST_MESH_TestMesh * self)
 {
     const tribol::TestMesh *SH_this = static_cast<const tribol::TestMesh *>(self->addr);
-    // splicer begin class.TestMesh.method.get_slave_face_connectivity_size
-    int SHC_rv = SH_this->getSlaveFaceConnectivitySize();
+    // splicer begin class.TestMesh.method.get_nonmortar_face_connectivity_size
+    int SHC_rv = SH_this->getNonmortarFaceConnectivitySize();
     return SHC_rv;
-    // splicer end class.TestMesh.method.get_slave_face_connectivity_size
+    // splicer end class.TestMesh.method.get_nonmortar_face_connectivity_size
 }
 
-int * TRIBOL_TEST_MESH_TestMesh_get_slave_face_connectivity(const TRIBOL_TEST_MESH_TestMesh * self)
+int * TRIBOL_TEST_MESH_TestMesh_get_nonmortar_face_connectivity(const TRIBOL_TEST_MESH_TestMesh * self)
 {
     const tribol::TestMesh *SH_this = static_cast<const tribol::TestMesh *>(self->addr);
-    // splicer begin class.TestMesh.method.get_slave_face_connectivity
-    int * SHC_rv = SH_this->getSlaveFaceConnectivity();
+    // splicer begin class.TestMesh.method.get_nonmortar_face_connectivity
+    int * SHC_rv = SH_this->getNonmortarFaceConnectivity();
     return SHC_rv;
-    // splicer end class.TestMesh.method.get_slave_face_connectivity
+    // splicer end class.TestMesh.method.get_nonmortar_face_connectivity
 }
 
-int * TRIBOL_TEST_MESH_TestMesh_get_slave_face_connectivity_bufferify(const TRIBOL_TEST_MESH_TestMesh * self, TRIBOL_TEST_MESH_SHROUD_array *DSHC_rv)
+int * TRIBOL_TEST_MESH_TestMesh_get_nonmortar_face_connectivity_bufferify(const TRIBOL_TEST_MESH_TestMesh * self, TRIBOL_TEST_MESH_SHROUD_array *DSHC_rv)
 {
     const tribol::TestMesh *SH_this = static_cast<const tribol::TestMesh *>(self->addr);
-    // splicer begin class.TestMesh.method.get_slave_face_connectivity_bufferify
-    int * SHC_rv = SH_this->getSlaveFaceConnectivity();
+    // splicer begin class.TestMesh.method.get_nonmortar_face_connectivity_bufferify
+    int * SHC_rv = SH_this->getNonmortarFaceConnectivity();
     DSHC_rv->cxx.addr  = SHC_rv;
     DSHC_rv->cxx.idtor = 0;
     DSHC_rv->addr.base = SHC_rv;
     DSHC_rv->type = SH_TYPE_INT;
     DSHC_rv->elem_len = sizeof(int);
     DSHC_rv->rank = 1;
-    DSHC_rv->shape[0] = SH_this->getSlaveFaceConnectivitySize();
+    DSHC_rv->shape[0] = SH_this->getNonmortarFaceConnectivitySize();
     DSHC_rv->size = DSHC_rv->shape[0];
     return SHC_rv;
-    // splicer end class.TestMesh.method.get_slave_face_connectivity_bufferify
+    // splicer end class.TestMesh.method.get_nonmortar_face_connectivity_bufferify
 }
 
 int TRIBOL_TEST_MESH_TestMesh_get_numtotalnodes(TRIBOL_TEST_MESH_TestMesh * self)
@@ -201,20 +201,20 @@ int TRIBOL_TEST_MESH_TestMesh_get_numtotalnodes(TRIBOL_TEST_MESH_TestMesh * self
     // splicer end class.TestMesh.method.get_numtotalnodes
 }
 
-int TRIBOL_TEST_MESH_TestMesh_get_nummasterfaces(TRIBOL_TEST_MESH_TestMesh * self)
+int TRIBOL_TEST_MESH_TestMesh_get_nummortarfaces(TRIBOL_TEST_MESH_TestMesh * self)
 {
     tribol::TestMesh *SH_this = static_cast<tribol::TestMesh *>(self->addr);
-    // splicer begin class.TestMesh.method.get_nummasterfaces
-    return SH_this->numMasterFaces;
-    // splicer end class.TestMesh.method.get_nummasterfaces
+    // splicer begin class.TestMesh.method.get_nummortarfaces
+    return SH_this->numMortarFaces;
+    // splicer end class.TestMesh.method.get_nummortarfaces
 }
 
-int TRIBOL_TEST_MESH_TestMesh_get_numslavefaces(TRIBOL_TEST_MESH_TestMesh * self)
+int TRIBOL_TEST_MESH_TestMesh_get_numnonmortarfaces(TRIBOL_TEST_MESH_TestMesh * self)
 {
     tribol::TestMesh *SH_this = static_cast<tribol::TestMesh *>(self->addr);
-    // splicer begin class.TestMesh.method.get_numslavefaces
-    return SH_this->numSlaveFaces;
-    // splicer end class.TestMesh.method.get_numslavefaces
+    // splicer begin class.TestMesh.method.get_numnonmortarfaces
+    return SH_this->numNonmortarFaces;
+    // splicer end class.TestMesh.method.get_numnonmortarfaces
 }
 
 }  // extern "C"

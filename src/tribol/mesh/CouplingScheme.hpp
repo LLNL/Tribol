@@ -88,8 +88,8 @@ public:
    * \brief Creates a CouplingSchmeme instance between a pair of meshes
    *
    * \param [in] params pointer to the parameters object
-   * \param [in] meshId1 ID of the master surface
-   * \param [in] meshId2 ID of the slave surface, or ANY_MESH for multiple meshes
+   * \param [in] meshId1 ID of the mortar surface
+   * \param [in] meshId2 ID of the nonmortar surface, or ANY_MESH for multiple meshes
    * \param [in] contact_mode the type of contact, e.g. SURFACE_TO_SURFACE
    * \param [in] contact_case the specific case of contact application, e.g. auto
    * \param [in] contact_method the contact method, e.g. SINGLE_MORTAR

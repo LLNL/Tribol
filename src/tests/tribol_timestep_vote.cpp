@@ -63,18 +63,18 @@ protected:
 
 TEST_F( CommonPlaneTest, zero_velocity_small_gap )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 4;
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 4;
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 'small' (0.055) interpenetration gap
    real x_min1 = 0.;
@@ -119,14 +119,14 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
    real velY2 = 0.;
    real velZ2 = 0.; 
 
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, -velZ2 ); 
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
    
    // allocate and set element thickness and bulk modulus
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.masterMeshId, element_thickness1 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.masterMeshId, bulk_mod1 );
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.slaveMeshId, element_thickness2 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.slaveMeshId, bulk_mod2 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.mortarMeshId, element_thickness1 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.mortarMeshId, bulk_mod1 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.nonmortarMeshId, element_thickness2 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.nonmortarMeshId, bulk_mod2 );
 
    // call tribol setup and update
    tribol::TestControlParameters parameters; 
@@ -144,18 +144,18 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
 
 TEST_F( CommonPlaneTest, zero_velocity_large_gap )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 4;
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 4;
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
    real x_min1 = 0.;
@@ -200,14 +200,14 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
    real velY2 = 0.;
    real velZ2 = 0.; 
 
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, -velZ2 ); 
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
    
    // allocate and set element thickness and bulk modulus
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.masterMeshId, element_thickness1 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.masterMeshId, bulk_mod1 );
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.slaveMeshId, element_thickness2 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.slaveMeshId, bulk_mod2 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.mortarMeshId, element_thickness1 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.mortarMeshId, bulk_mod1 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.nonmortarMeshId, element_thickness2 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.nonmortarMeshId, bulk_mod2 );
 
    // call tribol setup and update
    tribol::TestControlParameters parameters; 
@@ -228,18 +228,18 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
 
 TEST_F( CommonPlaneTest, large_velocity_small_gap )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 4;
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 4;
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 'small' (0.055) interpenetration gap
    real x_min1 = 0.;
@@ -285,14 +285,14 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
    real velY2 = 0.;
    real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, -velZ2 ); 
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
    
    // allocate and set element thickness and bulk modulus
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.masterMeshId, element_thickness1 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.masterMeshId, bulk_mod1 );
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.slaveMeshId, element_thickness2 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.slaveMeshId, bulk_mod2 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.mortarMeshId, element_thickness1 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.mortarMeshId, bulk_mod1 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.nonmortarMeshId, element_thickness2 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.nonmortarMeshId, bulk_mod2 );
 
    // call tribol setup and update
    tribol::TestControlParameters parameters; 
@@ -314,18 +314,18 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
 
 TEST_F( CommonPlaneTest, large_velocity_large_gap )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 4;
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 4;
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
    real x_min1 = 0.;
@@ -371,14 +371,14 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
    real velY2 = 0.;
    real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, -velZ2 ); 
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
    
    // allocate and set element thickness and bulk modulus
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.masterMeshId, element_thickness1 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.masterMeshId, bulk_mod1 );
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.slaveMeshId, element_thickness2 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.slaveMeshId, bulk_mod2 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.mortarMeshId, element_thickness1 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.mortarMeshId, bulk_mod1 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.nonmortarMeshId, element_thickness2 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.nonmortarMeshId, bulk_mod2 );
 
    // call tribol setup and update
    tribol::TestControlParameters parameters; 
@@ -400,18 +400,18 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
 
 TEST_F( CommonPlaneTest, separation_velocity_small_gap )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 4;
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 4;
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.055 interpenetration gap
    real x_min1 = 0.;
@@ -457,14 +457,14 @@ TEST_F( CommonPlaneTest, separation_velocity_small_gap )
    real velY2 = 0.;
    real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, -velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, velZ2 ); 
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, -velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, velZ2 ); 
    
    // allocate and set element thickness and bulk modulus
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.masterMeshId, element_thickness1 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.masterMeshId, bulk_mod1 );
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.slaveMeshId, element_thickness2 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.slaveMeshId, bulk_mod2 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.mortarMeshId, element_thickness1 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.mortarMeshId, bulk_mod1 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.nonmortarMeshId, element_thickness2 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.nonmortarMeshId, bulk_mod2 );
 
    // call tribol setup and update
    tribol::TestControlParameters parameters; 
@@ -484,18 +484,18 @@ TEST_F( CommonPlaneTest, large_velocity_separation )
 {
    // this test has two blocks has two blocks with initial separation
    // and checks to make sure that the timestep is not altered. 
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 4;
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 4;
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with initial separation
    real x_min1 = 0.;
@@ -541,14 +541,14 @@ TEST_F( CommonPlaneTest, large_velocity_separation )
    real velY2 = 0.;
    real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, -velZ2 ); 
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
    
    // allocate and set element thickness and bulk modulus
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.masterMeshId, element_thickness1 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.masterMeshId, bulk_mod1 );
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.slaveMeshId, element_thickness2 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.slaveMeshId, bulk_mod2 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.mortarMeshId, element_thickness1 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.mortarMeshId, bulk_mod1 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.nonmortarMeshId, element_thickness2 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.nonmortarMeshId, bulk_mod2 );
 
    // call tribol setup and update
    tribol::TestControlParameters parameters; 
@@ -569,18 +569,18 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
    // this test checks the two blocks with a small initial separation 
    // and a large velocity. This should trigger a velocity projection 
    // timestep vote
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 4;
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 4;
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with initial separation
    real x_min1 = 0.;
@@ -626,14 +626,14 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
    real velY2 = 0.;
    real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, -velZ2 ); 
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
    
    // allocate and set element thickness and bulk modulus
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.masterMeshId, element_thickness1 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.masterMeshId, bulk_mod1 );
-   this->m_mesh.allocateAndSetElementThickness( m_mesh.slaveMeshId, element_thickness2 );
-   this->m_mesh.allocateAndSetBulkModulus( m_mesh.slaveMeshId, bulk_mod2 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.mortarMeshId, element_thickness1 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.mortarMeshId, bulk_mod1 );
+   this->m_mesh.allocateAndSetElementThickness( m_mesh.nonmortarMeshId, element_thickness2 );
+   this->m_mesh.allocateAndSetBulkModulus( m_mesh.nonmortarMeshId, bulk_mod2 );
 
    // call tribol setup and update
    tribol::TestControlParameters parameters; 

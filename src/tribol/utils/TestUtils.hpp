@@ -123,8 +123,8 @@ public:
    * \param [in] xMax2 maximum x-coordinate location of second block
    * \param [in] yMax2 maximum y-coordinate location of second block
    * \param [in] zMax2 maximum z-coordinate location of second block
-   * \param [in] thetaMaster angle of rotation of non-z-plane vertices about z-axis
-   * \param [in] thetaSlave angle of rotation of non-z-plane vertices about z-axis
+   * \param [in] thetaMortar angle of rotation of non-z-plane vertices about z-axis
+   * \param [in] thetaNonmortar angle of rotation of non-z-plane vertices about z-axis
    *
    */
    void setupContactMeshHex( int numElemsX1, int numElemsY1, int numElemsZ1, 
@@ -133,7 +133,7 @@ public:
                              int numElemsX2, int numElemsY2, int numElemsZ2,
                              real xMin2, real yMin2, real zMin2, 
                              real xMax2, real yMax2, real zMax2,
-                             real thetaMaster, real thetaSlave );
+                             real thetaMortar, real thetaNonmortar );
 
   /*!
    * \brief sets up the Dirichlet BC node ids and values for a single 3D mesh block 
@@ -142,7 +142,7 @@ public:
    * \param [in] numElemsX number of elements in the x-direction
    * \param [in] numElemsY number of elements in the y-direction
    * \param [in] numElemsZ number of elements in the z-direction
-   * \param [in] master true if this is the master block in the mesh
+   * \param [in] mortar true if this is the mortar block in the mesh
    * \param [in] nodeIdOffset node id offset for this block
    * \param [in] inHomogeneousGap true if enforcing gap closure through Dirichlet BCs
    * \param [in] inHomogeneousZVal z-component inhomogeneous Dirichlet BC for when inHomogeneousGap is true
@@ -152,23 +152,23 @@ public:
    *
    */
    void setupPatchTestDirichletBCs( int numElemsX, int numElemsY, int numElemsZ, 
-                                    bool master, int nodeIdOffset, 
+                                    bool mortar, int nodeIdOffset, 
                                     bool inHomogeneousGap, 
                                     real inHomogeneousZVal = 0. );
 
   /*!
-   * \brief sets up pressure dof ids for a 3D slave mesh block for PATCH TEST
+   * \brief sets up pressure dof ids for a 3D nonmortar mesh block for PATCH TEST
    *
-   * \param [in] numElemsX number of elements in x-direction of slave block
-   * \param [in] numElemsY number of elements in y-direction of slave block
-   * \param [in] numElemsZ number of elements in z-direction of slave block
-   * \param [in] nodeIdOffset slave node id offset
+   * \param [in] numElemsX number of elements in x-direction of nonmortar block
+   * \param [in] numElemsY number of elements in y-direction of nonmortar block
+   * \param [in] numElemsZ number of elements in z-direction of nonmortar block
+   * \param [in] nodeIdOffset nonmortar node id offset
    * \param [in] contact true if enforcing zero gap using contact enforcement
-   * \param [in,out] presDofs pointer to array of slave pressure dof node ids
+   * \param [in,out] presDofs pointer to array of nonmortar pressure dof node ids
    *
    */
    void setupPatchTestPressureDofs( int numElemsX, int numElemsY, int numElemsZ, 
-                                    int nodeIdOffset, bool contact, bool master );
+                                    int nodeIdOffset, bool contact, bool mortar );
 
   /*!
    * \brief sets up an mfem mesh object representation of the original test mesh
@@ -261,7 +261,7 @@ public:
    *        system size sparse matrix
    *
    * \param [in,out] ATribol Tribol-sized dense matrix (dim * totalNumberOfNodes + totalNumberOfNodes)
-   * \param [in,out] ASystem system-sized sparse matrix (dim * totalNumberOfNodes + numSlaveNodes)
+   * \param [in,out] ASystem system-sized sparse matrix (dim * totalNumberOfNodes + numNonmortarNodes)
    *
    * \pre ATribol != nullptr
    * \pre ASystem != nullptr
@@ -312,52 +312,52 @@ public:
    mfem::Mesh * mfem_mesh; 
 
    // public member variables
-   int masterMeshId;         ///< Mesh id for master portion of mesh
-   int slaveMeshId;          ///< Mesh id for slave portion of mesh
+   int mortarMeshId;         ///< Mesh id for mortar portion of mesh
+   int nonmortarMeshId;          ///< Mesh id for nonmortar portion of mesh
    int numTotalNodes;        ///< Total number of nodes in the mesh 
-   int numMasterNodes;       ///< Number of master nodes (not just surface nodes)
-   int numSlaveNodes;        ///< Number of slave nodes (not just surface nodes)
-   int numSlaveSurfaceNodes; ///< Number of surface nodes on the slave side
+   int numMortarNodes;       ///< Number of mortar nodes (not just surface nodes)
+   int numNonmortarNodes;        ///< Number of nonmortar nodes (not just surface nodes)
+   int numNonmortarSurfaceNodes; ///< Number of surface nodes on the nonmortar side
    int numTotalElements;     ///< Total number of elements 
-   int numMasterElements;    ///< Number of master elements
-   int numSlaveElements;     ///< Number of slave nodes 
+   int numMortarElements;    ///< Number of mortar elements
+   int numNonmortarElements;     ///< Number of nonmortar nodes 
    int numTotalFaces;        ///< Total number of faces
-   int numMasterFaces;       ///< Number of master faces
-   int numSlaveFaces;        ///< Number of slave faces 
+   int numMortarFaces;       ///< Number of mortar faces
+   int numNonmortarFaces;        ///< Number of nonmortar faces 
    int numNodesPerFace;      ///< Number of nodes per face
    int numNodesPerElement;   ///< Number of nodes per element
    int dim;                  ///< Mesh dimension
-   int *dirNodesX1;          ///< Pointer to list of master node ids with x-component Dirichlet BCs 
-   int *dirNodesY1;          ///< Pointer to list of master node ids with y-component Dirichlet BCs
-   int *dirNodesZ1;          ///< Pointer to list of master node ids with z-component Dirichlet BCs 
-   double *iDirValX1;        ///< Pointer to x-component Dirichlet BC values for specified master nodes
-   double *iDirValY1;        ///< Pointer to y-component Dirichlet BC values for specified master nodes
-   double *iDirValZ1;        ///< Pointer to z-component Dirichlet BC values for specified master nodes
-   int *dirNodesX2;          ///< Pointer to list of slave node ids with x-component Dirichlet BCs
-   int *dirNodesY2;          ///< Pointer to list of slave node ids with y-component Dirichlet BCs
-   int *dirNodesZ2;          ///< Pointer to list of slave node ids with z-component Dirichlet BCs
-   double *iDirValX2;        ///< Pointer to x-component Dirichlet BC values for specified slave nodes
-   double *iDirValY2;        ///< Pointer to y-component Dirichlet BC values for specified slave nodes
-   double *iDirValZ2;        ///< Pointer to z-component Dirichlet BC values for specified slave nodes
-   int *faceConn1;           ///< Pointer to master face connectivity
-   int *faceConn2;           ///< Pointer to slave face connectivity
-   int *elConn1;             ///< Pointer to master element connectivity
-   int *elConn2;             ///< Pointer to slave element connectivity 
-   int *presDofs1;           ///< Pointer to master node ids with a pressure BC
-   int *presDofs2;           ///< Pointer to slave node ids with a pressure BC
+   int *dirNodesX1;          ///< Pointer to list of mortar node ids with x-component Dirichlet BCs 
+   int *dirNodesY1;          ///< Pointer to list of mortar node ids with y-component Dirichlet BCs
+   int *dirNodesZ1;          ///< Pointer to list of mortar node ids with z-component Dirichlet BCs 
+   double *iDirValX1;        ///< Pointer to x-component Dirichlet BC values for specified mortar nodes
+   double *iDirValY1;        ///< Pointer to y-component Dirichlet BC values for specified mortar nodes
+   double *iDirValZ1;        ///< Pointer to z-component Dirichlet BC values for specified mortar nodes
+   int *dirNodesX2;          ///< Pointer to list of nonmortar node ids with x-component Dirichlet BCs
+   int *dirNodesY2;          ///< Pointer to list of nonmortar node ids with y-component Dirichlet BCs
+   int *dirNodesZ2;          ///< Pointer to list of nonmortar node ids with z-component Dirichlet BCs
+   double *iDirValX2;        ///< Pointer to x-component Dirichlet BC values for specified nonmortar nodes
+   double *iDirValY2;        ///< Pointer to y-component Dirichlet BC values for specified nonmortar nodes
+   double *iDirValZ2;        ///< Pointer to z-component Dirichlet BC values for specified nonmortar nodes
+   int *faceConn1;           ///< Pointer to mortar face connectivity
+   int *faceConn2;           ///< Pointer to nonmortar face connectivity
+   int *elConn1;             ///< Pointer to mortar element connectivity
+   int *elConn2;             ///< Pointer to nonmortar element connectivity 
+   int *presDofs1;           ///< Pointer to mortar node ids with a pressure BC
+   int *presDofs2;           ///< Pointer to nonmortar node ids with a pressure BC
 
-   double *fx1; ///< Master nodal forces, x-component 
-   double *fy1; ///< Master nodal forces, y-component 
-   double *fz1; ///< Master nodal forces, z-component
-   double *fx2; ///< Slave nodal forces, x-component
-   double *fy2; ///< Slave nodal forces, y-component
-   double *fz2; ///< Slave nodal forces, z-component
-   double *vx1; ///< Master nodal velocities, x-component
-   double *vy1; ///< Master nodal velocities, y-component
-   double *vz1; ///< Master nodal velocities, z-component
-   double *vx2; ///< Slave nodal velocities, x-component
-   double *vy2; ///< Slave nodal velocities, y-component
-   double *vz2; ///< Slave nodal velocities, z-component
+   double *fx1; ///< Mortar nodal forces, x-component 
+   double *fy1; ///< Mortar nodal forces, y-component 
+   double *fz1; ///< Mortar nodal forces, z-component
+   double *fx2; ///< Nonmortar nodal forces, x-component
+   double *fy2; ///< Nonmortar nodal forces, y-component
+   double *fz2; ///< Nonmortar nodal forces, z-component
+   double *vx1; ///< Mortar nodal velocities, x-component
+   double *vy1; ///< Mortar nodal velocities, y-component
+   double *vz1; ///< Mortar nodal velocities, z-component
+   double *vx2; ///< Nonmortar nodal velocities, x-component
+   double *vy2; ///< Nonmortar nodal velocities, y-component
+   double *vz2; ///< Nonmortar nodal velocities, z-component
    double *x;   ///< Nodal coordinates, x-component
    double *y;   ///< Nodal coordinates, y-component
    double *z;   ///< Nodal coordinates, z-component
@@ -370,10 +370,10 @@ public:
    double *gaps;      ///< Array of nodal gaps
    double *pressures; ///< Array of nodal pressures
 
-   real * master_bulk_mod;
-   real * master_element_thickness;
-   real * slave_bulk_mod;
-   real * slave_element_thickness;
+   real * mortar_bulk_mod;
+   real * mortar_element_thickness;
+   real * nonmortar_bulk_mod;
+   real * nonmortar_element_thickness;
 
    bool registered_velocities1;
    bool registered_velocities2;
@@ -382,15 +382,15 @@ public:
    double* getX() const {return x;}
    double* getY() const {return y;}
    double* getZ() const {return z;}
-   int* getMasterFaceConnectivity() const {return faceConn1;}
-   int* getSlaveFaceConnectivity()  const {return faceConn2;}
+   int* getMortarFaceConnectivity() const {return faceConn1;}
+   int* getNonmortarFaceConnectivity()  const {return faceConn2;}
 
    int getNumTotalNodes() const { return numTotalNodes;}
 
   public:
    /// Needed for initial shroud interface
-   int getMasterFaceConnectivitySize() const { return numNodesPerFace * numMasterFaces ; }
-   int getSlaveFaceConnectivitySize() const { return numNodesPerFace * numSlaveFaces ; }
+   int getMortarFaceConnectivitySize() const { return numNodesPerFace * numMortarFaces ; }
+   int getNonmortarFaceConnectivitySize() const { return numNodesPerFace * numNonmortarFaces ; }
 
 protected:
    // NONE

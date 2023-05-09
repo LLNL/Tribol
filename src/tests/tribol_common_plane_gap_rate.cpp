@@ -251,18 +251,18 @@ protected:
 
 TEST_F( CommonPlaneTest, constant_rate_penetration )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 1; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 1; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
    real x_min1 = 0.;
@@ -295,8 +295,8 @@ TEST_F( CommonPlaneTest, constant_rate_penetration )
    real velX2 = 0.;
    real velY2 = 0.;
    real velZ2 = -1.;
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, velZ2 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, velZ2 );
    
    // set kinematic gap and rate (velocity) gap penalty parameters
    tribol::TestControlParameters parameters;
@@ -345,18 +345,18 @@ TEST_F( CommonPlaneTest, constant_rate_penetration )
 
 TEST_F( CommonPlaneTest, constant_rate_separation )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 1; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 1; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration kinematic gap
    real x_min1 = 0.;
@@ -390,8 +390,8 @@ TEST_F( CommonPlaneTest, constant_rate_separation )
    real velX2 = 0.;
    real velY2 = 0.;
    real velZ2 = 1.;
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, velZ2 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, velZ2 );
    
    // set kinematic gap and rate (velocity) gap penalty parameters
    tribol::TestControlParameters parameters;
@@ -440,18 +440,18 @@ TEST_F( CommonPlaneTest, constant_rate_separation )
 
 TEST_F( CommonPlaneTest, no_gap_constant_rate_penetration )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 1; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 1; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with zero gap.
    real x_min1 = 0.;
@@ -484,8 +484,8 @@ TEST_F( CommonPlaneTest, no_gap_constant_rate_penetration )
    real velX2 = 0.;
    real velY2 = 0.;
    real velZ2 = -1.;
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, velZ2 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, velZ2 );
    
    // set kinematic gap and rate (velocity) gap penalty parameters
    tribol::TestControlParameters parameters;
@@ -531,18 +531,18 @@ TEST_F( CommonPlaneTest, no_gap_constant_rate_penetration )
 
 TEST_F( CommonPlaneTest, percent_rate_penetration )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 1; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 1; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
    real x_min1 = 0.;
@@ -575,8 +575,8 @@ TEST_F( CommonPlaneTest, percent_rate_penetration )
    real velX2 = 0.;
    real velY2 = 0.;
    real velZ2 = -1.;
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, velZ2 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, velZ2 );
    
    // set kinematic gap and rate (velocity) gap penalty parameters
    tribol::TestControlParameters parameters;
@@ -625,18 +625,18 @@ TEST_F( CommonPlaneTest, percent_rate_penetration )
 
 TEST_F( CommonPlaneTest, percent_rate_separation )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 1; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 1; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
    real x_min1 = 0.;
@@ -671,8 +671,8 @@ TEST_F( CommonPlaneTest, percent_rate_separation )
    real velX2 = 0.;
    real velY2 = 0.;
    real velZ2 = 1.;
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, velZ2 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, velZ2 );
    
    // set kinematic gap and rate (velocity) gap penalty parameters
    tribol::TestControlParameters parameters;
@@ -721,18 +721,18 @@ TEST_F( CommonPlaneTest, percent_rate_separation )
 
 TEST_F( CommonPlaneTest, no_gap_percent_rate_penetration )
 {
-   this->m_mesh.masterMeshId = 0;
-   this->m_mesh.slaveMeshId = 1;
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
 
-   int nMasterElems = 1; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 1; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
    real x_min1 = 0.;
@@ -765,8 +765,8 @@ TEST_F( CommonPlaneTest, no_gap_percent_rate_penetration )
    real velX2 = 0.;
    real velY2 = 0.;
    real velZ2 = -1.;
-   this->m_mesh.allocateAndSetVelocities( m_mesh.masterMeshId, velX1, velY1, velZ1 );
-   this->m_mesh.allocateAndSetVelocities( m_mesh.slaveMeshId,  velX2, velY2, velZ2 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
+   this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, velZ2 );
    
    // set kinematic gap and rate (velocity) gap penalty parameters
    tribol::TestControlParameters parameters;

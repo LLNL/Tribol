@@ -204,14 +204,14 @@ void build_mesh_3D( tribol::TestMesh &mesh, Arguments &args, BLOCK_EX_BCS bc_typ
 
          // setup block 2 homogeneous Dirichlet BCs
          mesh.setupPatchTestDirichletBCs( res2[0], res2[1], res2[2],
-                                          false, mesh.numMasterNodes, false, 0. );
+                                          false, mesh.numMortarNodes, false, 0. );
 
          // setup DUMMY block 1 pressure dof array
          mesh.setupPatchTestPressureDofs( res1[0], res1[1], res1[2], 0, false, true );
 
          // setup block 2 pressure dofs
          mesh.setupPatchTestPressureDofs( res2[0], res2[1], res2[2], 
-                                          mesh.numMasterNodes, true, false );
+                                          mesh.numMortarNodes, true, false );
          break;
       }
       default:
@@ -257,11 +257,11 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
    const int block2_id = 1;
 
    // register the two meshes with Tribol
-   tribol::registerMesh( block1_id, mesh.numMasterFaces, 
+   tribol::registerMesh( block1_id, mesh.numMortarFaces, 
                          mesh.numTotalNodes,
                          mesh.faceConn1, cellType, 
                          mesh.x, mesh.y, mesh.z );
-   tribol::registerMesh( block2_id, mesh.numSlaveFaces, 
+   tribol::registerMesh( block2_id, mesh.numNonmortarFaces, 
                          mesh.numTotalNodes,
                          mesh.faceConn2, cellType, 
                          mesh.x, mesh.y, mesh.z );
@@ -363,23 +363,23 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
 
         else
         {
-           // master penalty data
-           tribol::allocRealArray( &mesh.master_bulk_mod, mesh.numMasterFaces, 
+           // mortar penalty data
+           tribol::allocRealArray( &mesh.mortar_bulk_mod, mesh.numMortarFaces, 
                                    params->const_penalty );
-           tribol::allocRealArray( &mesh.master_element_thickness, mesh.numMasterFaces, 1.0 );
+           tribol::allocRealArray( &mesh.mortar_element_thickness, mesh.numMortarFaces, 1.0 );
            tribol::registerRealElementField( block1_id, tribol::BULK_MODULUS, 
-                                             mesh.master_bulk_mod );
+                                             mesh.mortar_bulk_mod );
            tribol::registerRealElementField( block1_id, tribol::ELEMENT_THICKNESS, 
-                                             mesh.master_element_thickness );
+                                             mesh.mortar_element_thickness );
           
-           // slave penalty data
-           tribol::allocRealArray( &mesh.slave_bulk_mod, mesh.numSlaveFaces,
+           // nonmortar penalty data
+           tribol::allocRealArray( &mesh.nonmortar_bulk_mod, mesh.numNonmortarFaces,
                                    params->const_penalty );
-           tribol::allocRealArray( &mesh.slave_element_thickness, mesh.numSlaveFaces, 1.0 );
+           tribol::allocRealArray( &mesh.nonmortar_element_thickness, mesh.numNonmortarFaces, 1.0 );
            tribol::registerRealElementField( block2_id, tribol::BULK_MODULUS, 
-                                           mesh.slave_bulk_mod );
+                                           mesh.nonmortar_bulk_mod );
            tribol::registerRealElementField( block2_id, tribol::ELEMENT_THICKNESS, 
-                                           mesh.slave_element_thickness );
+                                           mesh.nonmortar_element_thickness );
         }
      } // end if-penalty
 

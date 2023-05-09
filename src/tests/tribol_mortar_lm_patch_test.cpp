@@ -47,8 +47,8 @@ class MortarLMPatchTest : public ::testing::Test
 public:
    tribol::TestMesh m_mesh;
 
-   void computeContactSolution( int nMasterElemsX, int nMasterElemsY, int nMasterElemsZ,
-                                int nSlaveElemsX, int nSlaveElemsY, int nSlaveElemsZ,
+   void computeContactSolution( int nMortarElemsX, int nMortarElemsY, int nMortarElemsZ,
+                                int nNonmortarElemsX, int nNonmortarElemsY, int nNonmortarElemsZ,
                                 real xMin1, real yMin1, real zMin1,
                                 real xMax1, real yMax1, real zMax1,
                                 real xMin2, real yMin2, real zMin2,
@@ -75,8 +75,8 @@ protected:
 
 };
 
-void MortarLMPatchTest::computeContactSolution( int nMasterElemsX, int nMasterElemsY, int nMasterElemsZ,
-                                                int nSlaveElemsX, int nSlaveElemsY, int nSlaveElemsZ,
+void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarElemsY, int nMortarElemsZ,
+                                                int nNonmortarElemsX, int nNonmortarElemsY, int nNonmortarElemsZ,
                                                 real xMin1, real yMin1, real zMin1,
                                                 real xMax1, real yMax1, real zMax1,
                                                 real xMin2, real yMin2, real zMin2,
@@ -95,31 +95,31 @@ void MortarLMPatchTest::computeContactSolution( int nMasterElemsX, int nMasterEl
       inHomogeneousVal = 0.05; // hard coded for this example
    }
 
-   this->m_mesh.setupContactMeshHex( nMasterElemsX, nMasterElemsY, nMasterElemsZ, 
+   this->m_mesh.setupContactMeshHex( nMortarElemsX, nMortarElemsY, nMortarElemsZ, 
                                      xMin1, yMin1, zMin1, xMax1, yMax1, zMax1,
-                                     nSlaveElemsX, nSlaveElemsY, nSlaveElemsZ, 
+                                     nNonmortarElemsX, nNonmortarElemsY, nNonmortarElemsZ, 
                                      xMin2, yMin2, zMin2, xMax2, yMax2, zMax2,
                                      thetaM, thetaS );
 
-   // setup master boundary conditions
-   this->m_mesh.setupPatchTestDirichletBCs( nMasterElemsX, nMasterElemsY, nMasterElemsZ, 
+   // setup mortar boundary conditions
+   this->m_mesh.setupPatchTestDirichletBCs( nMortarElemsX, nMortarElemsY, nMortarElemsZ, 
                                             true, 0, inHomogeneous, -inHomogeneousVal );
 
-   // setup slave boundary conditions
-   this->m_mesh.setupPatchTestDirichletBCs( nSlaveElemsX, nSlaveElemsY, nSlaveElemsZ, 
-                                            false, this->m_mesh.numMasterNodes, 
+   // setup nonmortar boundary conditions
+   this->m_mesh.setupPatchTestDirichletBCs( nNonmortarElemsX, nNonmortarElemsY, nNonmortarElemsZ, 
+                                            false, this->m_mesh.numMortarNodes, 
                                             inHomogeneous, inHomogeneousVal );
 
-   // setup DUMMY MASTER pressure dof array. Consider getting rid of 
-   // master pressure dofs based on new way stiffness data is handled 
+   // setup DUMMY MORTAR pressure dof array. Consider getting rid of 
+   // mortar pressure dofs based on new way stiffness data is handled 
    // after passed back from Tribol. ALWAYS call this function with 
-   // these arguments for the master block
-   this->m_mesh.setupPatchTestPressureDofs( nMasterElemsX, nMasterElemsY, nMasterElemsZ,
+   // these arguments for the mortar block
+   this->m_mesh.setupPatchTestPressureDofs( nMortarElemsX, nMortarElemsY, nMortarElemsZ,
                                             0, false, true );
 
-   // setup SLAVE pressure dofs
-   this->m_mesh.setupPatchTestPressureDofs( nSlaveElemsX, nSlaveElemsY, nSlaveElemsZ,
-                                            this->m_mesh.numMasterNodes, true, 
+   // setup NONMORTAR pressure dofs
+   this->m_mesh.setupPatchTestPressureDofs( nNonmortarElemsX, nNonmortarElemsY, nNonmortarElemsZ,
+                                            this->m_mesh.numMortarNodes, true, 
                                             false );
 
    // specify if contact is on
@@ -192,10 +192,10 @@ void MortarLMPatchTest::computeContactSolution( int nMasterElemsX, int nMasterEl
    tribolJac->ToDenseMatrix(dTribolJac);
 
    // instantiate mfem vector for rhs vector. The length of this vector is the 
-   // (space dimension) x (total number of mesh nodes) + (number of slave nodes in contact), 
+   // (space dimension) x (total number of mesh nodes) + (number of nonmortar nodes in contact), 
    // where the last addition is for the pressure lagrange multiplier field
    int rhs_size = this->m_mesh.dim * this->m_mesh.numTotalNodes +
-                  this->m_mesh.numSlaveSurfaceNodes;
+                  this->m_mesh.numNonmortarSurfaceNodes;
    double b[ rhs_size ];
 
    // initialize b vector
@@ -223,9 +223,9 @@ void MortarLMPatchTest::computeContactSolution( int nMasterElemsX, int nMasterEl
 
    this->m_mesh.tribolMatrixToSystemMatrix( &dTribolJac, &jac );
 
-   // set slave gaps in rhs vector
+   // set nonmortar gaps in rhs vector
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( 1 );
+   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
 
    // note: this does not populate the right hand side with any contact weak form 
    // residual terms. That is, the initial guess for pressure is zero, and therefore
@@ -264,27 +264,27 @@ void MortarLMPatchTest::computeContactSolution( int nMasterElemsX, int nMasterEl
    double * sol_data = sol.GetData();
 
    // update the tribol nodal pressure array. This traverses 
-   // the connectivity array, which will populate slave pressures 
-   // more than once for slave nodes shared between multiple faces, 
+   // the connectivity array, which will populate nonmortar pressures 
+   // more than once for nonmortar nodes shared between multiple faces, 
    // but this is easy for now (SRW). To do this we need a mapping 
-   // from local slave pressure dofs (in the solution vector) to 
+   // from local nonmortar pressure dofs (in the solution vector) to 
    // the global mesh connectivity ids. I don't create this mapping, 
-   // instead I exploit the fact that the slave pressure nodes are 
+   // instead I exploit the fact that the nonmortar pressure nodes are 
    // ordered consecutively with an offset that is the number of 
-   // master nodes in the master block
-   double slaveForceSum = 0.;
+   // mortar nodes in the mortar block
+   double nonmortarForceSum = 0.;
    if (contact)
    {
-      int connSize = this->m_mesh.numSlaveFaces * this->m_mesh.numNodesPerFace;
+      int connSize = this->m_mesh.numNonmortarFaces * this->m_mesh.numNodesPerFace;
       for (int i=0; i<connSize; ++i)
       {
-         int offset = this->m_mesh.dim * (this->m_mesh.numMasterNodes + this->m_mesh.numSlaveNodes);
-         int slaveOffset = this->m_mesh.numMasterNodes;
+         int offset = this->m_mesh.dim * (this->m_mesh.numMortarNodes + this->m_mesh.numNonmortarNodes);
+         int nonmortarOffset = this->m_mesh.numMortarNodes;
          int id = this->m_mesh.faceConn2[i];
-         slaveMesh.m_nodalFields.m_node_pressure[id] = sol_data[ offset + id - slaveOffset ];
+         nonmortarMesh.m_nodalFields.m_node_pressure[id] = sol_data[ offset + id - nonmortarOffset ];
       }
 
-      // zero out master and slave nodal force contributions for equilibrium 
+      // zero out mortar and nonmortar nodal force contributions for equilibrium 
       // residual evaluation. Note, don't update the nodal coordinates! We want 
       // to evaluate the equilibrium residual with the current pressure 
       // solution and the contact overlaps (i.e. mortar weights) used to 
@@ -310,15 +310,15 @@ void MortarLMPatchTest::computeContactSolution( int nMasterElemsX, int nMasterEl
 
       EXPECT_EQ( tribol_update_err, 0 );
 
-      // sum the nodal force contributions on the slave side
-      for (int i=0; i<this->m_mesh.numSlaveSurfaceNodes; ++i)
+      // sum the nodal force contributions on the nonmortar side
+      for (int i=0; i<this->m_mesh.numNonmortarSurfaceNodes; ++i)
       {
-         int offset = this->m_mesh.numMasterNodes;
+         int offset = this->m_mesh.numMortarNodes;
          // exploit offset and contiguous node numbering in the indexing here.
-         slaveForceSum += this->m_mesh.fz2[ offset + i ];
+         nonmortarForceSum += this->m_mesh.fz2[ offset + i ];
       }
-      pressure_rel_error = slaveForceSum;
-      SLIC_INFO("NODAL FORCE SUM (SLAVE, TRIBOL RESIDUALS): " << slaveForceSum);
+      pressure_rel_error = nonmortarForceSum;
+      SLIC_INFO("NODAL FORCE SUM (NONMORTAR, TRIBOL RESIDUALS): " << nonmortarForceSum);
    }
 
    // update nodal coordinates in separate stacked array. Keep original 
@@ -363,8 +363,8 @@ void MortarLMPatchTest::computeContactSolution( int nMasterElemsX, int nMasterEl
       real * error_data = stress33_rel_error.GetData();
       for (int i=(2*this->m_mesh.numTotalNodes); i<(2*this->m_mesh.numTotalNodes+this->m_mesh.numTotalNodes); ++i)
       {
-         error_data[i] -= slaveForceSum;
-         error_data[i] /= slaveForceSum;
+         error_data[i] -= nonmortarForceSum;
+         error_data[i] /= nonmortarForceSum;
          error_data[i] = std::abs(error_data[i]);
       }
    }
@@ -452,14 +452,14 @@ TEST_F( MortarLMPatchTest, single_mortar_uniform_patch )
    mfem::Vector xsol_base;
    mfem::Vector xsol_cntct;
 
-   int nMasterElems = 4;
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
+   int nMortarElems = 4;
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
    int nElemsZM = 1; 
 
-   int nSlaveElems = 4;
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
+   int nNonmortarElems = 4;
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
    int nElemsZS = 1;
 
    real x_min1 = 0.;
@@ -493,7 +493,7 @@ TEST_F( MortarLMPatchTest, single_mortar_uniform_patch )
                                  x_max2, y_max2, z_max2,
                                  thetaM, thetaS,
                                  tribol::SINGLE_MORTAR,
-                                 "uniform_master_fine",
+                                 "uniform_mortar_fine",
                                  contact, output, debug, 
                                  visualization, xsol_cntct, press_rel_error );
 
@@ -514,7 +514,7 @@ TEST_F( MortarLMPatchTest, single_mortar_uniform_patch )
                                  x_max2, y_max2, z_max2,
                                  thetaM, thetaS, 
                                  tribol::SINGLE_MORTAR,
-                                 "uniform_master_fine_exact",
+                                 "uniform_mortar_fine_exact",
                                  contact, output, debug, 
                                  visualization, xsol_base, press_rel_error_null );
 
@@ -533,20 +533,20 @@ TEST_F( MortarLMPatchTest, single_mortar_uniform_patch )
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }
 
-TEST_F( MortarLMPatchTest, single_mortar_nonuniform_master_fine_patch )
+TEST_F( MortarLMPatchTest, single_mortar_nonuniform_mortar_fine_patch )
 {
 
    mfem::Vector xsol_base;
    mfem::Vector xsol_cntct;
 
-   int nMasterElems = 5; // 4; // keep for a nice non-uniform mesh
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
+   int nMortarElems = 5; // 4; // keep for a nice non-uniform mesh
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
    int nElemsZM = 1;
 
-   int nSlaveElems = 3; // 3; // keep for a nice non-uniform mesh
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
+   int nNonmortarElems = 3; // 3; // keep for a nice non-uniform mesh
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
    int nElemsZS = 1;
 
    real x_min1 = 0.;
@@ -580,7 +580,7 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_master_fine_patch )
                                  x_max2, y_max2, z_max2,
                                  thetaM, thetaS,
                                  tribol::SINGLE_MORTAR,
-                                 "nonuniform_master_fine",
+                                 "nonuniform_mortar_fine",
                                  contact, output, debug, 
                                  visualization, xsol_cntct, press_rel_error );
 
@@ -601,7 +601,7 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_master_fine_patch )
                                  x_max2, y_max2, z_max2,
                                  thetaM, thetaS, 
                                  tribol::SINGLE_MORTAR,
-                                 "nonuniform_master_fine_exact",
+                                 "nonuniform_mortar_fine_exact",
                                  contact, output, debug, 
                                  visualization, xsol_base, press_rel_error_null );
 
@@ -620,20 +620,20 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_master_fine_patch )
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }
 
-TEST_F( MortarLMPatchTest, single_mortar_nonuniform_slave_fine_patch )
+TEST_F( MortarLMPatchTest, single_mortar_nonuniform_nonmortar_fine_patch )
 {
 
    mfem::Vector xsol_base;
    mfem::Vector xsol_cntct;
 
-   int nMasterElems = 3;
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
+   int nMortarElems = 3;
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
    int nElemsZM = 1;
 
-   int nSlaveElems = 5;
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = 7; //nSlaveElems;
+   int nNonmortarElems = 5;
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = 7; //nNonmortarElems;
    int nElemsZS = 1;
 
    real x_min1 = 0.;
@@ -664,7 +664,7 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_slave_fine_patch )
                                  x_max2, y_max2, z_max2,
                                  0., 0.,
                                  tribol::SINGLE_MORTAR,
-                                 "uniform_slave_fine",
+                                 "uniform_nonmortar_fine",
                                  contact, output, debug, 
                                  visualization, xsol_cntct, press_rel_error );
 
@@ -685,7 +685,7 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_slave_fine_patch )
                                  x_max2, y_max2, z_max2,
                                  0., 0.,
                                  tribol::SINGLE_MORTAR,
-                                 "uniform_slave_fine_exact",
+                                 "uniform_nonmortar_fine_exact",
                                  contact, output, debug, 
                                  visualization, xsol_base, press_rel_error_null );
 
@@ -710,14 +710,14 @@ TEST_F( MortarLMPatchTest, aligned_mortar_patch )
    mfem::Vector xsol_base;
    mfem::Vector xsol_cntct;
 
-   int nMasterElems = 4; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
+   int nMortarElems = 4; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
    int nElemsZM = 1;
 
-   int nSlaveElems = 4;
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
+   int nNonmortarElems = 4;
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
    int nElemsZS = 1;
 
    real x_min1 = 0.;

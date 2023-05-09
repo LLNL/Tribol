@@ -192,7 +192,7 @@ int main( int argc, char** argv )
 
      // instantiate mfem vector for RHS contributions
      int rhs_size = mesh.dim * mesh.numTotalNodes + // equilibrium equations
-                    mesh.numSlaveSurfaceNodes;      // gap equations
+                    mesh.numNonmortarSurfaceNodes;      // gap equations
      double b[ rhs_size ];
      tribol::initRealArray( &b[0], rhs_size, 0. );
      mfem::Vector rhs( &b[0], rhs_size );
@@ -256,7 +256,7 @@ int main( int argc, char** argv )
      SLIC_INFO( "Solved global system of equations." );
 
      real pressureSum = 0.;
-     for (int i=0; i<mesh.numSlaveSurfaceNodes; ++i)
+     for (int i=0; i<mesh.numNonmortarSurfaceNodes; ++i)
      {
         int offset = mesh.dim * mesh.numTotalNodes;
         // exploit offset and contiguous node numbering in the indexing here.

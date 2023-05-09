@@ -56,18 +56,18 @@ protected:
       ////////////////////////////////////////////////
       // setup simple non-null contacting test mesh //
       ////////////////////////////////////////////////
-      mesh->masterMeshId = 0;
-      mesh->slaveMeshId = 1;
+      mesh->mortarMeshId = 0;
+      mesh->nonmortarMeshId = 1;
 
-      int nMasterElems = 1; 
-      int nElemsXM = nMasterElems;
-      int nElemsYM = nMasterElems;
-      int nElemsZM = nMasterElems;
+      int nMortarElems = 1; 
+      int nElemsXM = nMortarElems;
+      int nElemsYM = nMortarElems;
+      int nElemsZM = nMortarElems;
 
-      int nSlaveElems = 1; 
-      int nElemsXS = nSlaveElems;
-      int nElemsYS = nSlaveElems;
-      int nElemsZS = nSlaveElems;
+      int nNonmortarElems = 1; 
+      int nElemsXS = nNonmortarElems;
+      int nElemsYS = nNonmortarElems;
+      int nElemsZS = nNonmortarElems;
 
       // mesh bounding box with 0.1 interpenetration gap
       real x_min1 = 0.;
@@ -93,14 +93,14 @@ protected:
                                  0., 0. );
 
       // register meshes
-      tribol::registerMesh( mesh->masterMeshId,
-                            mesh->numMasterFaces,
+      tribol::registerMesh( mesh->mortarMeshId,
+                            mesh->numMortarFaces,
                             mesh->numTotalNodes,
                             mesh->faceConn1, 3, 
                             mesh->x, mesh->y, mesh->z );
 
-      tribol::registerMesh( mesh->slaveMeshId,
-                            mesh->numSlaveFaces,
+      tribol::registerMesh( mesh->nonmortarMeshId,
+                            mesh->numNonmortarFaces,
                             mesh->numTotalNodes,
                             mesh->faceConn2, 3,
                             mesh->x, mesh->y, mesh->z );
@@ -113,10 +113,10 @@ protected:
       tribol::allocRealArray( &mesh->fy2, mesh->numTotalNodes, 0. );
       tribol::allocRealArray( &mesh->fz2, mesh->numTotalNodes, 0. );
 
-      tribol::registerNodalResponse( mesh->masterMeshId,
+      tribol::registerNodalResponse( mesh->mortarMeshId,
                                      mesh->fx1, mesh->fy1, mesh->fz1 );
 
-      tribol::registerNodalResponse( mesh->slaveMeshId,
+      tribol::registerNodalResponse( mesh->nonmortarMeshId,
                                      mesh->fx2, mesh->fy2, mesh->fz2 );
 
 
@@ -127,12 +127,12 @@ protected:
       real velX2 = 0.;
       real velY2 = 0.;
       real velZ2 = 1.;
-      mesh->allocateAndSetVelocities( mesh->masterMeshId, velX1, velY1, velZ1 );
-      mesh->allocateAndSetVelocities( mesh->slaveMeshId,  velX2, velY2, velZ2 );
+      mesh->allocateAndSetVelocities( mesh->mortarMeshId, velX1, velY1, velZ1 );
+      mesh->allocateAndSetVelocities( mesh->nonmortarMeshId,  velX2, velY2, velZ2 );
 
       // register velocities with Tribol
-      tribol::registerNodalVelocities(mesh->masterMeshId, mesh->vx1, mesh->vy1, mesh->vz1);
-      tribol::registerNodalVelocities(mesh->slaveMeshId, mesh->vx2, mesh->vy2, mesh->vz2);
+      tribol::registerNodalVelocities(mesh->mortarMeshId, mesh->vx1, mesh->vy1, mesh->vz1);
+      tribol::registerNodalVelocities(mesh->nonmortarMeshId, mesh->vx2, mesh->vy2, mesh->vz2);
       
       // register the coupling scheme
       const int csIndex = 0;
@@ -202,13 +202,13 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_error )
    real* element_thickness_1;
    real* element_thickness_2;
 
-   tribol::allocRealArray( &bulk_modulus_1, mesh->numMasterFaces, 0. );
-   tribol::allocRealArray( &bulk_modulus_2, mesh->numSlaveFaces, 0. );
-   tribol::allocRealArray( &element_thickness_1, mesh->numMasterFaces, 0. );
-   tribol::allocRealArray( &element_thickness_2, mesh->numSlaveFaces, 0. );
+   tribol::allocRealArray( &bulk_modulus_1, mesh->numMortarFaces, 0. );
+   tribol::allocRealArray( &bulk_modulus_2, mesh->numNonmortarFaces, 0. );
+   tribol::allocRealArray( &element_thickness_1, mesh->numMortarFaces, 0. );
+   tribol::allocRealArray( &element_thickness_2, mesh->numNonmortarFaces, 0. );
 
-   tribol::setKinematicElementPenalty( mesh->masterMeshId, bulk_modulus_1, element_thickness_1 );
-   tribol::setKinematicElementPenalty( mesh->slaveMeshId, bulk_modulus_2, element_thickness_2 );
+   tribol::setKinematicElementPenalty( mesh->mortarMeshId, bulk_modulus_1, element_thickness_1 );
+   tribol::setKinematicElementPenalty( mesh->nonmortarMeshId, bulk_modulus_2, element_thickness_2 );
 
    // 'incorrectly' set penalty options with KINEMATIC_CONSTANT instead of the set KINEMATIC_ELEMENT
    int csIndex = 0;
@@ -371,13 +371,13 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_pass )
    real* element_thickness_1;
    real* element_thickness_2;
 
-   tribol::allocRealArray( &bulk_modulus_1, mesh->numMasterFaces, 1. );
-   tribol::allocRealArray( &bulk_modulus_2, mesh->numSlaveFaces, 1. );
-   tribol::allocRealArray( &element_thickness_1, mesh->numMasterFaces, 1. );
-   tribol::allocRealArray( &element_thickness_2, mesh->numSlaveFaces, 1. );
+   tribol::allocRealArray( &bulk_modulus_1, mesh->numMortarFaces, 1. );
+   tribol::allocRealArray( &bulk_modulus_2, mesh->numNonmortarFaces, 1. );
+   tribol::allocRealArray( &element_thickness_1, mesh->numMortarFaces, 1. );
+   tribol::allocRealArray( &element_thickness_2, mesh->numNonmortarFaces, 1. );
 
-   tribol::setKinematicElementPenalty( mesh->masterMeshId, bulk_modulus_1, element_thickness_1 );
-   tribol::setKinematicElementPenalty( mesh->slaveMeshId, bulk_modulus_2, element_thickness_2 );
+   tribol::setKinematicElementPenalty( mesh->mortarMeshId, bulk_modulus_1, element_thickness_1 );
+   tribol::setKinematicElementPenalty( mesh->nonmortarMeshId, bulk_modulus_2, element_thickness_2 );
 
    // set penalty options with KINEMATIC_ELEMENT
    int csIndex = 0;
@@ -411,13 +411,13 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_invalid_element_input 
    real* element_thickness_1;
    real* element_thickness_2;
 
-   tribol::allocRealArray( &bulk_modulus_1, mesh->numMasterFaces, 0. );
-   tribol::allocRealArray( &bulk_modulus_2, mesh->numSlaveFaces, 0. );
-   tribol::allocRealArray( &element_thickness_1, mesh->numMasterFaces, 0. );
-   tribol::allocRealArray( &element_thickness_2, mesh->numSlaveFaces, 0. );
+   tribol::allocRealArray( &bulk_modulus_1, mesh->numMortarFaces, 0. );
+   tribol::allocRealArray( &bulk_modulus_2, mesh->numNonmortarFaces, 0. );
+   tribol::allocRealArray( &element_thickness_1, mesh->numMortarFaces, 0. );
+   tribol::allocRealArray( &element_thickness_2, mesh->numNonmortarFaces, 0. );
 
-   tribol::setKinematicElementPenalty( mesh->masterMeshId, bulk_modulus_1, element_thickness_1 );
-   tribol::setKinematicElementPenalty( mesh->slaveMeshId, bulk_modulus_2, element_thickness_2 );
+   tribol::setKinematicElementPenalty( mesh->mortarMeshId, bulk_modulus_1, element_thickness_1 );
+   tribol::setKinematicElementPenalty( mesh->nonmortarMeshId, bulk_modulus_2, element_thickness_2 );
 
    // set penalty options with KINEMATIC_ELEMENT
    int csIndex = 0;

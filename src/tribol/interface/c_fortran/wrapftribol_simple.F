@@ -83,28 +83,28 @@ module tribol_simple
         end function c_finalize_1
 
         subroutine tribol_simple_setup_coupling(dim, contact_method, &
-                master_numCells, master_lengthNodalData, &
-                master_connectivity, master_x, master_y, master_z, &
-                slave_numCells, slave_lengthNodalData, &
-                slave_connectivity, slave_x, slave_y, slave_z, &
+                mortar_numCells, mortar_lengthNodalData, &
+                mortar_connectivity, mortar_x, mortar_y, mortar_z, &
+                nonmortar_numCells, nonmortar_lengthNodalData, &
+                nonmortar_connectivity, nonmortar_x, nonmortar_y, nonmortar_z, &
                 area_frac, mortar_gaps, mortar_pressures) &
                 bind(C, name="TRIBOL_SIMPLE_simple_coupling_setup")
             use iso_c_binding, only : C_DOUBLE, C_INT
             implicit none
             integer(C_INT), value, intent(IN) :: dim
             integer(C_INT), value, intent(IN) :: contact_method
-            integer(C_INT), value, intent(IN) :: master_numCells
-            integer(C_INT), value, intent(IN) :: master_lengthNodalData
-            integer(C_INT), intent(IN) :: master_connectivity(*)
-            real(C_DOUBLE), intent(IN) :: master_x(*)
-            real(C_DOUBLE), intent(IN) :: master_y(*)
-            real(C_DOUBLE), intent(IN) :: master_z(*)
-            integer(C_INT), value, intent(IN) :: slave_numCells
-            integer(C_INT), value, intent(IN) :: slave_lengthNodalData
-            integer(C_INT), intent(IN) :: slave_connectivity(*)
-            real(C_DOUBLE), intent(IN) :: slave_x(*)
-            real(C_DOUBLE), intent(IN) :: slave_y(*)
-            real(C_DOUBLE), intent(IN) :: slave_z(*)
+            integer(C_INT), value, intent(IN) :: mortar_numCells
+            integer(C_INT), value, intent(IN) :: mortar_lengthNodalData
+            integer(C_INT), intent(IN) :: mortar_connectivity(*)
+            real(C_DOUBLE), intent(IN) :: mortar_x(*)
+            real(C_DOUBLE), intent(IN) :: mortar_y(*)
+            real(C_DOUBLE), intent(IN) :: mortar_z(*)
+            integer(C_INT), value, intent(IN) :: nonmortar_numCells
+            integer(C_INT), value, intent(IN) :: nonmortar_lengthNodalData
+            integer(C_INT), intent(IN) :: nonmortar_connectivity(*)
+            real(C_DOUBLE), intent(IN) :: nonmortar_x(*)
+            real(C_DOUBLE), intent(IN) :: nonmortar_y(*)
+            real(C_DOUBLE), intent(IN) :: nonmortar_z(*)
             real(C_DOUBLE), value, intent(IN) :: area_frac
             real(C_DOUBLE), intent(IN) :: mortar_gaps(*)
             real(C_DOUBLE), intent(IN) :: mortar_pressures(*)
