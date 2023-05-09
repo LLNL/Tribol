@@ -87,19 +87,19 @@ public:
       // register the mesh with tribol
       const int cellType = (dim == 3) ? (int)(tribol::FACE) : 
                                         (int)(tribol::EDGE);
-      const int masterMeshId = 0;
-      const int slaveMeshId = 1;
+      const int mortarMeshId = 0;
+      const int nonmortarMeshId = 1;
 
       // initialize tribol
       tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
       tribol::initialize( dim, problem_comm );
 
       // register mesh
-      tribol::registerMesh( masterMeshId, 1, 
+      tribol::registerMesh( mortarMeshId, 1, 
                             this->numNodes,
                             conn1, cellType, 
                             x, y, z );
-      tribol::registerMesh( slaveMeshId, 1, 
+      tribol::registerMesh( nonmortarMeshId, 1, 
                             this->numNodes,
                             conn2, cellType, 
                             x, y, z );
@@ -135,17 +135,17 @@ public:
          fz2[i] = 0.;
       }
 
-      tribol::registerNodalResponse( masterMeshId, fx1, fy1, fz1 );
-      tribol::registerNodalResponse( slaveMeshId, fx2, fy2, fz2 );
+      tribol::registerNodalResponse( mortarMeshId, fx1, fy1, fz1 );
+      tribol::registerNodalResponse( nonmortarMeshId, fx2, fy2, fz2 );
 
-      // register nodal pressure and nodal gap array for the slave mesh
+      // register nodal pressure and nodal gap array for the nonmortar mesh
       real *gaps, *pressures;
 
       gaps = new real [ this->numNodes ];
       pressures = new real [ this->numNodes ];
 
       // initialize gaps and pressures. Initialize all 
-      // slave pressures to 1.0
+      // nonmortar pressures to 1.0
       for (int i=0; i<this->numNodes; ++i)
       {
          gaps[i] = 0.;
@@ -153,14 +153,14 @@ public:
       }
 
       // register nodal gaps and pressure arrays
-      tribol::registerRealNodalField( slaveMeshId, tribol::MORTAR_GAPS, gaps );
-      tribol::registerRealNodalField( slaveMeshId, tribol::MORTAR_PRESSURES, pressures );
+      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, gaps );
+      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_PRESSURES, pressures );
 
       // register coupling scheme
       const int csIndex = 0;
       tribol::registerCouplingScheme( csIndex,
-                                      masterMeshId,
-                                      slaveMeshId,
+                                      mortarMeshId,
+                                      nonmortarMeshId,
                                       tribol::SURFACE_TO_SURFACE,
                                       tribol::AUTO,
                                       method,
@@ -178,8 +178,8 @@ public:
 
       // diagnostics
       tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-      tribol::MeshData& masterMesh = meshManager.GetMeshInstance( masterMeshId );
-      tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( slaveMeshId );
+      tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarMeshId );
+      tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarMeshId );
 
       // compute the sum of the nodal forces
       real fx1Sum = 0.;
@@ -191,24 +191,24 @@ public:
       real fz2Sum = 0.;
       for (int i=0; i<this->numNodesPerFace; ++i)
       {
-         int slaveNodeId = slaveMesh.getFaceNodeId( 0, i );
-         int masterNodeId = masterMesh.getFaceNodeId( 0, i );
+         int nonmortarNodeId = nonmortarMesh.getFaceNodeId( 0, i );
+         int mortarNodeId = mortarMesh.getFaceNodeId( 0, i );
 
-         fx2Sum += slaveMesh.m_forceX[ slaveNodeId ];
-         fy2Sum += slaveMesh.m_forceY[ slaveNodeId ];
-         fz2Sum += slaveMesh.m_forceZ[ slaveNodeId ];
+         fx2Sum += nonmortarMesh.m_forceX[ nonmortarNodeId ];
+         fy2Sum += nonmortarMesh.m_forceY[ nonmortarNodeId ];
+         fz2Sum += nonmortarMesh.m_forceZ[ nonmortarNodeId ];
 
-         fx1Sum += masterMesh.m_forceX[ masterNodeId ];
-         fy1Sum += masterMesh.m_forceY[ masterNodeId ];
-         fz1Sum += masterMesh.m_forceZ[ masterNodeId ];
+         fx1Sum += mortarMesh.m_forceX[ mortarNodeId ];
+         fy1Sum += mortarMesh.m_forceY[ mortarNodeId ];
+         fz1Sum += mortarMesh.m_forceZ[ mortarNodeId ];
       }
 
-      // sum slave pressure
+      // sum nonmortar pressure
       real pSum = 0.;
       for (int i=0; i<this->numNodesPerFace; ++i)
       {
-         int slaveNodeId = slaveMesh.getFaceNodeId( 0, i );
-         pSum += slaveMesh.m_nodalFields.m_node_pressure[ slaveNodeId ];
+         int nonmortarNodeId = nonmortarMesh.getFaceNodeId( 0, i );
+         pSum += nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarNodeId ];
       }
 
       real diffX1 = std::abs(fx1Sum) - std::abs(pSum);

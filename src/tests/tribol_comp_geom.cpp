@@ -64,15 +64,15 @@ protected:
 
 TEST_F( CompGeomTest, common_plane_check )
 {
-   int nMasterElems = 3; 
-   int nElemsXM = nMasterElems;
+   int nMortarElems = 3; 
+   int nElemsXM = nMortarElems;
    int nElemsYM = 3;
-   int nElemsZM = nMasterElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 3; 
-   int nElemsXS = nSlaveElems;
+   int nNonmortarElems = 3; 
+   int nElemsXS = nNonmortarElems;
    int nElemsYS = 3;
-   int nElemsZS = nSlaveElems;
+   int nElemsZS = nNonmortarElems;
 
    int userSpecifiedNumOverlaps = 25;
 
@@ -121,15 +121,15 @@ TEST_F( CompGeomTest, common_plane_check )
 
 TEST_F( CompGeomTest, single_mortar_check )
 {
-   int nMasterElems = 4; 
-   int nElemsXM = nMasterElems;
-   int nElemsYM = nMasterElems;
-   int nElemsZM = nMasterElems;
+   int nMortarElems = 4; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
 
-   int nSlaveElems = 5; 
-   int nElemsXS = nSlaveElems;
-   int nElemsYS = nSlaveElems;
-   int nElemsZS = nSlaveElems;
+   int nNonmortarElems = 5; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
 
    int userSpecifiedNumOverlaps = 64;
 

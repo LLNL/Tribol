@@ -233,8 +233,8 @@ enum IntegMethod
  */
 enum class BlockSpace
 {
-   MASTER,              ///! The coordinate space on the master contact surface
-   SLAVE,               ///! The coordinate space on the slave contact surface
+   MORTAR,              ///! The coordinate space on the mortar contact surface
+   NONMORTAR,           ///! The coordinate space on the nonmortar contact surface
    LAGRANGE_MULTIPLIER, ///! The Lagrange multiplier space
    NUM_BLOCK_SPACES
 };

@@ -792,13 +792,13 @@ int CouplingScheme::checkEnforcementData()
          // don't break
       case SINGLE_MORTAR:
       {
-         if (!mesh2.m_nodalFields.m_is_node_gap_set) // slave side only
+         if (!mesh2.m_nodalFields.m_is_node_gap_set) // nonmortar side only
          {
             this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
             err = 1;
          }
          
-         if (!mesh2.m_nodalFields.m_is_node_pressure_set) // slave side only
+         if (!mesh2.m_nodalFields.m_is_node_pressure_set) // nonmortar side only
          {
             this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
             err = 1;

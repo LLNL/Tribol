@@ -74,10 +74,10 @@ struct SurfaceContactElem
    }
 
    integer dim;          ///< Problem dimension
-   integer meshId1;      ///< Mesh Id for face 1 (master)
-   integer meshId2;      ///< Mesh Id for face 2 (slave)
-   integer faceId1;      ///< Face Id for face 1 (master)
-   integer faceId2;      ///< Face Id for face 2 (slave)
+   integer meshId1;      ///< Mesh Id for face 1 (mortar)
+   integer meshId2;      ///< Mesh Id for face 2 (nonmortar)
+   integer faceId1;      ///< Face Id for face 1 (mortar)
+   integer faceId2;      ///< Face Id for face 2 (nonmortar)
    real * faceCoords1;   ///< Coordinates of face 1 in 3D
    real * faceCoords2;   ///< Coordinates of face 2 in 3D
    real * faceNormal1;   ///< Components of face 1 normal
@@ -102,31 +102,31 @@ struct SurfaceContactElem
    void initializeMortarWts( );
 
   /*!
-   * \brief routine to return master-slave mortar weight
+   * \brief routine to return mortar-nonmortar mortar weight
    *
-   * \param [in] a MASTER node id
-   * \param [in] b SLAVE node id
+   * \param [in] a MORTAR node id
+   * \param [in] b NONMORTAR node id
    *
    */
-   real getMasterSlaveWt( const int a, const int b );
+   real getMortarNonmortarWt( const int a, const int b );
 
   /*!
-   * \brief routine to return slave-master mortar weights
+   * \brief routine to return nonmortar-mortar mortar weights
    *
-   * \param [in] a SLAVE node id
-   * \param [in] b MASTER node id
+   * \param [in] a NONMORTAR node id
+   * \param [in] b MORTAR node id
    *
    */
-   real getSlaveMasterWt( const int a, const int b );
+   real getNonmortarMortarWt( const int a, const int b );
 
   /*!
-   * \brief routine to return slave-slave mortar weight
+   * \brief routine to return nonmortar-nonmortar mortar weight
    *
-   * \param [in] a SLAVE node id
-   * \param [in] b SLAVE node id
+   * \param [in] a NONMORTAR node id
+   * \param [in] b NONMORTAR node id
    *
    */
-   real getSlaveSlaveWt( const int a, const int b );
+   real getNonmortarNonmortarWt( const int a, const int b );
 
   /*!
    * \brief get array index for x-dimension face-pair Jacobian contribution

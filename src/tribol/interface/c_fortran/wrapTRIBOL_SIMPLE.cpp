@@ -51,10 +51,10 @@ int TRIBOL_SIMPLE_finalize_1(bool finalize_slic)
     // splicer end function.finalize_1
 }
 
-void TRIBOL_SIMPLE_simple_coupling_setup(const int dim, int contact_method, int master_numCells, int master_lengthNodalData, const int * master_connectivity, const double * master_x, const double * master_y, const double * master_z, int slave_numCells, int slave_lengthNodalData, const int * slave_connectivity, const double * slave_x, const double * slave_y, const double * slave_z, const double area_frac, double * mortar_gaps, double * mortar_pressures)
+void TRIBOL_SIMPLE_simple_coupling_setup(const int dim, int contact_method, int mortar_numCells, int mortar_lengthNodalData, const int * mortar_connectivity, const double * mortar_x, const double * mortar_y, const double * mortar_z, int nonmortar_numCells, int nonmortar_lengthNodalData, const int * nonmortar_connectivity, const double * nonmortar_x, const double * nonmortar_y, const double * nonmortar_z, const double area_frac, double * mortar_gaps, double * mortar_pressures)
 {
     // splicer begin function.simple_coupling_setup
-    SimpleCouplingSetup(dim, contact_method, master_numCells, master_lengthNodalData, master_connectivity, master_x, master_y, master_z, slave_numCells, slave_lengthNodalData, slave_connectivity, slave_x, slave_y, slave_z, area_frac, mortar_gaps, mortar_pressures);
+    SimpleCouplingSetup(dim, contact_method, mortar_numCells, mortar_lengthNodalData, mortar_connectivity, mortar_x, mortar_y, mortar_z, nonmortar_numCells, nonmortar_lengthNodalData, nonmortar_connectivity, nonmortar_x, nonmortar_y, nonmortar_z, area_frac, mortar_gaps, mortar_pressures);
     // splicer end function.simple_coupling_setup
 }
 

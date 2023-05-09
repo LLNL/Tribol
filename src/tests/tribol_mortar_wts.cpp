@@ -23,7 +23,7 @@ using real = tribol::real;
 
 /*!
  * Test fixture class with some setup necessary to compute 
- * the slave/slave and master/slave mortar projection weights 
+ * the nonmortar/nonmortar and mortar/nonmortar mortar projection weights 
  * in order to test a simple projection between two 
  * mis-aligned faces.
  */
@@ -87,7 +87,7 @@ public:
       return zOverlap;
    }
 
-   void checkMortarWts ( real pTestSlave[4], real pTestMaster[4])
+   void checkMortarWts ( real pTestNonmortar[4], real pTestMortar[4])
    {
       if (this->numNodesPerFace != 4)
       {
@@ -154,11 +154,11 @@ public:
       {
          for (int j=0; j<this->numNodesPerFace; ++j)
          {
-            int slaveId = this->numNodesPerFace*i+j;
-            int masterId = this->numNodesPerFace * this->numNodesPerFace + 
+            int nonmortarId = this->numNodesPerFace*i+j;
+            int mortarId = this->numNodesPerFace * this->numNodesPerFace + 
                            this->numNodesPerFace * i + j;
-            pTestSlave[i] += elem.mortarWts[ slaveId ] * p[j];  
-            pTestMaster[i] += elem.mortarWts[ masterId ] * p[j];
+            pTestNonmortar[i] += elem.mortarWts[ nonmortarId ] * p[j];  
+            pTestMortar[i] += elem.mortarWts[ mortarId ] * p[j];
          }
       }
 
@@ -388,33 +388,33 @@ TEST_F( MortarWeightTest, simple_projection )
    zOvrlp[2] = 0.1;
    zOvrlp[3] = 0.1;
 
-   real pSlave[4] = {0., 0., 0., 0.};
-   real pMaster[4] = {0., 0., 0., 0};
-   this->checkMortarWts( pSlave, pMaster );
+   real pNonmortar[4] = {0., 0., 0., 0.};
+   real pMortar[4] = {0., 0., 0., 0};
+   this->checkMortarWts( pNonmortar, pMortar );
 
-   // hard-code diffs for each element in pSlave and pMaster. 
+   // hard-code diffs for each element in pNonmortar and pMortar. 
    // Note, these hard coded values DEPEND on the ordering of 
    // the nodes in this function (above).
-   real diffSlave1 = std::abs(0.5625 - pSlave[0]);
-   real diffSlave2 = std::abs(0.1875 - pSlave[1]);
-   real diffSlave3 = std::abs(0.0625 - pSlave[2]);
-   real diffSlave4 = std::abs(0.1875 - pSlave[3]);
+   real diffNonmortar1 = std::abs(0.5625 - pNonmortar[0]);
+   real diffNonmortar2 = std::abs(0.1875 - pNonmortar[1]);
+   real diffNonmortar3 = std::abs(0.0625 - pNonmortar[2]);
+   real diffNonmortar4 = std::abs(0.1875 - pNonmortar[3]);
 
-   real diffMaster1 = std::abs(0.0625 - pMaster[0]);
-   real diffMaster2 = std::abs(0.1875 - pMaster[1]);
-   real diffMaster3 = std::abs(0.5625 - pMaster[2]);
-   real diffMaster4 = std::abs(0.1875 - pMaster[3]);
+   real diffMortar1 = std::abs(0.0625 - pMortar[0]);
+   real diffMortar2 = std::abs(0.1875 - pMortar[1]);
+   real diffMortar3 = std::abs(0.5625 - pMortar[2]);
+   real diffMortar4 = std::abs(0.1875 - pMortar[3]);
 
    real tol = 1.e-8;
-   EXPECT_LE( diffSlave1, tol );
-   EXPECT_LE( diffSlave2, tol );
-   EXPECT_LE( diffSlave3, tol );
-   EXPECT_LE( diffSlave4, tol );
+   EXPECT_LE( diffNonmortar1, tol );
+   EXPECT_LE( diffNonmortar2, tol );
+   EXPECT_LE( diffNonmortar3, tol );
+   EXPECT_LE( diffNonmortar4, tol );
 
-   EXPECT_LE( diffMaster1, tol );
-   EXPECT_LE( diffMaster2, tol );
-   EXPECT_LE( diffMaster3, tol );
-   EXPECT_LE( diffMaster4, tol );
+   EXPECT_LE( diffMortar1, tol );
+   EXPECT_LE( diffMortar2, tol );
+   EXPECT_LE( diffMortar3, tol );
+   EXPECT_LE( diffMortar4, tol );
 
 }
 

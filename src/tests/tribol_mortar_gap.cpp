@@ -156,14 +156,14 @@ public:
       // register the mesh with tribol
       const int cellType = (dim == 3) ? (int)(tribol::FACE) :
                                         (int)(tribol::EDGE);
-      const int masterMeshId = 0;
-      const int slaveMeshId = 1;
+      const int mortarMeshId = 0;
+      const int nonmortarMeshId = 1;
 
-      tribol::registerMesh( masterMeshId, 1,
+      tribol::registerMesh( mortarMeshId, 1,
                             this->numNodesPerFace,
                             conn1, cellType,
                             x1, y1, z1 );
-      tribol::registerMesh( slaveMeshId, 1,
+      tribol::registerMesh( nonmortarMeshId, 1,
                             this->numNodesPerFace,
                             conn2, cellType,
                             x2, y2, z2 );
@@ -177,14 +177,14 @@ public:
          gaps[i] = 0.;
       }
 
-      tribol::registerRealNodalField( slaveMeshId, tribol::MORTAR_GAPS, gaps );
+      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, gaps );
 
       // instantiate SurfaceContactElem struct. Note, this object is instantiated
       // using face 1, face 2, and the set overlap polygon. Note, the mesh ids are set
       // equal to 0, and the face ids are 0 and 1, respectively.
       tribol::SurfaceContactElem elem ( this->dim, xy1, xy2, xyOverlap,
                                         this->numNodesPerFace, this->numOverlapNodes,
-                                        masterMeshId, slaveMeshId, 0, 0);
+                                        mortarMeshId, nonmortarMeshId, 0, 0);
 
       // compute the mortar weights to be stored on
       // the surface contact element struct.
@@ -203,9 +203,9 @@ public:
 
       // get instance of mesh in order to compute nodal gaps
       tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-      tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( slaveMeshId );
+      tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarMeshId );
 
-      slaveMesh.computeNodalNormals( this->dim );
+      nonmortarMesh.computeNodalNormals( this->dim );
 
       switch (method)
       {
@@ -460,13 +460,13 @@ TEST_F( MortarGapTest, parallel_misaligned )
    this->checkMortarGaps( &conn1[0], &conn2[0], tribol::SINGLE_MORTAR );
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( 1 );
+   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
 
    // compute the sum of the nodal gaps
    real gap = 0.;
    for (int i=0; i<numNodesPerFace; ++i)
    {
-      gap += slaveMesh.m_nodalFields.m_node_gap[i];
+      gap += nonmortarMesh.m_nodalFields.m_node_gap[i];
    }
 
    // note the face-gap of 0.1 is hard coded based on the
@@ -476,10 +476,10 @@ TEST_F( MortarGapTest, parallel_misaligned )
    real tol = 1.e-8;
    EXPECT_LE( gapDiff, tol );
 
-   if (slaveMesh.m_nodalFields.m_node_gap != nullptr)
+   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
    {
-      delete [] slaveMesh.m_nodalFields.m_node_gap;
-      slaveMesh.m_nodalFields.m_node_gap = nullptr;
+      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
+      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
    }
 }
 
@@ -557,13 +557,13 @@ TEST_F( MortarGapTest, parallel_aligned )
    this->checkMortarGaps( &conn1[0], &conn2[0], tribol::SINGLE_MORTAR );
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( 1 );
+   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
 
    // compute the sum of the nodal gaps
    real gap = 0.;
    for (int i=0; i<numNodesPerFace; ++i)
    {
-      gap += slaveMesh.m_nodalFields.m_node_gap[i];
+      gap += nonmortarMesh.m_nodalFields.m_node_gap[i];
    }
 
    // note the face-gap of 0.1 is hard coded based on the
@@ -573,10 +573,10 @@ TEST_F( MortarGapTest, parallel_aligned )
    real tol = 1.e-8;
    EXPECT_LE( gapDiff, tol );
 
-   if (slaveMesh.m_nodalFields.m_node_gap != nullptr)
+   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
    {
-      delete [] slaveMesh.m_nodalFields.m_node_gap;
-      slaveMesh.m_nodalFields.m_node_gap = nullptr;
+      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
+      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
    }
 }
 
@@ -654,14 +654,14 @@ TEST_F( MortarGapTest, parallel_simple_aligned )
    this->checkMortarGaps( &conn1[0], &conn2[0], tribol::ALIGNED_MORTAR );
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& slaveMesh = meshManager.GetMeshInstance( 1 );
+   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
 
    // compute the sum of the nodal gaps
    real gap = 0.;
    real gapTest = 0;
    for (int i=0; i<numNodesPerFace; ++i)
    {
-      gap += slaveMesh.m_nodalFields.m_node_gap[i];
+      gap += nonmortarMesh.m_nodalFields.m_node_gap[i];
       gapTest += z1[i] - z2[i];
    }
 
@@ -672,10 +672,10 @@ TEST_F( MortarGapTest, parallel_simple_aligned )
    real tol = 1.e-8;
    EXPECT_LE( gapDiff, tol );
 
-   if (slaveMesh.m_nodalFields.m_node_gap != nullptr)
+   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
    {
-      delete [] slaveMesh.m_nodalFields.m_node_gap;
-      slaveMesh.m_nodalFields.m_node_gap = nullptr;
+      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
+      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
    }
 }
 
