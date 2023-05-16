@@ -566,6 +566,7 @@ void TestMesh::makeMfemMesh2D( real const lx, real const ly,
 
    if (this->mfem_mesh != nullptr)
    {
+      SLIC_WARNING("TestMesh::makeMfemMesh2D(): deleting previously constructed mesh.");
       this->mfem_mesh->Clear();
    }
 
@@ -604,6 +605,7 @@ void TestMesh::makeMfemMesh3D( real const lx, real const ly, real const lz,
 
    if (this->mfem_mesh != nullptr)
    {
+      SLIC_WARNING("TestMesh::makeMfemMesh3D(): deleting previously constructed mesh.");
       this->mfem_mesh->Clear();
    }
 
@@ -1323,6 +1325,7 @@ void TestMesh::setupMfemMesh( )
    // construct new mfem mesh
    if (this->mfem_mesh != nullptr)
    {
+      SLIC_WARNING("TestMesh::setupMfemMesh(): deleting previously constructed mesh.");
       this->mfem_mesh->Clear();
    }
 
