@@ -10,9 +10,9 @@
 # Check paths
 tribol_assert_path_exists( ${AXOM_DIR} )
 
-find_depenency(axom REQUIRED
-               NO_DEFAULT_PATH 
-               PATHS ${AXOM_DIR}/lib/cmake)
+find_dependency(axom REQUIRED
+                NO_DEFAULT_PATH 
+                PATHS ${AXOM_DIR}/lib/cmake)
 
 # Backwards compatibility
 if (NOT TARGET axom::cli11 AND TARGET cli11)
