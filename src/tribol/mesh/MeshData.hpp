@@ -277,9 +277,8 @@ public:
    */
   void deallocateArrays();
 
-
-   /// Prints information associated with this mesh to \a os
-   void print(std::ostream& os) const;
+  /// Prints information associated with this mesh to \a os
+  void print(std::ostream& os) const;
 };
 
 } // end namespace tribol

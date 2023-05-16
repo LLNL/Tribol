@@ -8,7 +8,7 @@
 // Tribol includes
 #include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
-#include "tribol/mesh/MeshData.hpp"
+#include "tribol/mesh/MfemData.hpp"
 
 // Axom includes
 #include "axom/core.hpp"
@@ -229,68 +229,68 @@ public:
    *
    * \return bool indicating if coupling scheme is valid;
    */
-   bool isValidCouplingScheme();
+  bool isValidCouplingScheme();
 
   /*!
    * \brief Returns true if a valid mode is specified, otherwise false
    *
    * \return true indicating if the mode is valid;
    */
-   bool isValidMode();
+  bool isValidMode();
 
   /*!
    * \brief Returns true if a valid case is specified, otherwise false
    *
    * \return true indicating if the case is valid;
    */
-   bool isValidCase();
+  bool isValidCase();
 
   /*!
    * \brief Returns true if a valid method is specified, otherwise false
    *
    * \return true indicating if the method is valid;
    */
-   bool isValidMethod();
+  bool isValidMethod();
 
   /*!
    * \brief Returns true if a valid model is specified, otherwise false
    *
    * \return true indicating if the model is valid;
    */
-   bool isValidModel();
+  bool isValidModel();
 
   /*!
    * \brief Returns true if a valid enforcement is specified, otherwise false
    *
    * \return true indicating if the enforcement is valid;
    */
-   bool isValidEnforcement();
+  bool isValidEnforcement();
 
   /*!
    * \brief Check for correct enforcement data for a given method
    *
    * \return 0 for correct enforcement data, 1 otherwise
    */
-   int checkEnforcementData();
+  int checkEnforcementData();
 
   /*!
    * \brief Initializes the coupling scheme
    *
    * \return true if the coupling scheme was successfully initialized
    */
-   bool init();
+  bool init();
 
   /*!
    * \brief Allocate method data on the coupling scheme
    *
    */
-   void allocateMethodData();
+  void allocateMethodData();
 
   /*!
    * \brief Performs the binning between mesh 1 and mesh 2 
    *
    */
-   void performBinning();
+  void performBinning();
 
   /*!
    * \brief Applies the CouplingScheme
@@ -310,7 +310,7 @@ public:
    * \param [in/out] dt simulation timestep at given cycle
    *
    */
-   void computeTimeStep( real &dt );
+  void computeTimeStep( real &dt );
 
   /*!
    * \brief Wrapper to call method specific visualization output routines
@@ -321,10 +321,28 @@ public:
    * \param [in] t simulation time at given cycle
    *
    */
-   void writeInterfaceOutput( const std::string& dir,
+  void writeInterfaceOutput( const std::string& dir,
                               const VisType v_type, 
                               const integer cycle, 
                               const real t );
+
+  MfemMeshData* getMfemMeshData() { return m_mfemMeshData.get(); }
+  
+  const MfemMeshData* getMfemMeshData() const { return m_mfemMeshData.get(); }
+
+  void setMfemMeshData(std::unique_ptr<MfemMeshData>&& mfemMeshData)
+  {
+    m_mfemMeshData = std::move(mfemMeshData);
+  }
+
+  PrimalField* getVelocity() { return m_velocity.get(); }
+  
+  const PrimalField* getVelocity() const { return m_velocity.get(); }
+
+  void setVelocity(std::unique_ptr<PrimalField>&& velocity)
+  {
+    m_velocity = std::move(velocity);
+  }
 
 private:
 
@@ -365,6 +383,9 @@ private:
   EnforcementOptions   m_enforcementOptions;   ///< struct with options underneath chosen enforcement
   CouplingSchemeErrors m_couplingSchemeErrors; ///< struct handling coupling scheme errors
   CouplingSchemeInfo   m_couplingSchemeInfo;   ///< struct handling info to be printed
+
+  std::unique_ptr<MfemMeshData> m_mfemMeshData;
+  std::unique_ptr<PrimalField> m_velocity;
   
   DISABLE_COPY_AND_ASSIGNMENT( CouplingScheme );
   DISABLE_MOVE_AND_ASSIGNMENT( CouplingScheme );

@@ -178,6 +178,21 @@ void registerMesh( integer meshId,
                    const real* y,
                    const real* z=nullptr );
 
+void registerParMesh(integer cs_id,
+                     integer mesh_id_1,
+                     integer mesh_id_2,
+                     mfem::ParMesh& mesh,
+                     const mfem::ParGridFunction& current_coords,
+                     const std::set<integer>& attributes_1,
+                     const std::set<integer>& attributes_2,
+                     integer contact_mode,
+                     integer contact_case,
+                     integer contact_method,
+                     integer contact_model,
+                     integer enforcement_method,
+                     integer binning_method = DEFAULT_BINNING_METHOD,
+                     bool force_submesh = false );
+
 /*!
  * \brief Registers nodal displacements on the contact surface.
  *
@@ -218,6 +233,8 @@ void registerNodalVelocities( integer meshId,
                               const real* vy,
                               const real* vz=nullptr );
 
+void registerVelocityGridFn( integer cs_id, const mfem::ParGridFunction& v );
+
 /*!
  * \brief Registers nodal response buffers.
  *
@@ -237,6 +254,8 @@ void registerNodalResponse( integer meshId,
                             real* rx,
                             real* ry,
                             real* rz=nullptr );
+
+mfem::ParGridFunction getResponseGridFn( integer cs_id );
 
 /*!
  * \brief Get mfem sparse matrix for method specific matrix output 
@@ -401,7 +420,6 @@ void setInterfacePairs( integer couplingSchemeIndex,
                         IndexType const * meshId2,
                         IndexType const * pairType2,
                         IndexType const * pairIndex2 );
-
 
 
 /*!

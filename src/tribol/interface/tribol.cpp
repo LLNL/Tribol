@@ -14,6 +14,7 @@
 #include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/MeshManager.hpp"
+#include "tribol/mesh/MfemData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 
 #include "tribol/geom/ContactPlane.hpp"
@@ -392,6 +393,51 @@ void registerMesh( integer meshId,
 } // end of registerMesh()
 
 //------------------------------------------------------------------------------
+void registerParMesh( integer cs_id,
+                      integer mesh_id_1,
+                      integer mesh_id_2,
+                      mfem::ParMesh& mesh,
+                      const mfem::ParGridFunction& current_coords,
+                      const std::set<integer>& attributes_1,
+                      const std::set<integer>& attributes_2,
+                      integer contact_mode,
+                      integer contact_case,
+                      integer contact_method,
+                      integer contact_model,
+                      integer enforcement_method,
+                      integer binning_method)
+{
+   auto mfem_data = std::make_unique<MfemMeshData>(
+      mesh_id_1,
+      mesh_id_2,
+      mesh,
+      current_coords,
+      attributes_1,
+      attributes_2
+   );
+   // register empty meshes so the coupling scheme is valid
+   registerMesh(
+      mesh_id_1, 0, 0, nullptr, mfem_data->GetElemType(), nullptr, nullptr);
+   registerMesh(
+      mesh_id_2, 0, 0, nullptr, mfem_data->GetElemType(), nullptr, nullptr);
+   registerCouplingScheme(
+      cs_id,
+      mesh_id_1,
+      mesh_id_2,
+      contact_mode,
+      contact_case,
+      contact_method,
+      contact_model,
+      enforcement_method,
+      binning_method
+   );
+   CouplingSchemeManager::getInstance().getCoupling(cs_id)->setMfemMeshData(
+      std::move(mfem_data)
+   );
+
+} // end of registerParMesh()
+
+//------------------------------------------------------------------------------
 void registerNodalDisplacements( integer meshId,
                                  const real* dx,
                                  const real* dy,
@@ -463,6 +509,14 @@ void registerNodalVelocities( integer meshId,
 } // end registerNodalVelocities()
 
 //------------------------------------------------------------------------------
+void registerVelocityGridFn( integer cs_id, const mfem::ParGridFunction &v )
+{
+   CouplingSchemeManager::getInstance().getCoupling(cs_id)->setVelocity(
+      std::make_unique<PrimalField>(v)
+   );
+}
+
+//------------------------------------------------------------------------------
 void registerNodalResponse( integer meshId,
                             real* rx,
                             real* ry,
@@ -495,6 +549,18 @@ void registerNodalResponse( integer meshId,
    mesh.m_forceZ = rz;
 
 } // end registerNodalResponse()
+
+//------------------------------------------------------------------------------
+mfem::ParGridFunction getResponseGridFn( integer cs_id )
+{
+   auto mfem_data = CouplingSchemeManager::getInstance().getCoupling(cs_id)
+      ->getMfemMeshData();
+   SLIC_ERROR_ROOT_IF(
+      mfem_data == nullptr,
+      "Coupling scheme does not contain mfem data."
+   );
+   return mfem_data->GetParentResponse();
+}
 
 //------------------------------------------------------------------------------
 int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
@@ -921,6 +987,51 @@ integer update( integer cycle, real t, real &dt )
       }
 
       CouplingScheme* couplingScheme  = csManager.getCoupling(csIndex);
+
+      // update redecomp meshes if supplied mfem data
+      auto mfem_data = couplingScheme->getMfemMeshData();
+      if (mfem_data != nullptr)
+      {
+         auto mesh_id_1 = mfem_data->GetMesh1ID();
+         auto mesh_id_2 = mfem_data->GetMesh2ID();
+         mfem_data->UpdateMeshData();
+         auto coord_ptrs = mfem_data->GetCoordsPtrs();
+         registerMesh(
+            mesh_id_1,
+            mfem_data->GetMesh1NE(),
+            mfem_data->GetNV(),
+            mfem_data->GetMesh1Conn(),
+            mfem_data->GetElemType(),
+            coord_ptrs[0],
+            coord_ptrs[1],
+            coord_ptrs[2]
+         );
+         registerMesh(
+            mesh_id_2,
+            mfem_data->GetMesh2NE(),
+            mfem_data->GetNV(),
+            mfem_data->GetMesh2Conn(),
+            mfem_data->GetElemType(),
+            coord_ptrs[0],
+            coord_ptrs[1],
+            coord_ptrs[2]
+         );
+         auto f_ptrs = mfem_data->GetResponsePtrs();
+         registerNodalResponse(
+            mesh_id_1, f_ptrs[0], f_ptrs[1], f_ptrs[2]);
+         registerNodalResponse(
+            mesh_id_2, f_ptrs[0], f_ptrs[1], f_ptrs[2]);
+         auto velocity = couplingScheme->getVelocity();
+         if (velocity != nullptr)
+         {
+            velocity->UpdateField(mfem_data->GetPrimalTransfer());
+            auto v_ptrs = velocity->GetFieldPtrs();
+            registerNodalVelocities(
+               mesh_id_1, v_ptrs[0], v_ptrs[1], v_ptrs[2]);
+            registerNodalVelocities(
+               mesh_id_2, v_ptrs[0], v_ptrs[1], v_ptrs[2]);
+         }
+      }
       
       // initialize and check for valid coupling scheme
       if (!couplingScheme->init())
