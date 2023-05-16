@@ -83,7 +83,7 @@ class Tribol(CachedCMakePackage, CudaPackage):
     depends_on("raja", when="+raja")
     depends_on("raja~openmp~shared~examples~exercises", when="+raja+minbuild")
 
-    depends_on("umpire@6.0.0tribol", when="+umpire")
+    depends_on("umpire@2022.03.1:", when="+umpire")
     depends_on("umpire~shared~examples", when="+umpire+minbuild")
 
     depends_on("axom+mpi")

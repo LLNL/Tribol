@@ -101,8 +101,9 @@ endif()
 set(tribol_depends axom mfem)
 blt_list_append(TO tribol_depends ELEMENTS mpi IF TRIBOL_USE_MPI )
 blt_list_append(TO tribol_depends ELEMENTS cuda IF ENABLE_CUDA )
-blt_list_append(TO tribol_depends ELEMENTS umpire IF UMPIRE_FOUND )
+blt_list_append(TO tribol_depends ELEMENTS umpire IF TRIBOL_USE_UMPIRE )
 blt_list_append(TO tribol_depends ELEMENTS RAJA IF RAJA_FOUND )
+message(STATUS "Tribol library dependencies: ${tribol_depends}")
 
 ## create the library
 blt_add_library(

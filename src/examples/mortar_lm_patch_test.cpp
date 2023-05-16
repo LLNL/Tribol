@@ -5,6 +5,7 @@
 
 #include "examples_common.hpp" // for common functionality used in examples
 
+// Tribol includes
 #include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/utils/TestUtils.hpp"
@@ -18,7 +19,13 @@
 #include "tribol/mesh/MeshManager.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 
+// Axom includes
 #include "axom/slic.hpp"
+
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
 
 // C/C++ includes
 #include <cmath>    // for std::sin() and std::cos()
@@ -78,6 +85,11 @@ int main( int argc, char** argv )
   MPI_Init( &argc, &argv );
 #endif
   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
+#endif
+
   initialize_logger( problem_comm );
 
   // parse command line arguments. This is 

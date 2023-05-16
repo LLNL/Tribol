@@ -27,6 +27,11 @@
 // MFEM includes
 #include "mfem.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 // gtest includes
 #include "gtest/gtest.h"
 
@@ -494,6 +499,10 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
+#endif
 
   axom::slic::SimpleLogger logger;                // create & initialize logger,
   tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
