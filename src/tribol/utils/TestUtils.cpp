@@ -26,21 +26,21 @@ namespace tribol
 //                            //
 ////////////////////////////////
 TestMesh::TestMesh()
-   : mfem_mesh    ( nullptr ) 
-   , mortarMeshId       ( 0 )
-   , nonmortarMeshId        ( 0 )
-   , numTotalNodes      ( 0 )
-   , numMortarNodes     ( 0 )
-   , numNonmortarNodes      ( 0 )
-   , numTotalElements   ( 0 )
-   , numMortarElements  ( 0 )
-   , numNonmortarElements   ( 0 )
-   , numTotalFaces      ( 0 )
-   , numMortarFaces     ( 0 )
-   , numNonmortarFaces      ( 0 )
-   , numNodesPerFace    ( 4 )
-   , numNodesPerElement ( 8 )
-   , dim                ( 3 )
+     mfem_mesh            (nullptr)
+   , mortarMeshId         ( 0 )
+   , nonmortarMeshId      ( 0 )
+   , numTotalNodes        ( 0 )
+   , numMortarNodes       ( 0 )
+   , numNonmortarNodes    ( 0 )
+   , numTotalElements     ( 0 )
+   , numMortarElements    ( 0 )
+   , numNonmortarElements ( 0 )
+   , numTotalFaces        ( 0 )
+   , numMortarFaces       ( 0 )
+   , numNonmortarFaces    ( 0 )
+   , numNodesPerFace      ( 4 )
+   , numNodesPerElement   ( 8 )
+   , dim                  ( 3 )
    , dirNodesX1 ( nullptr )
    , dirNodesY1 ( nullptr )
    , dirNodesZ1 ( nullptr )
@@ -96,11 +96,12 @@ TestMesh::~TestMesh()
 //------------------------------------------------------------------------------
 void TestMesh::clear()
 {
-   if (this->mfem_mesh != nullptr)
+   if (mfem_mesh != nullptr)
    {
-      delete this->mfem_mesh;
-      this->mfem_mesh = nullptr;
+      delete mfem_mesh;
+      mfem_mesh = nullptr;
    }
+
    // coordinates
    if (this->x != nullptr)
    {
@@ -547,6 +548,82 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
    } // end loop over blocks
 
 } // end setupContactMeshHex()
+
+//------------------------------------------------------------------------------
+void TestMesh::makeMfemMesh2D( real const lx, real const ly,
+                               real const numx, real const numy,
+                               mfem::Element::Type elem_type )
+{
+   if (lx <= 0 || ly <= 0)
+   {
+      SLIC_ERROR("TestMesh::makeMfemMesh2D(): bounding box lengths must be > 0");
+   }
+
+   if (numx <= 0 || numy <=0)
+   {
+      SLIC_ERROR("TestMesh::makeMfemMesh2D(): number of elements in each direction must be > 0");
+   }
+
+   if (this->mfem_mesh != nullptr)
+   {
+      this->mfem_mesh->Clear();
+   }
+
+   switch (elem_type)
+   {
+      case QUADRILATERAL:
+      case TRIANGLE:
+      {
+         // return static mesh
+         mfem::Mesh mesh;
+         mesh = mfem::Mesh::MakeCartesian2D( numx, numy, elem_type, true, lx, ly, false );
+         this->mfem_mesh = &mesh;
+         break;
+      }
+      default:
+      {
+         SLIC_ERROR("TestMesh::makeMfemMesh2D(): element type, " << elem_type << " not supported.");
+      }
+   } // end switch on element type
+} // end TestMesh::makeMfemMesh2D()
+
+//------------------------------------------------------------------------------
+void TestMesh::makeMfemMesh3D( real const lx, real const ly, real const lz, 
+                               real const numx, real const numy, real const numz,
+                               mfem::Element::Type elem_type )
+{
+   if (lx <= 0 || ly <= 0 || lz <= 0)
+   {
+      SLIC_ERROR("TestMesh::makeMfemMesh3D(): bounding box lengths must be > 0");
+   }
+
+   if (numx <= 0 || numy <=0 || numz <= 0)
+   {
+      SLIC_ERROR("TestMesh::makeMfemMesh3D(): number of elements in each direction must be > 0");
+   }
+
+   if (this->mfem_mesh != nullptr)
+   {
+      this->mfem_mesh->Clear();
+   }
+
+   switch (elem_type)
+   {
+      case HEXAHEDRON:
+      case TETRAHEDRON:
+      {   
+         mfem::Mesh mesh;
+         // return static mesh
+         mesh = mfem::Mesh::MakeCartesian3D( numx, numy, numz, elem_type, lx, ly, lz, false );
+         this->mfem_mesh = &mesh;
+         break;
+      }
+      default:
+      {
+         SLIC_ERROR("TestMesh::makeMfemMesh3D(): element type, " << elem_type << " not supported.");
+      }
+   } // end switch on element type
+} // end TestMesh::makeMfemMesh3D()
 
 //------------------------------------------------------------------------------
 void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real valZ )
@@ -1243,10 +1320,15 @@ void TestMesh::setupMfemMesh( )
 
    SLIC_INFO( "Setting up 3D linear hex mfem mesh." );
 
-   // instantiate and point to new mfem mesh object
-   this->mfem_mesh = new mfem::Mesh( this->dim,
-                                     this->numTotalNodes,
-                                     this->numTotalElements );
+   // construct new mfem mesh
+   if (this->mfem_mesh != nullptr)
+   {
+      this->mfem_mesh->Clear();
+   }
+
+   this->mfem_mesh = new Mesh( this->dim,
+                               this->numTotalNodes,
+                               this->numTotalElements );
 
    // add mortar elements and vertices. Not sure if order of adding 
    // elements matters, but adding vertices should probably correspond 

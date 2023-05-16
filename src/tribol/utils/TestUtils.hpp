@@ -136,6 +136,51 @@ public:
                              real thetaMortar, real thetaNonmortar );
 
   /*!
+   * \brief sets up an mfem mesh object representation of the original hex test mesh
+   *
+   * \note must call setupContactMeshHex() to construct the hex mesh prior to calling
+   * this routine
+   *
+   */
+   void setupMfemMesh( );
+
+  /*!
+   * \brief makes a 2D mfem mesh based on an input bounding box
+   *
+   * \param [in] lx length of bounding box in x-direction
+   * \param [in] ly length of bounding box in y-direction
+   * \param [in] numx number of hexahedron elements in the x-direction
+   * \param [in] numy number of hexahedron elements in the y-direction
+   * \param [in] elem_type mfem element type, QUADRILATERAL or TRIANGLE
+   *
+   * \note if elem_type=TRIANGLE the total number of elements is 2*numx*numy
+   * based on a triangle decomposition of an underlying quadrilateral mesh
+   * 
+   */
+  void makeMfemMesh3D( int const dim, mfem::Element::Type elem_type,
+                       real const lx, real const ly,
+                       real const numx, real const numy );
+
+  /*!
+   * \brief makes a 3D mfem mesh based on an input bounding box
+   *
+   * \param [in] lx length of bounding box in x-direction
+   * \param [in] ly length of bounding box in y-direction
+   * \param [in] lz length of bounding box in z-direction
+   * \param [in] numx number of hexahedron elements in the x-direction
+   * \param [in] numy number of hexahedron elements in the y-direction
+   * \param [in] numz number of hexahedron elements in the z-direction
+   * \param [in] elem_type mfem element type, HEXAHEDRON or TETRAHEDRON
+   *
+   * \note if elem_type=TETRAHEDRON the total number of elements is 6*numx*numy*numz
+   * based on a tet decomposition of an underlying hex mesh.
+   * 
+   */
+  void makeMfemMesh3D( real const lx, real const ly, real const lz, 
+                       real const numx, real const numy, real const numz,
+                       mfem::Element::Type elem_type );
+
+  /*!
    * \brief sets up the Dirichlet BC node ids and values for a single 3D mesh block 
    *        for the contact PATCH TEST 
    *
@@ -169,12 +214,6 @@ public:
    */
    void setupPatchTestPressureDofs( int numElemsX, int numElemsY, int numElemsZ, 
                                     int nodeIdOffset, bool contact, bool mortar );
-
-  /*!
-   * \brief sets up an mfem mesh object representation of the original test mesh
-   *
-   */
-   void setupMfemMesh( );
 
   /*!
    * \brief allocates and sets velocity arrays
@@ -309,7 +348,7 @@ public:
 
 public:
 
-   mfem::Mesh * mfem_mesh; 
+   mfem::Mesh* mfem_mesh; 
 
    // public member variables
    int mortarMeshId;         ///< Mesh id for mortar portion of mesh
