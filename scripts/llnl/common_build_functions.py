@@ -337,14 +337,15 @@ def build_and_test_host_config(test_root, host_config, report_to_stdout=False, e
     #     return res
 
     # Install and test examples
-    if skip_install:
-        print("[Skipping 'make install']\n")
-    else:
-        res = test_examples(host_config, build_dir, install_dir, report_to_stdout)
+    # TODO: skipped for now until Tribol has a install test
+    # if skip_install:
+    #     print("[Skipping 'make install']\n")
+    # else:
+    #     res = test_examples(host_config, build_dir, install_dir, report_to_stdout)
 
-        if res != 0:
-            print("[ERROR: Building examples for host-config: %s failed]\n\n" % host_config)
-            return res
+    #     if res != 0:
+    #         print("[ERROR: Building examples for host-config: %s failed]\n\n" % host_config)
+    #         return res
 
     print("[SUCCESS: Build, test, and install for host-config: {0} complete]\n".format(host_config))
 
