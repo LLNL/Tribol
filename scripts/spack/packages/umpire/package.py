@@ -184,7 +184,7 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
                 arch_str = ",".join(archs)
                 entries.append(cmake_cache_string(
                     "HIP_HIPCC_FLAGS", '--amdgpu-target={0}'.format(arch_str)))
-            # BEGIN SERAC EDIT
+            # TRIBOL EDIT BEGIN
             # Fix blt_hip getting HIP_CLANG_INCLUDE_PATH-NOTFOUND bad include directory
             if self.spec.satisfies('%clang') and 'toss_4' in self._get_sys_type(spec):
                 hip_root = spec['hip'].prefix
@@ -194,7 +194,7 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
                 if os.path.isdir(hip_clang_include_path):
                     entries.append(cmake_cache_path("HIP_CLANG_INCLUDE_PATH", hip_clang_include_path))
 
-            # END SERAC EDIT
+            # TRIBOL EDIT END
         else:
             entries.append(cmake_cache_option("ENABLE_HIP", False))
 
@@ -226,10 +226,10 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
             "{}ENABLE_DOCS".format(option_prefix), False))
         entries.append(cmake_cache_option("BUILD_SHARED_LIBS", '+shared' in spec))
         entries.append(cmake_cache_option("ENABLE_TESTS", 'tests=none' not in spec))
-    # BEGIN SERAC EDIT
+    # TRIBOL EDIT BEGIN
         entries.append(cmake_cache_option(
             "{}ENABLE_DEVICE_ALLOCATOR".format(option_prefix), '+device_alloc' in spec))
-    # END SERAC EDIT
+    # TRIBOL EDIT END
 
         return entries
 
