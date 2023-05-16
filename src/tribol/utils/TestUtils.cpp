@@ -26,7 +26,7 @@ namespace tribol
 //                            //
 ////////////////////////////////
 TestMesh::TestMesh()
-     mfem_mesh            (nullptr)
+   : mfem_mesh            (nullptr)
    , mortarMeshId         ( 0 )
    , nonmortarMeshId      ( 0 )
    , numTotalNodes        ( 0 )
@@ -572,8 +572,8 @@ void TestMesh::makeMfemMesh2D( real const lx, real const ly,
 
    switch (elem_type)
    {
-      case QUADRILATERAL:
-      case TRIANGLE:
+      case mfem::Element::QUADRILATERAL:
+      case mfem::Element::TRIANGLE:
       {
          // return static mesh
          mfem::Mesh mesh;
@@ -611,8 +611,8 @@ void TestMesh::makeMfemMesh3D( real const lx, real const ly, real const lz,
 
    switch (elem_type)
    {
-      case HEXAHEDRON:
-      case TETRAHEDRON:
+      case mfem::Element::HEXAHEDRON:
+      case mfem::Element::TETRAHEDRON:
       {   
          mfem::Mesh mesh;
          // return static mesh
@@ -1329,9 +1329,9 @@ void TestMesh::setupMfemMesh( )
       this->mfem_mesh->Clear();
    }
 
-   this->mfem_mesh = new Mesh( this->dim,
-                               this->numTotalNodes,
-                               this->numTotalElements );
+   this->mfem_mesh = new mfem::Mesh( this->dim,
+                                     this->numTotalNodes,
+                                     this->numTotalElements );
 
    // add mortar elements and vertices. Not sure if order of adding 
    // elements matters, but adding vertices should probably correspond 

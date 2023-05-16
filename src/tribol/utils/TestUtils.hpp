@@ -92,7 +92,7 @@ public:
                              ContactModel model,             ///< contact model 
                              bool visualization,             ///< true if visualization
                              TestControlParameters & params  ///< control parameters struct
-                            );
+                           );
 
    /// performs tribol registration calls and calls tribol::update() using "simple" API
    int simpleTribolSetupAndUpdate( ContactMethod method,           ///< contact method
@@ -100,7 +100,7 @@ public:
                                    ContactModel model,             ///< contact model 
                                    bool visualization,             ///< true if visualization
                                    TestControlParameters & params  ///< control parameters struct
-                            );
+                                 );
 
   /*!
    * \brief setups of a 3D contact mesh consisting of two blocks
@@ -151,16 +151,16 @@ public:
    * \param [in] ly length of bounding box in y-direction
    * \param [in] numx number of hexahedron elements in the x-direction
    * \param [in] numy number of hexahedron elements in the y-direction
-   * \param [in] elem_type mfem element type, QUADRILATERAL or TRIANGLE
+   * \param [in] elem_type mfem element type, mfem::Element::QUADRILATERAL or 
+   *                       mfem::Element::TRIANGLE
    *
-   * \note if elem_type=TRIANGLE the total number of elements is 2*numx*numy
+   * \note if elem_type = mfem::Element::TRIANGLE the total number of elements is 2*numx*numy
    * based on a triangle decomposition of an underlying quadrilateral mesh
    * 
    */
-  void makeMfemMesh3D( int const dim, mfem::Element::Type elem_type,
-                       real const lx, real const ly,
-                       real const numx, real const numy );
-
+  void makeMfemMesh2D( real const lx, real const ly,
+                       real const numx, real const numy,
+                       mfem::Element::Type elem_type );
   /*!
    * \brief makes a 3D mfem mesh based on an input bounding box
    *
@@ -170,9 +170,10 @@ public:
    * \param [in] numx number of hexahedron elements in the x-direction
    * \param [in] numy number of hexahedron elements in the y-direction
    * \param [in] numz number of hexahedron elements in the z-direction
-   * \param [in] elem_type mfem element type, HEXAHEDRON or TETRAHEDRON
+   * \param [in] elem_type mfem element type, mfem::Element::HEXAHEDRON or 
+   *                       mfem::Element::TETRAHEDRON
    *
-   * \note if elem_type=TETRAHEDRON the total number of elements is 6*numx*numy*numz
+   * \note if elem_type = mfem::Element::TETRAHEDRON the total number of elements is 6*numx*numy*numz
    * based on a tet decomposition of an underlying hex mesh.
    * 
    */
