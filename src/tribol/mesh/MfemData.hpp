@@ -144,12 +144,19 @@ public:
   {
     return PrimalField::GetFieldPtrs(response_);
   }
-  mfem::ParGridFunction GetParentResponse() const {
+  mfem::ParGridFunction GetParentResponse() const
+  {
     return GetPrimalTransfer().RedecompToParent(response_);
   }
   const ParentRedecompTransfer& GetPrimalTransfer() const
   { 
     return GetUpdateData().primal_xfer_;
+  }
+  void SetParentVelocity(const mfem::ParGridFunction& velocity);
+  bool HasVelocity() const { return velocity_ != nullptr; }
+  std::vector<const real*> GetVelocityPtrs() const
+  {
+    return velocity_->GetFieldPtrs();
   }
 private:
   struct UpdateData
@@ -197,6 +204,7 @@ private:
   InterfaceElementType elem_type_;
   integer num_verts_per_elem_;
   std::unique_ptr<UpdateData> update_data_;
+  std::unique_ptr<PrimalField> velocity_;
 
   template <typename T>
   static T mergeContainers(T container_1, T container_2)

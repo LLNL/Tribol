@@ -511,9 +511,8 @@ void registerNodalVelocities( integer meshId,
 //------------------------------------------------------------------------------
 void registerVelocityGridFn( integer cs_id, const mfem::ParGridFunction &v )
 {
-   CouplingSchemeManager::getInstance().getCoupling(cs_id)->setVelocity(
-      std::make_unique<PrimalField>(v)
-   );
+   CouplingSchemeManager::getInstance().getCoupling(cs_id)->getMfemMeshData()
+      ->SetParentVelocity(v);
 }
 
 //------------------------------------------------------------------------------
@@ -1021,11 +1020,9 @@ integer update( integer cycle, real t, real &dt )
             mesh_id_1, f_ptrs[0], f_ptrs[1], f_ptrs[2]);
          registerNodalResponse(
             mesh_id_2, f_ptrs[0], f_ptrs[1], f_ptrs[2]);
-         auto velocity = couplingScheme->getVelocity();
-         if (velocity != nullptr)
+         if (mfem_data->HasVelocity())
          {
-            velocity->UpdateField(mfem_data->GetPrimalTransfer());
-            auto v_ptrs = velocity->GetFieldPtrs();
+            auto v_ptrs = mfem_data->GetVelocityPtrs();
             registerNodalVelocities(
                mesh_id_1, v_ptrs[0], v_ptrs[1], v_ptrs[2]);
             registerNodalVelocities(

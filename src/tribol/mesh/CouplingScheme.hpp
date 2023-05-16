@@ -335,15 +335,6 @@ public:
     m_mfemMeshData = std::move(mfemMeshData);
   }
 
-  PrimalField* getVelocity() { return m_velocity.get(); }
-  
-  const PrimalField* getVelocity() const { return m_velocity.get(); }
-
-  void setVelocity(std::unique_ptr<PrimalField>&& velocity)
-  {
-    m_velocity = std::move(velocity);
-  }
-
 private:
 
   /*!

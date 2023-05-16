@@ -248,7 +248,23 @@ void MfemMeshData::UpdateMeshData()
     dual_vdim_
   );
   coords_.UpdateField(update_data_->primal_xfer_);
+  if (velocity_)
+  {
+    velocity_->UpdateField(update_data_->primal_xfer_);
+  }
   response_ = mfem::GridFunction(coords_.GetRedecompField().FESpace());
+}
+
+void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
+{
+  if (velocity_)
+  {
+    velocity_->SetParentField(velocity);
+  }
+  else
+  {
+    velocity_ = std::make_unique<PrimalField>(velocity);
+  }
 }
 
 MfemMeshData::UpdateData::UpdateData(
