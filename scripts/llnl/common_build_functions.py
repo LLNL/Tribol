@@ -414,6 +414,9 @@ def set_group_and_perms(directory):
     directory. 
     """
 
+    # TODO: skipped now until directories are fixed
+    return 0
+
     skip = True
     shared_dirs = [get_shared_base_dir()]
     for shared_dir in shared_dirs:
