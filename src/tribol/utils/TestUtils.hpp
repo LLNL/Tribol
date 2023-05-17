@@ -103,7 +103,7 @@ public:
                                  );
 
   /*!
-   * \brief setups of a 3D contact mesh consisting of two blocks
+   * \brief setups of a 3D contact hex mesh consisting of two blocks
    *
    * \param [in] numElemsX1 number of elements in the x-direction for first block
    * \param [in] numElemsY1 number of elements in the y-direction for first block
@@ -136,6 +136,39 @@ public:
                              real thetaMortar, real thetaNonmortar );
 
   /*!
+   * \brief setups of a 3D contact tet mesh consisting of two blocks
+   *
+   * \param [in] numElemsX1 number of elements in the x-direction for first block
+   * \param [in] numElemsY1 number of elements in the y-direction for first block
+   * \param [in] numElemsZ1 number of elements in the z-direction for first block
+   * \param [in] xMin1 minimum x-coordinate location of first block
+   * \param [in] yMin1 minimum y-coordinate location of first block
+   * \param [in] zMin1 minimum z-coordinate location of first block
+   * \param [in] xMax1 maximum x-coordinate location of first block
+   * \param [in] yMax1 maximum y-coordinate location of first block
+   * \param [in] zMax1 maximum z-coordinate location of first block
+   * \param [in] numElemsX2 number of elements in the x-direction for second block
+   * \param [in] numElemsY2 number of elements in the y-direction for second block
+   * \param [in] numElemsZ2 number of elements in the z-direction for second block
+   * \param [in] xMin2 minimum x-coordinate location of second block
+   * \param [in] yMin2 minimum y-coordinate location of second block
+   * \param [in] zMin2 minimum z-coordinate location of second block
+   * \param [in] xMax2 maximum x-coordinate location of second block
+   * \param [in] yMax2 maximum y-coordinate location of second block
+   * \param [in] zMax2 maximum z-coordinate location of second block
+   * \param [in] thetaMortar angle of rotation of non-z-plane vertices about z-axis
+   * \param [in] thetaNonmortar angle of rotation of non-z-plane vertices about z-axis
+   *
+   */
+   void setupContactMeshTet( int numElemsX1, int numElemsY1, int numElemsZ1, 
+                             real xMin1, real yMin1, real zMin1,
+                             real xMax1, real yMax1, real zMax1,
+                             int numElemsX2, int numElemsY2, int numElemsZ2,
+                             real xMin2, real yMin2, real zMin2, 
+                             real xMax2, real yMax2, real zMax2,
+                             real thetaMortar, real thetaNonmortar );
+
+  /*!
    * \brief sets up an mfem mesh object representation of the original hex test mesh
    *
    * \note must call setupContactMeshHex() to construct the hex mesh prior to calling
@@ -155,7 +188,6 @@ public:
    *                       mfem::Element::TRIANGLE
    *
    * \note if elem_type = mfem::Element::TRIANGLE the total number of elements is 2*numx*numy
-   * based on a triangle decomposition of an underlying quadrilateral mesh
    * 
    */
   void makeMfemMesh2D( real const lx, real const ly,
@@ -174,7 +206,6 @@ public:
    *                       mfem::Element::TETRAHEDRON
    *
    * \note if elem_type = mfem::Element::TETRAHEDRON the total number of elements is 6*numx*numy*numz
-   * based on a tet decomposition of an underlying hex mesh.
    * 
    */
   void makeMfemMesh3D( real const lx, real const ly, real const lz, 
@@ -349,27 +380,33 @@ public:
 
 public:
 
+   // TODO if we use mfem::Make3D() or mfem::Make2D(), we will 
+   // actually have to carry around two meshes. Do we want to do this?
+   // Or do I want to do a tet decomposition of my hex mesh? This 
+   // will not be that general.
    mfem::Mesh* mfem_mesh; 
 
-   // public member variables
+   // Basic info about the mesh
    int mortarMeshId;         ///< Mesh id for mortar portion of mesh
    int nonmortarMeshId;          ///< Mesh id for nonmortar portion of mesh
-   int numTotalNodes;        ///< Total number of nodes in the mesh 
+   int numTotalNodes;        ///< Total number of nodes in the mesh
    int numMortarNodes;       ///< Number of mortar nodes (not just surface nodes)
    int numNonmortarNodes;        ///< Number of nonmortar nodes (not just surface nodes)
    int numNonmortarSurfaceNodes; ///< Number of surface nodes on the nonmortar side
-   int numTotalElements;     ///< Total number of elements 
+   int numTotalElements;     ///< Total number of elements
    int numMortarElements;    ///< Number of mortar elements
-   int numNonmortarElements;     ///< Number of nonmortar nodes 
+   int numNonmortarElements;     ///< Number of nonmortar nodes
    int numTotalFaces;        ///< Total number of faces
    int numMortarFaces;       ///< Number of mortar faces
-   int numNonmortarFaces;        ///< Number of nonmortar faces 
+   int numNonmortarFaces;        ///< Number of nonmortar faces
    int numNodesPerFace;      ///< Number of nodes per face
    int numNodesPerElement;   ///< Number of nodes per element
    int dim;                  ///< Mesh dimension
-   int *dirNodesX1;          ///< Pointer to list of mortar node ids with x-component Dirichlet BCs 
+
+   // Pointers to Boundary Condition Data
+   int *dirNodesX1;          ///< Pointer to list of mortar node ids with x-component Dirichlet BCs
    int *dirNodesY1;          ///< Pointer to list of mortar node ids with y-component Dirichlet BCs
-   int *dirNodesZ1;          ///< Pointer to list of mortar node ids with z-component Dirichlet BCs 
+   int *dirNodesZ1;          ///< Pointer to list of mortar node ids with z-component Dirichlet BCs
    double *iDirValX1;        ///< Pointer to x-component Dirichlet BC values for specified mortar nodes
    double *iDirValY1;        ///< Pointer to y-component Dirichlet BC values for specified mortar nodes
    double *iDirValZ1;        ///< Pointer to z-component Dirichlet BC values for specified mortar nodes
@@ -379,13 +416,16 @@ public:
    double *iDirValX2;        ///< Pointer to x-component Dirichlet BC values for specified nonmortar nodes
    double *iDirValY2;        ///< Pointer to y-component Dirichlet BC values for specified nonmortar nodes
    double *iDirValZ2;        ///< Pointer to z-component Dirichlet BC values for specified nonmortar nodes
+   int *presDofs1;           ///< Pointer to mortar node ids with a pressure BC
+   int *presDofs2;           ///< Pointer to nonmortar node ids with a pressure BC
+
+   // Pointers to connectivity data
    int *faceConn1;           ///< Pointer to mortar face connectivity
    int *faceConn2;           ///< Pointer to nonmortar face connectivity
    int *elConn1;             ///< Pointer to mortar element connectivity
    int *elConn2;             ///< Pointer to nonmortar element connectivity 
-   int *presDofs1;           ///< Pointer to mortar node ids with a pressure BC
-   int *presDofs2;           ///< Pointer to nonmortar node ids with a pressure BC
 
+   // TODO can we make these mfem grid functions?
    double *fx1; ///< Mortar nodal forces, x-component 
    double *fy1; ///< Mortar nodal forces, y-component 
    double *fz1; ///< Mortar nodal forces, z-component

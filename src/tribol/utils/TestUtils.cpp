@@ -38,9 +38,9 @@ TestMesh::TestMesh()
    , numTotalFaces        ( 0 )
    , numMortarFaces       ( 0 )
    , numNonmortarFaces    ( 0 )
-   , numNodesPerFace      ( 4 )
-   , numNodesPerElement   ( 8 )
-   , dim                  ( 3 )
+   , numNodesPerFace      ( 0 )
+   , numNodesPerElement   ( 0 ) 
+   , dim                  ( 0 ) 
    , dirNodesX1 ( nullptr )
    , dirNodesY1 ( nullptr )
    , dirNodesZ1 ( nullptr )
@@ -549,6 +549,42 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
 
 } // end setupContactMeshHex()
 
+//------------------------------------------------------------------------------
+void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElemsZ1,
+                                    real xMin1, real yMin1, real zMin1,
+                                    real xMax1, real yMax1, real zMax1,
+                                    int numElemsX2, int numElemsY2, int numElemsZ2,
+                                    real xMin2, real yMin2, real zMin2,
+                                    real xMax2, real yMax2, real zMax2,
+                                    real thetaMortar, real thetaNonmortar )
+{
+   // TODO Implement this routine
+   // NOTE: ONLY CONTACT INTERACTIONS IN THE Z-DIRECTION ARE SUPPORTED 
+   // AT THE MOMENT.
+
+   // Construct hex mesh
+   setupContactMeshHex( numElemsX1, numElemsY1, numElemsZ1,
+                        xMin1, yMin1, zMin1,
+                        xMax1, yMax1, zMax1,
+                        numElemsX2, numElemsY2, numElemsZ2,
+                        xMin2, yMin2, zMin2,
+                        xMax2, yMax2, zMax2,
+                        thetaMortar, thetaNonmortar );
+
+   // allocate temporary storage for tet mesh data while pulling 
+   // from hex mesh data
+   int t_numNodesPerFace = 3; // triangle faces
+   int t_numNodesPerElement = 4; // four nodes per tet
+   int t_numTetElems = 24 * this->numTotalElements; // 24 tets per hex
+   int t_numTotalFaces = ; // TODO check if this is just boundary faces
+   int t_numMortarFaces = ;
+   int t_numNonmortarFaces = ;
+   real t_faceConn1 [ t_numNodesPerFace * t_numMortarFaces ];
+   real t_faceConn2 [ t_numNodesPerFace * t_numNonmortarFaces];
+   real t_elConn1 [];
+   real t_elConn2 [];
+
+} // end setupContactMeshTet()
 //------------------------------------------------------------------------------
 void TestMesh::makeMfemMesh2D( real const lx, real const ly,
                                real const numx, real const numy,
