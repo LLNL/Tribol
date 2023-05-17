@@ -188,6 +188,7 @@ public:
    *                       mfem::Element::TRIANGLE
    *
    * \note if elem_type = mfem::Element::TRIANGLE the total number of elements is 2*numx*numy
+   *       based on the triangular decomposition of quadrilaterals.
    * 
    */
   void makeMfemMesh2D( real const lx, real const ly,
@@ -206,6 +207,7 @@ public:
    *                       mfem::Element::TETRAHEDRON
    *
    * \note if elem_type = mfem::Element::TETRAHEDRON the total number of elements is 6*numx*numy*numz
+   *       based on a six tetrahedron element decomposition of a hexahedron.
    * 
    */
   void makeMfemMesh3D( real const lx, real const ly, real const lz, 

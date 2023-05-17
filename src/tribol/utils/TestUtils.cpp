@@ -40,7 +40,7 @@ TestMesh::TestMesh()
    , numNonmortarFaces    ( 0 )
    , numNodesPerFace      ( 0 )
    , numNodesPerElement   ( 0 ) 
-   , dim                  ( 0 ) 
+   , dim                  ( 3 ) // no 2D support
    , dirNodesX1 ( nullptr )
    , dirNodesY1 ( nullptr )
    , dirNodesZ1 ( nullptr )
