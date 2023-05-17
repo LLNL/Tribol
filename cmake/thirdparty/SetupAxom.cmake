@@ -10,14 +10,22 @@
 # Check paths
 tribol_assert_path_exists( ${AXOM_DIR} )
 
-find_package(axom REQUIRED
-             NO_DEFAULT_PATH 
-             PATHS ${AXOM_DIR}/lib/cmake)
+find_dependency(axom REQUIRED
+                NO_DEFAULT_PATH 
+                PATHS ${AXOM_DIR}/lib/cmake)
+
+# Backwards compatibility
+if (NOT TARGET axom::cli11 AND TARGET cli11)
+    add_library(axom::cli11 ALIAS cli11)
+endif()
+if (NOT TARGET axom::fmt AND TARGET fmt)
+    add_library(axom::fmt ALIAS fmt)
+endif()
 
 #[==[
 blt_print_target_properties(TARGET axom)
-blt_print_target_properties(TARGET cli11)
-blt_print_target_properties(TARGET fmt)
+blt_print_target_properties(TARGET axom::cli11)
+blt_print_target_properties(TARGET axom::fmt)
 blt_print_target_properties(TARGET conduit::conduit)
 #]==]
 

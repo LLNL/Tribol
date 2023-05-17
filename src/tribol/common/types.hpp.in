@@ -16,6 +16,7 @@
 #cmakedefine TRIBOL_USE_64BIT_INDEXTYPE
 #cmakedefine TRIBOL_DATA_DIR "@TRIBOL_DATA_DIR@"
 #cmakedefine TRIBOL_USE_MPI
+#cmakedefine TRIBOL_USE_UMPIRE
 
 #ifdef TRIBOL_USE_MPI
 #include "mpi.h"

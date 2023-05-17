@@ -7,19 +7,16 @@
 # Set up tribol's TPLs
 #------------------------------------------------------------------------------
 
-message( STATUS "----------------------------"
-                "Configuring TPLs"
-                "----------------------------")
+message(STATUS "Configuring TPLs...\n"
+               "----------------------")
 
 set(TPL_DEPS)
-
+include(CMakeFindDependencyMacro)
 #------------------------------------------------------------------------------
 # axom
 #------------------------------------------------------------------------------
 if (DEFINED AXOM_DIR)
-  message( STATUS "----------------------"
-                  "Setting up external Axom TPL"
-                  "----------------------")
+  message(STATUS "Setting up external Axom TPL...")
   include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupAxom.cmake)
 
   list(APPEND TPL_DEPS axom)
@@ -36,26 +33,38 @@ endif()
 #------------------------------------------------------------------------------
 
 if (DEFINED MFEM_DIR)
-  message( STATUS "----------------------"
-                  "Setting up external mfem TPL"
-                  "----------------------")
+  message(STATUS "Setting up external MFEM TPL...")
 
   include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupMFEM.cmake)
 
   list(APPEND TPL_DEPS mfem)
 else()
   message(FATAL_ERROR 
-     "mfem is a required dependency for tribol."
+     "MFEM is a required dependency for tribol."
      " Please configure tribol with a path to axom via the MFEM_DIR variable.")
+endif()
+
+
+#------------------------------------------------------------------------------
+# Umpire
+#------------------------------------------------------------------------------
+
+if (DEFINED UMPIRE_DIR)
+  message(STATUS "Setting up external Umpire TPL...")
+
+  include(${UMPIRE_DIR}/lib/cmake/umpire/umpire-targets.cmake)
+
+  list(APPEND TPL_DEPS umpire)
+  set(TRIBOL_USE_UMPIRE TRUE)
+else()
+  message(STATUS "Umpire support is OFF")
 endif()
 
 #------------------------------------------------------------------------------
 # Shroud - Generates C/Fortran/Python bindings
 #------------------------------------------------------------------------------
 if(EXISTS ${SHROUD_EXECUTABLE})
-    message( STATUS "----------------------"
-                    "Setting up shroud TPL"
-                    "----------------------")
+    message(STATUS "Setting up shroud TPL...")
     execute_process(COMMAND ${SHROUD_EXECUTABLE}
                     --cmake ${CMAKE_CURRENT_BINARY_DIR}/SetupShroud.cmake
                     ERROR_VARIABLE SHROUD_cmake_error
@@ -86,7 +95,6 @@ endforeach()
 # export BLT targets
 blt_export_tpl_targets(EXPORT tribol-targets NAMESPACE tribol)
 
-message( STATUS "-----------------------"
-                "Finished configuring TPLs"
-                "----------------------")
+message(STATUS "--------------------------\n"
+               "Finished configuring TPLs")
 

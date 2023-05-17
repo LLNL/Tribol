@@ -174,14 +174,14 @@ int SurfaceContactElem::getJacobianDimOffset( JacBlock block ) const
 
 //------------------------------------------------------------------------------
 MethodData::MethodData()
-:  m_blockJElemIds {
+:  m_blockJElemIds (
       static_cast<axom::IndexType>(BlockSpace::NUM_BLOCK_SPACES),
       static_cast<axom::IndexType>(BlockSpace::NUM_BLOCK_SPACES)
-   } ,
-   m_blockJ ({
+   ) ,
+   m_blockJ (
       static_cast<axom::IndexType>(BlockSpace::NUM_BLOCK_SPACES),
       static_cast<axom::IndexType>(BlockSpace::NUM_BLOCK_SPACES)
-   })
+   )
 {
    m_blockJ.shrink();
 }
