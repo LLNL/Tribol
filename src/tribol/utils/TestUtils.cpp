@@ -35,7 +35,7 @@ TestMesh::TestMesh()
    , numTotalElements     ( 0 )
    , numMortarElements    ( 0 )
    , numNonmortarElements ( 0 )
-   , numTotalFaces        ( 0 )
+   , numTotalFaces        ( 0 ) // TODO not used?
    , numMortarFaces       ( 0 )
    , numNonmortarFaces    ( 0 )
    , numNodesPerFace      ( 0 )
@@ -364,32 +364,23 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
                   "Initial mesh configuration has a gap greater than the " << 
                   "element thickness in block 2.");
 
-   for (int iblk=0; iblk<2; ++iblk)
-   {
-      if (iblk == 0)
-      {
-         numElementsBlock1 = numElemsX1 * numElemsY1 * numElemsZ1;
-         numNodesBlock1 = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1);
-         this->numMortarFaces = numElemsX1 * numElemsY1;
-      }
-      else
-      {
-         numElementsBlock2 = numElemsX2 * numElemsY2 * numElemsZ2;
-         numNodesBlock2 = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
-         this->numNonmortarFaces = numElemsX2 * numElemsY2;
-      }
-   }
+   numElementsBlock1       = numElemsX1 * numElemsY1 * numElemsZ1;
+   numNodesBlock1          = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1);
+   this->numMortarFaces    = numElemsX1 * numElemsY1;
+   numElementsBlock2       = numElemsX2 * numElemsY2 * numElemsZ2;
+   numNodesBlock2          = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
+   this->numNonmortarFaces = numElemsX2 * numElemsY2;
 
-   this->numMortarNodes = numNodesBlock1;
-   this->numNonmortarNodes = numNodesBlock2;
+   this->numMortarNodes           = numNodesBlock1;
+   this->numNonmortarNodes        = numNodesBlock2;
    this->numNonmortarSurfaceNodes = (numElemsX2+1) * (numElemsY2+1);
-   this->numTotalNodes = numNodesBlock1 + numNodesBlock2;
-   this->numMortarElements = numElementsBlock1;
-   this->numNonmortarElements = numElementsBlock2;
-   this->numTotalElements = numElementsBlock1 + numElementsBlock2;
+   this->numTotalNodes            = numNodesBlock1 + numNodesBlock2;
+   this->numMortarElements        = numElementsBlock1;
+   this->numNonmortarElements     = numElementsBlock2;
+   this->numTotalElements         = numElementsBlock1 + numElementsBlock2;
 
-   this->elConn1 = new int[ this->numNodesPerElement * this->numMortarElements ];
-   this->elConn2 = new int[ this->numNodesPerElement * this->numNonmortarElements ];
+   this->elConn1   = new int[ this->numNodesPerElement * this->numMortarElements ];
+   this->elConn2   = new int[ this->numNodesPerElement * this->numNonmortarElements ];
    this->faceConn1 = new int[ this->numNodesPerFace * this->numMortarFaces ];
    this->faceConn2 = new int[ this->numNodesPerFace * this->numNonmortarFaces ];
    this->x = new real[ this->numTotalNodes ];
@@ -573,16 +564,188 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
 
    // allocate temporary storage for tet mesh data while pulling 
    // from hex mesh data
-   int t_numNodesPerFace = 3; // triangle faces
-   int t_numNodesPerElement = 4; // four nodes per tet
-   int t_numTetElems = 24 * this->numTotalElements; // 24 tets per hex
-   int t_numTotalFaces = ; // TODO check if this is just boundary faces
-   int t_numMortarFaces = ;
-   int t_numNonmortarFaces = ;
-   real t_faceConn1 [ t_numNodesPerFace * t_numMortarFaces ];
-   real t_faceConn2 [ t_numNodesPerFace * t_numNonmortarFaces];
-   real t_elConn1 [];
-   real t_elConn2 [];
+   int numTetsPerHex          = 6;
+   int t_numNodesPerFace      = 3; // triangle faces
+   int t_numNodesPerElement   = 4; // four nodes per tet
+   int t_numTotalElements     = numTetsPerHex * this->numTotalElements; // 6 tets per hex
+   int t_numMortarElements    = numTetsPerHex * numElemsX1 * numElemsY1 * numElemsZ1; 
+   int t_numNonmortarElements = numTetsPerHex * numElemsX2 * numElemsY2 * numElemsZ2;
+   int t_numMortarFaces       = 2 * numElemsX1 * numElemsY1;
+   int t_numNonmortarFaces    = 2 * numElemsX2 * numElemsY2;
+   int t_numMortarNodes       = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1); 
+   int t_numNonmortarNodes    = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
+   int t_numTotalNodes        = t_numMortarNodes + t_numNonmortarNodes;
+
+   // Temporary tet data, TODO use smart pointers?
+   real *t_faceConn1, *t_faceConn2, *t_elConn1, *t_elConn2;
+   t_faceConn1  = new real[ t_numNodesPerFace * t_numMortarFaces ];
+   t_faceConn2  = new real[ t_numNodesPerFace * t_numNonmortarFaces];
+   t_elConn1    = new real[ t_numNodesPerElement * t_numMortarElements ];
+   t_elConn2    = new real[ t_numNodesPerElement * t_numNonmortarElements ];
+   
+   // nodal coordinates are same as hex
+   real *t_x, *t_y, *t_z;
+   t_x = this->x;
+   t_y = this->y;
+   t_z = this->z;
+
+   allocRealArray( &this->fx1, this->numTotalNodes, 0. );
+   allocRealArray( &this->fy1, this->numTotalNodes, 0. );
+   allocRealArray( &this->fz1, this->numTotalNodes, 0. );
+   allocRealArray( &this->fx2, this->numTotalNodes, 0. );
+   allocRealArray( &this->fy2, this->numTotalNodes, 0. );
+   allocRealArray( &this->fz2, this->numTotalNodes, 0. );
+
+   // connectivity
+   // TODO implement this
+   int ndOffset;
+   int numElemsX, numElemsY, numElemsZ;
+   real xMax, yMax, zMax, xMin, yMin, zMin;
+   real theta;
+   int * elConn, * faceConn;
+   for ( int iblk = 0; iblk<2; ++iblk)
+   {
+      if ( iblk == 0)
+      {
+         ndOffset = 0;
+         numElemsX = numElemsX1;
+         numElemsY = numElemsY1;
+         numElemsZ = numElemsZ1;
+         xMin = xMin1;
+         yMin = yMin1;
+         zMin = zMin1;
+         xMax = xMax1;
+         yMax = yMax1;
+         zMax = zMax1;
+         elConn = t_elConn1;
+         faceConn = t_faceConn1;
+         theta = thetaMortar;
+      }
+      else
+      {
+         ndOffset = t_numMortarNodes;
+         numElemsX = numElemsX2;
+         numElemsY = numElemsY2;
+         numElemsZ = numElemsZ2;
+         xMin = xMin2;
+         yMin = yMin2;
+         zMin = zMin2;
+         xMax = xMax2;
+         yMax = yMax2;
+         zMax = zMax2;
+         elConn = t_elConn2;
+         faceConn = t_faceConn2;
+         theta = thetaNonmortar;
+      }
+
+      int numNodesX = numElemsX + 1;
+      int numNodesY = numElemsY + 1;
+      int numNodesZ = numElemsZ + 1;
+      real hx = (xMax - xMin) / numElemsX;
+      real hy = (yMax - yMin) / numElemsY;
+      real hz = (zMax - zMin) / numElemsZ;
+
+      // TODO fix this for tet decomposition
+      // populate element connectivity arrays
+      ctr = 0;
+      for (int k=0; k<numElemsZ; ++k) // loop over row in z-direction
+      {
+         for (int j=0; j<numElemsY; ++j) // loop over row in y-direction
+         {
+            for (int i=0; i<numElemsX; ++i) // loop over elements in x-direction
+            {
+               int zIdOffset = k * (numNodesX * numNodesY); // offset for z-direction node ids
+               int yIdOffset = j * numNodesX; // offset for y-direction node ids
+               int icr = ndOffset + zIdOffset + yIdOffset + i; // first node starting counter
+               int lclZOffset = icr + numNodesX * numNodesY; // local element z-offset for top nodes of hex
+
+               // write out the 6 tet elements per this hex  // code for each local hex node
+               // local node numbering for each hex          // 1) icr;
+               // 1)  1, 6, 5, 4                             // 2) icr + 1;
+               // 2)  1, 2, 6, 4                             // 3) icr + numNodesX + 1;
+               // 3)  3, 6, 2, 4                             // 4) icr + numNodesX;
+               // 4)  3, 7, 6, 4                             // 5) lclZOffset;
+               // 5)  8, 5, 6, 4                             // 6) lclZOffset + 1;
+               // 6)  8, 6, 7, 4                             // 7) lclZOffset + numNodesX + 1;
+               //                                            // 8) lclZOffset + numNodesX;
+
+               // local tet element 1
+               elConn[ this->numNodesPerElement * ctr ]    = icr;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1; 
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset; 
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr
+
+               // local tet element 2 
+               elConn[ this->numNodesPerElement * ctr ]    = icr;
+               elConn[ this->numNodesPerElement * ctr + 1] = icr + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr
+
+               // local tet element 3
+               elConn[ this->numNodesPerElement * ctr ]    = icr + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1; 
+               elConn[ this->numNodesPerElement * ctr + 2] = icr + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr
+ 
+               // local tet element 4
+               elConn[ this->numNodesPerElement * ctr ]    = icr + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1; 
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr
+
+               // local tet element 5
+               elConn[ this->numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr
+
+               // local tet element 6
+               elConn[ this->numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr
+               
+            } // end loop over x elements
+         } // end loop over y elements
+      } // end loop over z elements
+
+   } // end for loop over blocks
+   
+   // clear and set tet mesh data
+   this->clear();
+   this->numNodesPerFace      = t_numNodesPerFace;
+   this->numNodesPerElement   = t_numNodesPerElement;
+   this->numTotalElements     = t_numTotalElements;
+   this->numMortarElements    = t_numMortarElements;
+   this->numNonmortarElements = t_numNonmortarElements;
+   this->numMortarFaces       = t_numMortarFaces;
+   this->numNonmortarFaces    = t_numNonmortarFaces;
+   this->numMortarNodes       = t_numMortarNodes;
+   this->numNonmortarNodes    = t_numNonmortarNodes;
+   this->numTotalNodes        = t_numTotalNodes;
+
+   // element connectivity. Note, tet nodal coordinates are same as hex
+   this->faceConn1 = t_faceConn1;
+   this->faceConn2 = t_faceConn2;
+   this->elConn1   = t_elConn1;
+   this->elConn2   = t_elConn2;
+   this->x         = t_x;
+   this->y         = t_y;
+   this->z         = t_z;
+
+   // allocate and set new force arrays
+   allocRealArray( &this->fx1, this->numTotalNodes, 0. );
+   allocRealArray( &this->fy1, this->numTotalNodes, 0. );
+   allocRealArray( &this->fz1, this->numTotalNodes, 0. );
+   allocRealArray( &this->fx2, this->numTotalNodes, 0. );
+   allocRealArray( &this->fy2, this->numTotalNodes, 0. );
+   allocRealArray( &this->fz2, this->numTotalNodes, 0. );
 
 } // end setupContactMeshTet()
 //------------------------------------------------------------------------------
