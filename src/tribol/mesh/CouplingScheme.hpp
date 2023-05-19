@@ -326,9 +326,9 @@ public:
                               const integer cycle, 
                               const real t );
 
-  MfemMeshData* getMfemMeshData() { return m_mfemMeshData.get(); }
+  MfemMeshData* getMfemMeshData();
   
-  const MfemMeshData* getMfemMeshData() const { return m_mfemMeshData.get(); }
+  const MfemMeshData* getMfemMeshData() const;
 
   void setMfemMeshData(std::unique_ptr<MfemMeshData>&& mfemMeshData)
   {

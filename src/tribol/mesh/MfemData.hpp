@@ -194,10 +194,12 @@ public:
   {
     return pressure_->GetFieldPtrs();
   }
+  mfem::ParGridFunction& GetParentPressure();
   std::vector<real*> GetGapPtrs()
   {
     return PressureField::GetFieldPtrs(*gap_gridfn_);
   }
+  mfem::ParGridFunction GetParentGap() const;
 private:
   struct UpdateData
   {

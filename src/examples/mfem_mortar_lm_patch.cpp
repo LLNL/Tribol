@@ -20,10 +20,6 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
 
 int main( int argc, char** argv )
 {
-  /////////////////////////////////////////////////////////////////////////////
-  // STEP 0: Problem setup
-  /////////////////////////////////////////////////////////////////////////////
-
   // initialize MPI
   MPI_Init( &argc, &argv );
   int np, rank;
@@ -188,6 +184,15 @@ int main( int argc, char** argv )
 
   // retrieve contact contribution to force
   auto b = tribol::getResponseGridFn(0);
+
+  // retrieve nodal mortar gaps
+  auto g = tribol::getGapGridFn(0);
+
+  // retrieve nodal mortar pressures
+  auto& p = tribol::getPressureGridFn(0);
+
+  // retrieve block stiffness matrix
+  auto A_blk = tribol::getMfemHypreParMatrix(0);
 
   // cleanup
   MPI_Finalize();

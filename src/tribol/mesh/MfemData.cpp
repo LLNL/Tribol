@@ -347,6 +347,24 @@ void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
   }
 }
 
+mfem::ParGridFunction& MfemMeshData::GetParentPressure()
+{
+  SLIC_ERROR_ROOT_IF(
+    !pressure_gridfn_, "No pressure grid function exists. "
+    "Is contact enforced using Lagrange multipliers?"
+  );
+  return *pressure_gridfn_;
+}
+
+mfem::ParGridFunction MfemMeshData::GetParentGap() const
+{
+  SLIC_ERROR_ROOT_IF(
+    !gap_gridfn_, "No gap grid function exists. "
+    "Is contact enforced using Lagrange multipliers?"
+  );
+  return GetUpdateData().dual_xfer_->RedecompToSubmesh(*gap_gridfn_);
+}
+
 MfemMeshData::UpdateData::UpdateData(
   mfem::ParSubMesh& submesh,
   const std::set<integer>& attributes_1,

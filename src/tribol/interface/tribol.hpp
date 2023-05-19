@@ -344,13 +344,19 @@ int getElementBlockJacobians( integer csId,
                               axom::Array<integer>& col_elem_idx,
                               axom::Array<mfem::DenseMatrix>& jacobians );
 
+std::unique_ptr<mfem::BlockOperator> getMfemHypreParMatrix( integer csId );
+
 /// register mortar gaps scalar nodal field
 void registerMortarGaps( integer meshId,
                          real * nodal_gaps );
-                         
+
+mfem::ParGridFunction getGapGridFn( integer cs_id );
+
 /// register mortar pressure scalar nodal field
 void registerMortarPressures( integer meshId,
                               const real * nodal_pressures );
+
+mfem::ParGridFunction& getPressureGridFn( integer cs_id );
 
 /// register an integer nodal field
 void registerIntNodalField( integer meshId,

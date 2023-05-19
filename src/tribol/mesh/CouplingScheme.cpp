@@ -1468,5 +1468,25 @@ void CouplingScheme::writeInterfaceOutput( const std::string& dir,
 }
 
 //------------------------------------------------------------------------------
+MfemMeshData* CouplingScheme::getMfemMeshData()
+{
+   SLIC_ERROR_ROOT_IF(
+      !m_mfemMeshData, 
+      "Coupling scheme does not contain MFEM data."
+   );
+   return m_mfemMeshData.get();
+}
+
+//------------------------------------------------------------------------------
+const MfemMeshData* CouplingScheme::getMfemMeshData() const
+{
+   SLIC_ERROR_ROOT_IF(
+      !m_mfemMeshData, 
+      "Coupling scheme does not contain MFEM data."
+   );
+   return m_mfemMeshData.get();
+}
+
+//------------------------------------------------------------------------------
 
 } /* namespace tribol */

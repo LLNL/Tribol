@@ -582,13 +582,8 @@ void registerNodalResponse( integer meshId,
 //------------------------------------------------------------------------------
 mfem::ParGridFunction getResponseGridFn( integer cs_id )
 {
-   auto mfem_data = CouplingSchemeManager::getInstance().getCoupling(cs_id)
-      ->getMfemMeshData();
-   SLIC_ERROR_ROOT_IF(
-      mfem_data == nullptr,
-      "Coupling scheme does not contain mfem data."
-   );
-   return mfem_data->GetParentResponse();
+   return CouplingSchemeManager::getInstance().getCoupling(cs_id)
+      ->getMfemMeshData()->GetParentResponse();
 }
 
 //------------------------------------------------------------------------------
@@ -729,6 +724,13 @@ void registerMortarGaps( integer meshId,
 }
 
 //------------------------------------------------------------------------------
+mfem::ParGridFunction getGapGridFn( integer cs_id )
+{
+   return CouplingSchemeManager::getInstance().getCoupling(cs_id)
+      ->getMfemMeshData()->GetParentGap();
+}
+
+//------------------------------------------------------------------------------
 void registerMortarPressures( integer meshId,
                               const real * nodal_pressures )
 {
@@ -751,6 +753,13 @@ void registerMortarPressures( integer meshId,
       mesh.m_nodalFields.m_is_node_pressure_set = true;
    }
    
+}
+
+//------------------------------------------------------------------------------
+mfem::ParGridFunction& getPressureGridFn( integer cs_id )
+{
+   return CouplingSchemeManager::getInstance().getCoupling(cs_id)
+      ->getMfemMeshData()->GetParentPressure();
 }
 
 //------------------------------------------------------------------------------
