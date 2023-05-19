@@ -12,13 +12,13 @@ namespace tribol
 
 SubmeshRedecompTransfer::SubmeshRedecompTransfer(
   redecomp::RedecompMesh& redecomp,
-  const mfem::ParFiniteElementSpace& submesh_fes
+  mfem::ParFiniteElementSpace& submesh_fes
 )
 : submesh_fes_ { submesh_fes },
   redecomp_fes_ { std::make_unique<mfem::FiniteElementSpace>(
     &redecomp,
     submesh_fes_.FEColl(),
-    redecomp.SpaceDimension(),
+    submesh_fes_.GetVDim(),
     mfem::Ordering::byNODES
   ) },
   redecomp_xfer_ { } // default (element transfer) constructor
@@ -66,7 +66,7 @@ void SubmeshRedecompTransfer::UpdateRedecomp(redecomp::RedecompMesh& redecomp)
   redecomp_fes_ = std::make_unique<mfem::FiniteElementSpace>(
     &redecomp,
     submesh_fes_.FEColl(),
-    redecomp.SpaceDimension(),
+    submesh_fes_.GetVDim(),
     mfem::Ordering::byNODES
   );
 }
@@ -77,12 +77,13 @@ ParentRedecompTransfer::ParentRedecompTransfer(
   const mfem::ParFiniteElementSpace& parent_fes
 )
 : parent_fes_ { parent_fes },
-  redecomp_xfer_ { redecomp, mfem::ParFiniteElementSpace(
+  submesh_fes_ {
     &submesh,
     parent_fes_.FEColl(),
     submesh.SpaceDimension(),
     mfem::Ordering::byNODES
-  ) },
+  },
+  redecomp_xfer_ { redecomp, submesh_fes_ },
   submesh_gridfn_ { redecomp_xfer_.EmptySubmeshGridFn() }
 {
   SLIC_ERROR_ROOT_IF(
@@ -232,10 +233,10 @@ const PressureField::UpdateData& PressureField::GetUpdateData() const
 
 PressureField::UpdateData::UpdateData(
   const SubmeshRedecompTransfer& xfer,
-  const mfem::ParGridFunction& parent
+  const mfem::ParGridFunction& submesh
 )
 : xfer_ { xfer },
-  redecomp_ { xfer_.SubmeshToRedecomp(parent) }
+  redecomp_ { xfer_.SubmeshToRedecomp(submesh) }
 {}
 
 MfemMeshData::MfemMeshData(
@@ -266,11 +267,8 @@ MfemMeshData::MfemMeshData(
         dual_vdim
       )
     );
-    pressure_gridfn_->MakeOwner(dual_fec.get());
+    pressure_gridfn_->MakeOwner(dual_fec.release());
     pressure_ = std::make_unique<PressureField>(*pressure_gridfn_);
-    gap_gridfn_ = std::make_unique<mfem::ParGridFunction>(
-      pressure_gridfn_->ParFESpace()
-    );
   }
   // set the element type
   mfem::Element::Type element_type = mfem::Element::QUADRILATERAL;
@@ -331,7 +329,9 @@ void MfemMeshData::UpdateMeshData()
   if (pressure_gridfn_)
   {
     pressure_->UpdateField(*update_data_->dual_xfer_);
-    gap_gridfn_->SetSpace(pressure_->GetRedecompField().FESpace());
+    gap_gridfn_ = std::make_unique<mfem::GridFunction>(
+      pressure_->GetRedecompField().FESpace()
+    );
   }
 }
 
@@ -353,12 +353,12 @@ MfemMeshData::UpdateData::UpdateData(
   const std::set<integer>& attributes_2,
   integer num_verts_per_elem,
   const mfem::ParFiniteElementSpace& parent_fes,
-  const mfem::ParFiniteElementSpace* redecomp_fes
+  mfem::ParFiniteElementSpace* submesh_fes
 )
 : redecomp_ { submesh },
   primal_xfer_ { redecomp_, submesh, parent_fes },
-  dual_xfer_ { redecomp_fes ?
-    std::make_unique<SubmeshRedecompTransfer>(redecomp_, *redecomp_fes) :
+  dual_xfer_ { submesh_fes ?
+    std::make_unique<SubmeshRedecompTransfer>(redecomp_, *submesh_fes) :
     nullptr
   }
 {

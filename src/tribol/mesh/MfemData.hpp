@@ -26,7 +26,7 @@ class SubmeshRedecompTransfer
 public:
   SubmeshRedecompTransfer(
     redecomp::RedecompMesh& redecomp,
-    const mfem::ParFiniteElementSpace& submesh_fes
+    mfem::ParFiniteElementSpace& submesh_fes
   );
   mfem::GridFunction SubmeshToRedecomp(const mfem::ParGridFunction& src) const;
   mfem::ParGridFunction RedecompToSubmesh(const mfem::GridFunction& src) const;
@@ -44,7 +44,7 @@ public:
   }
   void UpdateRedecomp(redecomp::RedecompMesh& redecomp);
 private:
-  mutable mfem::ParFiniteElementSpace submesh_fes_;
+  mfem::ParFiniteElementSpace& submesh_fes_;
   mutable std::unique_ptr<mfem::FiniteElementSpace> redecomp_fes_;
   const redecomp::RedecompTransfer redecomp_xfer_;
 };
@@ -62,6 +62,7 @@ public:
   void UpdateRedecomp(redecomp::RedecompMesh& redecomp);
 private:
   mutable mfem::ParFiniteElementSpace parent_fes_;
+  mutable mfem::ParFiniteElementSpace submesh_fes_;
   SubmeshRedecompTransfer redecomp_xfer_;
   mutable mfem::ParGridFunction submesh_gridfn_;
 };
@@ -206,7 +207,7 @@ private:
       const std::set<integer>& attributes_2,
       integer num_verts_per_elem,
       const mfem::ParFiniteElementSpace& parent_fes,
-      const mfem::ParFiniteElementSpace* redecomp_fes
+      mfem::ParFiniteElementSpace* redecomp_fes
     );
     redecomp::RedecompMesh redecomp_;
     ParentRedecompTransfer primal_xfer_;
@@ -239,7 +240,6 @@ private:
   std::unique_ptr<mfem::ParGridFunction> pressure_gridfn_;
   std::unique_ptr<PressureField> pressure_;
   std::unique_ptr<mfem::GridFunction> gap_gridfn_;
-  std::unique_ptr<const mfem::ParFiniteElementSpace> dual_fes_;
   integer dual_vdim_;
   mfem::GridFunction response_gridfn_;
   InterfaceElementType elem_type_;
