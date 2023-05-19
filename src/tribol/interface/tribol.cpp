@@ -415,35 +415,13 @@ void registerParMesh( integer cs_id,
 {
    std::unique_ptr<mfem::FiniteElementCollection> dual_fec = nullptr;
    integer dual_vdim = 0;
-   if (enforcement_method == LAGRANGE_MULTIPLIER)
-   {
-      dual_fec = std::make_unique<mfem::H1_FECollection>(
-         current_coords.FESpace()->FEColl()->GetOrder(),
-         mesh.SpaceDimension()
-      );
-      if (contact_model == FRICTIONLESS)
-      {
-         dual_vdim = 1;
-      }
-      else if (contact_model == TIED || contact_model == COULOMB)
-      {
-         dual_vdim = mesh.SpaceDimension();
-      }
-      else
-      {
-         SLIC_ERROR_ROOT("Unsupported contact model. "
-           "Only FRICTIONLESS, TIED, and COULOMB supported.");
-      }
-   }
    auto mfem_data = std::make_unique<MfemMeshData>(
       mesh_id_1,
       mesh_id_2,
       mesh,
       current_coords,
       attributes_1,
-      attributes_2,
-      std::move(dual_fec),
-      dual_vdim
+      attributes_2
    );
    // register empty meshes so the coupling scheme is valid
    registerMesh(
@@ -464,6 +442,33 @@ void registerParMesh( integer cs_id,
    CouplingSchemeManager::getInstance().getCoupling(cs_id)->setMfemMeshData(
       std::move(mfem_data)
    );
+   if (enforcement_method == LAGRANGE_MULTIPLIER)
+   {
+      dual_fec = std::make_unique<mfem::H1_FECollection>(
+         current_coords.FESpace()->FEColl()->GetOrder(),
+         mesh.SpaceDimension()
+      );
+      if (contact_model == FRICTIONLESS)
+      {
+         dual_vdim = 1;
+      }
+      else if (contact_model == TIED || contact_model == COULOMB)
+      {
+         dual_vdim = mesh.SpaceDimension();
+      }
+      else
+      {
+         SLIC_ERROR_ROOT("Unsupported contact model. "
+           "Only FRICTIONLESS, TIED, and COULOMB supported.");
+      }
+      CouplingSchemeManager::getInstance().getCoupling(cs_id)->setMfemDualData(
+         std::make_unique<MfemDualData>(
+            mfem_data->GetSubmesh(),
+            std::move(dual_fec),
+            dual_vdim
+         )
+      );
+   }
 
 } // end of registerParMesh()
 
@@ -673,9 +678,9 @@ int getCSRMatrix( int** I, int** J, real** vals, int csId,
 int getElementBlockJacobians( integer csId, 
                               BlockSpace row_block, 
                               BlockSpace col_block,
-                              axom::Array<integer>& row_elem_idx,
-                              axom::Array<integer>& col_elem_idx,
-                              axom::Array<mfem::DenseMatrix>& jacobians )
+                              const axom::Array<integer>* row_elem_idx,
+                              const axom::Array<integer>* col_elem_idx,
+                              const axom::Array<mfem::DenseMatrix>* jacobians )
 {
    SparseMode sparse_mode = CouplingSchemeManager::getInstance().
       getCoupling(csId)->getEnforcementOptions().lm_implicit_options.sparse_mode;
@@ -683,19 +688,54 @@ int getElementBlockJacobians( integer csId,
    {
       SLIC_WARNING("Jacobian is assembled and can be accessed by " 
          "getMfemSparseMatrix() or getCSRMatrix(). For (unassembled) element "
-         "Jacobian contributions, call setJacobianStorage(JacobianStorage::ELEMENT) "
-         "before calling update().");
+         "Jacobian contributions, call setLagrangeMultiplierOptions() with "
+         "SparseMode::MFEM_ELEMENT_DENSE before calling update().");
       return 1;
    }
    MethodData* method_data = 
       CouplingSchemeManager::getInstance().getCoupling( csId )->getMethodData();
-   row_elem_idx = method_data->getBlockJElementIds()[static_cast<int>(row_block)];
-   col_elem_idx = method_data->getBlockJElementIds()[static_cast<int>(col_block)];
-   jacobians = method_data->getBlockJ()(
+   row_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(row_block)];
+   col_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(col_block)];
+   jacobians = &method_data->getBlockJ()(
       static_cast<int>(row_block),
       static_cast<int>(col_block)
    );
    return 0;
+}
+
+//------------------------------------------------------------------------------
+std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
+{
+   CouplingScheme* coupling_scheme = CouplingSchemeManager::getInstance().
+      getCoupling(csId);
+   SparseMode sparse_mode = coupling_scheme
+      ->getEnforcementOptions().lm_implicit_options.sparse_mode;
+   if (sparse_mode != SparseMode::MFEM_ELEMENT_DENSE)
+   {
+      SLIC_ERROR_ROOT("Jacobian is assembled and can be accessed by " 
+         "getMfemSparseMatrix() or getCSRMatrix(). For (unassembled) element "
+         "Jacobian contributions, call setLagrangeMultiplierOptions() with "
+         "SparseMode::MFEM_ELEMENT_DENSE before calling update().");
+   }
+   auto mfem_data = coupling_scheme->getMfemMeshData();
+   SLIC_ERROR_ROOT_IF(!mfem_data, "No MFEM data exists. The coupling scheme "
+     "must be registered using registerParMesh() to use this method.");
+   MethodData* method_data = coupling_scheme->getMethodData();
+   // 0 = displacement DOFs, 1 = lagrange multiplier DOFs
+   // (0,0) block is empty (for now)
+   // (1,1) block is empty
+   // (0,1) and (1,0) are symmetric (for now)
+   const auto& mortar_idx = method_data
+      ->getBlockJElementIds()[static_cast<int>(BlockSpace::MORTAR)];
+   const auto& nonmortar_idx = method_data
+      ->getBlockJElementIds()[static_cast<int>(BlockSpace::NONMORTAR)];
+   const auto& lm_idx = method_data
+      ->getBlockJElementIds()[static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER)];
+   // get (1,0) block
+   const auto& jacobians = method_data->getBlockJ()(
+      static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER),
+      static_cast<int>(BlockSpace::MORTAR)
+   );
 }
 
 //------------------------------------------------------------------------------
@@ -727,7 +767,7 @@ void registerMortarGaps( integer meshId,
 mfem::ParGridFunction getGapGridFn( integer cs_id )
 {
    return CouplingSchemeManager::getInstance().getCoupling(cs_id)
-      ->getMfemMeshData()->GetParentGap();
+      ->getMfemDualData()->GetParentGap();
 }
 
 //------------------------------------------------------------------------------
@@ -759,7 +799,7 @@ void registerMortarPressures( integer meshId,
 mfem::ParGridFunction& getPressureGridFn( integer cs_id )
 {
    return CouplingSchemeManager::getInstance().getCoupling(cs_id)
-      ->getMfemMeshData()->GetParentPressure();
+      ->getMfemDualData()->GetParentPressure();
 }
 
 //------------------------------------------------------------------------------
@@ -1066,9 +1106,13 @@ integer update( integer cycle, real t, real &dt )
          }
          if (couplingScheme->getEnforcementMethod() == LAGRANGE_MULTIPLIER)
          {
-            auto g_ptrs = mfem_data->GetGapPtrs();
+            SLIC_ERROR_ROOT_IF(couplingScheme->getContactModel() != FRICTIONLESS,
+              "Only frictionless contact is supported at this time.");
+            auto dual_data = couplingScheme->getMfemDualData();
+            dual_data->UpdateDualData(mfem_data->GetRedecompMesh());
+            auto g_ptrs = dual_data->GetGapPtrs();
             registerMortarGaps(mesh_id_2, g_ptrs[0]);
-            auto p_ptrs = mfem_data->GetPressurePtrs();
+            auto p_ptrs = dual_data->GetPressurePtrs();
             registerMortarPressures(mesh_id_2, p_ptrs[0]);
          }
       }

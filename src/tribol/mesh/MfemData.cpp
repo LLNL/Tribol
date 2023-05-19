@@ -6,6 +6,7 @@
 #include "tribol/mesh/MfemData.hpp"
 
 #include "axom/slic.hpp"
+#include <mfem/fem/pfespace.hpp>
 
 namespace tribol
 {
@@ -245,9 +246,7 @@ MfemMeshData::MfemMeshData(
   mfem::ParMesh& mesh,
   const mfem::ParGridFunction& current_coords,
   const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2,
-  std::unique_ptr<mfem::FiniteElementCollection> dual_fec,
-  integer dual_vdim
+  const std::set<integer>& attributes_2
 )
 : mesh_id_1_ { mesh_id_1 },
   mesh_id_2_ { mesh_id_2 },
@@ -257,19 +256,6 @@ MfemMeshData::MfemMeshData(
   submesh_ { CreateSubmesh(mesh_, attributes_1_, attributes_2_) },
   coords_ { current_coords }
 {
-  // create pressure and gap if dual_fec is not null
-  if (dual_fec)
-  {
-    pressure_gridfn_ = std::make_unique<mfem::ParGridFunction>(
-      new mfem::ParFiniteElementSpace(
-        &submesh_,
-        dual_fec.get(),
-        dual_vdim
-      )
-    );
-    pressure_gridfn_->MakeOwner(dual_fec.release());
-    pressure_ = std::make_unique<PressureField>(*pressure_gridfn_);
-  }
   // set the element type
   mfem::Element::Type element_type = mfem::Element::QUADRILATERAL;
   if (submesh_.GetNE() > 0)
@@ -317,21 +303,13 @@ void MfemMeshData::UpdateMeshData()
     attributes_1_, 
     attributes_2_, 
     num_verts_per_elem_,
-    *coords_.GetParentField().ParFESpace(),
-    pressure_ ? pressure_gridfn_->ParFESpace() : nullptr
+    *coords_.GetParentField().ParFESpace()
   );
   coords_.UpdateField(update_data_->primal_xfer_);
   response_gridfn_.SetSpace(coords_.GetRedecompField().FESpace());
   if (velocity_)
   {
     velocity_->UpdateField(update_data_->primal_xfer_);
-  }
-  if (pressure_gridfn_)
-  {
-    pressure_->UpdateField(*update_data_->dual_xfer_);
-    gap_gridfn_ = std::make_unique<mfem::GridFunction>(
-      pressure_->GetRedecompField().FESpace()
-    );
   }
 }
 
@@ -347,38 +325,15 @@ void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
   }
 }
 
-mfem::ParGridFunction& MfemMeshData::GetParentPressure()
-{
-  SLIC_ERROR_ROOT_IF(
-    !pressure_gridfn_, "No pressure grid function exists. "
-    "Is contact enforced using Lagrange multipliers?"
-  );
-  return *pressure_gridfn_;
-}
-
-mfem::ParGridFunction MfemMeshData::GetParentGap() const
-{
-  SLIC_ERROR_ROOT_IF(
-    !gap_gridfn_, "No gap grid function exists. "
-    "Is contact enforced using Lagrange multipliers?"
-  );
-  return GetUpdateData().dual_xfer_->RedecompToSubmesh(*gap_gridfn_);
-}
-
 MfemMeshData::UpdateData::UpdateData(
   mfem::ParSubMesh& submesh,
   const std::set<integer>& attributes_1,
   const std::set<integer>& attributes_2,
   integer num_verts_per_elem,
-  const mfem::ParFiniteElementSpace& parent_fes,
-  mfem::ParFiniteElementSpace* submesh_fes
+  const mfem::ParFiniteElementSpace& parent_fes
 )
 : redecomp_ { submesh },
-  primal_xfer_ { redecomp_, submesh, parent_fes },
-  dual_xfer_ { submesh_fes ?
-    std::make_unique<SubmeshRedecompTransfer>(redecomp_, *submesh_fes) :
-    nullptr
-  }
+  primal_xfer_ { redecomp_, submesh, parent_fes }
 {
   UpdateConnectivity(attributes_1, attributes_2, num_verts_per_elem);
 }
@@ -470,6 +425,58 @@ mfem::ParSubMesh MfemMeshData::CreateSubmesh(
     parent,
     attributes_array
   );
+}
+
+MfemDualData::MfemDualData(
+  mfem::ParSubMesh& submesh,
+  std::unique_ptr<mfem::FiniteElementCollection> dual_fec,
+  integer dual_vdim
+)
+: pressure_gridfn_ {
+    new mfem::ParFiniteElementSpace(
+      &submesh,
+      dual_fec.get(),
+      dual_vdim
+    )
+  },
+  pressure_ { pressure_gridfn_ }
+{
+  pressure_gridfn_.MakeOwner(dual_fec.release());
+}
+
+void MfemDualData::UpdateDualData(redecomp::RedecompMesh& redecomp)
+{
+  update_data_ = std::make_unique<UpdateData>(
+    redecomp,
+    *pressure_gridfn_.ParFESpace()
+  );
+  pressure_.UpdateField(update_data_->dual_xfer_);
+  gap_gridfn_.SetSpace(pressure_.GetRedecompField().FESpace());
+}
+
+MfemDualData::UpdateData::UpdateData(
+  redecomp::RedecompMesh& redecomp,
+  mfem::ParFiniteElementSpace& submesh_fes
+)
+: dual_xfer_ { redecomp, submesh_fes }
+{}
+
+MfemDualData::UpdateData& MfemDualData::GetUpdateData()
+{
+  SLIC_ERROR_ROOT_IF(
+    update_data_ == nullptr,
+    "UpdateField() must be called to generate UpdateData."
+  );
+  return *update_data_;
+}
+
+const MfemDualData::UpdateData& MfemDualData::GetUpdateData() const
+{
+  SLIC_ERROR_ROOT_IF(
+    update_data_ == nullptr,
+    "UpdateField() must be called to generate UpdateData."
+  );
+  return *update_data_;
 }
 
 } // end tribol namespace

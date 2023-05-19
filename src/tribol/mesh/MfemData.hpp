@@ -142,9 +142,7 @@ public:
     mfem::ParMesh& mesh,
     const mfem::ParGridFunction& current_coords,
     const std::set<integer>& attributes_1,
-    const std::set<integer>& attributes_2,
-    std::unique_ptr<mfem::FiniteElementCollection> dual_fec = nullptr,
-    integer dual_vdim = 0
+    const std::set<integer>& attributes_2
   );
   void SetParentCoords(const mfem::ParGridFunction& current_coords);
   void UpdateMeshData();
@@ -190,16 +188,14 @@ public:
   {
     return velocity_->GetFieldPtrs();
   }
-  std::vector<const real*> GetPressurePtrs() const
+  mfem::ParSubMesh& GetSubmesh()
   {
-    return pressure_->GetFieldPtrs();
+    return submesh_;
   }
-  mfem::ParGridFunction& GetParentPressure();
-  std::vector<real*> GetGapPtrs()
+  redecomp::RedecompMesh& GetRedecompMesh()
   {
-    return PressureField::GetFieldPtrs(*gap_gridfn_);
+    return GetUpdateData().redecomp_;
   }
-  mfem::ParGridFunction GetParentGap() const;
 private:
   struct UpdateData
   {
@@ -208,12 +204,10 @@ private:
       const std::set<integer>& attributes_1,
       const std::set<integer>& attributes_2,
       integer num_verts_per_elem,
-      const mfem::ParFiniteElementSpace& parent_fes,
-      mfem::ParFiniteElementSpace* redecomp_fes
+      const mfem::ParFiniteElementSpace& parent_fes
     );
     redecomp::RedecompMesh redecomp_;
     ParentRedecompTransfer primal_xfer_;
-    std::unique_ptr<SubmeshRedecompTransfer> dual_xfer_;
     axom::Array<integer, 2> conn_1_;
     axom::Array<integer, 2> conn_2_;
     std::vector<integer> elem_map_1_;
@@ -239,15 +233,11 @@ private:
   std::set<integer> attributes_2_;
   mfem::ParSubMesh submesh_;
   PrimalField coords_;
-  std::unique_ptr<mfem::ParGridFunction> pressure_gridfn_;
-  std::unique_ptr<PressureField> pressure_;
-  std::unique_ptr<mfem::GridFunction> gap_gridfn_;
-  integer dual_vdim_;
   mfem::GridFunction response_gridfn_;
   InterfaceElementType elem_type_;
   integer num_verts_per_elem_;
-  std::unique_ptr<UpdateData> update_data_;
   std::unique_ptr<PrimalField> velocity_;
+  std::unique_ptr<UpdateData> update_data_;
 
   template <typename T>
   static T mergeContainers(T container_1, T container_2)
@@ -275,6 +265,52 @@ private:
     }
     return array;
   }
+};
+
+class MfemDualData
+{
+public:
+  MfemDualData(
+    mfem::ParSubMesh& submesh,
+    std::unique_ptr<mfem::FiniteElementCollection> dual_fec,
+    integer dual_vdim
+  );
+  void UpdateDualData(redecomp::RedecompMesh& redecomp);
+  std::vector<const real*> GetPressurePtrs() const
+  {
+    return pressure_.GetFieldPtrs();
+  }
+  mfem::ParGridFunction& GetParentPressure()
+  {
+    return pressure_gridfn_;
+  }
+  std::vector<real*> GetGapPtrs()
+  {
+    return PressureField::GetFieldPtrs(gap_gridfn_);
+  }
+  mfem::ParGridFunction GetParentGap() const
+  {
+    return GetSubmeshTransfer().RedecompToSubmesh(gap_gridfn_);
+  }
+  const SubmeshRedecompTransfer& GetSubmeshTransfer() const
+  {
+    return GetUpdateData().dual_xfer_;
+  }
+private:
+  struct UpdateData
+  {
+    UpdateData(
+      redecomp::RedecompMesh& redecomp,
+      mfem::ParFiniteElementSpace& submesh_fes
+    );
+    SubmeshRedecompTransfer dual_xfer_;
+  };
+  UpdateData& GetUpdateData();
+  const UpdateData& GetUpdateData() const;
+  mfem::ParGridFunction pressure_gridfn_;
+  PressureField pressure_;
+  mfem::GridFunction gap_gridfn_;
+  std::unique_ptr<UpdateData> update_data_;
 };
 
 } // end namespace tribol

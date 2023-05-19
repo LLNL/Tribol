@@ -1472,7 +1472,8 @@ MfemMeshData* CouplingScheme::getMfemMeshData()
 {
    SLIC_ERROR_ROOT_IF(
       !m_mfemMeshData, 
-      "Coupling scheme does not contain MFEM data."
+      "Coupling scheme does not contain MFEM data. "
+      "Was the coupling scheme created with registerParMesh()?"
    );
    return m_mfemMeshData.get();
 }
@@ -1482,9 +1483,34 @@ const MfemMeshData* CouplingScheme::getMfemMeshData() const
 {
    SLIC_ERROR_ROOT_IF(
       !m_mfemMeshData, 
-      "Coupling scheme does not contain MFEM data."
+      "Coupling scheme does not contain MFEM data. "
+      "Was the coupling scheme created with registerParMesh()?"
    );
    return m_mfemMeshData.get();
+}
+
+//------------------------------------------------------------------------------
+MfemDualData* CouplingScheme::getMfemDualData()
+{
+   SLIC_ERROR_ROOT_IF(
+      !m_mfemDualData, 
+      "Coupling scheme does not contain MFEM dual field data. "
+      "Was the coupling scheme created with registerParMesh() and is the "
+      "enforcement method LAGRANGE_MULTIPLIER?"
+   );
+   return m_mfemDualData.get();
+}
+
+//------------------------------------------------------------------------------
+const MfemDualData* CouplingScheme::getMfemDualData() const
+{
+   SLIC_ERROR_ROOT_IF(
+      !m_mfemDualData, 
+      "Coupling scheme does not contain MFEM dual field data. "
+      "Was the coupling scheme created with registerParMesh() and is the "
+      "enforcement method LAGRANGE_MULTIPLIER?"
+   );
+   return m_mfemDualData.get();
 }
 
 //------------------------------------------------------------------------------

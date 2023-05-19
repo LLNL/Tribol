@@ -311,11 +311,11 @@ int getCSRMatrix( int** I, int** J, real** vals, int csId,
  * multiplier block, which is zero).
  *
  * The structure of the blocks is:
- *       M    S    LM
+ *       M    NM   LM
  *     ----------------  M  = BlockSpace::MORTAR
  *   M | 00 | 01 | 02 |
- *     |----|----|----|  S  = BlockSpace::NONMORTAR
- *   S | 10 | 11 | 12 |
+ *     |----|----|----|  NM = BlockSpace::NONMORTAR
+ *  NM | 10 | 11 | 12 |
  *     |----|----|----|  LM = BlockSpace::LAGRANGE_MULTIPLIER
  *  LM | 20 | 21 | 22 |
  *     ----------------
@@ -331,20 +331,20 @@ int getCSRMatrix( int** I, int** J, real** vals, int csId,
  * \param [in]  csId Coupling scheme id
  * \param [in]  row_block Row Jacobian block (MORTAR, NONMORTAR, or LAGRANGE_MULTIPLIER)
  * \param [in]  col_block Column Jacobian block (MORTAR, NONMORTAR, or LAGRANGE_MULTIPLIER)
- * \param [out] row_elem_idx Reference to array of element indices for the row block
- * \param [out] col_elem_idx Reference to array of element indices for the column block
- * \param [out] jacobians Reference to array of Jacobian dense matrices
+ * \param [out] row_elem_idx Pointer to array of element indices for the row block
+ * \param [out] col_elem_idx Pointer to array of element indices for the column block
+ * \param [out] jacobians Pointer to array of Jacobian dense matrices
  *
  * \return 0 success (if Jacobians exist), nonzero for failure
  */
 int getElementBlockJacobians( integer csId, 
                               BlockSpace row_block,
                               BlockSpace col_block,
-                              axom::Array<integer>& row_elem_idx,
-                              axom::Array<integer>& col_elem_idx,
-                              axom::Array<mfem::DenseMatrix>& jacobians );
+                              const axom::Array<integer>* row_elem_idx,
+                              const axom::Array<integer>* col_elem_idx,
+                              const axom::Array<mfem::DenseMatrix>* jacobians );
 
-std::unique_ptr<mfem::BlockOperator> getMfemHypreParMatrix( integer csId );
+std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
 
 /// register mortar gaps scalar nodal field
 void registerMortarGaps( integer meshId,

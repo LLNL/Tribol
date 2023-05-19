@@ -335,6 +335,15 @@ public:
     m_mfemMeshData = std::move(mfemMeshData);
   }
 
+  MfemDualData* getMfemDualData();
+  
+  const MfemDualData* getMfemDualData() const;
+
+  void setMfemDualData(std::unique_ptr<MfemDualData>&& mfemDualData)
+  {
+    m_mfemDualData = std::move(mfemDualData);
+  }
+
 private:
 
   /*!
@@ -376,7 +385,7 @@ private:
   CouplingSchemeInfo   m_couplingSchemeInfo;   ///< struct handling info to be printed
 
   std::unique_ptr<MfemMeshData> m_mfemMeshData;
-  std::unique_ptr<PrimalField> m_velocity;
+  std::unique_ptr<MfemDualData> m_mfemDualData;
   
   DISABLE_COPY_AND_ASSIGNMENT( CouplingScheme );
   DISABLE_MOVE_AND_ASSIGNMENT( CouplingScheme );
