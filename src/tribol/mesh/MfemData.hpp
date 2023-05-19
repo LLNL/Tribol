@@ -6,7 +6,6 @@
 #ifndef SRC_MESH_MFEMDATA_HPP_
 #define SRC_MESH_MFEMDATA_HPP_
 
-#include <mfem/fem/pfespace.hpp>
 #include <set>
 #include <vector>
 

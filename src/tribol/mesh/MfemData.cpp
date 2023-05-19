@@ -6,8 +6,6 @@
 #include "tribol/mesh/MfemData.hpp"
 
 #include "axom/slic.hpp"
-#include <mfem/fem/pfespace.hpp>
-#include <mfem/fem/pgridfunc.hpp>
 
 namespace tribol
 {
