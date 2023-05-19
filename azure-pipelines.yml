@@ -1,0 +1,111 @@
+# Copyright (c) 2017-2023, Lawrence Livermore National Security, LLC and
+# other Tribol Project Developers. See the top-level COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (MIT)
+
+variables:
+  Clang_10_ImageName: 'seracllnl/tpls:clang-10_05-03-23_16h-04m'
+  GCC_9_ImageName: 'seracllnl/tpls:gcc-9_05-03-23_16h-04m'
+  GCC_11_ImageName: 'seracllnl/tpls:gcc-11_05-03-23_16h-04m'
+  HOME_DIR: '/home/serac'
+  BASE_CMAKE_OPTS: '-UUMPIRE_DIR'
+
+jobs:
+- job: Build_and_Test
+  strategy:
+    matrix:
+      linux_gcc11_debug:
+          VM_ImageName: 'ubuntu-20.04'
+          Compiler_ImageName: $(GCC_11_ImageName)
+          TEST_TARGET: 'linux_gcc11'
+          HOST_CONFIG: 'gcc@11.1.0.cmake'
+          BUILD_TYPE: 'Debug'
+      linux_gcc11_release:
+          VM_ImageName: 'ubuntu-20.04'
+          Compiler_ImageName: $(GCC_11_ImageName)
+          TEST_TARGET: 'linux_gcc11'
+          HOST_CONFIG: 'gcc@11.1.0.cmake'
+          BUILD_TYPE: 'Release'
+      linux_gcc9_debug:
+          VM_ImageName: 'ubuntu-20.04'
+          Compiler_ImageName: $(GCC_9_ImageName)
+          TEST_TARGET: 'linux_gcc9'
+          HOST_CONFIG: 'gcc@9.3.0.cmake'
+          BUILD_TYPE: 'Debug'
+      linux_gcc9_release:
+          VM_ImageName: 'ubuntu-20.04'
+          Compiler_ImageName: $(GCC_9_ImageName)
+          TEST_TARGET: 'linux_gcc9'
+          HOST_CONFIG: 'gcc@9.3.0.cmake'
+          BUILD_TYPE: 'Release'
+      linux_clang10_debug:
+          VM_ImageName: 'ubuntu-20.04'
+          Compiler_ImageName: $(Clang_10_ImageName)
+          TEST_TARGET: 'linux_clang10'
+          HOST_CONFIG: 'clang@10.0.0.cmake'
+          BUILD_TYPE: 'Debug'
+      linux_clang10_release:
+          VM_ImageName: 'ubuntu-20.04'
+          Compiler_ImageName: $(Clang_10_ImageName)
+          TEST_TARGET: 'linux_clang10'
+          HOST_CONFIG: 'clang@10.0.0.cmake'
+          BUILD_TYPE: 'Release'
+
+  pool:
+    vmImage: $(VM_ImageName)
+
+  steps:
+  - checkout: self
+    clean: true
+    submodules: recursive
+  - script:  |
+      echo " -e $TEST_TARGET -e HOST_CONFIG $(Compiler_ImageName) ./scripts/llnl/build_src.py $BUILD_SRC_OPTS -v --host-config $HOST_CONFIG --extra-cmake-options \"${CMAKE_OPTS} -DCMAKE_BUILD_TYPE=$BUILD_TYPE\""
+      docker run --rm -v `pwd`:$(HOME_DIR)/tribol -e TEST_TARGET -e HOST_CONFIG $(Compiler_ImageName) ./tribol/scripts/llnl/build_src.py $BUILD_SRC_OPTS -v --host-config $HOST_CONFIG --extra-cmake-options "$(BASE_CMAKE_OPTS) ${CMAKE_OPTS} -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+
+    displayName: '$(TEST_TARGET) Build & Test'
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'cTest'
+      testResultsFiles: '**/Test.xml'
+      testRunTitle: '$(TEST_TARGET) Tests'
+      failTaskOnFailedTests: true
+
+#TODO: Enable if you want code checks
+#- job: Check_Code
+#  variables:
+#    VM_ImageName: 'ubuntu-20.04'
+#    Compiler_ImageName: $(Clang_10_ImageName)
+#    TEST_TARGET: 'linux_clang10'
+#    HOST_CONFIG: 'clang@10.0.0.cmake'
+#
+#  strategy:
+#    matrix:
+#TODO: Enable if you want codecov support
+#      coverage:
+#        DO_COVERAGE_CHECK: 'yes'
+#        DO_DOCS_CHECK: 'no'
+#        DO_STYLE_CHECK: 'no'
+#TODO: Enable if you want to ensure documentation does not have warnings
+#      docs:
+#        DO_COVERAGE_CHECK: 'no'
+#        DO_DOCS_CHECK: 'yes'
+#        DO_STYLE_CHECK: 'no'
+#TODO: Enable if you want to enforce style checks
+#      style:
+#        DO_COVERAGE_CHECK: 'no'
+#        DO_DOCS_CHECK: 'no'
+#        DO_STYLE_CHECK: 'yes'
+#
+#  pool:
+#    vmImage: $(VM_ImageName)
+#
+#  steps:
+#  - checkout: self
+#    clean: true
+#    submodules: recursive
+#  # https://docs.codecov.io/docs/testing-with-docker
+#  - script:  |
+#      ci_env=`bash <(curl -s https://codecov.io/env)`
+#      echo "  -e DO_COVERAGE_CHECK  -e DO_DOCS_CHECK -e DO_STYLE_CHECK -e HOST_CONFIG ./tribol/scripts/azure-pipelines/linux-check.sh"
+#      docker run --rm -v `pwd`:$(HOME_DIR)/tribol $ci_env -e DO_COVERAGE_CHECK  -e DO_DOCS_CHECK -e DO_STYLE_CHECK -e HOST_CONFIG $(Compiler_ImageName) ./tribol/scripts/azure-pipelines/linux-check.sh
+#    displayName: '$(TEST_TARGET) Check'

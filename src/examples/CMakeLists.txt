@@ -10,7 +10,7 @@ set( contact_examples
      )
 
 
-set(example_depends axom tribol cli11 fmt)
+set(example_depends axom tribol axom::cli11 axom::fmt)
 blt_list_append(TO example_depends ELEMENTS cuda IF ENABLE_CUDA )
 
 foreach( example ${contact_examples} )
