@@ -223,10 +223,6 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
 
    this->m_mesh.tribolMatrixToSystemMatrix( &dTribolJac, &jac );
 
-   // set nonmortar gaps in rhs vector
-   tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
-
    // note: this does not populate the right hand side with any contact weak form 
    // residual terms. That is, the initial guess for pressure is zero, and therefore
    // there are no contact contributions to the equilibrium residual. Here we only 
@@ -281,7 +277,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
          int offset = this->m_mesh.dim * (this->m_mesh.numMortarNodes + this->m_mesh.numNonmortarNodes);
          int nonmortarOffset = this->m_mesh.numMortarNodes;
          int id = this->m_mesh.faceConn2[i];
-         nonmortarMesh.m_nodalFields.m_node_pressure[id] = sol_data[ offset + id - nonmortarOffset ];
+         this->m_mesh.pressures[id] = sol_data[ offset + id - nonmortarOffset ];
       }
 
       // zero out mortar and nonmortar nodal force contributions for equilibrium 

@@ -32,6 +32,7 @@
 #include "axom/slic.hpp"
 
 // C/C++ includes
+#include <mfem/fem/fe_coll.hpp>
 #include <string>
 #include <unordered_map>
 #include <fstream>
@@ -265,6 +266,11 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
 
    lm_options.eval_mode = evalMode;
    lm_options.sparse_mode = sparseMode;
+   if (couplingScheme->getMfemMeshData())
+   {
+      // MFEM_ELEMENT_DENSE is required to use the MFEM interface
+      lm_options.sparse_mode = SparseMode::MFEM_ELEMENT_DENSE;
+   }
    lm_options.enforcement_option_set = true;
 
 } // end setLagrangeMultiplierOptions()
@@ -407,13 +413,37 @@ void registerParMesh( integer cs_id,
                       integer enforcement_method,
                       integer binning_method)
 {
+   std::unique_ptr<mfem::FiniteElementCollection> dual_fec = nullptr;
+   integer dual_vdim = 0;
+   if (enforcement_method == LAGRANGE_MULTIPLIER)
+   {
+      dual_fec = std::make_unique<mfem::H1_FECollection>(
+         current_coords.FESpace()->FEColl()->GetOrder(),
+         mesh.SpaceDimension()
+      );
+      if (contact_model == FRICTIONLESS)
+      {
+         dual_vdim = 1;
+      }
+      else if (contact_model == TIED || contact_model == COULOMB)
+      {
+         dual_vdim = mesh.SpaceDimension();
+      }
+      else
+      {
+         SLIC_ERROR_ROOT("Unsupported contact model. "
+           "Only FRICTIONLESS, TIED, and COULOMB supported.");
+      }
+   }
    auto mfem_data = std::make_unique<MfemMeshData>(
       mesh_id_1,
       mesh_id_2,
       mesh,
       current_coords,
       attributes_1,
-      attributes_2
+      attributes_2,
+      std::move(dual_fec),
+      dual_vdim
    );
    // register empty meshes so the coupling scheme is valid
    registerMesh(
@@ -674,57 +704,54 @@ int getElementBlockJacobians( integer csId,
 }
 
 //------------------------------------------------------------------------------
-void registerRealNodalField( integer meshId,
-                             const RealNodalFields field,
-                             real * fieldVariable )
+void registerMortarGaps( integer meshId,
+                         real * nodal_gaps )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
-   SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerRealNodalField(): " << 
-                 "no mesh with id, " << meshId << "exists.");
+   SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerMortarGaps(): " << 
+                 "no mesh with id " << meshId << " exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
 
-   switch (field)
+   if (nodal_gaps == nullptr)
    {
-      case MORTAR_GAPS:
-      {
-         if (fieldVariable==nullptr)
-         {
-            SLIC_WARNING( "tribol::registerRealNodalField(): null pointer to data for " << 
-                          "'MORTAR_GAPS' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
-         }
-         else
-         {
-            mesh.m_nodalFields.m_node_gap = fieldVariable;
-            mesh.m_nodalFields.m_is_node_gap_set = true;
-         }
-         break;
-      }
-      case MORTAR_PRESSURES:
-      {
-         if (fieldVariable==nullptr)
-         {
-            SLIC_WARNING( "tribol::registerRealNodalField(): null pointer to data for " << 
-                          "'MORTAR_PRESSURES' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
-         }
-         else
-         {
-            mesh.m_nodalFields.m_node_pressure = fieldVariable;
-            mesh.m_nodalFields.m_is_node_pressure_set = true;
-         }
-         break;
-      }
-      default:
-      {
-         SLIC_ERROR( "tribol::registerRealNodalField(): the field argument " << 
-                     "for mesh, " << meshId << ", is not an accepted tribol nodal field." );
-      }
-   } // end switch over field
+      SLIC_WARNING( "tribol::registerMortarGaps(): null pointer to data " << 
+                    "on mesh " << meshId << ".");
+      mesh.m_isValid = false;
+   }
+   else
+   {
+      mesh.m_nodalFields.m_node_gap = nodal_gaps;
+      mesh.m_nodalFields.m_is_node_gap_set = true;
+   }
+   
+}
 
-} // end registerRealNodalField()
+//------------------------------------------------------------------------------
+void registerMortarPressures( integer meshId,
+                              const real * nodal_pressures )
+{
+   MeshManager & meshManager = MeshManager::getInstance();
+
+   SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerMortarPressures(): " << 
+                 "no mesh with id " << meshId << " exists.");
+
+   MeshData & mesh = meshManager.GetMeshInstance( meshId );
+
+   if (nodal_pressures == nullptr)
+   {
+      SLIC_WARNING( "tribol::registerMortarPressures(): null pointer to data " << 
+                    "on mesh " << meshId << ".");
+      mesh.m_isValid = false;
+   }
+   else
+   {
+      mesh.m_nodalFields.m_node_pressure = nodal_pressures;
+      mesh.m_nodalFields.m_is_node_pressure_set = true;
+   }
+   
+}
 
 //------------------------------------------------------------------------------
 void registerIntNodalField( integer meshId,
@@ -1027,6 +1054,13 @@ integer update( integer cycle, real t, real &dt )
                mesh_id_1, v_ptrs[0], v_ptrs[1], v_ptrs[2]);
             registerNodalVelocities(
                mesh_id_2, v_ptrs[0], v_ptrs[1], v_ptrs[2]);
+         }
+         if (couplingScheme->getEnforcementMethod() == LAGRANGE_MULTIPLIER)
+         {
+            auto g_ptrs = mfem_data->GetGapPtrs();
+            registerMortarGaps(mesh_id_2, g_ptrs[0]);
+            auto p_ptrs = mfem_data->GetPressurePtrs();
+            registerMortarPressures(mesh_id_2, p_ptrs[0]);
          }
       }
       

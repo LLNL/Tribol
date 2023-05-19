@@ -6,6 +6,8 @@
 #include "tribol/mesh/MfemData.hpp"
 
 #include "axom/slic.hpp"
+#include <mfem/fem/pfespace.hpp>
+#include <mfem/fem/pgridfunc.hpp>
 
 namespace tribol
 {
@@ -176,6 +178,68 @@ PrimalField::UpdateData::UpdateData(
   redecomp_ { xfer_.ParentToRedecomp(parent) }
 {}
 
+PressureField::PressureField(
+  const mfem::ParGridFunction& submesh
+)
+: submesh_ { submesh }
+{}
+
+void PressureField::SetSubmeshField(const mfem::ParGridFunction& submesh)
+{
+  submesh_ = submesh;
+}
+
+void PressureField::UpdateField(const SubmeshRedecompTransfer& xfer)
+{
+  update_data_ = std::make_unique<UpdateData>(xfer, submesh_);
+}
+
+std::vector<const real*> PressureField::GetFieldPtrs() const
+{
+  auto data_ptrs = std::vector<const real*>(3, nullptr);
+  for (size_t i{}; i < static_cast<size_t>(GetRedecompField().FESpace()->GetVDim()); ++i)
+  {
+    data_ptrs[i] = &GetRedecompField()(GetRedecompField().FESpace()->DofToVDof(0, i));
+  }
+  return data_ptrs;
+}
+
+std::vector<real*> PressureField::GetFieldPtrs(mfem::GridFunction& redecomp_fn)
+{
+  auto data_ptrs = std::vector<real*>(3, nullptr);
+  for (size_t i{}; i < static_cast<size_t>(redecomp_fn.FESpace()->GetVDim()); ++i)
+  {
+    data_ptrs[i] = &redecomp_fn(redecomp_fn.FESpace()->DofToVDof(0, i));
+  }
+  return data_ptrs;
+}
+
+PressureField::UpdateData& PressureField::GetUpdateData()
+{
+  SLIC_ERROR_ROOT_IF(
+    update_data_ == nullptr,
+    "UpdateField() must be called to generate UpdateData."
+  );
+  return *update_data_;
+}
+
+const PressureField::UpdateData& PressureField::GetUpdateData() const
+{
+  SLIC_ERROR_ROOT_IF(
+    update_data_ == nullptr,
+    "UpdateField() must be called to generate UpdateData."
+  );
+  return *update_data_;
+}
+
+PressureField::UpdateData::UpdateData(
+  const SubmeshRedecompTransfer& xfer,
+  const mfem::ParGridFunction& parent
+)
+: xfer_ { xfer },
+  redecomp_ { xfer_.SubmeshToRedecomp(parent) }
+{}
+
 MfemMeshData::MfemMeshData(
   integer mesh_id_1,
   integer mesh_id_2,
@@ -183,7 +247,7 @@ MfemMeshData::MfemMeshData(
   const mfem::ParGridFunction& current_coords,
   const std::set<integer>& attributes_1,
   const std::set<integer>& attributes_2,
-  std::unique_ptr<const mfem::FiniteElementCollection> dual_fec,
+  std::unique_ptr<mfem::FiniteElementCollection> dual_fec,
   integer dual_vdim
 )
 : mesh_id_1_ { mesh_id_1 },
@@ -192,10 +256,24 @@ MfemMeshData::MfemMeshData(
   attributes_1_ { attributes_1 },
   attributes_2_ { attributes_2 },
   submesh_ { CreateSubmesh(mesh_, attributes_1_, attributes_2_) },
-  coords_ { current_coords },
-  dual_fec_ { std::move(dual_fec) },
-  dual_vdim_ { dual_vdim }
+  coords_ { current_coords }
 {
+  // create pressure and gap if dual_fec is not null
+  if (dual_fec)
+  {
+    pressure_gridfn_ = std::make_unique<mfem::ParGridFunction>(
+      new mfem::ParFiniteElementSpace(
+        &submesh_,
+        dual_fec.get(),
+        dual_vdim
+      )
+    );
+    pressure_gridfn_->MakeOwner(dual_fec.get());
+    pressure_ = std::make_unique<PressureField>(*pressure_gridfn_);
+    gap_gridfn_ = std::make_unique<mfem::ParGridFunction>(
+      pressure_gridfn_->ParFESpace()
+    );
+  }
   // set the element type
   mfem::Element::Type element_type = mfem::Element::QUADRILATERAL;
   if (submesh_.GetNE() > 0)
@@ -244,15 +322,19 @@ void MfemMeshData::UpdateMeshData()
     attributes_2_, 
     num_verts_per_elem_,
     *coords_.GetParentField().ParFESpace(),
-    dual_fec_.get(),
-    dual_vdim_
+    pressure_ ? pressure_gridfn_->ParFESpace() : nullptr
   );
   coords_.UpdateField(update_data_->primal_xfer_);
+  response_gridfn_.SetSpace(coords_.GetRedecompField().FESpace());
   if (velocity_)
   {
     velocity_->UpdateField(update_data_->primal_xfer_);
   }
-  response_ = mfem::GridFunction(coords_.GetRedecompField().FESpace());
+  if (pressure_gridfn_)
+  {
+    pressure_->UpdateField(*update_data_->dual_xfer_);
+    gap_gridfn_->SetSpace(pressure_->GetRedecompField().FESpace());
+  }
 }
 
 void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
@@ -273,18 +355,12 @@ MfemMeshData::UpdateData::UpdateData(
   const std::set<integer>& attributes_2,
   integer num_verts_per_elem,
   const mfem::ParFiniteElementSpace& parent_fes,
-  const mfem::FiniteElementCollection* dual_fec,
-  integer dual_vdim
+  const mfem::ParFiniteElementSpace* redecomp_fes
 )
 : redecomp_ { submesh },
   primal_xfer_ { redecomp_, submesh, parent_fes },
-  dual_xfer_ { dual_fec != nullptr ?
-    std::make_unique<SubmeshRedecompTransfer>(redecomp_, mfem::ParFiniteElementSpace(
-      &submesh,
-      dual_fec,
-      dual_vdim,
-      mfem::Ordering::byNODES
-    )) :
+  dual_xfer_ { redecomp_fes ?
+    std::make_unique<SubmeshRedecompTransfer>(redecomp_, *redecomp_fes) :
     nullptr
   }
 {

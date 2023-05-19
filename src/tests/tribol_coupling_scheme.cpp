@@ -173,8 +173,8 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
    real gaps;
    real pressures;
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerMortarGaps( 1, &gaps );
+   tribol::registerMortarPressures( 1, &pressures );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -207,8 +207,8 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
    real gaps;
    real pressures;
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerMortarGaps( 1, &gaps );
+   tribol::registerMortarPressures( 1, &pressures );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -267,8 +267,8 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
    real gaps;
    real pressures;
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerMortarGaps( 1, &gaps );
+   tribol::registerMortarPressures( 1, &pressures );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -353,8 +353,8 @@ TEST_F( CouplingSchemeTest, mortar_tied )
    real gaps;
    real pressures;
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerMortarGaps( 1, &gaps );
+   tribol::registerMortarPressures( 1, &pressures );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -387,8 +387,8 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
    real gaps;
    real pressures;
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerMortarGaps( 1, &gaps );
+   tribol::registerMortarPressures( 1, &pressures );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,

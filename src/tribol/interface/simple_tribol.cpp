@@ -110,11 +110,11 @@ void SimpleCouplingSetup( const int dim,
    // Register mortar gaps and pressures, if provided
    if( mortar_gaps != nullptr)
    {
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, mortar_gaps);
+      tribol::registerMortarGaps( nonmortarMeshId, mortar_gaps);
    }
    if( mortar_pressures != nullptr)
    {
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_PRESSURES, mortar_pressures);
+      tribol::registerMortarPressures( nonmortarMeshId, mortar_pressures);
    }
 
    // set contact area fraction 

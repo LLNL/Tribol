@@ -190,8 +190,7 @@ void registerParMesh(integer cs_id,
                      integer contact_method,
                      integer contact_model,
                      integer enforcement_method,
-                     integer binning_method = DEFAULT_BINNING_METHOD,
-                     bool force_submesh = false );
+                     integer binning_method = DEFAULT_BINNING_METHOD);
 
 /*!
  * \brief Registers nodal displacements on the contact surface.
@@ -345,10 +344,13 @@ int getElementBlockJacobians( integer csId,
                               axom::Array<integer>& col_elem_idx,
                               axom::Array<mfem::DenseMatrix>& jacobians );
 
-/// register a real nodal field
-void registerRealNodalField( integer meshId,
-                             const RealNodalFields field,
-                             real * fieldVariable );
+/// register mortar gaps scalar nodal field
+void registerMortarGaps( integer meshId,
+                         real * nodal_gaps );
+                         
+/// register mortar pressure scalar nodal field
+void registerMortarPressures( integer meshId,
+                              const real * nodal_pressures );
 
 /// register an integer nodal field
 void registerIntNodalField( integer meshId,

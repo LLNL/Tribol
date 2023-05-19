@@ -90,3 +90,29 @@ if ( TRIBOL_USE_MPI )
   endforeach()
   
 endif()
+
+## Tribol + redecomp examples
+if ( TRIBOL_USE_MPI )
+
+  set( examples
+      mfem_mortar_lm_patch.cpp
+      )
+
+  foreach( example ${examples} )
+    
+    get_filename_component( example_name ${example} NAME_WE )
+
+    blt_add_executable(
+        NAME       ${example_name}_ex
+        SOURCES    ${example}
+        OUTPUT_DIR ${EXAMPLE_OUTPUT_DIRECTORY}
+        DEPENDS_ON axom mfem mpi redecomp tribol
+        )
+
+    if (ENABLE_CUDA)
+      set_target_properties(${example_name}_ex PROPERTIES CUDA_SEPARABLE_COMPILATION On)
+    endif()
+
+  endforeach()
+  
+endif()

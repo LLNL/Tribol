@@ -854,8 +854,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
       allocRealArray( &this->pressures, this->numTotalNodes, 1. );
 
       // register nodal gaps and pressures
-      registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
-      registerRealNodalField( nonmortarMeshId, MORTAR_PRESSURES, this->pressures );
+      registerMortarGaps( nonmortarMeshId, this->gaps );
+      registerMortarPressures( nonmortarMeshId, this->pressures );
 
    }
    else if (method == MORTAR_WEIGHTS)
@@ -863,7 +863,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
       allocRealArray( &this->gaps, this->numTotalNodes, 0. );
       this->pressures = nullptr;
 
-      registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
+      registerMortarGaps( nonmortarMeshId, this->gaps );
    }
 
    // if enforcement is penalty, register penalty parameters
