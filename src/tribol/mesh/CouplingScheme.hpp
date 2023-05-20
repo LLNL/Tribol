@@ -326,6 +326,8 @@ public:
                               const integer cycle, 
                               const real t );
 
+  bool hasMfemData() const { return m_mfemMeshData != nullptr; }
+
   MfemMeshData* getMfemMeshData();
   
   const MfemMeshData* getMfemMeshData() const;

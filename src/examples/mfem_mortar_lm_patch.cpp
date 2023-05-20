@@ -191,7 +191,7 @@ int main( int argc, char** argv )
   auto& p = tribol::getPressureGridFn(0);
 
   // retrieve block stiffness matrix
-  //auto A_blk = tribol::getMfemBlockJacobian(0);
+  auto A_blk = tribol::getMfemBlockJacobian(0);
 
   // cleanup
   MPI_Finalize();

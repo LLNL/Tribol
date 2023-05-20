@@ -466,17 +466,6 @@ void registerParMesh( integer cs_id,
             dual_vdim
          )
       );
-      auto lm_options = coupling_scheme->getEnforcementOptions().lm_implicit_options;
-      if (
-         lm_options.enforcement_option_set && 
-         (
-            lm_options.eval_mode == ImplicitEvalMode::MORTAR_JACOBIAN ||
-            lm_options.eval_mode == ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
-         )
-      )
-      {
-         coupling_scheme->setMatrixXfer();
-      }
    }
 
 } // end of registerParMesh()
@@ -1124,9 +1113,9 @@ integer update( integer cycle, real t, real &dt )
       CouplingScheme* couplingScheme  = csManager.getCoupling(csIndex);
 
       // update redecomp meshes if supplied mfem data
-      auto mfem_data = couplingScheme->getMfemMeshData();
-      if (mfem_data != nullptr)
+      if (couplingScheme->hasMfemData())
       {
+         auto mfem_data = couplingScheme->getMfemMeshData();
          auto mesh_id_1 = mfem_data->GetMesh1ID();
          auto mesh_id_2 = mfem_data->GetMesh2ID();
          mfem_data->UpdateMeshData();
@@ -1174,6 +1163,17 @@ integer update( integer cycle, real t, real &dt )
             registerMortarGaps(mesh_id_2, g_ptrs[0]);
             auto p_ptrs = dual_data->GetRedecompPressurePtrs();
             registerMortarPressures(mesh_id_2, p_ptrs[0]);
+            auto lm_options = couplingScheme->getEnforcementOptions().lm_implicit_options;
+            if (
+               lm_options.enforcement_option_set && 
+               (
+                  lm_options.eval_mode == ImplicitEvalMode::MORTAR_JACOBIAN ||
+                  lm_options.eval_mode == ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
+               )
+            )
+            {
+               couplingScheme->setMatrixXfer();
+            }
          }
       }
       
