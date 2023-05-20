@@ -6,7 +6,6 @@
 #include "tribol/mesh/MfemData.hpp"
 
 #include "axom/slic.hpp"
-#include <mfem/fem/pfespace.hpp>
 
 namespace tribol
 {
@@ -132,7 +131,7 @@ void PrimalField::UpdateField(const ParentRedecompTransfer& xfer)
   update_data_ = std::make_unique<UpdateData>(xfer, parent_);
 }
 
-std::vector<const real*> PrimalField::GetFieldPtrs() const
+std::vector<const real*> PrimalField::GetRedecompFieldPtrs() const
 {
   auto data_ptrs = std::vector<const real*>(3, nullptr);
   for (size_t i{}; i < static_cast<size_t>(GetRedecompField().FESpace()->GetVDim()); ++i)
@@ -142,7 +141,7 @@ std::vector<const real*> PrimalField::GetFieldPtrs() const
   return data_ptrs;
 }
 
-std::vector<real*> PrimalField::GetFieldPtrs(mfem::GridFunction& redecomp_fn)
+std::vector<real*> PrimalField::GetRedecompFieldPtrs(mfem::GridFunction& redecomp_fn)
 {
   auto data_ptrs = std::vector<real*>(3, nullptr);
   for (size_t i{}; i < static_cast<size_t>(redecomp_fn.FESpace()->GetVDim()); ++i)
@@ -194,7 +193,7 @@ void PressureField::UpdateField(const SubmeshRedecompTransfer& xfer)
   update_data_ = std::make_unique<UpdateData>(xfer, submesh_);
 }
 
-std::vector<const real*> PressureField::GetFieldPtrs() const
+std::vector<const real*> PressureField::GetRedecompFieldPtrs() const
 {
   auto data_ptrs = std::vector<const real*>(3, nullptr);
   for (size_t i{}; i < static_cast<size_t>(GetRedecompField().FESpace()->GetVDim()); ++i)
@@ -204,7 +203,7 @@ std::vector<const real*> PressureField::GetFieldPtrs() const
   return data_ptrs;
 }
 
-std::vector<real*> PressureField::GetFieldPtrs(mfem::GridFunction& redecomp_fn)
+std::vector<real*> PressureField::GetRedecompFieldPtrs(mfem::GridFunction& redecomp_fn)
 {
   auto data_ptrs = std::vector<real*>(3, nullptr);
   for (size_t i{}; i < static_cast<size_t>(redecomp_fn.FESpace()->GetVDim()); ++i)
@@ -306,7 +305,7 @@ void MfemMeshData::UpdateMeshData()
     *coords_.GetParentField().ParFESpace()
   );
   coords_.UpdateField(update_data_->primal_xfer_);
-  response_gridfn_.SetSpace(coords_.GetRedecompField().FESpace());
+  redecomp_response_.SetSpace(coords_.GetRedecompField().FESpace());
   if (velocity_)
   {
     velocity_->UpdateField(update_data_->primal_xfer_);
@@ -432,26 +431,26 @@ MfemDualData::MfemDualData(
   std::unique_ptr<mfem::FiniteElementCollection> dual_fec,
   integer dual_vdim
 )
-: pressure_gridfn_ {
+: submesh_pressure_ {
     new mfem::ParFiniteElementSpace(
       &submesh,
       dual_fec.get(),
       dual_vdim
     )
   },
-  pressure_ { pressure_gridfn_ }
+  pressure_ { submesh_pressure_ }
 {
-  pressure_gridfn_.MakeOwner(dual_fec.release());
+  submesh_pressure_.MakeOwner(dual_fec.release());
 }
 
 void MfemDualData::UpdateDualData(redecomp::RedecompMesh& redecomp)
 {
   update_data_ = std::make_unique<UpdateData>(
     redecomp,
-    *pressure_gridfn_.ParFESpace()
+    *submesh_pressure_.ParFESpace()
   );
   pressure_.UpdateField(update_data_->dual_xfer_);
-  gap_gridfn_.SetSpace(pressure_.GetRedecompField().FESpace());
+  redecomp_gap_.SetSpace(pressure_.GetRedecompField().FESpace());
 }
 
 MfemDualData::UpdateData::UpdateData(

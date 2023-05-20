@@ -343,6 +343,17 @@ public:
   {
     m_mfemDualData = std::move(mfemDualData);
   }
+  
+  const redecomp::MatrixTransfer* getMatrixXfer() const;
+  
+  const mfem::Array<int>* getSubmeshToParentVdofList() const;
+
+  const mfem::Array<int>* getBlockOffsets() const
+  {
+    return m_blockOffsets.get();
+  }
+
+  void setMatrixXfer();
 
 private:
 
@@ -386,6 +397,9 @@ private:
 
   std::unique_ptr<MfemMeshData> m_mfemMeshData;
   std::unique_ptr<MfemDualData> m_mfemDualData;
+  std::unique_ptr<redecomp::MatrixTransfer> m_matrixXfer;
+  std::unique_ptr<mfem::Array<int>> m_submesh2ParentVdofList;
+  std::unique_ptr<mfem::Array<int>> m_blockOffsets;
   
   DISABLE_COPY_AND_ASSIGNMENT( CouplingScheme );
   DISABLE_MOVE_AND_ASSIGNMENT( CouplingScheme );

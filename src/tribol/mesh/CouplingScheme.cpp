@@ -1514,5 +1514,51 @@ const MfemDualData* CouplingScheme::getMfemDualData() const
 }
 
 //------------------------------------------------------------------------------
+const redecomp::MatrixTransfer* CouplingScheme::getMatrixXfer() const
+{
+   SLIC_ERROR_ROOT_IF(
+      !m_matrixXfer, 
+      "Coupling scheme does not contain matrix transfer operator. "
+      "Was the coupling scheme created with registerParMesh() and does the "
+      "implicit eval mode include Jacobian evaluation?"
+   );
+   return m_matrixXfer.get();
+}
+
+//------------------------------------------------------------------------------
+const mfem::Array<int>* CouplingScheme::getSubmeshToParentVdofList() const
+{
+   return m_submesh2ParentVdofList.get();
+}
+
+//------------------------------------------------------------------------------
+void CouplingScheme::setMatrixXfer()
+{
+   m_matrixXfer = std::make_unique<redecomp::MatrixTransfer>(
+      *m_mfemDualData->GetSubmeshPressure().ParFESpace(),
+      m_mfemMeshData->GetSubmeshFESpace(),
+      *m_mfemDualData->GetRedecompGap().FESpace(),
+      *m_mfemMeshData->GetRedecompResponse().FESpace()
+   );
+
+   // build vdof to vdof list (local dofs)
+   m_submesh2ParentVdofList = std::make_unique<mfem::Array<int>>();
+   mfem::SubMeshUtils::BuildVdofToVdofMap(
+      m_mfemMeshData->GetSubmeshFESpace(),
+      *m_mfemMeshData->GetParentCoords().FESpace(),
+      m_mfemMeshData->GetSubmesh().GetFrom(),
+      m_mfemMeshData->GetSubmesh().GetParentElementIDMap(),
+      *m_submesh2ParentVdofList
+   );
+
+   auto disp_size = m_mfemMeshData->GetParentCoords().ParFESpace()->GetTrueVSize();
+   auto lm_size = m_mfemMeshData->GetSubmeshFESpace().GetTrueVSize();
+   m_blockOffsets = std::make_unique<mfem::Array<int>>(3);
+   (*m_blockOffsets)[0] = 0;
+   (*m_blockOffsets)[1] = disp_size;
+   (*m_blockOffsets)[2] = disp_size + lm_size;
+}
+
+//------------------------------------------------------------------------------
 
 } /* namespace tribol */

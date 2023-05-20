@@ -60,6 +60,10 @@ public:
   mfem::GridFunction ParentToRedecomp(const mfem::ParGridFunction& src) const;
   mfem::ParGridFunction RedecompToParent(const mfem::GridFunction& src) const;
   void UpdateRedecomp(redecomp::RedecompMesh& redecomp);
+  const mfem::ParFiniteElementSpace& GetSubmeshFESpace() const
+  {
+    return submesh_fes_;
+  }
 private:
   mutable mfem::ParFiniteElementSpace parent_fes_;
   mutable mfem::ParFiniteElementSpace submesh_fes_;
@@ -82,8 +86,8 @@ public:
   {
     return GetUpdateData().redecomp_;
   }
-  std::vector<const real*> GetFieldPtrs() const;
-  static std::vector<real*> GetFieldPtrs(mfem::GridFunction& redecomp_fn);
+  std::vector<const real*> GetRedecompFieldPtrs() const;
+  static std::vector<real*> GetRedecompFieldPtrs(mfem::GridFunction& redecomp_fn);
 private:
   struct UpdateData
   {
@@ -115,8 +119,8 @@ public:
   {
     return GetUpdateData().redecomp_;
   }
-  std::vector<const real*> GetFieldPtrs() const;
-  static std::vector<real*> GetFieldPtrs(mfem::GridFunction& redecomp_fn);
+  std::vector<const real*> GetRedecompFieldPtrs() const;
+  static std::vector<real*> GetRedecompFieldPtrs(mfem::GridFunction& redecomp_fn);
 private:
   struct UpdateData
   {
@@ -144,6 +148,10 @@ public:
     const std::set<integer>& attributes_1,
     const std::set<integer>& attributes_2
   );
+  const mfem::ParGridFunction& GetParentCoords() const
+  {
+    return coords_.GetParentField();
+  }
   void SetParentCoords(const mfem::ParGridFunction& current_coords);
   void UpdateMeshData();
   integer GetMesh1ID() const { return mesh_id_1_; }
@@ -166,17 +174,21 @@ public:
     return GetUpdateData().conn_2_.data();
   }
   integer GetElemType() const { return elem_type_; }
-  std::vector<const real*> GetCoordsPtrs() const 
+  std::vector<const real*> GetRedecompCoordsPtrs() const 
   { 
-    return coords_.GetFieldPtrs();
+    return coords_.GetRedecompFieldPtrs();
   }
-  std::vector<real*> GetResponsePtrs()
+  std::vector<real*> GetRedecompResponsePtrs()
   {
-    return PrimalField::GetFieldPtrs(response_gridfn_);
+    return PrimalField::GetRedecompFieldPtrs(redecomp_response_);
+  }
+  const mfem::GridFunction& GetRedecompResponse() const
+  {
+    return redecomp_response_;
   }
   mfem::ParGridFunction GetParentResponse() const
   {
-    return GetPrimalTransfer().RedecompToParent(response_gridfn_);
+    return GetPrimalTransfer().RedecompToParent(redecomp_response_);
   }
   const ParentRedecompTransfer& GetPrimalTransfer() const
   { 
@@ -184,9 +196,17 @@ public:
   }
   void SetParentVelocity(const mfem::ParGridFunction& velocity);
   bool HasVelocity() const { return velocity_ != nullptr; }
-  std::vector<const real*> GetVelocityPtrs() const
+  std::vector<const real*> GetRedecompVelocityPtrs() const
   {
-    return velocity_->GetFieldPtrs();
+    return velocity_->GetRedecompFieldPtrs();
+  }
+  const std::vector<integer>& GetElemMap1() const
+  {
+    return GetUpdateData().elem_map_1_;
+  }
+  const std::vector<integer>& GetElemMap2() const
+  {
+    return GetUpdateData().elem_map_2_;
   }
   mfem::ParSubMesh& GetSubmesh()
   {
@@ -195,6 +215,10 @@ public:
   redecomp::RedecompMesh& GetRedecompMesh()
   {
     return GetUpdateData().redecomp_;
+  }
+  const mfem::ParFiniteElementSpace& GetSubmeshFESpace() const
+  {
+    return GetUpdateData().primal_xfer_.GetSubmeshFESpace();
   }
 private:
   struct UpdateData
@@ -233,7 +257,7 @@ private:
   std::set<integer> attributes_2_;
   mfem::ParSubMesh submesh_;
   PrimalField coords_;
-  mfem::GridFunction response_gridfn_;
+  mfem::GridFunction redecomp_response_;
   InterfaceElementType elem_type_;
   integer num_verts_per_elem_;
   std::unique_ptr<PrimalField> velocity_;
@@ -276,23 +300,27 @@ public:
     integer dual_vdim
   );
   void UpdateDualData(redecomp::RedecompMesh& redecomp);
-  std::vector<const real*> GetPressurePtrs() const
+  std::vector<const real*> GetRedecompPressurePtrs() const
   {
-    return pressure_.GetFieldPtrs();
+    return pressure_.GetRedecompFieldPtrs();
   }
-  mfem::ParGridFunction& GetParentPressure()
+  mfem::ParGridFunction& GetSubmeshPressure()
   {
-    return pressure_gridfn_;
+    return submesh_pressure_;
   }
-  std::vector<real*> GetGapPtrs()
+  std::vector<real*> GetRedecompGapPtrs()
   {
-    return PressureField::GetFieldPtrs(gap_gridfn_);
+    return PressureField::GetRedecompFieldPtrs(redecomp_gap_);
   }
-  mfem::ParGridFunction GetParentGap() const
+  const mfem::GridFunction& GetRedecompGap() const
   {
-    return GetSubmeshTransfer().RedecompToSubmesh(gap_gridfn_);
+    return redecomp_gap_;
   }
-  const SubmeshRedecompTransfer& GetSubmeshTransfer() const
+  mfem::ParGridFunction GetSubmeshGap() const
+  {
+    return GetDualTransfer().RedecompToSubmesh(redecomp_gap_);
+  }
+  const SubmeshRedecompTransfer& GetDualTransfer() const
   {
     return GetUpdateData().dual_xfer_;
   }
@@ -307,9 +335,9 @@ private:
   };
   UpdateData& GetUpdateData();
   const UpdateData& GetUpdateData() const;
-  mfem::ParGridFunction pressure_gridfn_;
+  mfem::ParGridFunction submesh_pressure_;
   PressureField pressure_;
-  mfem::GridFunction gap_gridfn_;
+  mfem::GridFunction redecomp_gap_;
   std::unique_ptr<UpdateData> update_data_;
 };
 

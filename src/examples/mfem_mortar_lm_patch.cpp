@@ -163,6 +163,10 @@ int main( int argc, char** argv )
 
   // set up tribol
   tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
+  tribol::setLagrangeMultiplierOptions(
+    0,
+    tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
+  );
   tribol::registerParMesh(
     0, 0, 1, *pmesh, coords, mortar_attribs, nonmortar_attribs,
     tribol::SURFACE_TO_SURFACE, 
@@ -171,11 +175,6 @@ int main( int argc, char** argv )
     tribol::FRICTIONLESS,
     tribol::LAGRANGE_MULTIPLIER,
     tribol::BINNING_GRID
-  );
-  tribol::setLagrangeMultiplierOptions(
-    0, 
-    tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN,
-    tribol::SparseMode::MFEM_ELEMENT_DENSE
   );
 
   // update tribol (compute contact contribution to force and stiffness)

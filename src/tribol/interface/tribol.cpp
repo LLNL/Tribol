@@ -32,7 +32,6 @@
 #include "axom/slic.hpp"
 
 // C/C++ includes
-#include <mfem/fem/fe_coll.hpp>
 #include <string>
 #include <unordered_map>
 #include <fstream>
@@ -439,9 +438,8 @@ void registerParMesh( integer cs_id,
       enforcement_method,
       binning_method
    );
-   CouplingSchemeManager::getInstance().getCoupling(cs_id)->setMfemMeshData(
-      std::move(mfem_data)
-   );
+   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
+   coupling_scheme->setMfemMeshData(std::move(mfem_data));
    if (enforcement_method == LAGRANGE_MULTIPLIER)
    {
       dual_fec = std::make_unique<mfem::H1_FECollection>(
@@ -461,13 +459,24 @@ void registerParMesh( integer cs_id,
          SLIC_ERROR_ROOT("Unsupported contact model. "
            "Only FRICTIONLESS, TIED, and COULOMB supported.");
       }
-      CouplingSchemeManager::getInstance().getCoupling(cs_id)->setMfemDualData(
+      coupling_scheme->setMfemDualData(
          std::make_unique<MfemDualData>(
             mfem_data->GetSubmesh(),
             std::move(dual_fec),
             dual_vdim
          )
       );
+      auto lm_options = coupling_scheme->getEnforcementOptions().lm_implicit_options;
+      if (
+         lm_options.enforcement_option_set && 
+         (
+            lm_options.eval_mode == ImplicitEvalMode::MORTAR_JACOBIAN ||
+            lm_options.eval_mode == ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
+         )
+      )
+      {
+         coupling_scheme->setMatrixXfer();
+      }
    }
 
 } // end of registerParMesh()
@@ -725,17 +734,68 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
    // (0,0) block is empty (for now)
    // (1,1) block is empty
    // (0,1) and (1,0) are symmetric (for now)
-   const auto& mortar_idx = method_data
+   const auto& elem_map_1 = mfem_data->GetElemMap1();
+   const auto& elem_map_2 = mfem_data->GetElemMap2();
+   auto mortar_elems = method_data
       ->getBlockJElementIds()[static_cast<int>(BlockSpace::MORTAR)];
-   const auto& nonmortar_idx = method_data
+   for (auto& mortar_elem : mortar_elems)
+   {
+      mortar_elem = elem_map_1[static_cast<size_t>(mortar_elem)];
+   }
+   auto nonmortar_elems = method_data
       ->getBlockJElementIds()[static_cast<int>(BlockSpace::NONMORTAR)];
-   const auto& lm_idx = method_data
+   for (auto& nonmortar_elem : nonmortar_elems)
+   {
+      nonmortar_elem = elem_map_2[static_cast<size_t>(nonmortar_elem)];
+   }
+   auto lm_elems = method_data
       ->getBlockJElementIds()[static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER)];
+   for (auto& lm_elem : lm_elems)
+   {
+      lm_elem = elem_map_2[static_cast<size_t>(lm_elem)];
+   }
    // get (1,0) block
-   const auto& jacobians = method_data->getBlockJ()(
+   const auto& elem_J_1 = method_data->getBlockJ()(
       static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER),
       static_cast<int>(BlockSpace::MORTAR)
    );
+   const auto& elem_J_2 = method_data->getBlockJ()(
+      static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER),
+      static_cast<int>(BlockSpace::NONMORTAR)
+   );
+   // move to submesh level
+   auto matrix_xfer = coupling_scheme->getMatrixXfer();
+   auto submesh_J = matrix_xfer->TransferToParallelSparse(
+      lm_elems, 
+      mortar_elems, 
+      elem_J_1
+   );
+   submesh_J += matrix_xfer->TransferToParallelSparse(
+      lm_elems, 
+      nonmortar_elems, 
+      elem_J_2
+   );
+   submesh_J.Finalize();
+
+   // transform J values from submesh to parent
+   auto J = submesh_J.GetJ();
+   for (int j{}; j < submesh_J.NumNonZeroElems(); ++j)
+   {
+      J[j] = (*coupling_scheme->getSubmeshToParentVdofList())[J[j]];
+   }
+
+   // create block operator
+   auto block_J = std::make_unique<mfem::BlockOperator>(
+      *coupling_scheme->getBlockOffsets()
+   );
+   block_J->owns_blocks = 1;
+
+   // fill block operator
+   auto hypre_J = matrix_xfer->ConvertToHypreParMatrix(submesh_J);
+   block_J->SetBlock(0, 1, new mfem::TransposeOperator(hypre_J.get()));
+   block_J->SetBlock(1, 0, hypre_J.release());
+
+   return block_J;
 }
 
 //------------------------------------------------------------------------------
@@ -767,7 +827,7 @@ void registerMortarGaps( integer meshId,
 mfem::ParGridFunction getGapGridFn( integer cs_id )
 {
    return CouplingSchemeManager::getInstance().getCoupling(cs_id)
-      ->getMfemDualData()->GetParentGap();
+      ->getMfemDualData()->GetSubmeshGap();
 }
 
 //------------------------------------------------------------------------------
@@ -799,7 +859,7 @@ void registerMortarPressures( integer meshId,
 mfem::ParGridFunction& getPressureGridFn( integer cs_id )
 {
    return CouplingSchemeManager::getInstance().getCoupling(cs_id)
-      ->getMfemDualData()->GetParentPressure();
+      ->getMfemDualData()->GetSubmeshPressure();
 }
 
 //------------------------------------------------------------------------------
@@ -1070,7 +1130,7 @@ integer update( integer cycle, real t, real &dt )
          auto mesh_id_1 = mfem_data->GetMesh1ID();
          auto mesh_id_2 = mfem_data->GetMesh2ID();
          mfem_data->UpdateMeshData();
-         auto coord_ptrs = mfem_data->GetCoordsPtrs();
+         auto coord_ptrs = mfem_data->GetRedecompCoordsPtrs();
          registerMesh(
             mesh_id_1,
             mfem_data->GetMesh1NE(),
@@ -1091,14 +1151,14 @@ integer update( integer cycle, real t, real &dt )
             coord_ptrs[1],
             coord_ptrs[2]
          );
-         auto f_ptrs = mfem_data->GetResponsePtrs();
+         auto f_ptrs = mfem_data->GetRedecompResponsePtrs();
          registerNodalResponse(
             mesh_id_1, f_ptrs[0], f_ptrs[1], f_ptrs[2]);
          registerNodalResponse(
             mesh_id_2, f_ptrs[0], f_ptrs[1], f_ptrs[2]);
          if (mfem_data->HasVelocity())
          {
-            auto v_ptrs = mfem_data->GetVelocityPtrs();
+            auto v_ptrs = mfem_data->GetRedecompVelocityPtrs();
             registerNodalVelocities(
                mesh_id_1, v_ptrs[0], v_ptrs[1], v_ptrs[2]);
             registerNodalVelocities(
@@ -1110,9 +1170,9 @@ integer update( integer cycle, real t, real &dt )
               "Only frictionless contact is supported at this time.");
             auto dual_data = couplingScheme->getMfemDualData();
             dual_data->UpdateDualData(mfem_data->GetRedecompMesh());
-            auto g_ptrs = dual_data->GetGapPtrs();
+            auto g_ptrs = dual_data->GetRedecompGapPtrs();
             registerMortarGaps(mesh_id_2, g_ptrs[0]);
-            auto p_ptrs = dual_data->GetPressurePtrs();
+            auto p_ptrs = dual_data->GetRedecompPressurePtrs();
             registerMortarPressures(mesh_id_2, p_ptrs[0]);
          }
       }
