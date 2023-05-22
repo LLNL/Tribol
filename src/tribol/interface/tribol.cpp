@@ -265,7 +265,7 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
 
    lm_options.eval_mode = evalMode;
    lm_options.sparse_mode = sparseMode;
-   if (couplingScheme->getMfemMeshData())
+   if (couplingScheme->hasMfemData())
    {
       // MFEM_ELEMENT_DENSE is required to use the MFEM interface
       lm_options.sparse_mode = SparseMode::MFEM_ELEMENT_DENSE;
