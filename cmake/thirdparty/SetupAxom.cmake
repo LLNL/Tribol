@@ -16,10 +16,12 @@ find_dependency(axom REQUIRED
 
 # Backwards compatibility
 if (NOT TARGET axom::cli11 AND TARGET cli11)
-    add_library(axom::cli11 ALIAS cli11)
+    add_library(axom::cli11 IMPORTED INTERFACE)
+    set_target_properties(axom::cli11 PROPERTIES INTERFACE_LINK_LIBRARIES cli11)
 endif()
 if (NOT TARGET axom::fmt AND TARGET fmt)
-    add_library(axom::fmt ALIAS fmt)
+    add_library(axom::fmt IMPORTED INTERFACE)
+    set_target_properties(axom::fmt PROPERTIES INTERFACE_LINK_LIBRARIES fmt)
 endif()
 
 #[==[
