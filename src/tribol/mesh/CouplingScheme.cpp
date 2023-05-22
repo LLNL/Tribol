@@ -1551,8 +1551,10 @@ void CouplingScheme::setMatrixXfer()
       *m_submesh2ParentVdofList
    );
 
-   auto disp_size = m_mfemMeshData->GetParentCoords().ParFESpace()->GetTrueVSize();
-   auto lm_size = m_mfemMeshData->GetSubmeshFESpace().GetTrueVSize();
+   auto disp_size = m_mfemMeshData->GetParentCoords().ParFESpace()
+      ->GetTrueVSize();
+   auto lm_size = m_mfemDualData->GetSubmeshPressure().ParFESpace()
+      ->GetTrueVSize();
    m_blockOffsets = std::make_unique<mfem::Array<int>>(3);
    (*m_blockOffsets)[0] = 0;
    (*m_blockOffsets)[1] = disp_size;

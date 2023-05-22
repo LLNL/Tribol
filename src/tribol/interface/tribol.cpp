@@ -439,7 +439,6 @@ void registerParMesh( integer cs_id,
       binning_method
    );
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
-   coupling_scheme->setMfemMeshData(std::move(mfem_data));
    if (enforcement_method == LAGRANGE_MULTIPLIER)
    {
       dual_fec = std::make_unique<mfem::H1_FECollection>(
@@ -467,6 +466,7 @@ void registerParMesh( integer cs_id,
          )
       );
    }
+   coupling_scheme->setMfemMeshData(std::move(mfem_data));
 
 } // end of registerParMesh()
 
@@ -715,9 +715,12 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
          "Jacobian contributions, call setLagrangeMultiplierOptions() with "
          "SparseMode::MFEM_ELEMENT_DENSE before calling update().");
    }
+   SLIC_ERROR_ROOT_IF(
+      !coupling_scheme->hasMfemData(), 
+      "No MFEM data exists. The coupling scheme "
+      "must be registered using registerParMesh() to use this method."
+   );
    auto mfem_data = coupling_scheme->getMfemMeshData();
-   SLIC_ERROR_ROOT_IF(!mfem_data, "No MFEM data exists. The coupling scheme "
-     "must be registered using registerParMesh() to use this method.");
    MethodData* method_data = coupling_scheme->getMethodData();
    // 0 = displacement DOFs, 1 = lagrange multiplier DOFs
    // (0,0) block is empty (for now)
@@ -780,9 +783,23 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
    block_J->owns_blocks = 1;
 
    // fill block operator
-   auto hypre_J = matrix_xfer->ConvertToHypreParMatrix(submesh_J);
-   block_J->SetBlock(0, 1, new mfem::TransposeOperator(hypre_J.get()));
-   block_J->SetBlock(1, 0, hypre_J.release());
+   auto mpi_comm = parameters_t::getInstance().problem_comm;
+   auto parent_test_fes = coupling_scheme->getMfemDualData()
+      ->GetSubmeshPressure().ParFESpace();
+   auto parent_trial_fes = mfem_data->GetParentCoords().ParFESpace();
+   auto J_full = std::make_unique<mfem::HypreParMatrix>(
+      mpi_comm, parent_test_fes->GetVSize(), 
+      parent_test_fes->GlobalVSize(), parent_trial_fes->GlobalVSize(),
+      submesh_J.GetI(), submesh_J.GetJ(), submesh_J.GetData(),
+      parent_test_fes->GetDofOffsets(), parent_trial_fes->GetDofOffsets()
+   );
+   auto J_true = std::unique_ptr<mfem::HypreParMatrix>(mfem::RAP(
+      parent_test_fes->Dof_TrueDof_Matrix(),
+      J_full.get(),
+      parent_trial_fes->Dof_TrueDof_Matrix()
+   ));
+   block_J->SetBlock(0, 1, new mfem::TransposeOperator(J_true.get()));
+   block_J->SetBlock(1, 0, J_true.release());
 
    return block_J;
 }
