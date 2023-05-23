@@ -199,19 +199,19 @@ void build_mesh_3D( tribol::TestMesh &mesh, Arguments &args, BLOCK_EX_BCS bc_typ
       case PATCH_BCS:
       {
          // setup block 1 homogeneous Dirichlet BCs
-         mesh.setupPatchTestDirichletBCs( res1[0], res1[1], res1[2],
-                                          true, 0, false, 0. );
+         mesh.setupPatchTestDirichletBCs( mesh.mortarMeshId, res1[0], res1[1], res1[2],
+                                          0, false, 0. );
 
          // setup block 2 homogeneous Dirichlet BCs
-         mesh.setupPatchTestDirichletBCs( res2[0], res2[1], res2[2],
-                                          false, mesh.numMortarNodes, false, 0. );
+         mesh.setupPatchTestDirichletBCs( mesh.nonmortarMeshId, res2[0], res2[1], res2[2],
+                                          mesh.numMortarNodes, false, 0. );
 
          // setup DUMMY block 1 pressure dof array
-         mesh.setupPatchTestPressureDofs( res1[0], res1[1], res1[2], 0, false, true );
+         mesh.setupPatchTestPressureDofs( mesh.mortarMeshId, res1[0], res1[1], res1[2], 0, false );
 
          // setup block 2 pressure dofs
-         mesh.setupPatchTestPressureDofs( res2[0], res2[1], res2[2], 
-                                          mesh.numMortarNodes, true, false );
+         mesh.setupPatchTestPressureDofs( mesh.nonmortarMeshId, res2[0], res2[1], res2[2], 
+                                          mesh.numMortarNodes, true );
          break;
       }
       default:

@@ -102,25 +102,23 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
                                      thetaM, thetaS );
 
    // setup mortar boundary conditions
-   this->m_mesh.setupPatchTestDirichletBCs( nMortarElemsX, nMortarElemsY, nMortarElemsZ, 
-                                            true, 0, inHomogeneous, -inHomogeneousVal );
+   this->m_mesh.setupPatchTestDirichletBCs( this->m_mesh.mortarMeshId, nMortarElemsX, nMortarElemsY, nMortarElemsZ, 
+                                            0, inHomogeneous, -inHomogeneousVal );
 
    // setup nonmortar boundary conditions
-   this->m_mesh.setupPatchTestDirichletBCs( nNonmortarElemsX, nNonmortarElemsY, nNonmortarElemsZ, 
-                                            false, this->m_mesh.numMortarNodes, 
-                                            inHomogeneous, inHomogeneousVal );
+   this->m_mesh.setupPatchTestDirichletBCs( this->m_mesh.nonmortarMeshId, nNonmortarElemsX, nNonmortarElemsY, nNonmortarElemsZ, 
+                                            this->m_mesh.numMortarNodes, inHomogeneous, inHomogeneousVal );
 
    // setup DUMMY MORTAR pressure dof array. Consider getting rid of 
    // mortar pressure dofs based on new way stiffness data is handled 
    // after passed back from Tribol. ALWAYS call this function with 
    // these arguments for the mortar block
-   this->m_mesh.setupPatchTestPressureDofs( nMortarElemsX, nMortarElemsY, nMortarElemsZ,
-                                            0, false, true );
+   this->m_mesh.setupPatchTestPressureDofs( this->m_mesh.mortarMeshId, nMortarElemsX, nMortarElemsY, nMortarElemsZ,
+                                            0, false );
 
    // setup NONMORTAR pressure dofs
-   this->m_mesh.setupPatchTestPressureDofs( nNonmortarElemsX, nNonmortarElemsY, nNonmortarElemsZ,
-                                            this->m_mesh.numMortarNodes, true, 
-                                            false );
+   this->m_mesh.setupPatchTestPressureDofs( this->m_mesh.nonmortarMeshId, nNonmortarElemsX, nNonmortarElemsY, nNonmortarElemsZ,
+                                            this->m_mesh.numMortarNodes, true );
 
    // specify if contact is on
    //bool matrixDebug = debug; // this controls whether the matrix printed is without (true) or with BCs applied 

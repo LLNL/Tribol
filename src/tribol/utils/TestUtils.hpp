@@ -181,10 +181,10 @@ public:
    * \brief sets up the Dirichlet BC node ids and values for a single 3D mesh block 
    *        for the contact PATCH TEST 
    *
+   * \param [in] meshId mesh id for the given block
    * \param [in] numElemsX number of elements in the x-direction
    * \param [in] numElemsY number of elements in the y-direction
    * \param [in] numElemsZ number of elements in the z-direction
-   * \param [in] mortar true if this is the mortar block in the mesh
    * \param [in] nodeIdOffset node id offset for this block
    * \param [in] inHomogeneousGap true if enforcing gap closure through Dirichlet BCs
    * \param [in] inHomogeneousZVal z-component inhomogeneous Dirichlet BC for when inHomogeneousGap is true
@@ -193,24 +193,23 @@ public:
    *       contact enforcement. This is used in tribol/tests/tribol_mortar_pressure_sol.cpp
    *
    */
-   void setupPatchTestDirichletBCs( int numElemsX, int numElemsY, int numElemsZ, 
-                                    bool mortar, int nodeIdOffset, 
-                                    bool inHomogeneousGap, 
+   void setupPatchTestDirichletBCs( int meshId, int numElemsX, int numElemsY, int numElemsZ, 
+                                    int nodeIdOffset, bool inHomogeneousGap, 
                                     real inHomogeneousZVal = 0. );
 
   /*!
    * \brief sets up pressure dof ids for a 3D nonmortar mesh block for PATCH TEST
    *
+   * \param [in] meshId id of the mesh block for patch test
    * \param [in] numElemsX number of elements in x-direction of nonmortar block
    * \param [in] numElemsY number of elements in y-direction of nonmortar block
    * \param [in] numElemsZ number of elements in z-direction of nonmortar block
    * \param [in] nodeIdOffset nonmortar node id offset
    * \param [in] contact true if enforcing zero gap using contact enforcement
-   * \param [in,out] presDofs pointer to array of nonmortar pressure dof node ids
    *
    */
-   void setupPatchTestPressureDofs( int numElemsX, int numElemsY, int numElemsZ, 
-                                    int nodeIdOffset, bool contact, bool mortar );
+   void setupPatchTestPressureDofs( int meshId, int numElemsX, int numElemsY, int numElemsZ, 
+                                    int nodeIdOffset, bool contact );
 
   /*!
    * \brief allocates and sets velocity arrays
@@ -345,10 +344,6 @@ public:
 
 public:
 
-   // TODO if we use mfem::Make3D() or mfem::Make2D(), we will 
-   // actually have to carry around two meshes. Do we want to do this?
-   // Or do I want to do a tet decomposition of my hex mesh? This 
-   // will not be that general.
    mfem::Mesh* mfem_mesh; 
 
    // Basic info about the mesh
@@ -420,8 +415,9 @@ public:
    real * nonmortar_bulk_mod;
    real * nonmortar_element_thickness;
 
-   bool registered_velocities1;
-   bool registered_velocities2;
+   bool registered_velocities1 {false};
+   bool registered_velocities2 {false};
+   bool mesh_constructed {false};
 
   public:
    double* getX() const {return x;}

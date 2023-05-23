@@ -349,6 +349,9 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
    int numElementsBlock1, numNodesBlock1;
    int numElementsBlock2, numNodesBlock2;
 
+   this->mortarMeshId = 0;
+   this->nonmortarMeshId = 1;
+
    // ASSUMING contact is in the Z-Direction, check to make sure that the 
    // gap of interpenetration is not greater than either block's element 
    // dimension
@@ -539,6 +542,8 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
 
    } // end loop over blocks
 
+   this->mesh_constructed = true;
+
 } // end setupContactMeshHex()
 
 //------------------------------------------------------------------------------
@@ -564,6 +569,7 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
 
    // allocate temporary storage for tet mesh data while pulling 
    // from hex mesh data
+   this->mesh_constructed     = false;
    int numTetsPerHex          = 6;
    int t_numNodesPerFace      = 3; // triangle faces
    int t_numNodesPerElement   = 4; // four nodes per tet
@@ -575,6 +581,8 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
    int t_numMortarNodes       = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1); 
    int t_numNonmortarNodes    = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
    int t_numTotalNodes        = t_numMortarNodes + t_numNonmortarNodes;
+   int t_mortarMeshId         = this->mortarMeshId;
+   int t_nonmortarMeshId      = this->nonmortarMeshId;
 
    real *t_x, *t_y, *t_z;
    t_x = this->x;
@@ -749,6 +757,8 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
    
    // clear and set tet mesh data
    this->clear();
+   this->mortarMeshId         = t_mortarMeshId;
+   this->nonmortarMeshId      = t_nonmortarMeshId;
    this->numNodesPerFace      = t_numNodesPerFace;
    this->numNodesPerElement   = t_numNodesPerElement;
    this->numTotalElements     = t_numTotalElements;
@@ -770,17 +780,18 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
    this->y         = t_y;
    this->z         = t_z;
 
+   this->mesh_constructed = false;
+
 } // end setupContactMeshTet()
 //------------------------------------------------------------------------------
 void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real valZ )
 {
-   // check mesh Ids. Tribol supports autocontact, but for the TestMesh 
-   // class the Ids have to be different
-   if (mortarMeshId == nonmortarMeshId)
-   {
-      SLIC_WARNING("TestMesh::allocateAndSetVelocities(): please set unique " << 
-                   "mortarMeshId and nonmortarMeshId prior to calling this routine.");
-   }
+   // Check that mesh ids are not the same. The TestMesh class was built around 
+   // testing the mortar method with Lagrange multiplier enforcement, which does not 
+   // support auto contact.
+   SLIC_WARNING_IF( mortarMeshId == nonmortarMeshId, 
+                    "TestMesh::allocateAndSetVelocities(): please set unique " << 
+                    "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
    // check to see if pointers have been set
    bool deleteVels = false;
@@ -838,24 +849,20 @@ void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real 
                   "not a valid mesh id." );
    }
 
-   if (deleteVels)
-   {
-      SLIC_INFO( "TestMesh::allocateAndSetVelocities(): " << 
+   SLIC_INFO_IF( deleteVels, "TestMesh::allocateAndSetVelocities(): " << 
                  "a velocity array has been deleted and reallocated." );
-   }
 
 } // end TestMesh::allocateAndSetVelocities()
 
 //------------------------------------------------------------------------------
 void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
 {
-   // check mesh ids. While Tribol supports auto-contact, the TestMesh class 
-   // has to have unique mesh Ids set prior to calling this routine
-   if (mortarMeshId == nonmortarMeshId)
-   {
-      SLIC_WARNING("TestMesh::allocateAndSetVelocities(): please set unique " << 
-                   "mortarMeshId and nonmortarMeshId prior to calling this routine.");
-   }
+   // Check that mesh ids are the same. The TestMesh class was built around 
+   // testing the mortar method with Lagrange multiplier enforcement, which does 
+   // not support auto contact.
+   SLIC_WARNING_IF( mortarMeshId == nonmortarMeshId, 
+                    "TestMesh::allocateAndSetVelocities(): please set unique " << 
+                    "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
    // check to see if pointers have been set
    bool deleteData = false;
@@ -885,11 +892,9 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
                   "not a valid mesh id." );
    }
 
-   if (deleteData)
-   {
-      SLIC_INFO( "TestMesh::allocateAndSetBulkModulus(): " << 
+   SLIC_INFO_IF( deleteData, "TestMesh::allocateAndSetBulkModulus(): " << 
                  "a bulk modulus array has been deleted and reallocated." );
-   }
+
 } // end TestMesh::allocateAndSetBulkModulus()
 
 //------------------------------------------------------------------------------
@@ -923,11 +928,9 @@ void TestMesh::allocateAndSetElementThickness( int meshId, real t )
                   "not a valid mesh id." );
    }
 
-   if (deleteData)
-   {
-      SLIC_INFO( "TestMesh::allocateAndSetElementThickness(): " << 
+   SLIC_INFO_IF( deleteData, "TestMesh::allocateAndSetElementThickness(): " << 
                  "an element thickness array has been deleted and reallocated." );
-   }
+
 } // end TestMesh::allocateAndSetElementThickness()
 
 //------------------------------------------------------------------------------
@@ -937,30 +940,35 @@ int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
                                           bool TRIBOL_UNUSED_PARAM(visualization),
                                           TestControlParameters& params )
 {
-   if (this->numNodesPerFace != 4)
-   {
-      SLIC_ERROR("simpleTribolSetupAndUpdate: number of nodes per face not equal to 4.");
-   }
-
    // grab coordinate data
    real * x = this->x;
    real * y = this->y;
    real * z = this->z;
- 
-   if ( method == SINGLE_MORTAR ||
-        method == ALIGNED_MORTAR )
-   { 
-      // allocate gaps and pressures with length of total mesh to allow use 
-      // of global connectivity for indexing
-      allocRealArray( &this->gaps, this->numTotalNodes, 0. );
-      allocRealArray( &this->pressures, this->numTotalNodes, 1. );
-   }
-   else if ( method == MORTAR_WEIGHTS)
-   {
-      allocRealArray( &this->gaps, this->numTotalNodes, 0. );
-      this->pressures = nullptr;
-   }
 
+   switch (method)
+   {
+      case SINGLE_MORTAR:
+      case ALIGNED_MORTAR:
+      {
+         // allocate gaps and pressures with length of total mesh to allow use 
+         // of global connectivity for indexing
+         allocRealArray( &this->gaps, this->numTotalNodes, 0. );
+         allocRealArray( &this->pressures, this->numTotalNodes, 1. );
+         break;
+      }
+      case MORTAR_WEIGHTS:
+      {
+         allocRealArray( &this->gaps, this->numTotalNodes, 0. );
+         this->pressures = nullptr;
+         break;
+      }
+      default:
+      {
+         // no-op
+         break;
+      }
+   } // end switch on method
+ 
    const double area_frac = 1.e-03;
 
    SimpleCouplingSetup( this->dim,
@@ -990,23 +998,16 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                                     bool visualization,
                                     TestControlParameters& params )
 {
-   // Note, this assumes that numTotalNodes is the total number of 
-   // nodes encompassing the two meshes that will be registered 
-   // with tribol, and that the conn1 and conn2 connectivity arrays 
-   // reflect a global, contiguous index space
-   if (this->numNodesPerFace != 4)
-   {
-      SLIC_ERROR("tribolSetupAndUpdate: number of nodes per face not equal to 4.");
-   }
-
    // grab coordinate data
    real * x = this->x;
    real * y = this->y;
    real * z = this->z;
 
+   // // TODO generalize
    // register the mesh with tribol
    const int cellType = (this->dim == 3) ? (int)(FACE) : 
                                            (int)(EDGE);
+
    // set mortar/nonmortar mesh ids. Note, mortar/nonmortar designation can 
    // still work for common plane
    if (this->mortarMeshId == 0 && this->nonmortarMeshId == 0)
@@ -1070,24 +1071,32 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 
    // register nodal pressure and nodal gap array for the nonmortar mesh
    // for mortar based methods
-   if ( method == SINGLE_MORTAR  ||
-        method == ALIGNED_MORTAR )
+   switch (method)
    {
-      allocRealArray( &this->gaps, this->numTotalNodes, 0. );
-      allocRealArray( &this->pressures, this->numTotalNodes, 1. );
+      case SINGLE_MORTAR:
+      case ALIGNED_MORTAR:
+      {
+         allocRealArray( &this->gaps, this->numTotalNodes, 0. );
+         allocRealArray( &this->pressures, this->numTotalNodes, 1. );
 
-      // register nodal gaps and pressures
-      registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
-      registerRealNodalField( nonmortarMeshId, MORTAR_PRESSURES, this->pressures );
+         // register nodal gaps and pressures
+         registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
+         registerRealNodalField( nonmortarMeshId, MORTAR_PRESSURES, this->pressures );
+         break;
+      }
+      case MORTAR_WEIGHTS:
+      {
+         allocRealArray( &this->gaps, this->numTotalNodes, 0. );
+         this->pressures = nullptr;
 
-   }
-   else if (method == MORTAR_WEIGHTS)
-   {
-      allocRealArray( &this->gaps, this->numTotalNodes, 0. );
-      this->pressures = nullptr;
-
-      registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
-   }
+         registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
+         break;
+      }
+      default:
+      {
+         // no-op
+      }
+   } // end switch on method
 
    // if enforcement is penalty, register penalty parameters
    if (enforcement == PENALTY)
@@ -1238,17 +1247,29 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 } // end tribolSetupAndUpdate()
       
 //------------------------------------------------------------------------------
-void TestMesh::setupPatchTestDirichletBCs( int numElemsX, 
+void TestMesh::setupPatchTestDirichletBCs( int meshId, 
+                                           int numElemsX, 
                                            int numElemsY, 
                                            int numElemsZ, 
-                                           bool mortar, 
                                            int nodeIdOffset, 
                                            bool inHomogeneousGap, 
                                            real inHomogeneousZVal )
 {
+   SLIC_ERROR_IF( !this->mesh_constructed, "TestMesh::setupPatchTestDirichletBCs(): " << 
+                  "mesh must be constructed prior to calling this routine." );
+
+   bool mortar = false;
+   if (meshId == mortarMeshId)
+   {
+      mortar = true;
+   }
+
    // This routine sets up x,y, and z-component Dirichlet BCs on 
    // three faces of each block specifically for the classical contact 
    // patch test problem
+   //
+   // NOTE: the number of nodes in the x, y and z-directions is the same 
+   // for a hex mesh and tet mesh
    int numNodesX = numElemsX + 1;
    int numNodesY = numElemsY + 1;
    int numNodesZ = numElemsZ + 1;
@@ -1417,13 +1438,22 @@ void TestMesh::setupPatchTestDirichletBCs( int numElemsX,
 } // end setupPatchTestDirichletBCs()
 
 //------------------------------------------------------------------------------
-void TestMesh::setupPatchTestPressureDofs( int numElemsX, 
-                                           int numElemsY, 
-                                           int numElemsZ, 
-                                           int nodeIdOffset, 
-                                           bool contact, 
-                                           bool mortar )
+void TestMesh::setupPatchTestPressureDofs( int meshId,
+                                           int numElemsX,
+                                           int numElemsY,
+                                           int numElemsZ,
+                                           int nodeIdOffset,
+                                           bool contact )
 {
+   SLIC_ERROR_IF( !this->mesh_constructed, "TestMesh::setupPatchTestPressureDofs(): " << 
+                  "mesh must be constructed prior to calling this routine." );
+
+   bool mortar = false;
+   if (meshId == this->mortarMeshId)
+   {
+      mortar = true;
+   }
+
    // this routine hard codes nonmortar pressure dofs for the bottom surface 
    // of the top (nonmortar) block
    int numNodes = (numElemsX+1) * (numElemsY+1) * (numElemsZ+1);
@@ -1458,24 +1488,26 @@ void TestMesh::setupPatchTestPressureDofs( int numElemsX,
 //------------------------------------------------------------------------------
 void TestMesh::setupMfemMesh( )
 {
-   if (this->dim != 3)
-   {
-      SLIC_ERROR("TestMesh::setupMfemMesh(): Mfem meshes of dimension, " << 
-                 this->dim << ", are not supported at this time." );
-   }
+   SLIC_ERROR_IF( !this->mesh_constructed, "TestMesh::setupMfemMesh(): " << 
+                  "test mesh must be constructed prior to calling this routine." );
 
-   SLIC_INFO( "Setting up 3D linear hex mfem mesh." );
+   SLIC_ERROR_IF( this->dim != 3, "TestMesh::setupMfemMesh(): Mfem meshes of dimension, " << 
+                  this->dim << ", are not supported at this time." );
+
+   SLIC_INFO( "Setting up 3D linear mfem mesh." );
 
    // construct new mfem mesh
    if (this->mfem_mesh != nullptr)
    {
-      SLIC_WARNING("TestMesh::setupMfemMesh(): deleting previously constructed mesh.");
+      SLIC_WARNING( "TestMesh::setupMfemMesh(): deleting previously constructed mesh." );
       this->mfem_mesh->Clear();
    }
 
    this->mfem_mesh = new mfem::Mesh( this->dim,
                                      this->numTotalNodes,
                                      this->numTotalElements );
+
+   SLIC_INFO("After calling mfem mesh constructor.");
 
    // add mortar elements and vertices. Not sure if order of adding 
    // elements matters, but adding vertices should probably correspond 
@@ -1528,6 +1560,8 @@ void TestMesh::setupMfemMesh( )
 
    this->mfem_mesh->FinalizeHexMesh();
 
+   SLIC_INFO( "3D linear mfem mesh finalized." );
+
 } // end setupMfemMesh()
 
 
@@ -1535,6 +1569,10 @@ void TestMesh::setupMfemMesh( )
 void TestMesh::computeEquilibriumJacobian( mfem::SparseMatrix* A,
                                            real const nu, real const youngs )
 {
+   SLIC_ERROR_IF( this->mfem_mesh == nullptr, 
+                  "TestMesh::computeEquilibriumJacobian(): must call setupMfemMesh() " << 
+                  "prior to calling this routine." );
+
    // define the FE collection and finite element space
    mfem::FiniteElementSpace * fes { nullptr };
    int order = 1; // hard coded for linear elements
@@ -1579,6 +1617,13 @@ void TestMesh::computeElementJacobianContributions( mfem::SparseMatrix * const A
                                                     mfem::FiniteElementSpace * fe_space,
                                                     bool matrixDebug )
 {
+   SLIC_ERROR_IF( A == nullptr, "TestMesh::computeElementJacobianContributions(): " <<
+                  "input pointer to sparse matrix is null." );
+   SLIC_ERROR_IF( eInt == nullptr, "TestMesh::computeElementJacobianContributions(): " <<
+                  "input pointer to elasticity integrator is null." );
+   SLIC_ERROR_IF( fe_space == nullptr, "TestMesh::computeElementJacobianContributions(): " <<
+                  "input pointer to finite element space is null." );
+
    mfem::ElementTransformation *T;
    mfem::DenseMatrix elmat;
    const mfem::FiniteElement *fe; 
@@ -1726,6 +1771,7 @@ void TestMesh::tribolMatrixToSystemMatrix( mfem::DenseMatrix * const ATribol,
 //------------------------------------------------------------------------------
 void TestMesh::getGapEvals( real * const v )
 {
+   SLIC_ERROR_IF( v == nullptr, "TestMesh::getGapEvals(): input pointer is null." );
    int presDofCtr = 0;
    for (int a=0; a<this->numNonmortarNodes; ++a)
    {
@@ -1745,6 +1791,11 @@ void TestMesh::enforceDirichletBCs( mfem::SparseMatrix * const A,
                                     mfem::Vector * const b,
                                     bool contact )
 {
+   SLIC_ERROR_IF( A == nullptr, "TestMesh::enforceDirichletBCs(): " << 
+                  "input pointer to sparse matrix is null." );
+   SLIC_ERROR_IF( b == nullptr, "TestMesh::enforceDirichletBCs(): " << 
+                  "input pointer to rhs vector, b, is null." );
+
    int * dirBCX, * dirBCY, * dirBCZ, * presDofs;
    double *dirValX, *dirValY, *dirValZ;
    int numBlkNodes;
