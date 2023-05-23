@@ -178,43 +178,6 @@ public:
    void setupMfemMesh( );
 
   /*!
-   * \brief makes a 2D mfem mesh based on an input bounding box
-   *
-   * \param [in] lx length of bounding box in x-direction
-   * \param [in] ly length of bounding box in y-direction
-   * \param [in] numx number of hexahedron elements in the x-direction
-   * \param [in] numy number of hexahedron elements in the y-direction
-   * \param [in] elem_type mfem element type, mfem::Element::QUADRILATERAL or 
-   *                       mfem::Element::TRIANGLE
-   *
-   * \note if elem_type = mfem::Element::TRIANGLE the total number of elements is 2*numx*numy
-   *       based on the triangular decomposition of quadrilaterals.
-   * 
-   */
-  void makeMfemMesh2D( real const lx, real const ly,
-                       real const numx, real const numy,
-                       mfem::Element::Type elem_type );
-  /*!
-   * \brief makes a 3D mfem mesh based on an input bounding box
-   *
-   * \param [in] lx length of bounding box in x-direction
-   * \param [in] ly length of bounding box in y-direction
-   * \param [in] lz length of bounding box in z-direction
-   * \param [in] numx number of hexahedron elements in the x-direction
-   * \param [in] numy number of hexahedron elements in the y-direction
-   * \param [in] numz number of hexahedron elements in the z-direction
-   * \param [in] elem_type mfem element type, mfem::Element::HEXAHEDRON or 
-   *                       mfem::Element::TETRAHEDRON
-   *
-   * \note if elem_type = mfem::Element::TETRAHEDRON the total number of elements is 6*numx*numy*numz
-   *       based on a six tetrahedron element decomposition of a hexahedron.
-   * 
-   */
-  void makeMfemMesh3D( real const lx, real const ly, real const lz, 
-                       real const numx, real const numy, real const numz,
-                       mfem::Element::Type elem_type );
-
-  /*!
    * \brief sets up the Dirichlet BC node ids and values for a single 3D mesh block 
    *        for the contact PATCH TEST 
    *
