@@ -549,11 +549,10 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
                                     real xMax2, real yMax2, real zMax2,
                                     real thetaMortar, real thetaNonmortar )
 {
-   // TODO Implement this routine
    // NOTE: ONLY CONTACT INTERACTIONS IN THE Z-DIRECTION ARE SUPPORTED 
    // AT THE MOMENT.
 
-   // Construct hex mesh
+   // Construct hex mesh first
    setupContactMeshHex( numElemsX1, numElemsY1, numElemsZ1,
                         xMin1, yMin1, zMin1,
                         xMax1, yMax1, zMax1,
@@ -570,8 +569,8 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
    int t_numTotalElements     = numTetsPerHex * this->numTotalElements; // 6 tets per hex
    int t_numMortarElements    = numTetsPerHex * numElemsX1 * numElemsY1 * numElemsZ1; 
    int t_numNonmortarElements = numTetsPerHex * numElemsX2 * numElemsY2 * numElemsZ2;
-   int t_numMortarFaces       = 2 * numElemsX1 * numElemsY1;
-   int t_numNonmortarFaces    = 2 * numElemsX2 * numElemsY2;
+   int t_numMortarFaces       = 2 * numElemsX1 * numElemsY1; // only on contact surface
+   int t_numNonmortarFaces    = 2 * numElemsX2 * numElemsY2; // only on contact surface
    int t_numMortarNodes       = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1); 
    int t_numNonmortarNodes    = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
    int t_numTotalNodes        = t_numMortarNodes + t_numNonmortarNodes;
@@ -619,6 +618,7 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
          {
             for (int i=0; i<numElemsX; ++i) // loop over elements in x-direction
             {
+               // same node ids and offsets as hex mesh
                int zIdOffset = k * (numNodesX * numNodesY); // offset for z-direction node ids
                int yIdOffset = j * numNodesX; // offset for y-direction node ids
                int icr = ndOffset + zIdOffset + yIdOffset + i; // first node starting counter
@@ -635,50 +635,110 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
                //                                            // 8) lclZOffset + numNodesX;
 
                // local tet element 1
-               elConn[ this->numNodesPerElement * ctr ]    = icr;
-               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1; 
-               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset; 
-               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
-               ++ctr;
+               elConn[ t_numNodesPerElement * ctr ]    = icr;
+               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset + 1; 
+               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset; 
+               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
 
                // local tet element 2 
-               elConn[ this->numNodesPerElement * ctr ]    = icr;
-               elConn[ this->numNodesPerElement * ctr + 1] = icr + 1;
-               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1;
-               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
-               ++ctr;
+               elConn[ t_numNodesPerElement * ctr ]    = icr;
+               elConn[ t_numNodesPerElement * ctr + 1] = icr + 1;
+               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset + 1;
+               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
 
                // local tet element 3
-               elConn[ this->numNodesPerElement * ctr ]    = icr + numNodesX + 1;
-               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1; 
-               elConn[ this->numNodesPerElement * ctr + 2] = icr + 1;
-               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
-               ++ctr;
+               elConn[ t_numNodesPerElement * ctr ]    = icr + numNodesX + 1;
+               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset + 1; 
+               elConn[ t_numNodesPerElement * ctr + 2] = icr + 1;
+               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
  
                // local tet element 4
-               elConn[ this->numNodesPerElement * ctr ]    = icr + numNodesX + 1;
-               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + numNodesX + 1;
-               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1; 
-               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
-               ++ctr;
+               elConn[ t_numNodesPerElement * ctr ]    = icr + numNodesX + 1;
+               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset + numNodesX + 1;
+               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset + 1; 
+               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
 
                // local tet element 5
-               elConn[ this->numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
-               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset;
-               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1;
-               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
-               ++ctr;
+               elConn[ t_numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
+               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset;
+               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset + 1;
+               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
 
                // local tet element 6
-               elConn[ this->numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
-               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1;
-               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + numNodesX + 1;
-               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
-               ++ctr;
+               elConn[ t_numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
+               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset + 1;
+               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset + numNodesX + 1;
+               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
                
             } // end loop over x elements
          } // end loop over y elements
       } // end loop over z elements
+
+      // TODO fix this for tets
+      // populate contact surface connectivity
+      ctr = 0;
+      for (int j=0; j<numElemsY; ++j)
+      { 
+         for (int i=0; i<numElemsX; ++i)
+         {
+            if (ndOffset == 0) // top surface of mortar bottom block
+            {
+               int yIdOffset = j * numNodesX;
+               int icr = (numElemsX+1)*(numElemsY+1)*(numElemsZ) + yIdOffset + i; // top surface node id
+
+               // local tet face connectivity for bottom block
+               // 2 tet faces per hex face   // code for each local hex node
+               // local el 1) 1, 2, 4        1) icr
+               // local el 2) 2, 3, 4        2) icr + 1
+               //                            3) icr + numNodesX + 1
+               //                            4) icr + numNodesX
+               
+               // local tet face 1
+               faceConn[ this->numNodesPerFace * ctr ]     = icr;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + 1;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + numNodesX;
+               ++ctr; // increment counter to next tet face
+
+               // local tet face 2
+               faceConn[ this->numNodesPerFace * ctr ]     = icr + 1;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + numNodesX + 1;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + numNodesX;
+               ++ctr; // increment counter to next tet face
+            }
+            // bottom surface of nonmortar top block
+            // reorient nonmortar face connectivity per outward unit normal requirement
+            if (ndOffset != 0) 
+            {
+               int yIdOffset = j * numNodesX;
+               int icr = ndOffset + yIdOffset + i; // bottom surface node id
+
+               // local tet face connectivity for top block
+               // 2 tet faces per hex face   // code for each local hex node
+               // local el 1) 1, 2, 4        1) icr
+               // local el 2) 2, 3, 4        2) icr + numNodesX
+               //                            3) icr + numNodesX + 1
+               //                            4) icr + 1
+
+               // local tet face 1
+               faceConn[ this->numNodesPerFace * ctr ]     = icr;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + numNodesX;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + 1; 
+               ++ctr; // increment counter to next tet face
+
+               // local tet face 2
+               faceConn[ this->numNodesPerFace * ctr ]     = icr + numNodesX;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + numNodesX + 1;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + 1;
+               ++ctr; // increment counter to next tet face
+            }
+         } // end loop over x-direction elements
+      } // end loop over y-direction elements
 
    } // end for loop over blocks
    
@@ -1905,15 +1965,17 @@ void TestMesh::testMeshToVtk( const std::string& dir, int cycle, double time )
       mesh << std::endl;
    }
 
-   // specify integer id for each cell type. For 8 node 
-   // hexes this is id = 12.
+   // specify integer id for each cell type. 
    mesh << "CELL_TYPES " << this->numTotalElements << std::endl;
 
    int element_id;
    switch (this->numNodesPerElement)
    {
       case 8:
-         element_id = 12; // vtk 8-node hex
+         element_id = 12; // vtk 8-node hexahedron
+         break;
+      case 4:
+         element_id = 10; // vtk 4-node tetra
          break;
       default :
          SLIC_ERROR("TestMesh::testMeshToVtk(): element type not supported by vtk.");
