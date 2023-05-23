@@ -67,6 +67,7 @@ int Finalize(bool finalize_slic)
 }
 
 void SimpleCouplingSetup( const int dim, 
+                          int cell_type,
                           int contact_method,           
                           int mortar_numCells,
                           int mortar_lengthNodalData,
@@ -90,21 +91,18 @@ void SimpleCouplingSetup( const int dim,
                   "for MORTAR_WEIGHTS method." );
    }
 
-   int cellType = (dim == 3) ? (int)(tribol::FACE) :
-                               (int)(tribol::EDGE);
-
    // register mortar mesh
    int mortarMeshId = 0;
    tribol::registerMesh( mortarMeshId, mortar_numCells, 
                          mortar_lengthNodalData,
-                         mortar_connectivity, cellType,
+                         mortar_connectivity, cell_type,
                          mortar_x, mortar_y, mortar_z );
 
    // register nonmortar mesh
    int nonmortarMeshId = 1;
    tribol::registerMesh( nonmortarMeshId, nonmortar_numCells,
                          nonmortar_lengthNodalData,
-                         nonmortar_connectivity, cellType,
+                         nonmortar_connectivity, cell_type,
                          nonmortar_x, nonmortar_y, nonmortar_z );
 
    // Register mortar gaps and pressures, if provided

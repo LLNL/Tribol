@@ -31,12 +31,18 @@ int GetVtkElementId( const InterfaceElementType type )
 {
    switch( type )
    {
-      case EDGE:
+      case LINEAR_EDGE:
          return 3;  // vtk 2-node line
-      case FACE:
+         break;
+      case LINEAR_TRIANGLE:
+         return 5;  // vtk 3-node triangle
+         break;
+      case LINEAR_QUAD:
          return 9;  // vtk 4-node quad
-      case CELL:
+         break;
+      case LINEAR_HEX:
          return 12; // vtk 8-node hex
+         break;
       default:
          SLIC_ERROR("Unsupported element type in Tribol's VTK output");
          break;

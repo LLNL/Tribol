@@ -249,8 +249,8 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
    // mesh class typically used for testing.  //
    //                                         //
    /////////////////////////////////////////////
-   const int cellType = (mesh.dim == 3) ? (int)(tribol::FACE) : 
-                                           (int)(tribol::EDGE);
+   const int cellType = mesh.cellType; 
+                        
    
    // set the mesh ids for block 1 and block 2
    const int block1_id = 0;

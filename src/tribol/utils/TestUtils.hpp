@@ -348,7 +348,8 @@ public:
 
    // Basic info about the mesh
    int mortarMeshId;         ///< Mesh id for mortar portion of mesh
-   int nonmortarMeshId;          ///< Mesh id for nonmortar portion of mesh
+   int nonmortarMeshId;      ///< Mesh id for nonmortar portion of mesh
+   int cellType;             ///< Type of contact surface cell in mesh
    int numTotalNodes;        ///< Total number of nodes in the mesh
    int numMortarNodes;       ///< Number of mortar nodes (not just surface nodes)
    int numNonmortarNodes;        ///< Number of nonmortar nodes (not just surface nodes)

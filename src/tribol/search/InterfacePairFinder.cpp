@@ -53,7 +53,8 @@ bool geomFilter( InterfacePair const & iPair, ContactMode const mode )
    MeshData& mesh1 = meshManager.GetMeshInstance(meshId1);
    MeshData& mesh2 = meshManager.GetMeshInstance(meshId2);
 
-   int dim = ( mesh1.m_elementType == tribol::EDGE ) ? 2 : 3;
+//   int dim = ( mesh1.m_elementType == tribol::EDGE ) ? 2 : 3;
+   int dim = mesh1.m_dim;
 
    /// CHECK #2: Check to make sure faces don't share a common
    ///           node for the case where meshId1 = meshId2.

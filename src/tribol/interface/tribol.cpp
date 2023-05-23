@@ -310,8 +310,9 @@ void registerMesh( integer meshId,
    MeshData & mesh = meshManager.CreateMesh( meshId );
 
    // check supported element types
-   if (static_cast< InterfaceElementType >(elementType) != EDGE && 
-       static_cast< InterfaceElementType >(elementType) != FACE)
+   if (static_cast< InterfaceElementType >(elementType) != LINEAR_EDGE && 
+       static_cast< InterfaceElementType >(elementType) != LINEAR_TRIANGLE &&
+       static_cast< InterfaceElementType >(elementType) != LINEAR_QUAD)
    {
       SLIC_WARNING("Mesh topology not supported for mesh id, " << meshId << ".");
       mesh.m_isValid = false;
@@ -354,8 +355,26 @@ void registerMesh( integer meshId,
    mesh.m_nodalFields.m_numNodes = lengthNodalData;
 
    // set the number of nodes per cell on the mesh.
-   // NOTE: this handles linear segments and bilinear quads
-   mesh.m_numCellNodes = (mesh.m_elementType == tribol::EDGE) ? 2 : 4;
+   switch (mesh.m_elementType)
+   {
+      case tribol::LINEAR_EDGE:
+      {
+         mesh.m_numCellNodes = 2;
+         break;
+      }
+      case tribol::LINEAR_TRIANGLE:
+      {
+         mesh.m_numCellNodes = 3;
+         break;
+      } 
+      case tribol::LINEAR_QUAD:
+      { 
+         mesh.m_numCellNodes = 4;
+         break;
+      }
+      default:
+         SLIC_WARNING("Element type not supported.");
+   } // end switch over element type
 
    // compute the number of unique surface nodes from the connectivity
    // Note: this routine assigns mesh.m_numSurfaceNodes and allocates

@@ -344,6 +344,7 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
    // AT THE MOMENT.
 
    // allocate mesh data arrays
+   this->cellType = (int)(tribol::LINEAR_QUAD);
    this->numNodesPerElement = 8; // hard coded for hex8 elements
    this->numNodesPerFace = 4; // hard code for quad4 faces
    int numElementsBlock1, numNodesBlock1;
@@ -569,7 +570,8 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
 
    // allocate temporary storage for tet mesh data while pulling 
    // from hex mesh data
-   this->mesh_constructed     = false;
+   this->mesh_constructed     = false; // will reset after tet mesh has been constructed
+   this->cellType = (int)(tribol::LINEAR_TRIANGLE);
    int numTetsPerHex          = 6;
    int t_numNodesPerFace      = 3; // triangle faces
    int t_numNodesPerElement   = 4; // four nodes per tet
@@ -940,6 +942,9 @@ int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
                                           bool TRIBOL_UNUSED_PARAM(visualization),
                                           TestControlParameters& params )
 {
+   SLIC_ERROR_IF( !this->mesh_constructed, "TestMesh::simpleTribolSetupAndUpdate(): " <<
+                  "must construct hex or tet mesh prior to calling this routine." );
+
    // grab coordinate data
    real * x = this->x;
    real * y = this->y;
@@ -972,6 +977,7 @@ int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
    const double area_frac = 1.e-03;
 
    SimpleCouplingSetup( this->dim,
+                        this->cellType,
                         method,
                         this->numMortarFaces,
                         this->numTotalNodes,
@@ -1003,19 +1009,6 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    real * y = this->y;
    real * z = this->z;
 
-   // // TODO generalize
-   // register the mesh with tribol
-   const int cellType = (this->dim == 3) ? (int)(FACE) : 
-                                           (int)(EDGE);
-
-   // set mortar/nonmortar mesh ids. Note, mortar/nonmortar designation can 
-   // still work for common plane
-   if (this->mortarMeshId == 0 && this->nonmortarMeshId == 0)
-   {
-      this->mortarMeshId = 0;
-      this->nonmortarMeshId = 1;
-   }
-
    // initialize tribol
    CommType problem_comm = TRIBOL_COMM_WORLD;
    initialize( this->dim, problem_comm );
@@ -1024,10 +1017,10 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    // ids for the connectivity and array lengths of numTotalNodes. 
    registerMesh( this->mortarMeshId, this->numMortarFaces, 
                  this->numTotalNodes,
-                 this->faceConn1, cellType, x, y, z );
+                 this->faceConn1, this->cellType, x, y, z );
    registerMesh( this->nonmortarMeshId, this->numNonmortarFaces, 
                  this->numTotalNodes,
-                 this->faceConn2, cellType, x, y, z );
+                 this->faceConn2, this->cellType, x, y, z );
 
    // register nodal forces. Note, I was getting a seg fault when 
    // registering the same pointer to a single set of force arrays 
