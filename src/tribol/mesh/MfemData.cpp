@@ -40,6 +40,7 @@ mfem::GridFunction SubmeshRedecompTransfer::SubmeshToRedecomp(
 ) const
 {
   auto dst = mfem::GridFunction(redecomp_fes_.get());
+  dst = 0.0;
   redecomp_xfer_.TransferToSerial(src, dst);
   return dst;
 }
@@ -49,6 +50,7 @@ mfem::ParGridFunction SubmeshRedecompTransfer::RedecompToSubmesh(
 ) const
 {
   auto dst = mfem::ParGridFunction(&submesh_fes_);
+  dst = 0.0;
   redecomp_xfer_.TransferToParallel(src, dst);
   return dst;
 }
@@ -96,6 +98,7 @@ mfem::GridFunction ParentRedecompTransfer::ParentToRedecomp(
   const mfem::ParGridFunction& src
 ) const
 {
+  submesh_gridfn_ = 0.0;
   redecomp_xfer_.GetSubmesh().Transfer(src, submesh_gridfn_);
   return redecomp_xfer_.SubmeshToRedecomp(submesh_gridfn_);
 }
@@ -105,6 +108,8 @@ mfem::ParGridFunction ParentRedecompTransfer::RedecompToParent(
 ) const
 {
   auto dst = mfem::ParGridFunction(&parent_fes_);
+  dst = 0.0;
+  submesh_gridfn_ = 0.0;
   redecomp_xfer_.RedecompToSubmesh(src, submesh_gridfn_);
   redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, dst);
   return dst;
@@ -306,6 +311,7 @@ void MfemMeshData::UpdateMeshData()
   );
   coords_.UpdateField(update_data_->primal_xfer_);
   redecomp_response_.SetSpace(coords_.GetRedecompField().FESpace());
+  redecomp_response_ = 0.0;
   if (velocity_)
   {
     velocity_->UpdateField(update_data_->primal_xfer_);
@@ -441,6 +447,7 @@ MfemDualData::MfemDualData(
   pressure_ { submesh_pressure_ }
 {
   submesh_pressure_.MakeOwner(dual_fec.release());
+  submesh_pressure_ = 0.0;
 }
 
 void MfemDualData::UpdateDualData(redecomp::RedecompMesh& redecomp)
@@ -451,6 +458,7 @@ void MfemDualData::UpdateDualData(redecomp::RedecompMesh& redecomp)
   );
   pressure_.UpdateField(update_data_->dual_xfer_);
   redecomp_gap_.SetSpace(pressure_.GetRedecompField().FESpace());
+  redecomp_gap_ = 0.0;
 }
 
 MfemDualData::UpdateData::UpdateData(

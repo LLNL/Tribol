@@ -98,6 +98,9 @@ int main( int argc, char** argv )
       }
     }
   }
+  
+  // set up data collection for output
+  auto dc = mfem::ParaViewDataCollection("pmesh", pmesh.get());
 
   // grid function for higher-order nodes
   auto fe_coll = mfem::H1_FECollection(order, pmesh->SpaceDimension());
@@ -112,6 +115,14 @@ int main( int argc, char** argv )
   {
     pmesh->GetNodes(coords);
   }
+  dc.RegisterField("pos", &coords);
+
+  // grid function for displacement
+  mfem::ParGridFunction u { &par_fe_space };
+  dc.RegisterField("disp", &u);
+  u = 0.0;
+
+  dc.Save();
 
   // recover dirichlet bc tdof list
   mfem::Array<int> ess_tdof_list;
@@ -121,14 +132,14 @@ int main( int argc, char** argv )
     ess_bdr = 0;
     for (auto xfix_attrib : xfix_attribs)
     {
-      ess_bdr[xfix_attrib] = 1;
+      ess_bdr[xfix_attrib-1] = 1;
     }
     par_fe_space.GetEssentialVDofs(ess_bdr, ess_vdof_marker, 0);
     mfem::Array<int> new_ess_vdof_marker;
     ess_bdr = 0;
     for (auto yfix_attrib : yfix_attribs)
     {
-      ess_bdr[yfix_attrib] = 1;
+      ess_bdr[yfix_attrib-1] = 1;
     }
     par_fe_space.GetEssentialVDofs(ess_bdr, new_ess_vdof_marker, 1);
     for (int i{0}; i < ess_vdof_marker.Size(); ++i)
@@ -138,7 +149,7 @@ int main( int argc, char** argv )
     ess_bdr = 0;
     for (auto zfix_attrib : zfix_attribs)
     {
-      ess_bdr[zfix_attrib] = 1;
+      ess_bdr[zfix_attrib-1] = 1;
     }
     par_fe_space.GetEssentialVDofs(ess_bdr, new_ess_vdof_marker, 2);
     for (int i{0}; i < ess_vdof_marker.Size(); ++i)
@@ -150,16 +161,39 @@ int main( int argc, char** argv )
     mfem::FiniteElementSpace::MarkerToList(ess_tdof_marker, ess_tdof_list);
   }
 
+  // int dim = pmesh->Dimension();
+  // mfem::VectorArrayCoefficient f(dim);
+  // for (int i = 0; i < dim-1; i++)
+  // {
+  //   f.Set(i, new mfem::ConstantCoefficient(0.0));
+  // }
+  // {
+  //     mfem::Vector pull_force(pmesh->bdr_attributes.Max());
+  //     pull_force = 0.0;
+  //     pull_force(4) = -1.0e-2;
+  //     f.Set(dim-1, new mfem::PWConstCoefficient(pull_force));
+  // }
+
+  // mfem::ParLinearForm *b = new mfem::ParLinearForm(&par_fe_space);
+  // b->AddBoundaryIntegrator(new mfem::VectorBoundaryLFIntegrator(f));
+  // b->Assemble();
+
   // set up mfem elasticity bilinear form
+  mfem::ParBilinearForm a(&par_fe_space);
   mfem::ConstantCoefficient lambda(50.0);
   mfem::ConstantCoefficient mu(50.0);
-  mfem::ParBilinearForm a(&par_fe_space);
   a.AddDomainIntegrator(new mfem::ElasticityIntegrator(lambda, mu));
   a.Assemble();
+  
+  // mfem::ParGridFunction x{&par_fe_space};
+  // x = 0.0;
+  // mfem::HypreParMatrix A;
+  // mfem::Vector B, X;
+  // a.FormLinearSystem(ess_tdof_list, x, *b, A, X, B);
 
   // compute elasticity contribution to stiffness
-  mfem::HypreParMatrix A;
-  a.FormSystemMatrix(ess_tdof_list, A);
+  auto A = std::make_unique<mfem::HypreParMatrix>();
+  a.FormSystemMatrix(ess_tdof_list, *A);
 
   // set up tribol
   tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
@@ -180,18 +214,71 @@ int main( int argc, char** argv )
   // update tribol (compute contact contribution to force and stiffness)
   double dt {1.0};
   tribol::update(1, 1.0, dt);
-
-  // retrieve contact contribution to force
-  auto b = tribol::getResponseGridFn(0);
-
-  // retrieve nodal mortar gaps
-  auto g = tribol::getGapGridFn(0);
-
-  // retrieve nodal mortar pressures
-  auto& p = tribol::getPressureGridFn(0);
+  dc.SetCycle(1);
+  dc.SetTime(1.0);
+  dc.SetTimeStep(1.0);
 
   // retrieve block stiffness matrix
   auto A_blk = tribol::getMfemBlockJacobian(0);
+  A_blk->SetBlock(0, 0, A.release());
+
+  // create block solution and RHS vectors
+  mfem::BlockVector B_blk { A_blk->ColOffsets() };
+  B_blk = 0.0;
+  mfem::BlockVector X_blk { A_blk->RowOffsets() };
+  X_blk = 0.0;
+
+  // retrieve force vector (RHS) from contact
+  // auto f = tribol::getResponseGridFn(0);
+
+  // variational restriction on parent
+  // {
+  //   auto& U = X_blk.GetBlock(0);
+  //   auto& F = B_blk.GetBlock(0);
+  //   auto& P_parent = *par_fe_space.GetProlongationMatrix();
+  //   auto& R_parent = *par_fe_space.GetRestrictionMatrix();
+  //   P_parent.MultTranspose(f, F);
+  //   R_parent.Mult(u, U);
+  // }
+
+  // retrieve gap vector (RHS) from contact
+  auto g = tribol::getGapGridFn(0);
+
+  // retrieve pressure vector from contact
+  // auto& p = tribol::getPressureGridFn(0);
+
+  // variational restriction on submesh
+  {
+    // auto& P = X_blk.GetBlock(1);
+    auto& G = B_blk.GetBlock(1);
+    auto& P_submesh = *g.ParFESpace()->GetProlongationMatrix();
+    // auto& R_submesh = *g.ParFESpace()->GetRestrictionMatrix();
+    P_submesh.MultTranspose(g, G);
+    // R_submesh.Mult(p, P);
+  }
+
+  // set BCs on RHS
+  // a.EliminateVDofsInRHS(ess_tdof_list, X_blk.GetBlock(0), B_blk.GetBlock(0));
+
+  // solve for X_blk
+  mfem::MINRESSolver solver(MPI_COMM_WORLD);
+  solver.SetRelTol(1.0e-8);
+  solver.SetAbsTol(1.0e-12);
+  solver.SetMaxIter(5000);
+  solver.SetPrintLevel(1);
+  solver.SetOperator(*A_blk);
+  solver.Mult(B_blk, X_blk);
+
+  // create displacement vector
+  {
+    auto& U = X_blk.GetBlock(0);
+    auto& P = *par_fe_space.GetProlongationMatrix();
+    P.Mult(U, u);
+  }
+  u.Neg();
+  coords += u;
+  pmesh->SetVertices(coords);
+  dc.Save();
 
   // cleanup
   MPI_Finalize();
