@@ -85,6 +85,8 @@ void SimpleCouplingSetup( const int dim,
                           double* mortar_gaps,
                           double* mortar_pressures)
 {
+   (void)dim; // quiet compiler
+
    if (contact_method != tribol::MORTAR_WEIGHTS)
    {
       SLIC_ERROR( "SimpleCouplingSetup: simple API only works " << 

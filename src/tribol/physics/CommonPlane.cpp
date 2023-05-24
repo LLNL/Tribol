@@ -172,7 +172,6 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    ////////////////////////////////
    // Grab pointers to mesh data //
@@ -182,6 +181,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 
    MeshData& mesh1 = meshManager.GetMeshInstance( meshId1 );
    MeshData& mesh2 = meshManager.GetMeshInstance( meshId2 );
+   IndexType const numNodesPerFace = mesh1.m_numCellNodes;
 
    real * const fx1 = mesh1.m_forceX;
    real * const fy1 = mesh1.m_forceY; 

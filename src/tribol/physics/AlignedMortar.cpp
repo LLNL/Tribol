@@ -197,7 +197,6 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    ////////////////////////////////////////////////////////////////////////
    //
@@ -209,6 +208,7 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
+   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
 
    real const * const x1 = mortarMesh.m_positionX;
    real const * const y1 = mortarMesh.m_positionY; 
@@ -310,7 +310,6 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    ////////////////////////////////////////////////////////////////////////
    //
@@ -322,6 +321,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
+   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
 
    real const * const x1 = mortarMesh.m_positionX;
    real const * const y1 = mortarMesh.m_positionY; 
