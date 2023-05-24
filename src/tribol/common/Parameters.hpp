@@ -43,7 +43,8 @@ enum InterfaceElementType
    LINEAR_EDGE,       ///! 1D linear edge 
    LINEAR_TRIANGLE,   ///! 2D linear triangle
    LINEAR_QUAD,       ///! 2D linear quadrilateral
-   LINEAR_HEX,        ///! 3D linear hexahedron (volume methods)
+   LINEAR_TET,        ///! 3D linear tetrahedron (volume methods and test mesh class)
+   LINEAR_HEX,        ///! 3D linear hexahedron (volume methods and test mesh class)
    NUM_CONTACT_ELEMENTS = LINEAR_HEX
 };
 

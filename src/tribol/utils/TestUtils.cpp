@@ -1513,8 +1513,24 @@ void TestMesh::setupMfemMesh( )
          int index = iel * this->numNodesPerElement + idx;
          mConn[ idx ] = this->elConn1[ index ];
       }
-      this->mfem_mesh->AddHex( &mConn[0] );
-   }
+      switch (this->cellType)
+      {
+         case LINEAR_TRIANGLE:
+         {
+            this->mfem_mesh->AddTet( &mConn[0] );
+            break;
+         }
+         case LINEAR_QUAD:
+         {
+            this->mfem_mesh->AddHex( &mConn[0] );
+            break;
+         }
+         default:
+         {
+            SLIC_ERROR("Element type not supported for creating mfem mesh from test mesh.");
+         }
+      } // end switch on surface element type
+   } // end loop over mortar elements
 
    for (int i=0; i<this->numMortarNodes; ++i)
    {
@@ -1537,8 +1553,24 @@ void TestMesh::setupMfemMesh( )
          int index = iel * this->numNodesPerElement + idx;
          sConn[ idx ] = this->elConn2[ index ];
       }
-      this->mfem_mesh->AddHex( &sConn[0] );
-   }
+      switch (this->cellType)
+      {
+         case LINEAR_TRIANGLE:
+         {
+            this->mfem_mesh->AddTet( &sConn[0] );
+            break;
+         }
+         case LINEAR_QUAD:
+         {
+            this->mfem_mesh->AddHex( &sConn[0] );
+            break;
+         }
+         default:
+         {
+            SLIC_ERROR("Element type not supported for creating mfem mesh from test mesh.");
+         }
+      } // end switch on surface element type
+   } // end loop over nonmortar elements
 
    for (int i=0; i<this->numNonmortarNodes; ++i)
    { 
@@ -1551,7 +1583,24 @@ void TestMesh::setupMfemMesh( )
       this->mfem_mesh->AddVertex( &vert[0] );
    }
 
-   this->mfem_mesh->FinalizeHexMesh();
+   switch (this->cellType)
+   {
+      case LINEAR_TRIANGLE:
+      {
+         this->mfem_mesh->FinalizeTetMesh();
+         break;
+      }
+      case LINEAR_QUAD:
+      {
+         this->mfem_mesh->FinalizeHexMesh();
+         break;
+      }
+      default:
+      {
+         // no-op
+         break;
+      }
+   } // end switch on surface cell type
 
    SLIC_INFO( "3D linear mfem mesh finalized." );
 
