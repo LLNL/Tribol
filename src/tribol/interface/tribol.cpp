@@ -544,8 +544,13 @@ void registerNodalVelocities( integer meshId,
 //------------------------------------------------------------------------------
 void registerVelocityGridFn( integer cs_id, const mfem::ParGridFunction &v )
 {
-   CouplingSchemeManager::getInstance().getCoupling(cs_id)->getMfemMeshData()
-      ->SetParentVelocity(v);
+   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
+   SLIC_ERROR_ROOT_IF(
+      !coupling_scheme->hasMfemData(), 
+      "Coupling scheme does not contain MFEM data. "
+      "Was the coupling scheme created with registerParMesh()?"
+   );
+   coupling_scheme->getMfemMeshData()->SetParentVelocity(v);
 }
 
 //------------------------------------------------------------------------------
@@ -585,8 +590,13 @@ void registerNodalResponse( integer meshId,
 //------------------------------------------------------------------------------
 mfem::ParGridFunction getResponseGridFn( integer cs_id )
 {
-   return CouplingSchemeManager::getInstance().getCoupling(cs_id)
-      ->getMfemMeshData()->GetParentResponse();
+   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
+   SLIC_ERROR_ROOT_IF(
+      !coupling_scheme->hasMfemData(), 
+      "Coupling scheme does not contain MFEM data. "
+      "Was the coupling scheme created with registerParMesh()?"
+   );
+   return coupling_scheme->getMfemMeshData()->GetParentResponse();
 }
 
 //------------------------------------------------------------------------------
@@ -751,8 +761,14 @@ void registerMortarGaps( integer meshId,
 //------------------------------------------------------------------------------
 mfem::ParGridFunction getGapGridFn( integer cs_id )
 {
-   return CouplingSchemeManager::getInstance().getCoupling(cs_id)
-      ->getMfemDualData()->GetSubmeshGap();
+   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
+   SLIC_ERROR_ROOT_IF(
+      !coupling_scheme->hasMfemDualData(), 
+      "Coupling scheme does not contain MFEM dual field data. "
+      "Was the coupling scheme created with registerParMesh() and is the "
+      "enforcement method LAGRANGE_MULTIPLIER?"
+   );
+   return coupling_scheme->getMfemDualData()->GetSubmeshGap();
 }
 
 //------------------------------------------------------------------------------
@@ -783,8 +799,14 @@ void registerMortarPressures( integer meshId,
 //------------------------------------------------------------------------------
 mfem::ParGridFunction& getPressureGridFn( integer cs_id )
 {
-   return CouplingSchemeManager::getInstance().getCoupling(cs_id)
-      ->getMfemDualData()->GetSubmeshPressure();
+   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
+   SLIC_ERROR_ROOT_IF(
+      !coupling_scheme->hasMfemDualData(), 
+      "Coupling scheme does not contain MFEM dual field data. "
+      "Was the coupling scheme created with registerParMesh() and is the "
+      "enforcement method LAGRANGE_MULTIPLIER?"
+   );
+   return coupling_scheme->getMfemDualData()->GetSubmeshPressure();
 }
 
 //------------------------------------------------------------------------------

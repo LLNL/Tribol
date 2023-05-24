@@ -252,6 +252,7 @@ int main( int argc, char** argv )
   dc.Save();
 
   // cleanup
+  tribol::finalize();
   MPI_Finalize();
 
   return 0;

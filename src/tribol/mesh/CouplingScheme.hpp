@@ -340,6 +340,8 @@ public:
     m_mfemMeshData = std::move(mfemMeshData);
   }
 
+  bool hasMfemDualData() const { return m_mfemDualData != nullptr; }
+
   MfemDualData* getMfemDualData() { return m_mfemDualData.get(); }
   
   const MfemDualData* getMfemDualData() const 
@@ -351,7 +353,7 @@ public:
   {
     m_mfemDualData = std::move(mfemDualData);
   }
-  
+
   void setMatrixXfer();
 
   std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian() const;
