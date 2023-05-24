@@ -5,18 +5,25 @@
 
 #include <set>
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
+// MFEM includes
+#include "mfem.hpp"
+
+// Axom includes
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
 
-#include "mfem.hpp"
-
+// Redecomp includes
 #include "redecomp/redecomp.hpp"
+
+// Tribol includes
 #include "tribol/common/Parameters.hpp"
 #include "tribol/config.hpp"
 #include "tribol/interface/tribol.hpp"
-
-template <int NDIMS>
-void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance);
 
 int main( int argc, char** argv )
 {
@@ -25,6 +32,10 @@ int main( int argc, char** argv )
   int np, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &np);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
+#endif
 
   // initialize logger
   axom::slic::SimpleLogger logger;
@@ -100,7 +111,7 @@ int main( int argc, char** argv )
   }
   
   // set up data collection for output
-  auto dc = mfem::ParaViewDataCollection("pmesh", pmesh.get());
+  auto dc = mfem::VisItDataCollection("pmesh", pmesh.get());
 
   // grid function for higher-order nodes
   auto fe_coll = mfem::H1_FECollection(order, pmesh->SpaceDimension());
