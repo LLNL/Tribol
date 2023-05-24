@@ -1468,70 +1468,6 @@ void CouplingScheme::writeInterfaceOutput( const std::string& dir,
 }
 
 //------------------------------------------------------------------------------
-MfemMeshData* CouplingScheme::getMfemMeshData()
-{
-   SLIC_ERROR_ROOT_IF(
-      !m_mfemMeshData, 
-      "Coupling scheme does not contain MFEM data. "
-      "Was the coupling scheme created with registerParMesh()?"
-   );
-   return m_mfemMeshData.get();
-}
-
-//------------------------------------------------------------------------------
-const MfemMeshData* CouplingScheme::getMfemMeshData() const
-{
-   SLIC_ERROR_ROOT_IF(
-      !m_mfemMeshData, 
-      "Coupling scheme does not contain MFEM data. "
-      "Was the coupling scheme created with registerParMesh()?"
-   );
-   return m_mfemMeshData.get();
-}
-
-//------------------------------------------------------------------------------
-MfemDualData* CouplingScheme::getMfemDualData()
-{
-   SLIC_ERROR_ROOT_IF(
-      !m_mfemDualData, 
-      "Coupling scheme does not contain MFEM dual field data. "
-      "Was the coupling scheme created with registerParMesh() and is the "
-      "enforcement method LAGRANGE_MULTIPLIER?"
-   );
-   return m_mfemDualData.get();
-}
-
-//------------------------------------------------------------------------------
-const MfemDualData* CouplingScheme::getMfemDualData() const
-{
-   SLIC_ERROR_ROOT_IF(
-      !m_mfemDualData, 
-      "Coupling scheme does not contain MFEM dual field data. "
-      "Was the coupling scheme created with registerParMesh() and is the "
-      "enforcement method LAGRANGE_MULTIPLIER?"
-   );
-   return m_mfemDualData.get();
-}
-
-//------------------------------------------------------------------------------
-const redecomp::MatrixTransfer* CouplingScheme::getMatrixXfer() const
-{
-   SLIC_ERROR_ROOT_IF(
-      !m_matrixXfer, 
-      "Coupling scheme does not contain matrix transfer operator. "
-      "Was the coupling scheme created with registerParMesh() and does the "
-      "implicit eval mode include Jacobian evaluation?"
-   );
-   return m_matrixXfer.get();
-}
-
-//------------------------------------------------------------------------------
-const mfem::Array<int>* CouplingScheme::getSubmeshToParentVdofList() const
-{
-   return m_submesh2ParentVdofList.get();
-}
-
-//------------------------------------------------------------------------------
 void CouplingScheme::setMatrixXfer()
 {
    m_matrixXfer = std::make_unique<redecomp::MatrixTransfer>(
@@ -1551,6 +1487,15 @@ void CouplingScheme::setMatrixXfer()
       *m_submesh2ParentVdofList
    );
 
+   int my_rank {0};
+   MPI_Comm_rank(TRIBOL_COMM_WORLD, &my_rank);
+   auto offset_idx = HYPRE_AssumedPartitionCheck() ? 0 : my_rank;
+   auto dof_offset = m_mfemMeshData->GetParentCoords().ParFESpace()->GetDofOffsets()[offset_idx];
+   for (auto& vdof : *m_submesh2ParentVdofList)
+   {
+      vdof = vdof + dof_offset;
+   }
+
    auto disp_size = m_mfemMeshData->GetParentCoords().ParFESpace()
       ->GetTrueVSize();
    auto lm_size = m_mfemDualData->GetSubmeshPressure().ParFESpace()
@@ -1559,6 +1504,155 @@ void CouplingScheme::setMatrixXfer()
    (*m_blockOffsets)[0] = 0;
    (*m_blockOffsets)[1] = disp_size;
    (*m_blockOffsets)[2] = disp_size + lm_size;
+}
+
+//------------------------------------------------------------------------------
+std::unique_ptr<mfem::BlockOperator> CouplingScheme::getMfemBlockJacobian() const
+{
+   // 0 = displacement DOFs, 1 = lagrange multiplier DOFs
+   // (0,0) block is empty (for now)
+   // (1,1) block is empty
+   // (0,1) and (1,0) are symmetric (for now)
+   const auto& elem_map_1 = m_mfemMeshData->GetElemMap1();
+   const auto& elem_map_2 = m_mfemMeshData->GetElemMap2();
+   auto mortar_elems = m_methodData
+      ->getBlockJElementIds()[static_cast<int>(BlockSpace::MORTAR)];
+   for (auto& mortar_elem : mortar_elems)
+   {
+      mortar_elem = elem_map_1[static_cast<size_t>(mortar_elem)];
+   }
+   auto nonmortar_elems = m_methodData
+      ->getBlockJElementIds()[static_cast<int>(BlockSpace::NONMORTAR)];
+   for (auto& nonmortar_elem : nonmortar_elems)
+   {
+      nonmortar_elem = elem_map_2[static_cast<size_t>(nonmortar_elem)];
+   }
+   auto lm_elems = m_methodData
+      ->getBlockJElementIds()[static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER)];
+   for (auto& lm_elem : lm_elems)
+   {
+      lm_elem = elem_map_2[static_cast<size_t>(lm_elem)];
+   }
+   // get (1,0) block
+   const auto& elem_J_1 = m_methodData->getBlockJ()(
+      static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER),
+      static_cast<int>(BlockSpace::MORTAR)
+   );
+   const auto& elem_J_2 = m_methodData->getBlockJ()(
+      static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER),
+      static_cast<int>(BlockSpace::NONMORTAR)
+   );
+   // move to submesh level
+   auto submesh_J = m_matrixXfer->TransferToParallelSparse(
+      lm_elems, 
+      mortar_elems, 
+      elem_J_1
+   );
+   submesh_J += m_matrixXfer->TransferToParallelSparse(
+      lm_elems, 
+      nonmortar_elems, 
+      elem_J_2
+   );
+   submesh_J.Finalize();
+
+   // transform J values from submesh to parent
+   auto J = submesh_J.GetJ();
+   auto submesh_vector_fes = m_mfemMeshData->GetSubmeshFESpace();
+   auto mpi = redecomp::MPIUtility(submesh_vector_fes.GetComm());
+   auto submesh_dof_offsets = axom::Array<int>(mpi.NRanks() + 1, mpi.NRanks() + 1);
+   if (HYPRE_AssumedPartitionCheck())
+   {
+      submesh_dof_offsets[mpi.MyRank()+1] = submesh_vector_fes.GetDofOffsets()[1];
+      mpi.Allreduce(&submesh_dof_offsets, MPI_SUM);
+   }
+   else
+   {
+      for (int i{0}; i < mpi.NRanks(); ++i)
+      {
+         submesh_dof_offsets[i] = submesh_vector_fes.GetDofOffsets()[i];
+      }
+      
+   }
+   auto send_J_by_rank = redecomp::MPIArray<int>(&mpi);
+   auto J_idx = redecomp::MPIArray<int>(&mpi);
+   auto est_num_J = submesh_J.NumNonZeroElems() / mpi.NRanks();
+   for (int r{}; r < mpi.NRanks(); ++r)
+   {
+      if (r == mpi.MyRank())
+      {
+         send_J_by_rank[r].shrink();
+         J_idx[r].shrink();
+      }
+      else
+      {
+         send_J_by_rank[r].reserve(est_num_J);
+         J_idx[r].reserve(est_num_J);
+      }
+      
+   }
+   for (int j{}; j < submesh_J.NumNonZeroElems(); ++j)
+   {
+      if (J[j] >= submesh_dof_offsets[mpi.MyRank()] 
+         && J[j] < submesh_dof_offsets[mpi.MyRank() + 1])
+      {
+         J[j] = (*m_submesh2ParentVdofList)[J[j] - submesh_dof_offsets[mpi.MyRank()]];
+      }
+      else
+      {
+         for (int r{}; r < mpi.NRanks(); ++r)
+         {
+         if (J[j] >= submesh_dof_offsets[r] && J[j] < submesh_dof_offsets[r + 1])
+         {
+            send_J_by_rank[r].push_back(J[j] - submesh_dof_offsets[r]);
+            J_idx[r].push_back(j);
+            break;
+         }
+         }
+      }
+   }
+   auto recv_J_by_rank = redecomp::MPIArray<int>(&mpi);
+   recv_J_by_rank.SendRecvArrayEach(send_J_by_rank);
+   // update recv_J_by_rank
+   for (int r{}; r < mpi.NRanks(); ++r)
+   {
+      for (auto& recv_J : recv_J_by_rank[r])
+      {
+         recv_J = (*m_submesh2ParentVdofList)[recv_J];
+      }
+   }
+   // give it back to send_J_by_rank
+   send_J_by_rank.SendRecvArrayEach(recv_J_by_rank);
+   for (int r{}; r < mpi.NRanks(); ++r)
+   {
+      for (int j{}; j < send_J_by_rank[r].size(); ++j)
+      {
+         J[J_idx[r][j]] = send_J_by_rank[r][j];
+      }
+   }
+
+   // create block operator
+   auto block_J = std::make_unique<mfem::BlockOperator>(*m_blockOffsets);
+   block_J->owns_blocks = 1;
+
+   // fill block operator
+   auto mpi_comm = parameters_t::getInstance().problem_comm;
+   auto parent_test_fes = m_mfemDualData->GetSubmeshPressure().ParFESpace();
+   auto parent_trial_fes = m_mfemMeshData->GetParentCoords().ParFESpace();
+   auto J_full = std::make_unique<mfem::HypreParMatrix>(
+      mpi_comm, parent_test_fes->GetVSize(), 
+      parent_test_fes->GlobalVSize(), parent_trial_fes->GlobalVSize(),
+      submesh_J.GetI(), submesh_J.GetJ(), submesh_J.GetData(),
+      parent_test_fes->GetDofOffsets(), parent_trial_fes->GetDofOffsets()
+   );
+   auto J_true = std::unique_ptr<mfem::HypreParMatrix>(mfem::RAP(
+      parent_test_fes->Dof_TrueDof_Matrix(),
+      J_full.get(),
+      parent_trial_fes->Dof_TrueDof_Matrix()
+   ));
+   block_J->SetBlock(0, 1, new mfem::TransposeOperator(J_true.get()));
+   block_J->SetBlock(1, 0, J_true.release());
+
+   return block_J;
 }
 
 //------------------------------------------------------------------------------

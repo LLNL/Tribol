@@ -328,34 +328,33 @@ public:
 
   bool hasMfemData() const { return m_mfemMeshData != nullptr; }
 
-  MfemMeshData* getMfemMeshData();
+  MfemMeshData* getMfemMeshData() { return m_mfemMeshData.get(); }
   
-  const MfemMeshData* getMfemMeshData() const;
+  const MfemMeshData* getMfemMeshData() const
+  {
+    return m_mfemMeshData.get();
+  }
 
   void setMfemMeshData(std::unique_ptr<MfemMeshData>&& mfemMeshData)
   {
     m_mfemMeshData = std::move(mfemMeshData);
   }
 
-  MfemDualData* getMfemDualData();
+  MfemDualData* getMfemDualData() { return m_mfemDualData.get(); }
   
-  const MfemDualData* getMfemDualData() const;
+  const MfemDualData* getMfemDualData() const 
+  {
+    return m_mfemDualData.get();
+  }
 
   void setMfemDualData(std::unique_ptr<MfemDualData>&& mfemDualData)
   {
     m_mfemDualData = std::move(mfemDualData);
   }
   
-  const redecomp::MatrixTransfer* getMatrixXfer() const;
-  
-  const mfem::Array<int>* getSubmeshToParentVdofList() const;
-
-  const mfem::Array<int>* getBlockOffsets() const
-  {
-    return m_blockOffsets.get();
-  }
-
   void setMatrixXfer();
+
+  std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian() const;
 
 private:
 

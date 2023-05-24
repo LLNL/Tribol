@@ -111,7 +111,7 @@ int main( int argc, char** argv )
   }
   
   // set up data collection for output
-  auto dc = mfem::VisItDataCollection("pmesh", pmesh.get());
+  auto dc = mfem::ParaViewDataCollection("pmesh", pmesh.get());
 
   // grid function for higher-order nodes
   auto fe_coll = mfem::H1_FECollection(order, pmesh->SpaceDimension());
@@ -133,6 +133,7 @@ int main( int argc, char** argv )
   dc.RegisterField("disp", &u);
   u = 0.0;
 
+  // save initial configuration
   dc.Save();
 
   // recover dirichlet bc tdof list
@@ -172,35 +173,12 @@ int main( int argc, char** argv )
     mfem::FiniteElementSpace::MarkerToList(ess_tdof_marker, ess_tdof_list);
   }
 
-  // int dim = pmesh->Dimension();
-  // mfem::VectorArrayCoefficient f(dim);
-  // for (int i = 0; i < dim-1; i++)
-  // {
-  //   f.Set(i, new mfem::ConstantCoefficient(0.0));
-  // }
-  // {
-  //     mfem::Vector pull_force(pmesh->bdr_attributes.Max());
-  //     pull_force = 0.0;
-  //     pull_force(4) = -1.0e-2;
-  //     f.Set(dim-1, new mfem::PWConstCoefficient(pull_force));
-  // }
-
-  // mfem::ParLinearForm *b = new mfem::ParLinearForm(&par_fe_space);
-  // b->AddBoundaryIntegrator(new mfem::VectorBoundaryLFIntegrator(f));
-  // b->Assemble();
-
   // set up mfem elasticity bilinear form
   mfem::ParBilinearForm a(&par_fe_space);
   mfem::ConstantCoefficient lambda(50.0);
   mfem::ConstantCoefficient mu(50.0);
   a.AddDomainIntegrator(new mfem::ElasticityIntegrator(lambda, mu));
   a.Assemble();
-  
-  // mfem::ParGridFunction x{&par_fe_space};
-  // x = 0.0;
-  // mfem::HypreParMatrix A;
-  // mfem::Vector B, X;
-  // a.FormLinearSystem(ess_tdof_list, x, *b, A, X, B);
 
   // compute elasticity contribution to stiffness
   auto A = std::make_unique<mfem::HypreParMatrix>();
@@ -239,37 +217,15 @@ int main( int argc, char** argv )
   mfem::BlockVector X_blk { A_blk->RowOffsets() };
   X_blk = 0.0;
 
-  // retrieve force vector (RHS) from contact
-  // auto f = tribol::getResponseGridFn(0);
-
-  // variational restriction on parent
-  // {
-  //   auto& U = X_blk.GetBlock(0);
-  //   auto& F = B_blk.GetBlock(0);
-  //   auto& P_parent = *par_fe_space.GetProlongationMatrix();
-  //   auto& R_parent = *par_fe_space.GetRestrictionMatrix();
-  //   P_parent.MultTranspose(f, F);
-  //   R_parent.Mult(u, U);
-  // }
-
   // retrieve gap vector (RHS) from contact
   auto g = tribol::getGapGridFn(0);
 
-  // retrieve pressure vector from contact
-  // auto& p = tribol::getPressureGridFn(0);
-
   // variational restriction on submesh
   {
-    // auto& P = X_blk.GetBlock(1);
     auto& G = B_blk.GetBlock(1);
     auto& P_submesh = *g.ParFESpace()->GetProlongationMatrix();
-    // auto& R_submesh = *g.ParFESpace()->GetRestrictionMatrix();
     P_submesh.MultTranspose(g, G);
-    // R_submesh.Mult(p, P);
   }
-
-  // set BCs on RHS
-  // a.EliminateVDofsInRHS(ess_tdof_list, X_blk.GetBlock(0), B_blk.GetBlock(0));
 
   // solve for X_blk
   mfem::MINRESSolver solver(MPI_COMM_WORLD);
@@ -280,15 +236,19 @@ int main( int argc, char** argv )
   solver.SetOperator(*A_blk);
   solver.Mult(B_blk, X_blk);
 
-  // create displacement vector
+  // move block displacements to grid function
   {
     auto& U = X_blk.GetBlock(0);
     auto& P = *par_fe_space.GetProlongationMatrix();
     P.Mult(U, u);
   }
   u.Neg();
+
+  // update mesh coordinates
   coords += u;
   pmesh->SetVertices(coords);
+
+  // save deformed configuration
   dc.Save();
 
   // cleanup
