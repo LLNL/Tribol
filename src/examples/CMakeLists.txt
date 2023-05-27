@@ -96,6 +96,7 @@ if ( TRIBOL_USE_MPI )
 
   set( examples
       mfem_mortar_lm_patch.cpp
+      mfem_common_plane.cpp
       )
 
   foreach( example ${examples} )

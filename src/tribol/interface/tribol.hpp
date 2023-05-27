@@ -178,19 +178,26 @@ void registerMesh( integer meshId,
                    const real* y,
                    const real* z=nullptr );
 
-void registerParMesh(integer cs_id,
-                     integer mesh_id_1,
-                     integer mesh_id_2,
-                     mfem::ParMesh& mesh,
-                     const mfem::ParGridFunction& current_coords,
-                     const std::set<integer>& attributes_1,
-                     const std::set<integer>& attributes_2,
-                     integer contact_mode,
-                     integer contact_case,
-                     integer contact_method,
-                     integer contact_model,
-                     integer enforcement_method,
-                     integer binning_method = DEFAULT_BINNING_METHOD);
+void registerMfemMesh( integer cs_id,
+                       integer mesh_id_1,
+                       integer mesh_id_2,
+                       mfem::ParMesh& mesh,
+                       const mfem::ParGridFunction& current_coords,
+                       const std::set<integer>& attributes_1,
+                       const std::set<integer>& attributes_2,
+                       integer contact_mode,
+                       integer contact_case,
+                       integer contact_method,
+                       integer contact_model,
+                       integer enforcement_method,
+                       integer binning_method = DEFAULT_BINNING_METHOD );
+
+void enableMfemLowOrderRefined( integer cs_id,
+                            integer lor_factor,
+                            LORMethod lor_method );
+
+void enableMfemElementPenalty( integer cs_id,
+                               real bulk_modulus );
 
 /*!
  * \brief Registers nodal displacements on the contact surface.
@@ -232,7 +239,7 @@ void registerNodalVelocities( integer meshId,
                               const real* vy,
                               const real* vz=nullptr );
 
-void registerVelocityGridFn( integer cs_id, const mfem::ParGridFunction& v );
+void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
 
 /*!
  * \brief Registers nodal response buffers.
@@ -254,7 +261,7 @@ void registerNodalResponse( integer meshId,
                             real* ry,
                             real* rz=nullptr );
 
-mfem::ParGridFunction getResponseGridFn( integer cs_id );
+mfem::ParGridFunction getMfemResponse( integer cs_id );
 
 /*!
  * \brief Get mfem sparse matrix for method specific matrix output 
@@ -350,13 +357,13 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
 void registerMortarGaps( integer meshId,
                          real * nodal_gaps );
 
-mfem::ParGridFunction getGapGridFn( integer cs_id );
+mfem::ParGridFunction getMfemGap( integer cs_id );
 
 /// register mortar pressure scalar nodal field
 void registerMortarPressures( integer meshId,
                               const real * nodal_pressures );
 
-mfem::ParGridFunction& getPressureGridFn( integer cs_id );
+mfem::ParGridFunction& getMfemPressure( integer cs_id );
 
 /// register an integer nodal field
 void registerIntNodalField( integer meshId,

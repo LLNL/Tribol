@@ -34,7 +34,7 @@ int main( int argc, char** argv )
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 #ifdef TRIBOL_USE_UMPIRE
-  umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
+  umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
 #endif
 
   // initialize logger
@@ -186,7 +186,7 @@ int main( int argc, char** argv )
 
   // set up tribol
   tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
-  tribol::registerParMesh(
+  tribol::registerMfemMesh(
     0, 0, 1, *pmesh, coords, mortar_attribs, nonmortar_attribs,
     tribol::SURFACE_TO_SURFACE, 
     tribol::NO_SLIDING, 
@@ -218,7 +218,7 @@ int main( int argc, char** argv )
   X_blk = 0.0;
 
   // retrieve gap vector (RHS) from contact
-  auto g = tribol::getGapGridFn(0);
+  auto g = tribol::getMfemGap(0);
 
   // variational restriction on submesh
   {
