@@ -86,6 +86,9 @@ public:
    /// clear function
    void clear();
 
+   /// clear connectivity arrays only
+   void clearConnectivity();
+
    /// performs tribol registration calls and calls tribol::update()
    int tribolSetupAndUpdate( ContactMethod method,           ///< contact method
                              EnforcementMethod enforcement,  ///< constraint enforcement method
@@ -169,10 +172,10 @@ public:
                              real thetaMortar, real thetaNonmortar );
 
   /*!
-   * \brief sets up an mfem mesh object representation of the original hex test mesh
+   * \brief sets up an mfem mesh object representation of the original hex or tet test mesh
    *
-   * \note must call setupContactMeshHex() to construct the hex mesh prior to calling
-   * this routine
+   * \note must call setupContactMeshHex() or setupContactMeshTet() to construct the test mesh 
+   * prior to calling this routine
    *
    */
    void setupMfemMesh( );
