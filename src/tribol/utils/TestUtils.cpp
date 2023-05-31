@@ -94,7 +94,7 @@ TestMesh::~TestMesh()
 }
 
 //------------------------------------------------------------------------------
-void TestMesh::clear()
+void TestMesh::clear( bool keepCoords )
 {
    if (mfem_mesh != nullptr)
    {
@@ -103,20 +103,23 @@ void TestMesh::clear()
    }
 
    // coordinates
-   if (this->x != nullptr)
+   if (!keepCoords)
    {
-      delete [] this->x;
-      this->x = nullptr;
-   }
-   if (this->y != nullptr)
-   {
-      delete [] this->y;
-      this->y = nullptr;
-   }
-   if (this->z != nullptr)
-   {
-      delete [] this->z;
-      this->z = nullptr;
+      if (this->x != nullptr)
+      {
+         delete [] this->x;
+         this->x = nullptr;
+      }
+      if (this->y != nullptr)
+      {
+         delete [] this->y;
+         this->y = nullptr;
+      }
+      if (this->z != nullptr)
+      {
+         delete [] this->z;
+         this->z = nullptr;
+      }
    }
    // boundary condition nodes side 1
    if (this->dirNodesX1 != nullptr)
@@ -330,32 +333,6 @@ void TestMesh::clear()
    }
 
 } // end TestMesh::clear()
-
-//------------------------------------------------------------------------------
-void TestMesh::clearConnectivity()
-{
-   // deallocate connectivity arrays
-   if (this->elConn1 != nullptr)
-   {
-      delete [] this->elConn1;
-      this->elConn1 = nullptr;
-   } 
-   if (this->elConn2 != nullptr)
-   {
-      delete [] this->elConn2;
-      this->elConn2 = nullptr;
-   } 
-   if (this->faceConn1 != nullptr)
-   {
-      delete [] this->faceConn1;
-      this->faceConn1 = nullptr;
-   }
-   if (this->faceConn2 != nullptr)
-   {
-      delete [] this->faceConn2;
-      this->faceConn2 = nullptr;
-   }
-}
 
 //------------------------------------------------------------------------------
 void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElemsZ1, 
@@ -596,29 +573,31 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
 
    // allocate temporary storage for tet mesh data while pulling 
    // from hex mesh data
+   int numTetsPerHex          = 6;
    this->mesh_constructed     = false; // will reset after tet mesh has been constructed
    this->cellType = (int)(tribol::LINEAR_TRIANGLE);
-   int numTetsPerHex          = 6;
-   int t_numNodesPerFace      = 3; // triangle faces
-   int t_numNodesPerElement   = 4; // four nodes per tet
-   int t_numTotalElements     = numTetsPerHex * this->numTotalElements; // 6 tets per hex
-   int t_numMortarElements    = numTetsPerHex * numElemsX1 * numElemsY1 * numElemsZ1; 
-   int t_numNonmortarElements = numTetsPerHex * numElemsX2 * numElemsY2 * numElemsZ2;
-   int t_numMortarFaces       = 2 * numElemsX1 * numElemsY1; // only on contact surface
-   int t_numNonmortarFaces    = 2 * numElemsX2 * numElemsY2; // only on contact surface
-   int t_numMortarNodes       = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1); 
-   int t_numNonmortarNodes    = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
-   int t_numTotalNodes        = t_numMortarNodes + t_numNonmortarNodes;
-   int t_mortarMeshId         = this->mortarMeshId;
-   int t_nonmortarMeshId      = this->nonmortarMeshId;
+   this->numNodesPerFace      = 3; // linear triangle faces
+   this->numNodesPerElement   = 4; // linear four node tets
+   this->numTotalElements     = numTetsPerHex * this->numTotalElements; // 6 tets per hex
+   this->numMortarElements    = numTetsPerHex * numElemsX1 * numElemsY1 * numElemsZ1; 
+   this->numNonmortarElements = numTetsPerHex * numElemsX2 * numElemsY2 * numElemsZ2;
+   this->numMortarFaces       = 2 * numElemsX1 * numElemsY1; // only on contact surface
+   this->numNonmortarFaces    = 2 * numElemsX2 * numElemsY2; // only on contact surface
+   this->numMortarNodes       = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1); 
+   this->numNonmortarNodes    = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
+   this->numTotalNodes        = this->numMortarNodes + this->numNonmortarNodes; 
+   this->numTotalFaces        = this->numMortarFaces + this->numNonmortarFaces; 
 
-   // clear connectivity arrays
-   this->clearConnectivity();
+   // clear prior mesh, but keep same nodal coordinate arrays
+   // Note, at this point nodal data arrays should not have been allocated 
+   // on the new hex mesh, but this makes sure of that
+   bool keep_coords = true;
+   this->clear(keep_coords);
 
-   this->faceConn1  = new int[ t_numNodesPerFace * t_numMortarFaces ];
-   this->faceConn2  = new int[ t_numNodesPerFace * t_numNonmortarFaces ];
-   this->elConn1    = new int[ t_numNodesPerElement * t_numMortarElements ];
-   this->elConn2    = new int[ t_numNodesPerElement * t_numNonmortarElements ];
+   allocIntArray( &this->faceConn1, this->numNodesPerFace*this->numMortarFaces, -1 );
+   allocIntArray( &this->faceConn2, this->numNodesPerFace*this->numNonmortarFaces, -1 ); 
+   allocIntArray( &this->elConn1, this->numNodesPerElement*this->numMortarElements, -1 );
+   allocIntArray( &this->elConn2, this->numNodesPerElement*this->numNonmortarElements, -1 );
    
    // tet element connectivity
    int ndOffset;
@@ -637,7 +616,7 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
       }
       else
       {
-         ndOffset  = t_numMortarNodes;
+         ndOffset  = this->numMortarNodes;
          numElemsX = numElemsX2;
          numElemsY = numElemsY2;
          numElemsZ = numElemsZ2;
@@ -673,45 +652,45 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
                //                                            // 8) lclZOffset + numNodesX;
 
                // local tet element 1
-               elConn[ t_numNodesPerElement * ctr ]    = icr;
-               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset + 1; 
-               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset; 
-               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               elConn[ this->numNodesPerElement * ctr ]    = icr;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1; 
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset; 
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
                ++ctr; // incrememnt for next local tet
 
                // local tet element 2 
-               elConn[ t_numNodesPerElement * ctr ]    = icr;
-               elConn[ t_numNodesPerElement * ctr + 1] = icr + 1;
-               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset + 1;
-               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               elConn[ this->numNodesPerElement * ctr ]    = icr;
+               elConn[ this->numNodesPerElement * ctr + 1] = icr + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
                ++ctr; // incrememnt for next local tet
 
                // local tet element 3
-               elConn[ t_numNodesPerElement * ctr ]    = icr + numNodesX + 1;
-               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset + 1; 
-               elConn[ t_numNodesPerElement * ctr + 2] = icr + 1;
-               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               elConn[ this->numNodesPerElement * ctr ]    = icr + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1; 
+               elConn[ this->numNodesPerElement * ctr + 2] = icr + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
                ++ctr; // incrememnt for next local tet
  
                // local tet element 4
-               elConn[ t_numNodesPerElement * ctr ]    = icr + numNodesX + 1;
-               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset + numNodesX + 1;
-               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset + 1; 
-               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               elConn[ this->numNodesPerElement * ctr ]    = icr + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1; 
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
                ++ctr; // incrememnt for next local tet
 
                // local tet element 5
-               elConn[ t_numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
-               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset;
-               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset + 1;
-               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               elConn[ this->numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
                ++ctr; // incrememnt for next local tet
 
                // local tet element 6
-               elConn[ t_numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
-               elConn[ t_numNodesPerElement * ctr + 1] = lclZOffset + 1;
-               elConn[ t_numNodesPerElement * ctr + 2] = lclZOffset + numNodesX + 1;
-               elConn[ t_numNodesPerElement * ctr + 3] = icr + numNodesX;
+               elConn[ this->numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
                ++ctr; // incrememnt for next local tet
                
             } // end loop over x elements
@@ -737,15 +716,15 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
                //                            4) icr + numNodesX
                
                // local tet face 1
-               faceConn[ t_numNodesPerFace * ctr ]     = icr;
-               faceConn[ t_numNodesPerFace * ctr + 1 ] = icr + 1;
-               faceConn[ t_numNodesPerFace * ctr + 2 ] = icr + numNodesX;
-               ++ctr; // increment counter to next tet face
+               faceConn[ this->numNodesPerFace * ctr ]     = icr;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + 1;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + numNodesX;
+               ++ctr; // crement counter to next tet face
 
                // local tet face 2
-               faceConn[ t_numNodesPerFace * ctr ]     = icr + 1;
-               faceConn[ t_numNodesPerFace * ctr + 1 ] = icr + numNodesX + 1;
-               faceConn[ t_numNodesPerFace * ctr + 2 ] = icr + numNodesX;
+               faceConn[ this->numNodesPerFace * ctr ]     = icr + 1;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + numNodesX + 1;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + numNodesX;
                ++ctr; // increment counter to next tet face
             }
             // bottom surface of nonmortar top block
@@ -763,15 +742,15 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
                //                            4) icr + 1
 
                // local tet face 1
-               faceConn[ t_numNodesPerFace * ctr ]     = icr;
-               faceConn[ t_numNodesPerFace * ctr + 1 ] = icr + numNodesX;
-               faceConn[ t_numNodesPerFace * ctr + 2 ] = icr + 1; 
+               faceConn[ this->numNodesPerFace * ctr ]     = icr;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + numNodesX;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + 1; 
                ++ctr; // increment counter to next tet face
 
                // local tet face 2
-               faceConn[ t_numNodesPerFace * ctr ]     = icr + numNodesX;
-               faceConn[ t_numNodesPerFace * ctr + 1 ] = icr + numNodesX + 1;
-               faceConn[ t_numNodesPerFace * ctr + 2 ] = icr + 1;
+               faceConn[ this->numNodesPerFace * ctr ]     = icr + numNodesX;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + numNodesX + 1;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + 1;
                ++ctr; // increment counter to next tet face
             }
          } // end loop over x-direction elements
@@ -779,20 +758,6 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
 
    } // end for loop over blocks
    
-   this->mortarMeshId         = t_mortarMeshId;
-   this->nonmortarMeshId      = t_nonmortarMeshId;
-   this->numNodesPerFace      = t_numNodesPerFace;
-   this->numNodesPerElement   = t_numNodesPerElement;
-   this->numTotalElements     = t_numTotalElements;
-   this->numMortarElements    = t_numMortarElements;
-   this->numNonmortarElements = t_numNonmortarElements;
-   this->numMortarFaces       = t_numMortarFaces;
-   this->numNonmortarFaces    = t_numNonmortarFaces;
-   this->numMortarNodes       = t_numMortarNodes;
-   this->numNonmortarNodes    = t_numNonmortarNodes;
-   this->numTotalNodes        = t_numTotalNodes;
-   this->numTotalFaces        = t_numMortarFaces + t_numNonmortarFaces; 
-
    this->mesh_constructed = true;
 
 } // end setupContactMeshTet()

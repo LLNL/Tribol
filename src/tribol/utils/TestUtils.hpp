@@ -84,10 +84,8 @@ public:
    ~TestMesh();
 
    /// clear function
-   void clear();
-
-   /// clear connectivity arrays only
-   void clearConnectivity();
+   void clear( bool keepCoords = false ///< option to keep nodal coordinate arrays for hex-to-tet mesh
+             );
 
    /// performs tribol registration calls and calls tribol::update()
    int tribolSetupAndUpdate( ContactMethod method,           ///< contact method

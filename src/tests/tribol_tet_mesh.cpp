@@ -55,12 +55,12 @@ TEST_F( TetMeshTest, build_and_check_tet_mesh )
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
-   int nMortarElems = 1;
+   int nMortarElems = 4;
    int nElemsXM = nMortarElems;
    int nElemsYM = nMortarElems;
    int nElemsZM = nMortarElems;
 
-   int nNonmortarElems = 1; 
+   int nNonmortarElems = 3; 
    int nElemsXS = nNonmortarElems;
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
@@ -86,7 +86,22 @@ TEST_F( TetMeshTest, build_and_check_tet_mesh )
                                      nElemsXS, nElemsYS, nElemsZS,
                                      x_min2, y_min2, z_min2,
                                      x_max2, y_max2, z_max2,
-                                     0., 0. );
+                                     5., -5. );
+    
+   // sanity checks for this specific mesh
+   EXPECT_EQ( this->m_mesh.mesh_constructed, true );
+   EXPECT_EQ( this->m_mesh.cellType, (int)(tribol::LINEAR_TRIANGLE) );
+   EXPECT_EQ( this->m_mesh.numNodesPerFace, 3 );
+   EXPECT_EQ( this->m_mesh.numNodesPerElement, 4 );
+   EXPECT_EQ( this->m_mesh.numMortarElements, 6 * nMortarElems*nMortarElems*nMortarElems );
+   EXPECT_EQ( this->m_mesh.numNonmortarElements, 6 * nNonmortarElems*nNonmortarElems*nNonmortarElems );
+   EXPECT_EQ( this->m_mesh.numTotalElements, this->m_mesh.numMortarElements + this->m_mesh.numNonmortarElements );
+   EXPECT_EQ( this->m_mesh.numMortarFaces, 2 * nMortarElems*nMortarElems );
+   EXPECT_EQ( this->m_mesh.numNonmortarFaces, 2 * nNonmortarElems*nNonmortarElems );
+   EXPECT_EQ( this->m_mesh.numMortarNodes, (nMortarElems+1)*(nMortarElems+1)*(nMortarElems+1) );
+   EXPECT_EQ( this->m_mesh.numNonmortarNodes, (nNonmortarElems+1)*(nNonmortarElems+1)*(nNonmortarElems+1) );
+
+   //this->m_mesh.testMeshToVtk( "", 1, 1 );
 
 }
 
