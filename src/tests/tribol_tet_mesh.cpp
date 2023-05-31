@@ -102,50 +102,67 @@ TEST_F( TetMeshTest, build_and_check_tet_mesh )
    EXPECT_EQ( this->m_mesh.numNonmortarNodes, (nNonmortarElems+1)*(nNonmortarElems+1)*(nNonmortarElems+1) );
 
    //this->m_mesh.testMeshToVtk( "", 1, 1 );
-
 }
 
-//TEST_F( TetMeshTest, build_and_check_mfem_tet_mesh )
-//{
-//   this->m_mesh.mortarMeshId = 0;
-//   this->m_mesh.nonmortarMeshId = 1;
-//
-//   int nMortarElems = 4; 
-//   int nElemsXM = nMortarElems;
-//   int nElemsYM = nMortarElems;
-//   int nElemsZM = nMortarElems;
-//
-//   int nNonmortarElems = 5; 
-//   int nElemsXS = nNonmortarElems;
-//   int nElemsYS = nNonmortarElems;
-//   int nElemsZS = nNonmortarElems;
-//
-//   // mesh bounding box with 0.1 interpenetration gap
-//   real x_min1 = 0.;
-//   real y_min1 = 0.;
-//   real z_min1 = 0.; 
-//   real x_max1 = 1.;
-//   real y_max1 = 1.;
-//   real z_max1 = 1.05;
-//
-//   real x_min2 = 0.;
-//   real y_min2 = 0.;
-//   real z_min2 = 0.95;
-//   real x_max2 = 1.;
-//   real y_max2 = 1.;
-//   real z_max2 = 2.;
-//
-//   this->m_mesh.setupContactMeshTet( nElemsXM, nElemsYM, nElemsZM,
-//                                     x_min1, y_min1, z_min1,
-//                                     x_max1, y_max1, z_max1,
-//                                     nElemsXS, nElemsYS, nElemsZS,
-//                                     x_min2, y_min2, z_min2,
-//                                     x_max2, y_max2, z_max2,
-//                                     0., 0. );
-//
-//   this->m_mesh.setupMfemMesh();
-//
-//}
+TEST_F( TetMeshTest, build_and_check_mfem_tet_mesh )
+{
+   this->m_mesh.mortarMeshId = 0;
+   this->m_mesh.nonmortarMeshId = 1;
+
+   int nMortarElems = 4; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
+
+   int nNonmortarElems = 3; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
+
+   // mesh bounding box with 0.1 interpenetration gap
+   real x_min1 = 0.;
+   real y_min1 = 0.;
+   real z_min1 = 0.; 
+   real x_max1 = 1.;
+   real y_max1 = 1.;
+   real z_max1 = 1.05;
+
+   real x_min2 = 0.;
+   real y_min2 = 0.;
+   real z_min2 = 0.95;
+   real x_max2 = 1.;
+   real y_max2 = 1.;
+   real z_max2 = 2.;
+
+   this->m_mesh.setupContactMeshTet( nElemsXM, nElemsYM, nElemsZM,
+                                     x_min1, y_min1, z_min1,
+                                     x_max1, y_max1, z_max1,
+                                     nElemsXS, nElemsYS, nElemsZS,
+                                     x_min2, y_min2, z_min2,
+                                     x_max2, y_max2, z_max2,
+                                     5., -5. );
+
+   this->m_mesh.setupMfemMesh();
+
+   // perform mfem mesh based sanity checks
+   EXPECT_EQ( this->m_mesh.mfem_mesh->SpaceDimension(), 3 );
+   EXPECT_EQ( this->m_mesh.mfem_mesh->GetNE(), this->m_mesh.numMortarElements + this->m_mesh.numNonmortarElements );
+   EXPECT_EQ( this->m_mesh.mfem_mesh->GetNV(), this->m_mesh.numMortarNodes + this->m_mesh.numNonmortarNodes );
+   EXPECT_EQ( this->m_mesh.mfem_mesh->GetNFbyType(mfem::FaceType::Boundary), 
+              2 * 6 * (nMortarElems*nMortarElems + nNonmortarElems*nNonmortarElems) );
+
+   // check for inverted elements
+   int wrong_elem_orientation = -1;
+   int wrong_bdr_elem_orientation = -1;
+   bool fix_it = false;
+   wrong_elem_orientation = this->m_mesh.mfem_mesh->CheckElementOrientation( fix_it );
+   wrong_bdr_elem_orientation = this->m_mesh.mfem_mesh->CheckBdrElementOrientation( fix_it );
+   EXPECT_EQ( wrong_elem_orientation, 0 );
+   EXPECT_EQ( wrong_bdr_elem_orientation, 0 );
+
+   //std::ofstream mfem_file("mfem_test_mesh.vtk");
+   //this->m_mesh.mfem_mesh->PrintVTK(mfem_file);
+}
 
 int main(int argc, char* argv[])
 {
