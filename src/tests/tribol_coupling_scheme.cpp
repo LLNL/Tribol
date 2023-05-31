@@ -71,8 +71,8 @@ protected:
       // Single element meshes are usesd in these tests out of 
       // simplicity. 
       m_numCells = (numCells >= 1) ? 1 : 0;
-      m_lengthNodalData = 4;
-      m_elementType = 2; // 1D edge for 2D mesh 
+      m_lengthNodalData = 4; // Quad 4
+      m_elementType = (int)(tribol::LINEAR_EDGE); // 1D edge for 2D mesh 
 
       if (m_numCells > 0)
       {
@@ -80,14 +80,14 @@ protected:
          m_connectivity = new int[ m_lengthNodalData ];
          m_x = new real[ m_lengthNodalData ];
          m_y = new real[ m_lengthNodalData ];
-         m_z = new real[ m_lengthNodalData ];
+         //m_z = new real[ m_lengthNodalData ];
 
          for (int i=0; i<m_lengthNodalData; ++i)
          {
             m_connectivity[i] = i;
             m_x[i] = 0.;
             m_y[i] = 0.;
-            m_z[i] = 0.;
+            //m_z[i] = 0.;
          }
       }
 
@@ -105,8 +105,8 @@ protected:
       // Single element meshes are usesd in these tests out of 
       // simplicity. 
       m_numCells = (numCells >= 1) ? 1 : 0;
-      m_lengthNodalData = 8; 
-      m_elementType = 3; // 2D face in 3D mesh
+      m_lengthNodalData = 8; // Hex 8
+      m_elementType = (int)(tribol::LINEAR_QUAD); // 2D face in 3D mesh
 
       if (m_numCells > 0)
       {
@@ -165,14 +165,13 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 2, problem_comm );
 
-   int numNodes = 4;
    registerDummy2DMesh( 0 );
    registerDummy2DMesh( 1 );
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[numNodes];
-   real pressures[numNodes];
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
    tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
    tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
@@ -200,14 +199,13 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 2, problem_comm );
 
-   int numNodes = 4;
    registerDummy2DMesh( 0 );
    registerDummy2DMesh( 1 );
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[numNodes];
-   real pressures[numNodes];
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
    tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
    tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
@@ -261,14 +259,13 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   int numNodes = 8;
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[numNodes];
-   real pressures[numNodes];
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
    tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
    tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
@@ -348,14 +345,13 @@ TEST_F( CouplingSchemeTest, mortar_tied )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   int numNodes = 8;
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[numNodes];
-   real pressures[numNodes];
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
    tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
    tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
@@ -383,14 +379,13 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   int numNodes = 8;
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[numNodes];
-   real pressures[numNodes];
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
    tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
    tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
