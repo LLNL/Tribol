@@ -35,5 +35,6 @@ variables:
 
 # This is where jobs are included for each machine
 include:
-  - local: .gitlab/build_lassen.yml
+#TODO: Turn back on when everyone has lassen
+#  - local: .gitlab/build_lassen.yml
   - local: .gitlab/build_quartz.yml
