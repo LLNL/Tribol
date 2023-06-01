@@ -34,7 +34,6 @@
 ####
 # Build jobs
 
-# Only run integration tests on one spec
 quartz-clang_14_0_6-src:
   variables:
     COMPILER: "clang@14.0.6"
