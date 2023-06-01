@@ -1774,7 +1774,7 @@ void TestMesh::tribolMatrixToSystemMatrix( mfem::DenseMatrix * const ATribol,
 
    // KEEP this as debug code for unit tests, but in general 
    // there should be no contributions
-   // TEST compose bottom-diagonal block diagonal elements
+   // TEST: compose bottom-diagonal block diagonal elements
 //   for (int i=0; i<this->m_mesh.numNonmortarSurfaceNodes; ++i)
 //   {
 //      int newOffset = this->m_mesh.dim * this->m_mesh.numTotalNodes;
