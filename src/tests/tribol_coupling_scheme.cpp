@@ -468,319 +468,323 @@ TEST_F( CouplingSchemeTest, common_plane_coulomb )
    EXPECT_EQ( isInit, false );
 }
 
-//TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
-//{
-//   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-//   tribol::initialize( 3, problem_comm );
-//
-//   ////////////////////////////////////////////////
-//   // setup simple non-null contacting test mesh //
-//   ////////////////////////////////////////////////
-//   tribol::TestMesh mesh;
-//   mesh.mortarMeshId = 0;
-//   mesh.nonmortarMeshId = 1;
-//
-//   int nMortarElems = 1; 
-//   int nElemsXM = nMortarElems;
-//   int nElemsYM = nMortarElems;
-//   int nElemsZM = nMortarElems;
-//
-//   int nNonmortarElems = 1; 
-//   int nElemsXS = nNonmortarElems;
-//   int nElemsYS = nNonmortarElems;
-//   int nElemsZS = nNonmortarElems;
-//
-//   // mesh bounding box with 0.1 interpenetration gap
-//   real x_min1 = 0.;
-//   real y_min1 = 0.;
-//   real z_min1 = 0.; 
-//   real x_max1 = 1.;
-//   real y_max1 = 1.;
-//   real z_max1 = 1.05;
-//
-//   real x_min2 = 0.;
-//   real y_min2 = 0.;
-//   real z_min2 = 0.95;
-//   real x_max2 = 1.;
-//   real y_max2 = 1.;
-//   real z_max2 = 2.;
-//
-//   mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
-//                             x_min1, y_min1, z_min1,
-//                             x_max1, y_max1, z_max1,
-//                             nElemsXS, nElemsYS, nElemsZS,
-//                             x_min2, y_min2, z_min2,
-//                             x_max2, y_max2, z_max2,
-//                             0., 0. );
-//
-//   // register meshes
-//   tribol::registerMesh( mesh.mortarMeshId,
-//                         mesh.numMortarFaces,
-//                         mesh.numTotalNodes,
-//                         mesh.faceConn1, 3, 
-//                         mesh.x, mesh.y, mesh.z );
-//
-//   tribol::registerMesh( mesh.nonmortarMeshId,
-//                         mesh.numNonmortarFaces,
-//                         mesh.numTotalNodes,
-//                         mesh.faceConn2, 3,
-//                         mesh.x, mesh.y, mesh.z );
-//
-//   // set penalty data so coupling scheme initialization passes 
-//   real penalty = 1.0;
-//   tribol::setKinematicConstantPenalty( 0, penalty );
-//   tribol::setKinematicConstantPenalty( 1, penalty );
-//
-//   // register nodal responses (i.e. nodal forces)
-//   tribol::allocRealArray( &mesh.fx1, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fy1, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fz1, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fx2, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fy2, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fz2, mesh.numTotalNodes, 0. );
-//
-//   tribol::registerNodalResponse( mesh.mortarMeshId,
-//                                  mesh.fx1, mesh.fy1, mesh.fz1 );
-//
-//   tribol::registerNodalResponse( mesh.nonmortarMeshId,
-//                                  mesh.fx2, mesh.fy2, mesh.fz2 );
-//
-//   // register the coupling scheme
-//   const int csIndex = 0;
-//   tribol::registerCouplingScheme(csIndex, 0, 1, 
-//                                  tribol::SURFACE_TO_SURFACE,
-//                                  tribol::AUTO,
-//                                  tribol::COMMON_PLANE,
-//                                  tribol::FRICTIONLESS,
-//                                  tribol::PENALTY,
-//                                  tribol::BINNING_GRID );
-//  
-//   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
-//                              tribol::KINEMATIC_CONSTANT ); 
-//
-//   // call update so binning on coupling scheme is performed.
-//   double dt = 1.0;
-//   EXPECT_EQ(tribol::update(1, 1., dt), 0);
-//
-//   tribol::CouplingSchemeManager& csManager =
-//         tribol::CouplingSchemeManager::getInstance();
-//   tribol::CouplingScheme* cs_non_null = csManager.getCoupling(csIndex);
-//
-//   // check that the total number of nodes in the coupling scheme are 
-//   // the two 8 node hexes in 3D
-//   EXPECT_EQ(cs_non_null->getNumTotalNodes(), 16); // hard coded for simplicity
-// 
-//   // check that there is a single active pair
-//   EXPECT_EQ(cs_non_null->getNumActivePairs(), 1);
-//
-//   ///////////////////////////////////////////////////////////////
-//   // Re-register Data With Same Mesh Ids and CouplingScheme Id //
-//   ///////////////////////////////////////////////////////////////
-//
-//   // register same mesh IDs as NULL meshes
-//   tribol::registerMesh( 0, 0, 0, nullptr, 3, nullptr, nullptr, nullptr );
-//   tribol::registerMesh( 1, 0, 0, nullptr, 3, nullptr, nullptr, nullptr );
-//
-//   // set penalty data for valid coupling scheme with penalty enforcement. 
-//   // Previous meshes and mesh associated penalty data is overwritten with 
-//   // registerMesh() calls above
-//   tribol::setKinematicConstantPenalty( 0, penalty );
-//   tribol::setKinematicConstantPenalty( 1, penalty );
-//
-//   //RE-register coupling scheme 0 with null-meshes with same IDs as before
-//   tribol::registerCouplingScheme(csIndex, 0, 1, 
-//                                  tribol::SURFACE_TO_SURFACE,
-//                                  tribol::AUTO,
-//                                  tribol::COMMON_PLANE,
-//                                  tribol::FRICTIONLESS,
-//                                  tribol::PENALTY,
-//                                  tribol::BINNING_GRID );
-//
-//   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
-//                              tribol::KINEMATIC_CONSTANT ); 
-//
-//   tribol::CouplingScheme* cs_null = csManager.getCoupling(csIndex);
-//   
-//   // check that total number of nodes on the coupling scheme is zero from null meshes
-//   EXPECT_EQ(cs_null->getNumTotalNodes(), 0);
-// 
-//   // check that the number of active pairs is zero from initialization and not 
-//   // carried over from previous coupling scheme registration with non-null meshes
-//   EXPECT_EQ(cs_null->getNumActivePairs(), 0);
-//
-//   // call update() to make sure there is a no-op for this coupling scheme
-//   EXPECT_EQ(tribol::update(1, 1., dt), 0);
-//   EXPECT_EQ(cs_null->getNumActivePairs(), 0);
-//}
-//
-//TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
-//{
-//   // TODO finish this test
-//   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-//   tribol::initialize( 3, problem_comm );
-//
-//   // register meshes
-//   int id1 = 0;
-//   int id2 = 1;
-//   int numFaces1 = 1;
-//   int numFaces2 = 1;
-//   constexpr int numTotalNodes1 = 2;
-//   constexpr int numTotalNodes2 = 4;
-//   int faceConn1[numTotalNodes1] = {0, 1};    // dummy triangle connectivity (invalid)
-//   int faceConn2[numTotalNodes2] = {4, 5, 6, 7}; // dummy quadrilateral connectivity (valid)
-//   real x1[numTotalNodes1] = {0., 0.5};
-//   real y1[numTotalNodes1] = {0., 0.};
-//   real z1[numTotalNodes1] = {0., 0.};
-//   real x2[numTotalNodes2] = {0., 0.5, 0.5, 0.};
-//   real y2[numTotalNodes2] = {0., 0., 0.5, 0.5};
-//   real z2[numTotalNodes2] = {-0.1, -0.1, -0.1, -0.1};
-//   real fx1[numTotalNodes1], fy1[numTotalNodes1], fz1[numTotalNodes1];
-//   real fx2[numTotalNodes2], fy2[numTotalNodes2], fz2[numTotalNodes2];
-//
-//   tribol::initRealArray( &fx1[0], numTotalNodes1, 0. );
-//   tribol::initRealArray( &fy1[0], numTotalNodes1, 0. );
-//   tribol::initRealArray( &fz1[0], numTotalNodes1, 0. );
-//
-//   tribol::initRealArray( &fx2[0], numTotalNodes2, 0. );
-//   tribol::initRealArray( &fy2[0], numTotalNodes2, 0. );
-//   tribol::initRealArray( &fz2[0], numTotalNodes2, 0. );
-//
-//   tribol::registerMesh( id1, numFaces1, numTotalNodes1,
-//                         &faceConn1[0], 2, &x1[0], &y1[0], &z1[0] );
-//
-//   tribol::registerMesh( id2, numFaces2, numTotalNodes2,
-//                         &faceConn2[0], 3, &x2[0], &y2[0], &z2[0] );
-//
-//   // set penalty data so coupling scheme initialization passes 
-//   real penalty = 1.0;
-//   tribol::setKinematicConstantPenalty( 0, penalty );
-//   tribol::setKinematicConstantPenalty( 1, penalty );
-//
-//   tribol::registerNodalResponse( id1, &fx1[0], &fy1[0], &fz1[0] );
-//
-//   tribol::registerNodalResponse( id2, &fx2[0], &fy2[0], &fz2[0] );
-//
-//   // register the coupling scheme
-//   const int csIndex = 0;
-//   tribol::registerCouplingScheme(csIndex, 0, 1, 
-//                                  tribol::SURFACE_TO_SURFACE,
-//                                  tribol::AUTO,
-//                                  tribol::COMMON_PLANE,
-//                                  tribol::FRICTIONLESS,
-//                                  tribol::PENALTY,
-//                                  tribol::BINNING_GRID );
-//  
-//   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
-//                              tribol::KINEMATIC_CONSTANT ); 
-//
-//   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-//   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
-//   bool isInit = scheme->init();
-//
-//   EXPECT_EQ( isInit, false );
-//}
-//
-//TEST_F( CouplingSchemeTest, finalize )
-//{
-//   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-//   tribol::initialize( 3, problem_comm );
-//
-//   ////////////////////////////////////////////////
-//   // setup simple non-null contacting test mesh //
-//   ////////////////////////////////////////////////
-//   tribol::TestMesh mesh;
-//   mesh.mortarMeshId = 0;
-//   mesh.nonmortarMeshId = 1;
-//
-//   int nMortarElems = 1; 
-//   int nElemsXM = nMortarElems;
-//   int nElemsYM = nMortarElems;
-//   int nElemsZM = nMortarElems;
-//
-//   int nNonmortarElems = 1; 
-//   int nElemsXS = nNonmortarElems;
-//   int nElemsYS = nNonmortarElems;
-//   int nElemsZS = nNonmortarElems;
-//
-//   // mesh bounding box with 0.1 interpenetration gap
-//   real x_min1 = 0.;
-//   real y_min1 = 0.;
-//   real z_min1 = 0.; 
-//   real x_max1 = 1.;
-//   real y_max1 = 1.;
-//   real z_max1 = 1.05;
-//
-//   real x_min2 = 0.;
-//   real y_min2 = 0.;
-//   real z_min2 = 0.95;
-//   real x_max2 = 1.;
-//   real y_max2 = 1.;
-//   real z_max2 = 2.;
-//
-//   mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
-//                             x_min1, y_min1, z_min1,
-//                             x_max1, y_max1, z_max1,
-//                             nElemsXS, nElemsYS, nElemsZS,
-//                             x_min2, y_min2, z_min2,
-//                             x_max2, y_max2, z_max2,
-//                             0., 0. );
-//
-//   // register meshes
-//   tribol::registerMesh( mesh.mortarMeshId,
-//                         mesh.numMortarFaces,
-//                         mesh.numTotalNodes,
-//                         mesh.faceConn1, 3, 
-//                         mesh.x, mesh.y, mesh.z );
-//
-//   tribol::registerMesh( mesh.nonmortarMeshId,
-//                         mesh.numNonmortarFaces,
-//                         mesh.numTotalNodes,
-//                         mesh.faceConn2, 3,
-//                         mesh.x, mesh.y, mesh.z );
-//
-//   // set penalty data so coupling scheme initialization passes 
-//   real penalty = 1.0;
-//   tribol::setKinematicConstantPenalty(0, penalty);
-//   tribol::setKinematicConstantPenalty(1, penalty);
-//
-//   // register nodal responses (i.e. nodal forces)
-//   tribol::allocRealArray( &mesh.fx1, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fy1, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fz1, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fx2, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fy2, mesh.numTotalNodes, 0. );
-//   tribol::allocRealArray( &mesh.fz2, mesh.numTotalNodes, 0. );
-//
-//   tribol::registerNodalResponse( mesh.mortarMeshId,
-//                                  mesh.fx1, mesh.fy1, mesh.fz1 );
-//
-//   tribol::registerNodalResponse( mesh.nonmortarMeshId,
-//                                  mesh.fx2, mesh.fy2, mesh.fz2 );
-//
-//   // register the coupling scheme
-//   const int csIndex = 0;
-//   tribol::registerCouplingScheme(csIndex, 0, 1, 
-//                                  tribol::SURFACE_TO_SURFACE,
-//                                  tribol::AUTO,
-//                                  tribol::COMMON_PLANE,
-//                                  tribol::FRICTIONLESS,
-//                                  tribol::PENALTY,
-//                                  tribol::BINNING_GRID );
-//   
-//   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
-//                              tribol::KINEMATIC_CONSTANT ); 
-//  
-//   // call update so binning on coupling scheme is performed.
-//   double dt = 1.0;
-//   EXPECT_EQ(tribol::update(1, 1., dt), 0);
-//
-//   tribol::finalize();
-//
-//   tribol::CouplingSchemeManager& csManager =
-//         tribol::CouplingSchemeManager::getInstance();
-//   EXPECT_EQ( csManager.hasCoupling(csIndex), false );
-//
-//}
+TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   ////////////////////////////////////////////////
+   // setup simple non-null contacting test mesh //
+   ////////////////////////////////////////////////
+   tribol::TestMesh mesh;
+   mesh.mortarMeshId = 0;
+   mesh.nonmortarMeshId = 1;
+
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
+
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
+
+   // mesh bounding box with 0.1 interpenetration gap
+   real x_min1 = 0.;
+   real y_min1 = 0.;
+   real z_min1 = 0.; 
+   real x_max1 = 1.;
+   real y_max1 = 1.;
+   real z_max1 = 1.05;
+
+   real x_min2 = 0.;
+   real y_min2 = 0.;
+   real z_min2 = 0.95;
+   real x_max2 = 1.;
+   real y_max2 = 1.;
+   real z_max2 = 2.;
+
+   mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
+                             x_min1, y_min1, z_min1,
+                             x_max1, y_max1, z_max1,
+                             nElemsXS, nElemsYS, nElemsZS,
+                             x_min2, y_min2, z_min2,
+                             x_max2, y_max2, z_max2,
+                             0., 0. );
+
+   // register meshes
+   tribol::registerMesh( mesh.mortarMeshId,
+                         mesh.numMortarFaces,
+                         mesh.numTotalNodes,
+                         mesh.faceConn1, (int)(tribol::LINEAR_QUAD),
+                         mesh.x, mesh.y, mesh.z );
+
+   tribol::registerMesh( mesh.nonmortarMeshId,
+                         mesh.numNonmortarFaces,
+                         mesh.numTotalNodes,
+                         mesh.faceConn2, (int)(tribol::LINEAR_QUAD),
+                         mesh.x, mesh.y, mesh.z );
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   // register nodal responses (i.e. nodal forces)
+   tribol::allocRealArray( &mesh.fx1, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fy1, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fz1, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fx2, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fy2, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fz2, mesh.numTotalNodes, 0. );
+
+   tribol::registerNodalResponse( mesh.mortarMeshId,
+                                  mesh.fx1, mesh.fy1, mesh.fz1 );
+
+   tribol::registerNodalResponse( mesh.nonmortarMeshId,
+                                  mesh.fx2, mesh.fy2, mesh.fz2 );
+
+   // register the coupling scheme
+   const int csIndex = 0;
+   tribol::registerCouplingScheme(csIndex, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+  
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   // call update so binning on coupling scheme is performed.
+   double dt = 1.0;
+   EXPECT_EQ(tribol::update(1, 1., dt), 0);
+
+   tribol::CouplingSchemeManager& csManager =
+         tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* cs_non_null = csManager.getCoupling(csIndex);
+
+   // check that the total number of nodes in the coupling scheme are 
+   // the two 8 node hexes in 3D
+   EXPECT_EQ(cs_non_null->getNumTotalNodes(), 16); // hard coded for simplicity
+ 
+   // check that there is a single active pair
+   EXPECT_EQ(cs_non_null->getNumActivePairs(), 1);
+
+   ///////////////////////////////////////////////////////////////
+   // Re-register Data With Same Mesh Ids and CouplingScheme Id //
+   ///////////////////////////////////////////////////////////////
+
+   // register same mesh IDs as NULL meshes
+   int elementType = (int)(tribol::LINEAR_QUAD);
+   tribol::registerMesh( 0, 0, 0, nullptr, elementType, nullptr, nullptr, nullptr );
+   tribol::registerMesh( 1, 0, 0, nullptr, elementType, nullptr, nullptr, nullptr );
+
+   // set penalty data for valid coupling scheme with penalty enforcement. 
+   // Previous meshes and mesh associated penalty data is overwritten with 
+   // registerMesh() calls above
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   //RE-register coupling scheme 0 with null-meshes with same IDs as before
+   tribol::registerCouplingScheme(csIndex, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   tribol::CouplingScheme* cs_null = csManager.getCoupling(csIndex);
+   
+   // check that total number of nodes on the coupling scheme is zero from null meshes
+   EXPECT_EQ(cs_null->getNumTotalNodes(), 0);
+ 
+   // check that the number of active pairs is zero from initialization and not 
+   // carried over from previous coupling scheme registration with non-null meshes
+   EXPECT_EQ(cs_null->getNumActivePairs(), 0);
+
+   // call update() to make sure there is a no-op for this coupling scheme
+   EXPECT_EQ(tribol::update(1, 1., dt), 0);
+   EXPECT_EQ(cs_null->getNumActivePairs(), 0);
+
+}
+
+TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
+{
+   // TODO finish this test
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   // register meshes
+   int id1 = 0;
+   int id2 = 1;
+   int numFaces1 = 1;
+   int numFaces2 = 1;
+   constexpr int numTotalNodes1 = 2;
+   constexpr int numTotalNodes2 = 4;
+   int faceConn1[numTotalNodes1] = {0, 1};    // dummy triangle connectivity (invalid)
+   int faceConn2[numTotalNodes2] = {4, 5, 6, 7}; // dummy quadrilateral connectivity (valid)
+   real x1[numTotalNodes1] = {0., 0.5};
+   real y1[numTotalNodes1] = {0., 0.};
+   real z1[numTotalNodes1] = {0., 0.};
+   real x2[numTotalNodes2] = {0., 0.5, 0.5, 0.};
+   real y2[numTotalNodes2] = {0., 0., 0.5, 0.5};
+   real z2[numTotalNodes2] = {-0.1, -0.1, -0.1, -0.1};
+   real fx1[numTotalNodes1], fy1[numTotalNodes1], fz1[numTotalNodes1];
+   real fx2[numTotalNodes2], fy2[numTotalNodes2], fz2[numTotalNodes2];
+
+   tribol::initRealArray( &fx1[0], numTotalNodes1, 0. );
+   tribol::initRealArray( &fy1[0], numTotalNodes1, 0. );
+   tribol::initRealArray( &fz1[0], numTotalNodes1, 0. );
+
+   tribol::initRealArray( &fx2[0], numTotalNodes2, 0. );
+   tribol::initRealArray( &fy2[0], numTotalNodes2, 0. );
+   tribol::initRealArray( &fz2[0], numTotalNodes2, 0. );
+
+   tribol::registerMesh( id1, numFaces1, numTotalNodes1,
+                         &faceConn1[0], (int)(tribol::LINEAR_EDGE),
+                         &x1[0], &y1[0], &z1[0] );
+
+   tribol::registerMesh( id2, numFaces2, numTotalNodes2,
+                         &faceConn2[0], (int)(tribol::LINEAR_QUAD),
+                         &x2[0], &y2[0], &z2[0] );
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty( 0, penalty );
+   tribol::setKinematicConstantPenalty( 1, penalty );
+
+   tribol::registerNodalResponse( id1, &fx1[0], &fy1[0], &fz1[0] );
+
+   tribol::registerNodalResponse( id2, &fx2[0], &fy2[0], &fz2[0] );
+
+   // register the coupling scheme
+   const int csIndex = 0;
+   tribol::registerCouplingScheme(csIndex, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+  
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+}
+
+TEST_F( CouplingSchemeTest, finalize )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   ////////////////////////////////////////////////
+   // setup simple non-null contacting test mesh //
+   ////////////////////////////////////////////////
+   tribol::TestMesh mesh;
+   mesh.mortarMeshId = 0;
+   mesh.nonmortarMeshId = 1;
+
+   int nMortarElems = 1; 
+   int nElemsXM = nMortarElems;
+   int nElemsYM = nMortarElems;
+   int nElemsZM = nMortarElems;
+
+   int nNonmortarElems = 1; 
+   int nElemsXS = nNonmortarElems;
+   int nElemsYS = nNonmortarElems;
+   int nElemsZS = nNonmortarElems;
+
+   // mesh bounding box with 0.1 interpenetration gap
+   real x_min1 = 0.;
+   real y_min1 = 0.;
+   real z_min1 = 0.; 
+   real x_max1 = 1.;
+   real y_max1 = 1.;
+   real z_max1 = 1.05;
+
+   real x_min2 = 0.;
+   real y_min2 = 0.;
+   real z_min2 = 0.95;
+   real x_max2 = 1.;
+   real y_max2 = 1.;
+   real z_max2 = 2.;
+
+   mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
+                             x_min1, y_min1, z_min1,
+                             x_max1, y_max1, z_max1,
+                             nElemsXS, nElemsYS, nElemsZS,
+                             x_min2, y_min2, z_min2,
+                             x_max2, y_max2, z_max2,
+                             0., 0. );
+
+   // register meshes
+   tribol::registerMesh( mesh.mortarMeshId,
+                         mesh.numMortarFaces,
+                         mesh.numTotalNodes,
+                         mesh.faceConn1, (int)(tribol::LINEAR_QUAD),
+                         mesh.x, mesh.y, mesh.z );
+
+   tribol::registerMesh( mesh.nonmortarMeshId,
+                         mesh.numNonmortarFaces,
+                         mesh.numTotalNodes,
+                         mesh.faceConn2, (int)(tribol::LINEAR_QUAD),
+                         mesh.x, mesh.y, mesh.z );
+
+   // set penalty data so coupling scheme initialization passes 
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty(0, penalty);
+   tribol::setKinematicConstantPenalty(1, penalty);
+
+   // register nodal responses (i.e. nodal forces)
+   tribol::allocRealArray( &mesh.fx1, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fy1, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fz1, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fx2, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fy2, mesh.numTotalNodes, 0. );
+   tribol::allocRealArray( &mesh.fz2, mesh.numTotalNodes, 0. );
+
+   tribol::registerNodalResponse( mesh.mortarMeshId,
+                                  mesh.fx1, mesh.fy1, mesh.fz1 );
+
+   tribol::registerNodalResponse( mesh.nonmortarMeshId,
+                                  mesh.fx2, mesh.fy2, mesh.fz2 );
+
+   // register the coupling scheme
+   const int csIndex = 0;
+   tribol::registerCouplingScheme(csIndex, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+   
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+  
+   // call update so binning on coupling scheme is performed.
+   double dt = 1.0;
+   EXPECT_EQ(tribol::update(1, 1., dt), 0);
+
+   tribol::finalize();
+
+   tribol::CouplingSchemeManager& csManager =
+         tribol::CouplingSchemeManager::getInstance();
+   EXPECT_EQ( csManager.hasCoupling(csIndex), false );
+
+}
 
 int main(int argc, char* argv[])
 {
