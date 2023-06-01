@@ -1,0 +1,39 @@
+##############################################################################
+# Copyright (c) 2017-2023, Lawrence Livermore National Security, LLC and
+# other Tribol Project Developers. See the top-level COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (MIT)
+##############################################################################
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  PROJECT_ALLOC_NAME: ${CI_PROJECT_NAME}_ci_${CI_PIPELINE_ID}
+  BUILD_ROOT: ${CI_PROJECT_DIR}
+  ALLOC_BANK: eng
+
+####
+# Templates
+.src_build_script:
+  script:
+    # Build source, run unit tests, and test install examples. Conditionally run
+    # integration tests
+    - echo -e "section_start:$(date +%s):src_build_and_unit_test\r\e[0K
+      Source Build and Unit Tests ${CI_PROJECT_NAME}"
+    - ${ALLOC_COMMAND} python3 scripts/llnl/build_src.py -v --host-config ${HOST_CONFIG} ${EXTRA_BUILD_OPTIONS}
+    - echo -e "section_end:$(date +%s):src_build_and_unit_test\r\e[0K"
+  artifacts:
+    when: always
+    paths:
+      - _tribol_build_and_test_*/output.log*.txt
+      - _tribol_build_and_test_*/build-*/output.log*.txt
+      - _tribol_build_and_test_*/build-*/*.*.logs/*.log
+      - _tribol_build_and_test_*/build-*/*.*.logs/*.err
+    reports:
+      junit:
+      - _tribol_build_and_test_*/build-*/junit.xml
+      - _tribol_build_and_test_*/build-*/*.*.logs/atsr.xml
+
+# This is where jobs are included for each machine
+include:
+  - local: .gitlab/build_lassen.yml
+  - local: .gitlab/build_quartz.yml
