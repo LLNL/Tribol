@@ -33,8 +33,5 @@ variables:
       - _tribol_build_and_test_*/build-*/junit.xml
       - _tribol_build_and_test_*/build-*/*.*.logs/atsr.xml
 
-# This is where jobs are included for each machine
 include:
-#TODO: Turn back on when everyone has lassen
-#  - local: .gitlab/build_lassen.yml
   - local: .gitlab/build_quartz.yml
