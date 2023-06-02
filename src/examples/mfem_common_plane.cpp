@@ -176,11 +176,11 @@ int main( int argc, char** argv )
   // timestep size
   double dt = 0.0001;
   // end time
-  double t_end = 0.2;
+  double t_end = 0.15;
   // kinematic penalty
   double p_kine = 10.0;
   // rate penalty
-  double p_rate = 500000.0;
+  double p_rate = 1000000.0;
   // number of cycles to skip before output
   int output_cycles = 20;
 
@@ -387,7 +387,10 @@ int main( int argc, char** argv )
     solver.Step(u, v, t, dt);
 
     coords += u;
-    pmesh->SetVertices(coords);
+    if (order == 1)
+    {
+      pmesh->SetVertices(coords);
+    }
 
     ++cycle;
   }

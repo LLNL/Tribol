@@ -22,14 +22,14 @@ void TransferByElements::TransferToSerial(
   SLIC_ASSERT_MSG(redecomp != nullptr,
     "The Mesh of GridFunction dst must be a Redecomp mesh.");
   SLIC_ASSERT_MSG(src.ParFESpace()->GetParMesh() == &redecomp->getParent(),
-    "The Meshes of the specified GridFunctions are not related in a"
+    "The Meshes of the specified GridFunctions are not related in a "
     "Redecomp -> ParMesh relationship.");
   SLIC_ASSERT_MSG(strcmp(src.FESpace()->FEColl()->Name(), 
     dst.FESpace()->FEColl()->Name()) == 0, 
-    "The FiniteElementCollections of the specified GridFunctions are not"
+    "The FiniteElementCollections of the specified GridFunctions are not "
     "the same.");
   SLIC_ASSERT_MSG(src.FESpace()->GetVDim() == dst.FESpace()->GetVDim(),
-    "The vdim of the FiniteElementSpaces of the specified GridFunctions are"
+    "The vdim of the FiniteElementSpaces of the specified GridFunctions are "
     "not the same.");
 
   // send and receive DOF values from other ranks

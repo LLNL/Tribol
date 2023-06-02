@@ -60,7 +60,9 @@ SubmeshRedecompTransfer::SubmeshRedecompTransfer(
   redecomp::RedecompMesh& redecomp
 )
 : submesh_fes_ { submesh_fes },
-  redecomp_fes_ { CreateRedecompFESpace(redecomp, submesh_fes_) },
+  redecomp_fes_ { lor_xfer ?
+    CreateRedecompFESpace(redecomp, *lor_xfer->GetLORGridFn().ParFESpace()) :
+    CreateRedecompFESpace(redecomp, submesh_fes_) },
   lor_xfer_ { lor_xfer },
   redecomp_xfer_ { } // default (element transfer) constructor
 {
@@ -71,7 +73,13 @@ SubmeshRedecompTransfer::SubmeshRedecompTransfer(
     "submesh_fes must be on a ParSubMesh."
   );
   SLIC_ERROR_ROOT_IF(
-    &redecomp.getParent() != submesh_fes_.GetParMesh(),
+    !lor_xfer &&
+      &redecomp.getParent() != submesh_fes_.GetParMesh(),
+    "redecomp's parent must match the submesh_fes ParMesh."
+  );
+  SLIC_ERROR_ROOT_IF(
+    lor_xfer &&
+      &redecomp.getParent() != lor_xfer->GetLORGridFn().ParFESpace()->GetParMesh(),
     "redecomp's parent must match the submesh_fes ParMesh."
   );
 }
@@ -448,8 +456,8 @@ MfemMeshData::UpdateData::UpdateData(
   integer num_verts_per_elem
 )
 : redecomp_ { lor_submesh ? 
-    redecomp::RedecompMesh(submesh) :
-    redecomp::RedecompMesh(*lor_submesh)
+    redecomp::RedecompMesh(*lor_submesh) :
+    redecomp::RedecompMesh(submesh)
   },
   primal_xfer_ { parent_fes, submesh_gridfn, lor_xfer, redecomp_ }
 {
