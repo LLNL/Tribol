@@ -3,9 +3,6 @@
 //
 // SPDX-License-Identifier: (MIT)
 
-#include <mfem/fem/bilininteg.hpp>
-#include <mfem/linalg/ode.hpp>
-#include <mfem/linalg/operator.hpp>
 #include <set>
 
 #ifdef TRIBOL_USE_UMPIRE
@@ -171,7 +168,7 @@ int main( int argc, char** argv )
   // command line options
   // number of times to uniformly refine the serial mesh before constructing the
   // parallel mesh
-  int ref_levels = 0;
+  int ref_levels = 1;
   // polynomial order of the finite element discretization
   int order = 1;
   // initial velocity
@@ -257,7 +254,7 @@ int main( int argc, char** argv )
 
     // further refinement of parallel mesh
     {
-      int par_ref_levels = 2;
+      int par_ref_levels = 0;
       for (int i{0}; i < par_ref_levels; ++i)
       {
         pmesh->UniformRefinement();

@@ -134,12 +134,6 @@ enum BinningMethod
   DEFAULT_BINNING_METHOD = BINNING_GRID
 };
 
-enum class LORMethod
-{
-   INTERPOLATE,
-   L2_MINIMIZATION
-};
-
 /*!
  * \brief Enumerates the available penalty enforcement options 
  */

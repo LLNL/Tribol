@@ -10,17 +10,58 @@
 namespace tribol
 {
 
+SubmeshLORTransfer::SubmeshLORTransfer(
+  mfem::ParFiniteElementSpace& ho_submesh_fes,
+  mfem::ParMesh& lor_submesh
+)
+: lor_gridfn_ { CreateLORGridFunction(
+    lor_submesh,
+    std::make_unique<mfem::H1_FECollection>(1, lor_submesh.SpaceDimension()),
+    ho_submesh_fes.GetVDim()
+  ) },
+  lor_xfer_ { ho_submesh_fes, *lor_gridfn_.ParFESpace() }
+{}
+
+void SubmeshLORTransfer::TransferToLORGridFn(
+  const mfem::ParGridFunction& ho_src
+)
+{
+  lor_xfer_.ForwardOperator().Mult(ho_src, lor_gridfn_);
+}
+
+void SubmeshLORTransfer::TransferFromLORGridFn(
+  mfem::ParGridFunction& ho_dst
+) const
+{
+  lor_xfer_.BackwardOperator().Mult(lor_gridfn_, ho_dst);
+}
+
+mfem::ParGridFunction SubmeshLORTransfer::CreateLORGridFunction(
+  mfem::ParMesh& lor_mesh,
+  std::unique_ptr<mfem::FiniteElementCollection> lor_fec,
+  integer vdim
+)
+{
+  mfem::ParGridFunction lor_gridfn {
+    new mfem::ParFiniteElementSpace(
+      &lor_mesh,
+      lor_fec.get(),
+      vdim,
+      mfem::Ordering::byNODES
+    )
+  };
+  lor_gridfn.MakeOwner(lor_fec.release());
+  return lor_gridfn;
+}
+
 SubmeshRedecompTransfer::SubmeshRedecompTransfer(
-  redecomp::RedecompMesh& redecomp,
-  mfem::ParFiniteElementSpace& submesh_fes
+  mfem::ParFiniteElementSpace& submesh_fes,
+  SubmeshLORTransfer* lor_xfer,
+  redecomp::RedecompMesh& redecomp
 )
 : submesh_fes_ { submesh_fes },
-  redecomp_fes_ { std::make_unique<mfem::FiniteElementSpace>(
-    &redecomp,
-    submesh_fes_.FEColl(),
-    submesh_fes_.GetVDim(),
-    mfem::Ordering::byNODES
-  ) },
+  redecomp_fes_ { CreateRedecompFESpace(redecomp, submesh_fes_) },
+  lor_xfer_ { lor_xfer },
   redecomp_xfer_ { } // default (element transfer) constructor
 {
   // make sure submesh_fes is a submesh and redecomp's parent is submesh_fes's
@@ -39,9 +80,16 @@ mfem::GridFunction SubmeshRedecompTransfer::SubmeshToRedecomp(
   const mfem::ParGridFunction& src
 ) const
 {
+  auto src_ptr = &src;
   auto dst = mfem::GridFunction(redecomp_fes_.get());
   dst = 0.0;
-  redecomp_xfer_.TransferToSerial(src, dst);
+  if (lor_xfer_)
+  {
+    lor_xfer_->GetLORGridFn() = 0.0;
+    lor_xfer_->TransferToLORGridFn(src);
+    src_ptr = &lor_xfer_->GetLORGridFn();
+  }
+  redecomp_xfer_.TransferToSerial(*src_ptr, dst);
   return dst;
 }
 
@@ -51,7 +99,7 @@ mfem::ParGridFunction SubmeshRedecompTransfer::RedecompToSubmesh(
 {
   auto dst = mfem::ParGridFunction(&submesh_fes_);
   dst = 0.0;
-  redecomp_xfer_.TransferToParallel(src, dst);
+  RedecompToSubmesh(src, dst);
   return dst;
 }
 
@@ -60,37 +108,59 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   mfem::ParGridFunction& dst
 ) const
 {
-  redecomp_xfer_.TransferToParallel(src, dst);
+  auto dst_ptr = &dst;
+  if (lor_xfer_)
+  {
+    lor_xfer_->GetLORGridFn() = 0.0;
+    dst_ptr = &lor_xfer_->GetLORGridFn();
+  }
+  redecomp_xfer_.TransferToParallel(src, *dst_ptr);
+  if (lor_xfer_)
+  {
+    lor_xfer_->TransferFromLORGridFn(dst);
+  }
 }
 
 void SubmeshRedecompTransfer::UpdateRedecomp(redecomp::RedecompMesh& redecomp)
 {
-  redecomp_fes_ = std::make_unique<mfem::FiniteElementSpace>(
+  redecomp_fes_ = CreateRedecompFESpace(redecomp, submesh_fes_);
+}
+
+std::unique_ptr<mfem::FiniteElementSpace> SubmeshRedecompTransfer::CreateRedecompFESpace(
+  redecomp::RedecompMesh& redecomp,
+  mfem::ParFiniteElementSpace& submesh_fes
+)
+{
+  return std::make_unique<mfem::FiniteElementSpace>(
     &redecomp,
-    submesh_fes_.FEColl(),
-    submesh_fes_.GetVDim(),
+    submesh_fes.FEColl(),
+    submesh_fes.GetVDim(),
     mfem::Ordering::byNODES
   );
 }
 
 ParentRedecompTransfer::ParentRedecompTransfer(
-  redecomp::RedecompMesh& redecomp,
-  mfem::ParSubMesh& submesh,
-  const mfem::ParFiniteElementSpace& parent_fes
+  const mfem::ParFiniteElementSpace& parent_fes,
+  mfem::ParGridFunction& submesh_gridfn,
+  SubmeshLORTransfer* lor_xfer,
+  redecomp::RedecompMesh& redecomp
 )
 : parent_fes_ { parent_fes },
-  submesh_fes_ {
-    &submesh,
-    parent_fes_.FEColl(),
-    submesh.SpaceDimension(),
-    mfem::Ordering::byNODES
-  },
-  redecomp_xfer_ { redecomp, submesh_fes_ },
-  submesh_gridfn_ { redecomp_xfer_.EmptySubmeshGridFn() }
+  submesh_gridfn_ { submesh_gridfn },
+  redecomp_xfer_ { 
+    *submesh_gridfn_.ParFESpace(),
+    lor_xfer, 
+    redecomp
+  }
 {
+  // Note: this is checked in the SubmeshRedecompTransfer constructor
+  // SLIC_ERROR_ROOT_IF(
+  //   !mfem::ParSubMesh::IsParSubMesh(submesh_gridfn_.ParFESpace()->GetParMesh()),
+  //   "submesh_gridfn_ must be associated with an mfem::ParSubMesh."
+  // );
   SLIC_ERROR_ROOT_IF(
-    submesh.GetParent() != parent_fes_.GetParMesh(),
-    "submesh's parent must match the parent_fes ParMesh."
+    redecomp_xfer_.GetSubmesh().GetParent() != parent_fes_.GetParMesh(),
+    "submesh_gridfn's parent mesh must match the parent_fes ParMesh."
   );
 }
 
@@ -258,8 +328,18 @@ MfemMeshData::MfemMeshData(
   attributes_1_ { attributes_1 },
   attributes_2_ { attributes_2 },
   submesh_ { CreateSubmesh(mesh_, attributes_1_, attributes_2_) },
-  coords_ { current_coords }
+  coords_ { current_coords },
+  submesh_xfer_gridfn_ { 
+    CreateSubmeshGridFn(submesh_, *current_coords.ParFESpace())
+  },
+  lor_factor_ { 0 }
 {
+  // build LOR submesh
+  if (current_coords.FESpace()->FEColl()->GetOrder() > 1)
+  {
+    SetLowOrderRefinedFactor(current_coords.FESpace()->FEColl()->GetOrder());
+  }
+
   // set the element type
   mfem::Element::Type element_type = mfem::Element::QUADRILATERAL;
   if (submesh_.GetNE() > 0)
@@ -303,11 +383,14 @@ void MfemMeshData::SetParentCoords(const mfem::ParGridFunction& current_coords)
 void MfemMeshData::UpdateMeshData()
 {
   update_data_ = std::make_unique<UpdateData>(
-    submesh_, 
+    submesh_,
+    lor_submesh_.get(),
+    *coords_.GetParentField().ParFESpace(),
+    submesh_xfer_gridfn_,
+    lor_xfer_.get(),
     attributes_1_, 
     attributes_2_, 
-    num_verts_per_elem_,
-    *coords_.GetParentField().ParFESpace()
+    num_verts_per_elem_
   );
   coords_.UpdateField(update_data_->primal_xfer_);
   redecomp_response_.SetSpace(coords_.GetRedecompField().FESpace());
@@ -330,15 +413,45 @@ void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
   }
 }
 
+void MfemMeshData::SetLowOrderRefinedFactor(integer lor_factor)
+{
+  if (lor_factor <= 1)
+  {
+    SLIC_WARNING_ROOT("lor_factor must be an integer > 1.  LOR factor not changed.");
+    return;
+  }
+  if (coords_.GetParentField().FESpace()->FEColl()->GetOrder() <= 1)
+  {
+    SLIC_WARNING_ROOT("lor_factor is only applicable to higher order geometry.  "
+      "LOR factor not changed.");
+    return;
+  }
+  lor_factor_ = lor_factor;
+  // note: calls ParMesh's move ctor
+  lor_submesh_ = std::make_unique<mfem::ParMesh>(mfem::ParMesh::MakeRefined(
+    submesh_, lor_factor, mfem::BasisType::ClosedUniform
+  ));
+  lor_xfer_ = std::make_unique<SubmeshLORTransfer>(
+    *submesh_xfer_gridfn_.ParFESpace(),
+    *lor_submesh_
+  );
+}
+
 MfemMeshData::UpdateData::UpdateData(
   mfem::ParSubMesh& submesh,
+  mfem::ParMesh* lor_submesh,
+  const mfem::ParFiniteElementSpace& parent_fes,
+  mfem::ParGridFunction& submesh_gridfn,
+  SubmeshLORTransfer* lor_xfer,
   const std::set<integer>& attributes_1,
   const std::set<integer>& attributes_2,
-  integer num_verts_per_elem,
-  const mfem::ParFiniteElementSpace& parent_fes
+  integer num_verts_per_elem
 )
-: redecomp_ { submesh },
-  primal_xfer_ { redecomp_, submesh, parent_fes }
+: redecomp_ { lor_submesh ? 
+    redecomp::RedecompMesh(submesh) :
+    redecomp::RedecompMesh(*lor_submesh)
+  },
+  primal_xfer_ { parent_fes, submesh_gridfn, lor_xfer, redecomp_ }
 {
   UpdateConnectivity(attributes_1, attributes_2, num_verts_per_elem);
 }
@@ -432,8 +545,29 @@ mfem::ParSubMesh MfemMeshData::CreateSubmesh(
   );
 }
 
+mfem::ParGridFunction MfemMeshData::CreateSubmeshGridFn(
+  mfem::ParSubMesh& submesh,
+  mfem::ParFiniteElementSpace& parent_fes
+)
+{
+  std::unique_ptr<mfem::FiniteElementCollection> submesh_fec {
+    parent_fes.FEColl()->Clone(parent_fes.FEColl()->GetOrder())
+  };
+  mfem::ParGridFunction submesh_gridfn {
+    new mfem::ParFiniteElementSpace(
+      &submesh,
+      submesh_fec.get(),
+      parent_fes.GetVDim(),
+      mfem::Ordering::byNODES
+    )
+  };
+  submesh_gridfn.MakeOwner(submesh_fec.release());
+  return submesh_gridfn;
+}
+
 MfemDualData::MfemDualData(
   mfem::ParSubMesh& submesh,
+  mfem::ParMesh* lor_submesh,
   std::unique_ptr<mfem::FiniteElementCollection> dual_fec,
   integer dual_vdim
 )
@@ -444,7 +578,14 @@ MfemDualData::MfemDualData(
       dual_vdim
     )
   },
-  pressure_ { submesh_pressure_ }
+  pressure_ { submesh_pressure_ },
+  lor_xfer_ { lor_submesh ?
+    std::make_unique<SubmeshLORTransfer>(
+      *submesh_pressure_.ParFESpace(), 
+      *lor_submesh
+    ) :
+    nullptr
+  }
 {
   submesh_pressure_.MakeOwner(dual_fec.release());
   submesh_pressure_ = 0.0;
@@ -453,8 +594,9 @@ MfemDualData::MfemDualData(
 void MfemDualData::UpdateDualData(redecomp::RedecompMesh& redecomp)
 {
   update_data_ = std::make_unique<UpdateData>(
-    redecomp,
-    *submesh_pressure_.ParFESpace()
+    *submesh_pressure_.ParFESpace(),
+    lor_xfer_.get(),
+    redecomp
   );
   pressure_.UpdateField(update_data_->dual_xfer_);
   redecomp_gap_.SetSpace(pressure_.GetRedecompField().FESpace());
@@ -462,10 +604,11 @@ void MfemDualData::UpdateDualData(redecomp::RedecompMesh& redecomp)
 }
 
 MfemDualData::UpdateData::UpdateData(
-  redecomp::RedecompMesh& redecomp,
-  mfem::ParFiniteElementSpace& submesh_fes
+  mfem::ParFiniteElementSpace& submesh_fes,
+  SubmeshLORTransfer* lor_xfer,
+  redecomp::RedecompMesh& redecomp
 )
-: dual_xfer_ { redecomp, submesh_fes }
+: dual_xfer_ { submesh_fes, lor_xfer, redecomp }
 {}
 
 MfemDualData::UpdateData& MfemDualData::GetUpdateData()

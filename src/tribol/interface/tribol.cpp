@@ -460,6 +460,7 @@ void registerMfemMesh( integer cs_id,
       coupling_scheme->setMfemDualData(
          std::make_unique<MfemDualData>(
             mfem_data->GetSubmesh(),
+            mfem_data->GetLORSubmesh(),
             std::move(dual_fec),
             dual_vdim
          )
@@ -468,6 +469,19 @@ void registerMfemMesh( integer cs_id,
    coupling_scheme->setMfemMeshData(std::move(mfem_data));
 
 } // end of registerParMesh()
+
+//------------------------------------------------------------------------------
+void setMfemLowOrderRefinedFactor( integer cs_id,
+                                   integer lor_factor)
+{
+   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
+   SLIC_ERROR_ROOT_IF(
+      !coupling_scheme->hasMfemData(),
+      "Coupling scheme does not contain MFEM data. "
+      "Was the coupling scheme created with registerParMesh()?"
+   );
+   coupling_scheme->getMfemMeshData()->SetLowOrderRefinedFactor(lor_factor);
+}
 
 //------------------------------------------------------------------------------
 void registerNodalDisplacements( integer meshId,

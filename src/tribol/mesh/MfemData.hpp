@@ -20,13 +20,39 @@
 namespace tribol
 {
 
+class SubmeshLORTransfer
+{
+public:
+  SubmeshLORTransfer(
+    mfem::ParFiniteElementSpace& ho_submesh_fes,
+    mfem::ParMesh& lor_submesh
+  );
+  void TransferToLORGridFn(
+    const mfem::ParGridFunction& ho_src
+  );
+  void TransferFromLORGridFn(
+    mfem::ParGridFunction& ho_dst
+  ) const;
+  mfem::ParGridFunction& GetLORGridFn() { return lor_gridfn_; }
+  const mfem::ParGridFunction& GetLORGridFn() const { return lor_gridfn_; }
+private:
+  static mfem::ParGridFunction CreateLORGridFunction(
+    mfem::ParMesh& lor_mesh,
+    std::unique_ptr<mfem::FiniteElementCollection> lor_fec,
+    integer vdim
+  );
+  mfem::ParGridFunction lor_gridfn_;
+  mutable mfem::L2ProjectionGridTransfer lor_xfer_;
+};
+
 // dual fields only go from redecomp to submesh
 class SubmeshRedecompTransfer
 {
 public:
   SubmeshRedecompTransfer(
-    redecomp::RedecompMesh& redecomp,
-    mfem::ParFiniteElementSpace& submesh_fes
+    mfem::ParFiniteElementSpace& submesh_fes,
+    SubmeshLORTransfer* lor_xfer,
+    redecomp::RedecompMesh& redecomp
   );
   mfem::GridFunction SubmeshToRedecomp(const mfem::ParGridFunction& src) const;
   mfem::ParGridFunction RedecompToSubmesh(const mfem::GridFunction& src) const;
@@ -34,18 +60,19 @@ public:
     const mfem::GridFunction& src,
     mfem::ParGridFunction& dst
   ) const;
-  mfem::ParGridFunction EmptySubmeshGridFn() const
-  {
-    return mfem::ParGridFunction(&submesh_fes_);
-  }
   const mfem::ParSubMesh& GetSubmesh() const 
   { 
     return static_cast<const mfem::ParSubMesh&>(*submesh_fes_.GetParMesh());
   }
   void UpdateRedecomp(redecomp::RedecompMesh& redecomp);
 private:
+  static std::unique_ptr<mfem::FiniteElementSpace> CreateRedecompFESpace(
+    redecomp::RedecompMesh& redecomp,
+    mfem::ParFiniteElementSpace& submesh_fes
+  );
   mfem::ParFiniteElementSpace& submesh_fes_;
   mutable std::unique_ptr<mfem::FiniteElementSpace> redecomp_fes_;
+  SubmeshLORTransfer* lor_xfer_;
   const redecomp::RedecompTransfer redecomp_xfer_;
 };
 
@@ -53,22 +80,22 @@ class ParentRedecompTransfer
 {
 public:
   ParentRedecompTransfer(
-    redecomp::RedecompMesh& redecomp,
-    mfem::ParSubMesh& submesh,
-    const mfem::ParFiniteElementSpace& parent_fes
+    const mfem::ParFiniteElementSpace& parent_fes,
+    mfem::ParGridFunction& submesh_gridfn,
+    SubmeshLORTransfer* lor_xfer,
+    redecomp::RedecompMesh& redecomp
   );
   mfem::GridFunction ParentToRedecomp(const mfem::ParGridFunction& src) const;
   mfem::ParGridFunction RedecompToParent(const mfem::GridFunction& src) const;
   void UpdateRedecomp(redecomp::RedecompMesh& redecomp);
   const mfem::ParFiniteElementSpace& GetSubmeshFESpace() const
   {
-    return submesh_fes_;
+    return *submesh_gridfn_.ParFESpace();
   }
 private:
   mutable mfem::ParFiniteElementSpace parent_fes_;
-  mutable mfem::ParFiniteElementSpace submesh_fes_;
+  mfem::ParGridFunction& submesh_gridfn_;
   SubmeshRedecompTransfer redecomp_xfer_;
-  mutable mfem::ParGridFunction submesh_gridfn_;
 };
 
 class PrimalField
@@ -208,10 +235,8 @@ public:
   {
     return GetUpdateData().elem_map_2_;
   }
-  mfem::ParSubMesh& GetSubmesh()
-  {
-    return submesh_;
-  }
+  mfem::ParSubMesh& GetSubmesh() { return submesh_; }
+  mfem::ParMesh* GetLORSubmesh() { return lor_submesh_.get(); }
   redecomp::RedecompMesh& GetRedecompMesh()
   {
     return GetUpdateData().redecomp_;
@@ -220,15 +245,19 @@ public:
   {
     return GetUpdateData().primal_xfer_.GetSubmeshFESpace();
   }
+  void SetLowOrderRefinedFactor(integer lor_factor);
 private:
   struct UpdateData
   {
     UpdateData(
       mfem::ParSubMesh& submesh,
+      mfem::ParMesh* lor_submesh,
+      const mfem::ParFiniteElementSpace& parent_fes,
+      mfem::ParGridFunction& submesh_gridfn,
+      SubmeshLORTransfer* lor_xfer,
       const std::set<integer>& attributes_1,
       const std::set<integer>& attributes_2,
-      integer num_verts_per_elem,
-      const mfem::ParFiniteElementSpace& parent_fes
+      integer num_verts_per_elem
     );
     redecomp::RedecompMesh redecomp_;
     ParentRedecompTransfer primal_xfer_;
@@ -250,6 +279,10 @@ private:
     const std::set<integer>& attributes_1,
     const std::set<integer>& attributes_2
   );
+  static mfem::ParGridFunction CreateSubmeshGridFn(
+    mfem::ParSubMesh& submesh,
+    mfem::ParFiniteElementSpace& parent_fes
+  );
   integer mesh_id_1_;
   integer mesh_id_2_;
   mfem::ParMesh& mesh_;
@@ -257,11 +290,15 @@ private:
   std::set<integer> attributes_2_;
   mfem::ParSubMesh submesh_;
   PrimalField coords_;
-  mfem::GridFunction redecomp_response_;
+  mfem::ParGridFunction submesh_xfer_gridfn_;
+  integer lor_factor_;
+  std::unique_ptr<mfem::ParMesh> lor_submesh_;
+  std::unique_ptr<SubmeshLORTransfer> lor_xfer_;
   InterfaceElementType elem_type_;
   integer num_verts_per_elem_;
   std::unique_ptr<PrimalField> velocity_;
   std::unique_ptr<UpdateData> update_data_;
+  mfem::GridFunction redecomp_response_;
 
   template <typename T>
   static T mergeContainers(T container_1, T container_2)
@@ -296,6 +333,7 @@ class MfemDualData
 public:
   MfemDualData(
     mfem::ParSubMesh& submesh,
+    mfem::ParMesh* lor_submesh,
     std::unique_ptr<mfem::FiniteElementCollection> dual_fec,
     integer dual_vdim
   );
@@ -328,8 +366,9 @@ private:
   struct UpdateData
   {
     UpdateData(
-      redecomp::RedecompMesh& redecomp,
-      mfem::ParFiniteElementSpace& submesh_fes
+      mfem::ParFiniteElementSpace& submesh_fes,
+      SubmeshLORTransfer* lor_xfer,
+      redecomp::RedecompMesh& redecomp
     );
     SubmeshRedecompTransfer dual_xfer_;
   };
@@ -337,6 +376,7 @@ private:
   const UpdateData& GetUpdateData() const;
   mfem::ParGridFunction submesh_pressure_;
   PressureField pressure_;
+  std::unique_ptr<SubmeshLORTransfer> lor_xfer_;
   mfem::GridFunction redecomp_gap_;
   std::unique_ptr<UpdateData> update_data_;
 };
