@@ -15,8 +15,7 @@ variables:
 # Templates
 .src_build_script:
   script:
-    # Build source, run unit tests, and test install examples. Conditionally run
-    # integration tests
+    # Build source and run unit tests.
     - echo -e "section_start:$(date +%s):src_build_and_unit_test\r\e[0K
       Source Build and Unit Tests ${CI_PROJECT_NAME}"
     - ${ALLOC_COMMAND} python3 scripts/llnl/build_src.py -v --host-config ${HOST_CONFIG} ${EXTRA_BUILD_OPTIONS}
@@ -26,12 +25,9 @@ variables:
     paths:
       - _tribol_build_and_test_*/output.log*.txt
       - _tribol_build_and_test_*/build-*/output.log*.txt
-      - _tribol_build_and_test_*/build-*/*.*.logs/*.log
-      - _tribol_build_and_test_*/build-*/*.*.logs/*.err
     reports:
       junit:
       - _tribol_build_and_test_*/build-*/junit.xml
-      - _tribol_build_and_test_*/build-*/*.*.logs/atsr.xml
 
 include:
   - local: .gitlab/build_quartz.yml
