@@ -259,6 +259,7 @@ int main( int argc, char** argv )
   
   // set up data collection for output
   auto dc_pv = mfem::ParaViewDataCollection("common_plane_pv", pmesh.get());
+  auto dc_vi = mfem::VisItDataCollection("common_plane_vi", pmesh.get());
 
   // grid function for higher-order nodes
   auto fe_coll = mfem::H1_FECollection(order, pmesh->SpaceDimension());
@@ -274,15 +275,18 @@ int main( int argc, char** argv )
     pmesh->GetNodes(coords);
   }
   dc_pv.RegisterField("pos", &coords);
+  dc_vi.RegisterField("pos", &coords);
 
   // grid function for displacement
   mfem::ParGridFunction u { &par_fe_space };
   dc_pv.RegisterField("disp", &u);
+  dc_vi.RegisterField("disp", &u);
   u = 0.0;
 
   // grid function for velocity
   mfem::ParGridFunction v { &par_fe_space };
   dc_pv.RegisterField("vel", &v);
+  dc_vi.RegisterField("vel", &v);
   v = 0.0;
 
   // set initial velocity
@@ -368,10 +372,14 @@ int main( int argc, char** argv )
     dc_pv.SetCycle(cycle);
     dc_pv.SetTime(t);
     dc_pv.SetTimeStep(dt);
+    dc_vi.SetCycle(cycle);
+    dc_vi.SetTime(t);
+    dc_vi.SetTimeStep(dt);
 
     if (cycle % output_cycles == 0)
     {
       dc_pv.Save();
+      dc_vi.Save();
     }
 
     tribol::update(cycle, t, dt);
@@ -390,6 +398,7 @@ int main( int argc, char** argv )
 
   // save output after last timestep
   dc_pv.Save();
+  dc_vi.Save();
 
   // cleanup
   tribol::finalize();
