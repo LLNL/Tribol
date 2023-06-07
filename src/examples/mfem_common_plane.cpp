@@ -168,21 +168,19 @@ int main( int argc, char** argv )
   // command line options
   // number of times to uniformly refine the serial mesh before constructing the
   // parallel mesh
-  int ref_levels = 0;
+  int ref_levels = 2;
   // polynomial order of the finite element discretization
   int order = 1;
   // initial velocity
   double initial_v = 0.001;
   // timestep size
-  double dt = 0.0001;
+  double dt = 0.001;
   // end time
-  double t_end = 0.15;
+  double t_end = 0.35;
   // kinematic penalty
-  double p_kine = 10.0;
-  // rate penalty
-  double p_rate = 1000000.0;
+  double p_kine = 500.0;
   // number of cycles to skip before output
-  int output_cycles = 15;
+  int output_cycles = 5;
 
   axom::CLI::App app { "mfem_common_plane" };
   app.add_option("-r,--refine", ref_levels,
@@ -200,11 +198,8 @@ int main( int argc, char** argv )
   app.add_option("-e,--endtime", t_end, 
     "Time of the end of the simulation.")
     ->capture_default_str();
-  app.add_option("-K,--kinematicpenalty", p_kine, 
+  app.add_option("-p,--kinematicpenalty", p_kine, 
     "Kinematic penalty parameter.")
-    ->capture_default_str();
-  app.add_option("-R,--ratepenalty", p_rate, 
-    "Rate penalty parameter.")
     ->capture_default_str();
   app.add_option("-c,--outputcycles", output_cycles, 
     "Cycles to skip before next output.")
@@ -360,14 +355,12 @@ int main( int argc, char** argv )
   tribol::registerMfemVelocity(0, v);
   tribol::setPenaltyOptions(
     0,
-    tribol::KINEMATIC_AND_RATE,
+    tribol::KINEMATIC,
     tribol::KINEMATIC_CONSTANT,
-    tribol::RATE_CONSTANT
+    tribol::NO_RATE_PENALTY
   );
   tribol::setKinematicConstantPenalty(0, p_kine);
   tribol::setKinematicConstantPenalty(1, p_kine);
-  tribol::setRateConstantPenalty(0, p_rate);
-  tribol::setRateConstantPenalty(1, p_rate);
 
   int cycle {0};
   for (double t {0.0}; t < t_end; t+=dt)
