@@ -227,11 +227,11 @@ int main( int argc, char** argv )
   // retrieve gap vector (RHS) from contact
   auto g = tribol::getMfemGap(0);
 
-  // variational restriction on submesh
+  // restriction on submesh
   {
     auto& G = B_blk.GetBlock(1);
-    auto& P_submesh = *g.ParFESpace()->GetProlongationMatrix();
-    P_submesh.MultTranspose(g, G);
+    auto& R_submesh = *g.ParFESpace()->GetRestrictionOperator();
+    R_submesh.Mult(g, G);
   }
 
   // solve for X_blk
