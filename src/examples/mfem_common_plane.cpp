@@ -168,7 +168,7 @@ int main( int argc, char** argv )
   // command line options
   // number of times to uniformly refine the serial mesh before constructing the
   // parallel mesh
-  int ref_levels = 1;
+  int ref_levels = 0;
   // polynomial order of the finite element discretization
   int order = 1;
   // initial velocity
@@ -182,7 +182,7 @@ int main( int argc, char** argv )
   // rate penalty
   double p_rate = 1000000.0;
   // number of cycles to skip before output
-  int output_cycles = 20;
+  int output_cycles = 15;
 
   axom::CLI::App app { "mfem_common_plane" };
   app.add_option("-r,--refine", ref_levels,

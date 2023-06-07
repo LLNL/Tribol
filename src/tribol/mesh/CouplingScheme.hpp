@@ -326,37 +326,113 @@ public:
                               const integer cycle, 
                               const real t );
 
+  /**
+   * @brief Check if coupling scheme has MFEM mesh data
+   * 
+   * @return true: MFEM mesh data exists
+   * @return false: MFEM mesh data does not exist
+   */
   bool hasMfemData() const { return m_mfemMeshData != nullptr; }
 
+  /**
+   * @brief Get the MFEM mesh data object
+   * 
+   * @return MfemMeshData* 
+   */
   MfemMeshData* getMfemMeshData() { return m_mfemMeshData.get(); }
   
+  /**
+   * @brief Get the MFEM mesh data object (const overload)
+   * 
+   * @return const MfemMeshData* 
+   */
   const MfemMeshData* getMfemMeshData() const
   {
     return m_mfemMeshData.get();
   }
 
-  void setMfemMeshData(std::unique_ptr<MfemMeshData>&& mfemMeshData)
+  /**
+   * @brief Sets the MFEM mesh data object
+   * 
+   * @param mfemMeshData Unique pointer to MFEM mesh data
+   */
+  void setMfemMeshData(std::unique_ptr<MfemMeshData> mfemMeshData)
   {
     m_mfemMeshData = std::move(mfemMeshData);
   }
 
-  bool hasMfemDualData() const { return m_mfemDualData != nullptr; }
+  /**
+   * @brief Check if coupling scheme has MFEM submesh field data
+   * 
+   * @return true: MFEM submesh field data exists
+   * @return false: MFEM submesh field data does not exist
+   */
+  bool hasMfemSubmeshData() const { return m_mfemSubmeshData != nullptr; }
 
-  MfemDualData* getMfemDualData() { return m_mfemDualData.get(); }
+  /**
+   * @brief Get the MFEM submesh field data object
+   * 
+   * @return MfemSubmeshData* 
+   */
+  MfemSubmeshData* getMfemSubmeshData() { return m_mfemSubmeshData.get(); }
   
-  const MfemDualData* getMfemDualData() const 
+  /**
+   * @brief Get the MFEM submesh field data object (const overload)
+   * 
+   * @return const MfemSubmeshData* 
+   */
+  const MfemSubmeshData* getMfemSubmeshData() const 
   {
-    return m_mfemDualData.get();
+    return m_mfemSubmeshData.get();
   }
 
-  void setMfemDualData(std::unique_ptr<MfemDualData>&& mfemDualData)
+  /**
+   * @brief Sets the MFEM submesh field data object
+   * 
+   * @param MfemSubmeshData Unique pointer to MFEM submesh field data
+   */
+  void setMfemSubmeshData(std::unique_ptr<MfemSubmeshData> mfemSubmeshData)
   {
-    m_mfemDualData = std::move(mfemDualData);
+    m_mfemSubmeshData = std::move(mfemSubmeshData);
   }
 
-  void setMatrixXfer();
+  /**
+   * @brief Check if coupling scheme has MFEM matrix transfer data
+   * 
+   * @return true: MFEM matrix transfer data exists
+   * @return false: MFEM matrix transfer data does not exist
+   */
+  bool hasMfemMatrixData() const { return m_mfemMatrixData != nullptr; }
+  
+  /**
+   * @brief Get the MFEM matrix transfer data object
+   * 
+   * @return MfemMatrixData* 
+   */
+  MfemMatrixData* getMfemMatrixData()
+  {
+    return m_mfemMatrixData.get();
+  }
+  
+  /**
+   * @brief Get the MFEM matrix transfer data object (const overload)
+   * 
+   * @return MfemMatrixData* 
+   */
+  const MfemMatrixData* getMfemMatrixData() const
+  {
+    return m_mfemMatrixData.get();
+  }
 
-  std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian() const;
+  /**
+   * @brief Sets the MFEM matrix transfer data object
+   * 
+   * @param mfemMatrixData Unique pointer to MFEM matrix transfer data
+   */
+  void setMatrixXfer(std::unique_ptr<MfemMatrixData> mfemMatrixData)
+  {
+    m_mfemMatrixData = std::move(mfemMatrixData);
+  }
 
 private:
 
@@ -398,11 +474,9 @@ private:
   CouplingSchemeErrors m_couplingSchemeErrors; ///< struct handling coupling scheme errors
   CouplingSchemeInfo   m_couplingSchemeInfo;   ///< struct handling info to be printed
 
-  std::unique_ptr<MfemMeshData> m_mfemMeshData;
-  std::unique_ptr<MfemDualData> m_mfemDualData;
-  std::unique_ptr<redecomp::MatrixTransfer> m_matrixXfer;
-  std::unique_ptr<mfem::Array<int>> m_submesh2ParentVdofList;
-  std::unique_ptr<mfem::Array<int>> m_blockOffsets;
+  std::unique_ptr<MfemMeshData> m_mfemMeshData;       ///< MFEM mesh data
+  std::unique_ptr<MfemSubmeshData> m_mfemSubmeshData; ///< MFEM submesh field data
+  std::unique_ptr<MfemMatrixData> m_mfemMatrixData;   ///< MFEM matrix transfer data
   
   DISABLE_COPY_AND_ASSIGNMENT( CouplingScheme );
   DISABLE_MOVE_AND_ASSIGNMENT( CouplingScheme );

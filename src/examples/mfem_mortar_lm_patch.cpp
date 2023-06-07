@@ -102,7 +102,7 @@ int main( int argc, char** argv )
 
     // further refinement of parallel mesh
     {
-      int par_ref_levels = 2;
+      int par_ref_levels = 0;
       for (int i{0}; i < par_ref_levels; ++i)
       {
         pmesh->UniformRefinement();
@@ -111,7 +111,7 @@ int main( int argc, char** argv )
   }
   
   // set up data collection for output
-  auto dc = mfem::ParaViewDataCollection("pmesh", pmesh.get());
+  auto dc = mfem::ParaViewDataCollection("mortar_patch_pv", pmesh.get());
 
   // grid function for higher-order nodes
   auto fe_coll = mfem::H1_FECollection(order, pmesh->SpaceDimension());

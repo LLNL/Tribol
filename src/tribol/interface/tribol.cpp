@@ -269,6 +269,18 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
    {
       // MFEM_ELEMENT_DENSE is required to use the MFEM interface
       lm_options.sparse_mode = SparseMode::MFEM_ELEMENT_DENSE;
+      if (
+         !couplingScheme->hasMfemMatrixData() && (
+            lm_options.eval_mode == ImplicitEvalMode::MORTAR_JACOBIAN ||
+            lm_options.eval_mode == ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
+         )
+      )
+      {
+         couplingScheme->setMatrixXfer(std::make_unique<MfemMatrixData>(
+            *couplingScheme->getMfemMeshData(),
+            *couplingScheme->getMfemSubmeshData()
+         ));
+      }
    }
    lm_options.enforcement_option_set = true;
 
@@ -457,14 +469,28 @@ void registerMfemMesh( integer cs_id,
          SLIC_ERROR_ROOT("Unsupported contact model. "
            "Only FRICTIONLESS, TIED, and COULOMB supported.");
       }
-      coupling_scheme->setMfemDualData(
-         std::make_unique<MfemDualData>(
+      coupling_scheme->setMfemSubmeshData(
+         std::make_unique<MfemSubmeshData>(
             mfem_data->GetSubmesh(),
             mfem_data->GetLORSubmesh(),
             std::move(dual_fec),
             dual_vdim
          )
       );
+      auto lm_options = coupling_scheme->getEnforcementOptions().lm_implicit_options;
+      if (
+         lm_options.enforcement_option_set && 
+         (
+            lm_options.eval_mode == ImplicitEvalMode::MORTAR_JACOBIAN ||
+            lm_options.eval_mode == ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
+         )
+      )
+      {
+         coupling_scheme->setMatrixXfer(std::make_unique<MfemMatrixData>(
+            *mfem_data,
+            *coupling_scheme->getMfemSubmeshData()
+         ));
+      }
    }
    coupling_scheme->setMfemMeshData(std::move(mfem_data));
 
@@ -743,7 +769,9 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
       "No MFEM data exists. The coupling scheme "
       "must be registered using registerParMesh() to use this method."
    );
-   return coupling_scheme->getMfemBlockJacobian();
+   return coupling_scheme->getMfemMatrixData()->GetMfemBlockJacobian(
+      *coupling_scheme->getMethodData()
+   );
 }
 
 //------------------------------------------------------------------------------
@@ -776,12 +804,12 @@ mfem::ParGridFunction getMfemGap( integer cs_id )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
-      !coupling_scheme->hasMfemDualData(), 
+      !coupling_scheme->hasMfemSubmeshData(), 
       "Coupling scheme does not contain MFEM dual field data. "
       "Was the coupling scheme created with registerParMesh() and is the "
       "enforcement method LAGRANGE_MULTIPLIER?"
    );
-   return coupling_scheme->getMfemDualData()->GetSubmeshGap();
+   return coupling_scheme->getMfemSubmeshData()->GetSubmeshGap();
 }
 
 //------------------------------------------------------------------------------
@@ -814,12 +842,12 @@ mfem::ParGridFunction& getMfemPressure( integer cs_id )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
-      !coupling_scheme->hasMfemDualData(), 
+      !coupling_scheme->hasMfemSubmeshData(), 
       "Coupling scheme does not contain MFEM dual field data. "
       "Was the coupling scheme created with registerParMesh() and is the "
       "enforcement method LAGRANGE_MULTIPLIER?"
    );
-   return coupling_scheme->getMfemDualData()->GetSubmeshPressure();
+   return coupling_scheme->getMfemSubmeshData()->GetSubmeshPressure();
 }
 
 //------------------------------------------------------------------------------
@@ -1159,22 +1187,16 @@ integer update( integer cycle, real t, real &dt )
          {
             SLIC_ERROR_ROOT_IF(couplingScheme->getContactModel() != FRICTIONLESS,
               "Only frictionless contact is supported.");
-            auto dual_data = couplingScheme->getMfemDualData();
-            dual_data->UpdateDualData(mfem_data->GetRedecompMesh());
+            auto dual_data = couplingScheme->getMfemSubmeshData();
+            dual_data->UpdateSubmeshData(mfem_data->GetRedecompMesh());
             auto g_ptrs = dual_data->GetRedecompGapPtrs();
             registerMortarGaps(mesh_ids[1], g_ptrs[0]);
             auto p_ptrs = dual_data->GetRedecompPressurePtrs();
             registerMortarPressures(mesh_ids[1], p_ptrs[0]);
             auto lm_options = couplingScheme->getEnforcementOptions().lm_implicit_options;
-            if (
-               lm_options.enforcement_option_set && 
-               (
-                  lm_options.eval_mode == ImplicitEvalMode::MORTAR_JACOBIAN ||
-                  lm_options.eval_mode == ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
-               )
-            )
+            if (couplingScheme->hasMfemMatrixData())
             {
-               couplingScheme->setMatrixXfer();
+               couplingScheme->getMfemMatrixData()->UpdateMatrixXfer();
             }
          }
       }
