@@ -111,7 +111,8 @@ int main( int argc, char** argv )
   }
   
   // set up data collection for output
-  auto dc = mfem::ParaViewDataCollection("mortar_patch_pv", pmesh.get());
+  auto pv_dc = mfem::ParaViewDataCollection("mortar_patch_pv", pmesh.get());
+  auto vi_dc = mfem::VisItDataCollection("mortar_patch_vi", pmesh.get());
 
   // grid function for higher-order nodes
   auto fe_coll = mfem::H1_FECollection(order, pmesh->SpaceDimension());
@@ -126,15 +127,18 @@ int main( int argc, char** argv )
   {
     pmesh->GetNodes(coords);
   }
-  dc.RegisterField("pos", &coords);
+  pv_dc.RegisterField("pos", &coords);
+  vi_dc.RegisterField("pos", &coords);
 
   // grid function for displacement
   mfem::ParGridFunction u { &par_fe_space };
-  dc.RegisterField("disp", &u);
+  pv_dc.RegisterField("disp", &u);
+  vi_dc.RegisterField("disp", &u);
   u = 0.0;
 
   // save initial configuration
-  dc.Save();
+  pv_dc.Save();
+  vi_dc.Save();
 
   // recover dirichlet bc tdof list
   mfem::Array<int> ess_tdof_list;
@@ -203,9 +207,12 @@ int main( int argc, char** argv )
   // update tribol (compute contact contribution to force and stiffness)
   double dt {1.0};
   tribol::update(1, 1.0, dt);
-  dc.SetCycle(1);
-  dc.SetTime(1.0);
-  dc.SetTimeStep(1.0);
+  pv_dc.SetCycle(1);
+  pv_dc.SetTime(1.0);
+  pv_dc.SetTimeStep(1.0);
+  vi_dc.SetCycle(1);
+  vi_dc.SetTime(1.0);
+  vi_dc.SetTimeStep(1.0);
 
   // retrieve block stiffness matrix
   auto A_blk = tribol::getMfemBlockJacobian(0);
@@ -249,7 +256,8 @@ int main( int argc, char** argv )
   pmesh->SetVertices(coords);
 
   // save deformed configuration
-  dc.Save();
+  pv_dc.Save();
+  vi_dc.Save();
 
   // cleanup
   tribol::finalize();
