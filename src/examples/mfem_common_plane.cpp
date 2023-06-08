@@ -74,7 +74,7 @@ private:
   }
 };
 
-/// Explicit solid mechanics update (lumped mass, no damping)
+/// Explicit solid mechanics update (lumped mass, optional damping)
 class ExplicitMechanics : public mfem::SecondOrderTimeDependentOperator
 {
 public:
@@ -222,7 +222,10 @@ int main( int argc, char** argv )
   // element attributes of moving volumes (initial condition)
   auto move_attribs = std::set<int>({2});
 
+  axom::utilities::Timer timer { false };
+
   // read mesh
+  timer.start();
   std::unique_ptr<mfem::ParMesh> pmesh { nullptr };
   {
     // read serial mesh
@@ -238,14 +241,8 @@ int main( int argc, char** argv )
     }
     
     // create parallel mesh from serial
-    axom::utilities::Timer timer { false };
-    timer.start();
     pmesh = std::make_unique<mfem::ParMesh>(MPI_COMM_WORLD, *mesh);
     mesh.reset(nullptr);
-    timer.stop();
-    SLIC_INFO_ROOT(axom::fmt::format(
-      "Time to create parallel mesh: {0:f}ms", timer.elapsedTimeInMilliSec()
-    ));
 
     // further refinement of parallel mesh
     {
@@ -256,12 +253,17 @@ int main( int argc, char** argv )
       }
     }
   }
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to create parallel mesh: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
   
   // set up data collection for output
   auto dc_pv = mfem::ParaViewDataCollection("common_plane_pv", pmesh.get());
   auto dc_vi = mfem::VisItDataCollection("common_plane_vi", pmesh.get());
 
   // grid function for higher-order nodes
+  timer.start();
   auto fe_coll = mfem::H1_FECollection(order, pmesh->SpaceDimension());
   auto par_fe_space = mfem::ParFiniteElementSpace(
     pmesh.get(), &fe_coll, pmesh->SpaceDimension());
@@ -288,8 +290,13 @@ int main( int argc, char** argv )
   dc_pv.RegisterField("vel", &v);
   dc_vi.RegisterField("vel", &v);
   v = 0.0;
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to create grid functions: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
 
   // set initial velocity
+  timer.start();
   {
     mfem::Array<int> attrib_marker(pmesh->attributes.Max());
     attrib_marker = 0;
@@ -334,18 +341,28 @@ int main( int argc, char** argv )
     par_fe_space.GetEssentialVDofs(ess_bdr, ess_vdof_marker);
     mfem::FiniteElementSpace::MarkerToList(ess_vdof_marker, ess_vdof_list);
   }
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to set up boundary conditions: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
 
   // set up mfem elasticity bilinear form
+  timer.start();
   mfem::ConstantCoefficient rho {100.0};
   mfem::ConstantCoefficient lambda {100000.0};
   mfem::ConstantCoefficient mu {100000.0};
   ExplicitMechanics op {par_fe_space, rho, lambda, mu};
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to set up elasticity bilinear form: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
 
   // set up time integrator
   CentralDiffSolver solver { ess_vdof_list };
   solver.Init(op);
 
   // set up tribol
+  timer.start();
   tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
   tribol::registerMfemMesh(
     0, 0, 1, *pmesh, coords, surf1_attribs, surf2_attribs,
@@ -365,6 +382,10 @@ int main( int argc, char** argv )
   );
   tribol::setKinematicConstantPenalty(0, p_kine);
   tribol::setKinematicConstantPenalty(1, p_kine);
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to set up Tribol: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
 
   int cycle {0};
   for (double t {0.0}; t < t_end; t+=dt)

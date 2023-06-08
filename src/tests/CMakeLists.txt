@@ -82,8 +82,49 @@ if ( TRIBOL_USE_MPI )
       DEPENDS_ON ${redecomp_test_depends}
       FOLDER redecomp/tests )
 
-    blt_add_test( NAME ${test_name}
-                  COMMAND ${test_name}_test )
+    foreach ( nranks RANGE 1 3 )
+      blt_add_test( NAME ${test_name}_${nranks}rank
+                    COMMAND ${test_name}_test
+                    NUM_MPI_RANKS ${nranks} )
+    endforeach()
+
+    if (ENABLE_CUDA)
+      set_target_properties(${test_name}_test PROPERTIES CUDA_SEPARABLE_COMPILATION On)
+    endif()
+
+  endforeach()
+
+endif()
+
+#------------------------------------------------------------------------------
+# Add tribol + redecomp tests
+#------------------------------------------------------------------------------
+if ( TRIBOL_USE_MPI )
+
+  set( combined_tests
+      tribol_mfem_common_plane.cpp
+      tribol_mfem_mortar_lm.cpp
+      )
+
+  set(combined_test_depends axom mfem redecomp tribol gtest)
+  blt_list_append(TO combined_test_depends ELEMENTS cuda IF ENABLE_CUDA )
+
+  foreach( test ${combined_tests} )
+
+    get_filename_component( test_name ${test} NAME_WE )
+
+    blt_add_executable(
+      NAME ${test_name}_test
+      SOURCES ${test}
+      OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
+      DEPENDS_ON ${combined_test_depends}
+      FOLDER tribol/tests )
+
+    foreach ( nranks RANGE 1 3 )
+      blt_add_test( NAME ${test_name}_${nranks}rank
+                    COMMAND ${test_name}_test
+                    NUM_MPI_RANKS ${nranks} )
+    endforeach()
 
     if (ENABLE_CUDA)
       set_target_properties(${test_name}_test PROPERTIES CUDA_SEPARABLE_COMPILATION On)

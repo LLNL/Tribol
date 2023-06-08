@@ -44,7 +44,7 @@ int main( int argc, char** argv )
   // command line options
   // number of times to uniformly refine the serial mesh before constructing the
   // parallel mesh
-  int ref_levels = 0;
+  int ref_levels = 2;
   // polynomial order of the finite element discretization
   int order = 1;
 
@@ -74,8 +74,11 @@ int main( int argc, char** argv )
   auto yfix_attribs = std::set<int>({2});
   // boundary element attributes of z-fixed surfaces
   auto zfix_attribs = std::set<int>({3, 6});
+  
+  axom::utilities::Timer timer { false };
 
   // read mesh
+  timer.start();
   std::unique_ptr<mfem::ParMesh> pmesh { nullptr };
   {
     // read serial mesh
@@ -91,14 +94,8 @@ int main( int argc, char** argv )
     }
     
     // create parallel mesh from serial
-    axom::utilities::Timer timer { false };
-    timer.start();
     pmesh = std::make_unique<mfem::ParMesh>(MPI_COMM_WORLD, *mesh);
     mesh.reset(nullptr);
-    timer.stop();
-    SLIC_INFO_ROOT(axom::fmt::format(
-      "Time to create parallel mesh: {0:f}ms", timer.elapsedTimeInMilliSec()
-    ));
 
     // further refinement of parallel mesh
     {
@@ -109,12 +106,17 @@ int main( int argc, char** argv )
       }
     }
   }
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to create parallel mesh: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
   
   // set up data collection for output
   auto pv_dc = mfem::ParaViewDataCollection("mortar_patch_pv", pmesh.get());
   auto vi_dc = mfem::VisItDataCollection("mortar_patch_vi", pmesh.get());
 
   // grid function for higher-order nodes
+  timer.start();
   auto fe_coll = mfem::H1_FECollection(order, pmesh->SpaceDimension());
   auto par_fe_space = mfem::ParFiniteElementSpace(
     pmesh.get(), &fe_coll, pmesh->SpaceDimension());
@@ -135,12 +137,17 @@ int main( int argc, char** argv )
   pv_dc.RegisterField("disp", &u);
   vi_dc.RegisterField("disp", &u);
   u = 0.0;
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to create grid functions: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
 
   // save initial configuration
   pv_dc.Save();
   vi_dc.Save();
 
   // recover dirichlet bc tdof list
+  timer.start();
   mfem::Array<int> ess_tdof_list;
   {
     mfem::Array<int> ess_vdof_marker;
@@ -176,8 +183,13 @@ int main( int argc, char** argv )
     par_fe_space.GetRestrictionMatrix()->BooleanMult(ess_vdof_marker, ess_tdof_marker);
     mfem::FiniteElementSpace::MarkerToList(ess_tdof_marker, ess_tdof_list);
   }
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to set up boundary conditions: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
 
   // set up mfem elasticity bilinear form
+  timer.start();
   mfem::ParBilinearForm a(&par_fe_space);
   mfem::ConstantCoefficient lambda(50.0);
   mfem::ConstantCoefficient mu(50.0);
@@ -187,8 +199,13 @@ int main( int argc, char** argv )
   // compute elasticity contribution to stiffness
   auto A = std::make_unique<mfem::HypreParMatrix>();
   a.FormSystemMatrix(ess_tdof_list, *A);
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to create and assemble internal stiffness: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
 
   // set up tribol
+  timer.start();
   tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
   tribol::registerMfemMesh(
     0, 0, 1, *pmesh, coords, mortar_attribs, nonmortar_attribs,
@@ -217,8 +234,13 @@ int main( int argc, char** argv )
   // retrieve block stiffness matrix
   auto A_blk = tribol::getMfemBlockJacobian(0);
   A_blk->SetBlock(0, 0, A.release());
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to setup Tribol and compute Jacobian: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
 
   // create block solution and RHS vectors
+  timer.start();
   mfem::BlockVector B_blk { A_blk->ColOffsets() };
   B_blk = 0.0;
   mfem::BlockVector X_blk { A_blk->RowOffsets() };
@@ -239,7 +261,7 @@ int main( int argc, char** argv )
   solver.SetRelTol(1.0e-8);
   solver.SetAbsTol(1.0e-12);
   solver.SetMaxIter(5000);
-  solver.SetPrintLevel(1);
+  solver.SetPrintLevel(3);
   solver.SetOperator(*A_blk);
   solver.Mult(B_blk, X_blk);
 
@@ -254,6 +276,10 @@ int main( int argc, char** argv )
   // update mesh coordinates
   coords += u;
   pmesh->SetVertices(coords);
+  timer.stop();
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "Time to solve for updated displacements: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
 
   // save deformed configuration
   pv_dc.Save();
