@@ -16,6 +16,7 @@ set( tribol_tests
      tribol_coupling_scheme.cpp
      tribol_coupling_scheme_manager.cpp
      tribol_enforcement_options.cpp
+     tribol_hex_mesh.cpp
      tribol_inv_iso.cpp
      tribol_iso_integ.cpp
      tribol_math.cpp

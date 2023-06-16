@@ -26,9 +26,9 @@ using real = tribol::real;
 
 /*!
  * Test fixture class with some setup necessary to test 
- * the TestMesh tet mesh feature 
+ * the TestMesh hex mesh feature 
  */
-class TetMeshTest : public ::testing::Test
+class HexMeshTest : public ::testing::Test
 {
    
 public:
@@ -50,7 +50,7 @@ protected:
 
 };
 
-TEST_F( TetMeshTest, build_and_check_tet_mesh )
+TEST_F( HexMeshTest, build_and_check_hex_mesh )
 {
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
@@ -80,7 +80,7 @@ TEST_F( TetMeshTest, build_and_check_tet_mesh )
    real y_max2 = 1.;
    real z_max2 = 2.;
 
-   this->m_mesh.setupContactMeshTet( nElemsXM, nElemsYM, nElemsZM,
+   this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
                                      x_max1, y_max1, z_max1,
                                      nElemsXS, nElemsYS, nElemsZS,
@@ -90,21 +90,21 @@ TEST_F( TetMeshTest, build_and_check_tet_mesh )
     
    // sanity checks for this specific mesh
    EXPECT_EQ( this->m_mesh.mesh_constructed, true );
-   EXPECT_EQ( this->m_mesh.cellType, (int)(tribol::LINEAR_TRIANGLE) );
-   EXPECT_EQ( this->m_mesh.numNodesPerFace, 3 );
-   EXPECT_EQ( this->m_mesh.numNodesPerElement, 4 );
-   EXPECT_EQ( this->m_mesh.numMortarElements, 6 * nMortarElems*nMortarElems*nMortarElems );
-   EXPECT_EQ( this->m_mesh.numNonmortarElements, 6 * nNonmortarElems*nNonmortarElems*nNonmortarElems );
+   EXPECT_EQ( this->m_mesh.cellType, (int)(tribol::LINEAR_QUAD) );
+   EXPECT_EQ( this->m_mesh.numNodesPerFace, 4 );
+   EXPECT_EQ( this->m_mesh.numNodesPerElement, 8 );
+   EXPECT_EQ( this->m_mesh.numMortarElements, nMortarElems*nMortarElems*nMortarElems );
+   EXPECT_EQ( this->m_mesh.numNonmortarElements, nNonmortarElems*nNonmortarElems*nNonmortarElems );
    EXPECT_EQ( this->m_mesh.numTotalElements, this->m_mesh.numMortarElements + this->m_mesh.numNonmortarElements );
-   EXPECT_EQ( this->m_mesh.numMortarFaces, 2 * nMortarElems*nMortarElems );
-   EXPECT_EQ( this->m_mesh.numNonmortarFaces, 2 * nNonmortarElems*nNonmortarElems );
+   EXPECT_EQ( this->m_mesh.numMortarFaces, nMortarElems*nMortarElems );
+   EXPECT_EQ( this->m_mesh.numNonmortarFaces, nNonmortarElems*nNonmortarElems );
    EXPECT_EQ( this->m_mesh.numMortarNodes, (nMortarElems+1)*(nMortarElems+1)*(nMortarElems+1) );
    EXPECT_EQ( this->m_mesh.numNonmortarNodes, (nNonmortarElems+1)*(nNonmortarElems+1)*(nNonmortarElems+1) );
 
    //this->m_mesh.testMeshToVtk( "", 1, 1 );
 }
 
-TEST_F( TetMeshTest, build_and_check_mfem_tet_mesh )
+TEST_F( HexMeshTest, build_and_check_mfem_hex_mesh )
 {
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
@@ -134,7 +134,7 @@ TEST_F( TetMeshTest, build_and_check_mfem_tet_mesh )
    real y_max2 = 1.;
    real z_max2 = 2.;
 
-   this->m_mesh.setupContactMeshTet( nElemsXM, nElemsYM, nElemsZM,
+   this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
                                      x_max1, y_max1, z_max1,
                                      nElemsXS, nElemsYS, nElemsZS,
@@ -143,7 +143,7 @@ TEST_F( TetMeshTest, build_and_check_mfem_tet_mesh )
                                      5., -5. );
 
    // setup mfem mesh, but don't fix orientations in order to 
-   // check if underlying TestMesh tet mesh has orientation issues
+   // check if underlying TestMesh hex mesh has orientation issues
    this->m_mesh.setupMfemMesh( false );
 
    // perform mfem mesh based sanity checks
@@ -152,7 +152,7 @@ TEST_F( TetMeshTest, build_and_check_mfem_tet_mesh )
    EXPECT_EQ( this->m_mesh.mfem_mesh->GetNE(), this->m_mesh.numMortarElements + this->m_mesh.numNonmortarElements );
    EXPECT_EQ( this->m_mesh.mfem_mesh->GetNV(), this->m_mesh.numMortarNodes + this->m_mesh.numNonmortarNodes );
    EXPECT_EQ( this->m_mesh.mfem_mesh->GetNFbyType(mfem::FaceType::Boundary), 
-              2 * 6 * (nMortarElems*nMortarElems + nNonmortarElems*nNonmortarElems) );
+              6 * (nMortarElems*nMortarElems + nNonmortarElems*nNonmortarElems) );
 
    // check for inverted elements
    int wrong_elem_orientation = -1;

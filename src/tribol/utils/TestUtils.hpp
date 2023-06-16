@@ -172,11 +172,14 @@ public:
   /*!
    * \brief sets up an mfem mesh object representation of the original hex or tet test mesh
    *
+   *
+   * \param [in] fix_orientation true will fix any orientation errors in original TestMesh
+   *
    * \note must call setupContactMeshHex() or setupContactMeshTet() to construct the test mesh 
    * prior to calling this routine
    *
    */
-   void setupMfemMesh( );
+   void setupMfemMesh( bool fix_orientation = true );
 
   /*!
    * \brief sets up the Dirichlet BC node ids and values for a single 3D mesh block 
