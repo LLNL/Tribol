@@ -1,0 +1,52 @@
+##############################################################################
+# Copyright (c) 2017-2023, Lawrence Livermore National Security, LLC and
+# other Tribol Project Developers. See the top-level COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (MIT)
+##############################################################################
+
+####
+# This is the shared configuration of jobs for quartz
+.on_quartz:
+  variables:
+    ALLOC_OPTIONS: "-p pdebug --exclusive --mpibind=off"
+    ALLOC_COMMAND: "salloc ${ALLOC_OPTIONS} -N ${ALLOC_NODES} -t ${ALLOC_TIME}"
+  tags:
+    - shell
+    - quartz
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /_qnone/ || $ON_QUARTZ == "OFF"' #run except if ...
+      when: never
+    - when: on_success
+  before_script:
+    - module load python/3.9.12
+    # We could also extract the CMake executable location from the hostconfig in common_build_functions
+    # like we do in config-build
+    - module load cmake/3.19.2
+
+
+####
+# Templates
+.src_build_on_quartz:
+  extends: [.src_build_script, .on_quartz]
+  needs: []
+
+
+####
+# Build jobs
+
+quartz-clang_14_0_6-src:
+  variables:
+    COMPILER: "clang@14.0.6"
+    HOST_CONFIG: "toss_4_x86_64_ib-${COMPILER}.cmake"
+    ALLOC_NODES: "1"
+    ALLOC_TIME: "20"
+  extends: .src_build_on_quartz
+
+quartz-gcc_10_3_1-src:
+  variables:
+    COMPILER: "gcc@10.3.1"
+    HOST_CONFIG: "toss_4_x86_64_ib-${COMPILER}.cmake"
+    ALLOC_NODES: "1"
+    ALLOC_TIME: "20"
+  extends: .src_build_on_quartz

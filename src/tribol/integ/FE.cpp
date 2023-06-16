@@ -68,7 +68,7 @@ void GalerkinEval( const real* const RESTRICT x,
             EvalBasis( x, pX, pY, pZ, numNodes, nd, phi );
             for (int i=0; i<galerkinDim; ++i)
             {
-               galerkinVal[i] += nodeVals[i] * phi;
+               galerkinVal[i] += nodeVals[i+nd*galerkinDim] * phi;
             } 
          }
          break;
