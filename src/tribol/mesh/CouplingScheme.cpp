@@ -550,7 +550,7 @@ bool CouplingScheme::isValidMethod()
    {
       case ALIGNED_MORTAR:
       {
-         if (mesh1.m_numCellNodes != mesh2.m_numCellNodes)
+         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
          {
             this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
             return false;
@@ -582,7 +582,7 @@ bool CouplingScheme::isValidMethod()
       case COMMON_PLANE:
       {
          // check for different face types. This is not yet supported
-         if (mesh1.m_numCellNodes != mesh2.m_numCellNodes)
+         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
          {
             this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
             return false;
@@ -1171,8 +1171,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    //int num_sides = 2; // always 2 sides in a single coupling scheme
    int dim = this->spatialDimension();
-   int numNodesPerCell1 = mesh1.m_numCellNodes;
-   int numNodesPerCell2 = mesh2.m_numCellNodes;
+   int numNodesPerCell1 = mesh1.m_numNodesPerCell;
+   int numNodesPerCell2 = mesh2.m_numNodesPerCell;
 
    // loop over each interface pair. Even if pair is not in contact, 
    // we still do a velocity projection for that proximate face-pair 

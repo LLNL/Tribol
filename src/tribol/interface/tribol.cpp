@@ -359,17 +359,17 @@ void registerMesh( integer meshId,
    {
       case tribol::LINEAR_EDGE:
       {
-         mesh.m_numCellNodes = 2;
+         mesh.m_numNodesPerCell = 2;
          break;
       }
       case tribol::LINEAR_TRIANGLE:
       {
-         mesh.m_numCellNodes = 3;
+         mesh.m_numNodesPerCell = 3;
          break;
       } 
       case tribol::LINEAR_QUAD:
       { 
-         mesh.m_numCellNodes = 4;
+         mesh.m_numNodesPerCell = 4;
          break;
       }
       default:

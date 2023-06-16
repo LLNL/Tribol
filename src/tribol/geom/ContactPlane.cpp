@@ -118,7 +118,7 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
 
    // loop over vertices on face 2
    int k = 0;
-   for (int i=0; i<meshDat2.m_numCellNodes; ++i) 
+   for (int i=0; i<meshDat2.m_numNodesPerCell; ++i) 
    {
       // get ith face 2 node id
       const int f2NodeId = meshDat2.getFaceNodeId(fId2, i);
@@ -145,7 +145,7 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
    } // end loop over nodes
 
    // check to see if all nodes are on the other side
-   if (k == meshDat2.m_numCellNodes)
+   if (k == meshDat2.m_numNodesPerCell)
    {
       allVerts = true;
    }
@@ -167,7 +167,7 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
 
    // loop over vertices on face 1
    k = 0;
-   for (int i=0; i<meshDat1.m_numCellNodes; ++i) 
+   for (int i=0; i<meshDat1.m_numNodesPerCell; ++i) 
    {
       // get ith face 1 node id
       const int f1NodeId = meshDat1.getFaceNodeId(fId1, i);
@@ -193,7 +193,7 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
    } // end loop over nodes
 
    // check to see if all nodes are on the other side
-   if (k == meshDat1.m_numCellNodes) 
+   if (k == meshDat1.m_numNodesPerCell) 
    {
       allVerts = true;
    }
@@ -211,7 +211,7 @@ bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
 
    // loop over vertices on edge 2
    int k = 0;
-   for (int i=0; i<meshDat2.m_numCellNodes; ++i)
+   for (int i=0; i<meshDat2.m_numNodesPerCell; ++i)
    {
       // get edge 2 ith vertex id
       const int e2vId = meshDat2.getFaceNodeId( eId2, i );
@@ -232,7 +232,7 @@ bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
    } // end loop over edge2 vertices
 
    // check to see if all vertices are on the other side
-   if (k == meshDat2.m_numCellNodes) allVerts = true;
+   if (k == meshDat2.m_numNodesPerCell) allVerts = true;
 
    if (check == false) return check;
 
@@ -240,7 +240,7 @@ bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
    // entirely on the other side of edge 2 triggering a full overlap 
    // computation
    k = 0;
-   for (int i=0; i<meshDat1.m_numCellNodes; ++i)
+   for (int i=0; i<meshDat1.m_numNodesPerCell; ++i)
    {
       // get edge 1 ith vertex id
       const int e1vId = meshDat1.getFaceNodeId( eId1, i );
@@ -261,7 +261,7 @@ bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
    } // end loop over edge1 vertices
 
    // check to see if all vertices are on the other side
-   if (k == meshDat1.m_numCellNodes) allVerts = true;
+   if (k == meshDat1.m_numNodesPerCell) allVerts = true;
 
    return check;
 
@@ -277,7 +277,7 @@ void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId,
 
    // loop over nodes and project onto the plane defined by the point-normal 
    // input arguments
-   for (int i=0; i<mesh.m_numCellNodes; ++i) {
+   for (int i=0; i<mesh.m_numNodesPerCell; ++i) {
       const int nodeId = mesh.getFaceNodeId(faceId, i);
       ProjectPointToPlane( mesh.m_positionX[nodeId], mesh.m_positionY[nodeId], 
                            mesh.m_positionZ[nodeId], nrmlX, nrmlY, nrmlZ, 
@@ -294,7 +294,7 @@ void ProjectEdgeNodesToSegment( const MeshData& mesh, int edgeId,
                                 real cY, real* RESTRICT pX, 
                                 real* RESTRICT pY )
 {
-   for (int i=0; i<mesh.m_numCellNodes; ++i)
+   for (int i=0; i<mesh.m_numNodesPerCell; ++i)
    {
       const int nodeId = mesh.getFaceNodeId(edgeId, i);
       ProjectPointToSegment( mesh.m_positionX[nodeId], mesh.m_positionY[nodeId], 
@@ -539,13 +539,13 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    // The mortar face may not be exactly planar so we still need to project 
    // the nodes onto the contact plane, which is defined by average normal of the 
    // mortar face.
-   real projX1[ mesh1.m_numCellNodes ];
-   real projY1[ mesh1.m_numCellNodes ];
-   real projZ1[ mesh1.m_numCellNodes ];
+   real projX1[ mesh1.m_numNodesPerCell ];
+   real projY1[ mesh1.m_numNodesPerCell ];
+   real projZ1[ mesh1.m_numNodesPerCell ];
 
-   real projX2[ mesh2.m_numCellNodes ];
-   real projY2[ mesh2.m_numCellNodes ];
-   real projZ2[ mesh2.m_numCellNodes ];
+   real projX2[ mesh2.m_numNodesPerCell ];
+   real projY2[ mesh2.m_numNodesPerCell ];
+   real projZ2[ mesh2.m_numNodesPerCell ];
     
    ProjectFaceNodesToPlane( mesh1, faceId1, cp.m_nX, cp.m_nY, cp.m_nZ, 
                             cp.m_cX, cp.m_cY, cp.m_cZ, 
@@ -559,18 +559,18 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
 
    // project the projected global nodal coordinates onto local 
    // contact plane 2D coordinate system. 
-   real projeX1[ mesh1.m_numCellNodes ];
-   real projeY1[ mesh1.m_numCellNodes ];
+   real projeX1[ mesh1.m_numNodesPerCell ];
+   real projeY1[ mesh1.m_numNodesPerCell ];
 
-   real projeX2[ mesh2.m_numCellNodes ];
-   real projeY2[ mesh2.m_numCellNodes ];
+   real projeX2[ mesh2.m_numNodesPerCell ];
+   real projeY2[ mesh2.m_numNodesPerCell ];
 
    cp.globalTo2DLocalCoords( &projX1[0], &projY1[0], &projZ1[0], 
                              &projeX1[0], &projeY1[0], 
-                             mesh1.m_numCellNodes );
+                             mesh1.m_numNodesPerCell );
    cp.globalTo2DLocalCoords( &projX2[0], &projY2[0], &projZ2[0], 
                              &projeX2[0], &projeY2[0], 
-                             mesh2.m_numCellNodes );
+                             mesh2.m_numNodesPerCell );
 
    // compute the overlap area of the two faces. Note, this is the full,
    // but cheaper, overlap computation. This is suitable enough to 
@@ -605,15 +605,15 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
       real* Y1 = &projeY1[0];
 
       // reorder the second face's vertices to be in CCW ordering
-      real X2[ mesh2.m_numCellNodes ];
-      real Y2[ mesh2.m_numCellNodes ];
+      real X2[ mesh2.m_numNodesPerCell ];
+      real Y2[ mesh2.m_numNodesPerCell ];
 
       // set the first vertex the same
       X2[0] = projeX2[0];
       Y2[0] = projeY2[0];
 
       int k=1; 
-      for (int i=(mesh2.m_numCellNodes-1); i>0; --i)
+      for (int i=(mesh2.m_numNodesPerCell-1); i>0; --i)
       {
          X2[k] = projeX2[i];
          Y2[k] = projeY2[i];
@@ -627,8 +627,8 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
                      axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                                            mesh2.m_faceRadius[ faceId2 ] );
       real len_tol = pos_tol;
-      Intersection2DPolygon( X1, Y1, mesh1.m_numCellNodes,
-                             X2, Y2, mesh2.m_numCellNodes,
+      Intersection2DPolygon( X1, Y1, mesh1.m_numNodesPerCell,
+                             X2, Y2, mesh2.m_numNodesPerCell,
                              pos_tol, len_tol, &cp.m_polyLocX, 
                              &cp.m_polyLocY, cp.m_numPolyVert, 
                              cp.m_area ); 
@@ -901,14 +901,14 @@ ContactPlane3D CheckAlignedFacePair( InterfacePair& pair )
    }
 
    // if we are here we have contact between two aligned faces
-   cp.m_numPolyVert = mesh1.m_numCellNodes;
+   cp.m_numPolyVert = mesh1.m_numNodesPerCell;
    cp.m_polyX = new real[ cp.m_numPolyVert ];
    cp.m_polyY = new real[ cp.m_numPolyVert ];
    cp.m_polyZ = new real[ cp.m_numPolyVert ];
 
    for (int a=0; a<cp.m_numPolyVert; ++a)
    {
-      int id = mesh1.m_connectivity[mesh1.m_numCellNodes*faceId1+a];
+      int id = mesh1.m_connectivity[mesh1.m_numNodesPerCell*faceId1+a];
       cp.m_polyX[a] = mesh1.m_positionX[id];
       cp.m_polyY[a] = mesh1.m_positionY[id]; 
       cp.m_polyZ[a] = mesh1.m_positionZ[id];
@@ -1152,8 +1152,8 @@ void ContactPlane3D::checkPolyOverlap( real* RESTRICT projLocX1, real* RESTRICT 
    MeshData& mesh2 = getCpMeshData( m_pair.meshId2 );
 
    // change the vertex ordering of one of the faces so that the two match
-   real x2Temp[ mesh2.m_numCellNodes ];
-   real y2Temp[ mesh2.m_numCellNodes ];
+   real x2Temp[ mesh2.m_numNodesPerCell ];
+   real y2Temp[ mesh2.m_numNodesPerCell ];
 
    // set first vertex coordinates the same
    x2Temp[0] = projLocX2[0];
@@ -1161,16 +1161,16 @@ void ContactPlane3D::checkPolyOverlap( real* RESTRICT projLocX1, real* RESTRICT 
 
    // reorder
    int k = 1;
-   for (int i=(mesh2.m_numCellNodes-1); i>0; --i)
+   for (int i=(mesh2.m_numNodesPerCell-1); i>0; --i)
    {
       x2Temp[k] = projLocX2[i];
       y2Temp[k] = projLocY2[i];
       ++k;
    }
 
-   PolyInterYCentroid( mesh1.m_numCellNodes, projLocX1, projLocY1, mesh2.m_numCellNodes, 
+   PolyInterYCentroid( mesh1.m_numNodesPerCell, projLocX1, projLocY1, mesh2.m_numNodesPerCell, 
                        x2Temp, y2Temp, isym, m_area, m_overlapCY );
-   PolyInterYCentroid( mesh1.m_numCellNodes, projLocY1, projLocX1, mesh2.m_numCellNodes, 
+   PolyInterYCentroid( mesh1.m_numNodesPerCell, projLocY1, projLocX1, mesh2.m_numNodesPerCell, 
                        y2Temp, x2Temp, isym, m_area, m_overlapCX );
 
    return;
@@ -1382,10 +1382,10 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
    // set up vertex id arrays to indicate which vertices pass through
    // contact plane
    MeshData& mesh1 = getCpMeshData( m_pair.meshId1 );
-   int interpenVertex1[ mesh1.m_numCellNodes ];
+   int interpenVertex1[ mesh1.m_numNodesPerCell ];
 
    MeshData& mesh2 = getCpMeshData( m_pair.meshId2 );
-   int interpenVertex2[ mesh2.m_numCellNodes ];
+   int interpenVertex2[ mesh2.m_numNodesPerCell ];
 
    for (int i=0; i<2; ++i) // loop over two constituent faces
    {
@@ -1415,17 +1415,17 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
       
       // declare array to hold vertex id for all vertices that interpenetrate 
       // the contact plane
-      int interpenVertex[ mesh.m_numCellNodes ];
+      int interpenVertex[ mesh.m_numNodesPerCell ];
 
       int k = 0;
-      for (int j=0; j<mesh.m_numCellNodes; ++j) // loop over face segments
+      for (int j=0; j<mesh.m_numNodesPerCell; ++j) // loop over face segments
       {
          // initialize current entry in the vertex id list
          interpenVertex[j] = -1;
 
          // determine segment vertex ids
          int ja = j;
-         int jb = (j == (mesh.m_numCellNodes-1)) ? 0 : (j+1);
+         int jb = (j == (mesh.m_numNodesPerCell-1)) ? 0 : (j+1);
 
          const int& fNodeIdA = mesh.getFaceNodeId(fId, ja);
          const real& x1 = mesh.m_positionX[fNodeIdA];
@@ -1480,7 +1480,7 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
       // count the number of vertices for the clipped portion of the i^th face that 
       // interpenetrates the contact plane.
       numV[i] = k;
-      for (int vid=0; vid<mesh.m_numCellNodes; ++vid)
+      for (int vid=0; vid<mesh.m_numNodesPerCell; ++vid)
       {
          if (interpenVertex[vid] == vid) ++numV[i];
 
@@ -1520,7 +1520,7 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
 
    // populate the face 1 vertices that cross the contact plane
    int k = 2;
-   for (int m=0; m<mesh1.m_numCellNodes; ++m) 
+   for (int m=0; m<mesh1.m_numNodesPerCell; ++m) 
    {
       if (interpenVertex1[m] != -1)
       {
@@ -1534,7 +1534,7 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
 
    // populate the face 2 vertices that cross the contact plane
    k = 2;
-   for (int m=0; m<mesh2.m_numCellNodes; ++m) 
+   for (int m=0; m<mesh2.m_numNodesPerCell; ++m) 
    {
       if (interpenVertex2[m] != -1)
       {
@@ -1971,11 +1971,11 @@ ContactPlane2D CheckEdgePair( InterfacePair& pair,
    cp.computePlanePoint(); 
 
    // project each edge's nodes onto the contact segment.
-   real projX1[ mesh1.m_numCellNodes ];
-   real projY1[ mesh1.m_numCellNodes ];
+   real projX1[ mesh1.m_numNodesPerCell ];
+   real projY1[ mesh1.m_numNodesPerCell ];
 
-   real projX2[ mesh2.m_numCellNodes ];
-   real projY2[ mesh2.m_numCellNodes ];
+   real projX2[ mesh2.m_numNodesPerCell ];
+   real projY2[ mesh2.m_numNodesPerCell ];
 
    ProjectEdgeNodesToSegment( mesh1, edgeId1, cp.m_nX, cp.m_nY,
                               cp.m_cX, cp.m_cY, &projX1[0], &projY1[0] );
@@ -1986,7 +1986,7 @@ ContactPlane2D CheckEdgePair( InterfacePair& pair,
    // overlap, we have to compute the full overlap in order to properly 
    // locate the contact plane (segment) for the interpenetration calculation
    cp.checkSegOverlap( &projX1[0], &projY1[0], &projX2[0], &projY2[0], 
-                       mesh1.m_numCellNodes, mesh2.m_numCellNodes );
+                       mesh1.m_numNodesPerCell, mesh2.m_numNodesPerCell );
 
    // compute the overlap length tolerance
    cp.computeAreaTol(); 
@@ -2245,7 +2245,7 @@ bool ContactPlane2D::computeLocalInterpenOverlap()
    int interId1 = -1;
    int interId2 = -1;
    int k = 0;
-   for (int i=0; i<mesh1.m_numCellNodes; ++i)
+   for (int i=0; i<mesh1.m_numNodesPerCell; ++i)
    {
       int nodeId1 = mesh1.getFaceNodeId( edgeId1, i );
       int nodeId2 = mesh2.getFaceNodeId( edgeId2, i );

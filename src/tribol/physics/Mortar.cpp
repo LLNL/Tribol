@@ -211,7 +211,7 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
-   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
+   IndexType const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    real const * const x1 = mortarMesh.m_positionX;
    real const * const y1 = mortarMesh.m_positionY; 
@@ -347,7 +347,7 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
-   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
+   IndexType const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    real const * const x1 = mortarMesh.m_positionX;
    real const * const y1 = mortarMesh.m_positionY; 
@@ -743,7 +743,7 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
    IndexType const nonmortarId = cs->getMeshId2();
    MeshManager& meshManager = MeshManager::getInstance();
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
-   IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
+   IndexType const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    ////////////////////////////////
    //                            //
