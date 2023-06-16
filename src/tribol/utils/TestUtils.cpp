@@ -96,10 +96,10 @@ TestMesh::~TestMesh()
 //------------------------------------------------------------------------------
 void TestMesh::clear( bool keepCoords )
 {
-   if (mfem_mesh != nullptr)
+   if (this->mfem_mesh != nullptr)
    {
-      delete mfem_mesh;
-      mfem_mesh = nullptr;
+      delete this->mfem_mesh;
+      this->mfem_mesh = nullptr;
    }
 
    // coordinates
@@ -773,7 +773,7 @@ void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real 
    // Check that mesh ids are not the same. The TestMesh class was built around 
    // testing the mortar method with Lagrange multiplier enforcement, which does not 
    // support auto contact.
-   SLIC_WARNING_IF( mortarMeshId == nonmortarMeshId, 
+   SLIC_WARNING_IF( this->mortarMeshId == this->nonmortarMeshId, 
                     "TestMesh::allocateAndSetVelocities(): please set unique " << 
                     "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
@@ -844,7 +844,7 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
    // Check that mesh ids are the same. The TestMesh class was built around 
    // testing the mortar method with Lagrange multiplier enforcement, which does 
    // not support auto contact.
-   SLIC_WARNING_IF( mortarMeshId == nonmortarMeshId, 
+   SLIC_WARNING_IF( this->mortarMeshId == this->nonmortarMeshId, 
                     "TestMesh::allocateAndSetVelocities(): please set unique " << 
                     "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
@@ -1055,8 +1055,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
          allocRealArray( &this->pressures, this->numTotalNodes, 1. );
 
          // register nodal gaps and pressures
-         registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
-         registerRealNodalField( nonmortarMeshId, MORTAR_PRESSURES, this->pressures );
+         registerRealNodalField( this->nonmortarMeshId, MORTAR_GAPS, this->gaps );
+         registerRealNodalField( this->nonmortarMeshId, MORTAR_PRESSURES, this->pressures );
          break;
       }
       case MORTAR_WEIGHTS:
@@ -1064,7 +1064,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
          allocRealArray( &this->gaps, this->numTotalNodes, 0. );
          this->pressures = nullptr;
 
-         registerRealNodalField( nonmortarMeshId, MORTAR_GAPS, this->gaps );
+         registerRealNodalField( this->nonmortarMeshId, MORTAR_GAPS, this->gaps );
          break;
       }
       default:
@@ -1234,7 +1234,7 @@ void TestMesh::setupPatchTestDirichletBCs( int meshId,
                   "mesh must be constructed prior to calling this routine." );
 
    bool mortar = false;
-   if (meshId == mortarMeshId)
+   if (meshId == this->mortarMeshId)
    {
       mortar = true;
    }
