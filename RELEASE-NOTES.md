@@ -25,6 +25,7 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
   and reals.
 - Added support for gap-rate penalization for the common plane method.
   See setPenaltyOptions().
+- Added support for a linear tetrahedral mesh under the TestMesh class.
 
 ### Changed
 - Examples now use `CLI11` for command line argument parsing.
