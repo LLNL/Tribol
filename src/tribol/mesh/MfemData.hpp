@@ -22,62 +22,69 @@ namespace tribol
 {
 
 /**
- * @brief Facilitates transfer to submesh low-order refined mesh
+ * @brief Facilitates transfer of variables to/from parent-linked boundary
+ * submesh to LOR mesh
  *
  * This class simplifies transferring 1) a variable (e.g. displacement) from a
- * higher-order grid function on a coarse mesh to a low-order grid function on a
- * fine mesh and 2) a variable in the dual space (e.g. force) from a low-order
- * grid function on a fine mesh to a higher-order grid function on a coarse
- * mesh. The coarse mesh is intended to live on a mfem::ParSubMesh level, but
- * this is not required to use this class.
+ * higher-order grid function on a parent-linked boundary submesh to a low-order
+ * grid function on a LOR boundary mesh and 2) a variable in the dual space
+ * (e.g. force) from a low-order grid function on a LOR mesh to a higher-order
+ * grid function on a parent-linked boundary submesh. The submesh grid function
+ * usually lives on a mfem::ParSubMesh, but this is not required to use this
+ * class.
  */
 class SubmeshLORTransfer
 {
 public:
   /**
    * @brief Construct a new SubmeshLORTransfer object
-   * 
-   * @param ho_submesh_fes Higher order finite element space on the coarse mesh
-   * @param lor_submesh Refined mesh
+   *
+   * @param submesh_fes Higher order finite element space on the parent-linked
+   * boundary submesh
+   * @param lor_mesh LOR mesh
    */
   SubmeshLORTransfer(
-    mfem::ParFiniteElementSpace& ho_submesh_fes,
-    mfem::ParMesh& lor_submesh
+    mfem::ParFiniteElementSpace& submesh_fes,
+    mfem::ParMesh& lor_mesh
   );
 
   /**
-   * @brief Transfers data from a higher-order grid function on a coarse mesh
+   * @brief Transfers data from a higher-order grid function on a parent-linked
+   * submesh
    *
-   * Data is transferred to the low-order grid function on a fine mesh that can
+   * Data is transferred to the low-order grid function on the LOR mesh that can
    * be accessed using GetLORGridFn().
    *
-   * @param ho_src Source higher-order grid function on the coarse mesh
+   * @param submesh_src Source higher-order grid function on the parent-linked
+   * submesh
    */
   void TransferToLORGridFn(
-    const mfem::ParGridFunction& ho_src
+    const mfem::ParGridFunction& submesh_src
   );
 
   /**
-   * @brief Transfers data to a higher-order grid function on a coarse mesh
+   * @brief Transfers data to a higher-order grid function on a parent-linked
+   * boundary submesh
    *
-   * Data must be stored in the low-order grid function on a fine mesh accessed
+   * Data must be stored in the low-order grid function on the LOR mesh accessed
    * using GetLORGridFn().
    *
-   * @param ho_dst Destination higher-order grid function on the coarse mesh
+   * @param submesh_dst Destination higher-order grid function on the
+   * parent-linked submesh
    */
   void TransferFromLORGridFn(
-    mfem::ParGridFunction& ho_dst
+    mfem::ParGridFunction& submesh_dst
   ) const;
 
   /**
-   * @brief Access the local low-order grid function on the refined mesh
+   * @brief Access the local low-order grid function on the LOR mesh
    * 
    * @return mfem::ParGridFunction& 
    */
   mfem::ParGridFunction& GetLORGridFn() { return lor_gridfn_; }
 
   /**
-   * @brief Access the local low-order grid function on the refined mesh
+   * @brief Access the local low-order grid function on the LOR mesh
    * 
    * @return const mfem::ParGridFunction& 
    */
@@ -85,9 +92,9 @@ public:
 
 private:
   /**
-  * @brief Create low-order grid function on the refined mesh
+  * @brief Create low-order grid function on the LOR mesh
   * 
-  * @param lor_mesh Refined mesh
+  * @param lor_mesh LOR mesh
   * @param lor_fec Finite element collection to apply to grid function
   * @param vdim Vector dimension of the grid function
   * @return mfem::ParGridFunction on lor_mesh, with lor_fec and vdim specified
@@ -99,7 +106,7 @@ private:
   );
 
   /**
-   * @brief Local low-order grid function on the refined mesh 
+   * @brief Local low-order grid function on the LOR mesh 
    */
   mfem::ParGridFunction lor_gridfn_;
 
@@ -110,12 +117,16 @@ private:
 };
 
 /**
- * @brief Facilitates transferring variables from the submesh to redecomp levels
+ * @brief Facilitates transferring variables from the submesh to redecomp mesh
+ * levels
  *
  * This class simplifies transferring field variables from/to a grid function on
  * an mfem::ParSubMesh to/from a grid function on a redecomp::RedecompMesh.  If
- * transferring to a low-order grid function on a refined mesh is also required,
+ * transferring to a low-order grid function on a LOR mesh is also required,
  * this class will perform that transfer as well.
+ *
+ * The hierarchy of transfer is: submesh <--> LOR mesh (optional) <--> redecomp
+ * mesh
  *
  * @note This is used to transfer variables defined at the mfem::ParSubMesh
  * level (e.g. pressure and gap).
@@ -125,47 +136,53 @@ class SubmeshRedecompTransfer
 public:
   /**
    * @brief Construct a new SubmeshRedecompTransfer object
-   * 
-   * @param submesh_fes Finite element space on the (coarse) mfem::ParSubMesh
-   * @param lor_xfer (Optional) low-order grid function, refined mesh transfer object
-   * @param redecomp RCB redecomposed (refined) submesh
+   *
+   * @param submesh_fes Finite element space on the parent-linked boundary
+   * submesh
+   * @param submesh_lor_xfer (Optional) Submesh to LOR mesh transfer object
+   * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
    */
   SubmeshRedecompTransfer(
     mfem::ParFiniteElementSpace& submesh_fes,
-    SubmeshLORTransfer* lor_xfer,
-    redecomp::RedecompMesh& redecomp
+    SubmeshLORTransfer* submesh_lor_xfer,
+    redecomp::RedecompMesh& redecomp_mesh
   );
 
   /**
-   * @brief Transfer grid function on submesh to grid function on redecomp mesh
-   * 
-   * @param src Grid function on (coarse) submesh
-   * @return mfem::GridFunction on (refined) redecomp mesh
+   * @brief Transfer grid function on parent-linked boundary submesh to grid
+   * function on redecomp mesh
+   *
+   * @param submesh_src Grid function on parent-linked boundary submesh
+   * @return mfem::GridFunction on redecomp mesh
    */
-  mfem::GridFunction SubmeshToRedecomp(const mfem::ParGridFunction& src) const;
+  mfem::GridFunction SubmeshToRedecomp(const mfem::ParGridFunction& submesh_src) const;
 
   /**
-   * @brief Transfer grid function on redecomp mesh to grid function on submesh
-   * 
-   * @param src Grid function on (refined) redecomp mesh
-   * @return mfem::ParGridFunction on (coarse) submesh
+   * @brief Transfer grid function on redecomp mesh to grid function on
+   * parent-linked boundary submesh
+   *
+   * @param redecomp_src Grid function on redecomp mesh
+   * @return mfem::ParGridFunction on parent-linked boundary submesh
    */
-  mfem::ParGridFunction RedecompToSubmesh(const mfem::GridFunction& src) const;
+  mfem::ParGridFunction RedecompToSubmesh(const mfem::GridFunction& redecomp_src) const;
 
   /**
-   * @brief Transfer grid function on redecomp mesh to grid function on submesh
-   * 
-   * @param src Grid function on (refined) redecomp mesh
-   * @param dst Zero-valued grid function on (coarse) submesh
+   * @brief Transfer grid function on redecomp mesh to grid function on
+   * parent-linked boundary submesh
+   *
+   * @param redecomp_src Grid function on redecomp mesh
+   * @param submesh_dst Zero-valued grid function on parent-linked boundary
+   * submesh
    */
   void RedecompToSubmesh(
-    const mfem::GridFunction& src,
-    mfem::ParGridFunction& dst
+    const mfem::GridFunction& redecomp_src,
+    mfem::ParGridFunction& submesh_dst
   ) const;
 
   /**
-   * @brief Get the (coarse) Submesh associated with the SubmeshRedecompTransfer object
-   * 
+   * @brief Get the parent-linked boundary submesh associated with the
+   * SubmeshRedecompTransfer object
+   *
    * @return const mfem::ParSubMesh& 
    */
   const mfem::ParSubMesh& GetSubmesh() const 
@@ -174,54 +191,62 @@ public:
   }
 
   /**
-   * @brief Set a new (refined) redecomp mesh associated with the existing (refined) submesh
-   * 
-   * @param redecomp RCB redecomposed (refined) submesh
+   * @brief Set a new redecomp mesh associated with the existing parent-linked
+   * submesh
+   *
+   * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
    */
-  void UpdateRedecomp(redecomp::RedecompMesh& redecomp);
+  void UpdateRedecomp(redecomp::RedecompMesh& redecomp_mesh);
 
 private:
   /**
-   * @brief Create a finite element space on the (refined) redecomp mesh
-   * 
-   * @param redecomp RCB redecomposed (refined) submesh
-   * @param submesh_fes Original finite element space on the (refined) submesh
+   * @brief Create a finite element space on the redecomp mesh
+   *
+   * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
+   * @param submesh_fes Finite element space on the parent-linked boundary
+   * submesh
    * @return std::unique_ptr<mfem::FiniteElementSpace> 
    */
   static std::unique_ptr<mfem::FiniteElementSpace> CreateRedecompFESpace(
-    redecomp::RedecompMesh& redecomp,
+    redecomp::RedecompMesh& redecomp_mesh,
     mfem::ParFiniteElementSpace& submesh_fes
   );
 
   /**
-   * @brief Finite element space on the (coarse) submesh 
+   * @brief Finite element space on the parent-linked boundary submesh 
    */
   mfem::ParFiniteElementSpace& submesh_fes_;
 
   /**
-   * @brief Finite element space on the (refined) redecomp mesh
+   * @brief Finite element space on the redecomp mesh
    */
   mutable std::unique_ptr<mfem::FiniteElementSpace> redecomp_fes_;
 
   /**
    * @brief Transfer object between low-order and higher-order grid functions
    */
-  SubmeshLORTransfer* lor_xfer_;
+  SubmeshLORTransfer* submesh_lor_xfer_;
 
   /**
-   * @brief Transfer object between (refined) submesh and (refined) redecomp mesh
+   * @brief Transfer object between parent-linked boundary submesh and redecomp
+   * mesh
    */
   const redecomp::RedecompTransfer redecomp_xfer_;
 };
 
 /**
- * @brief Facilitates transferring variables from the original mesh to redecomp
- * levels
+ * @brief Facilitates transferring variables from the parent mesh to the
+ * redecomp mesh levels
  *
  * This class simplifies transferring field variables from/to a grid function on
- * an mfem::ParMesh to/from a grid function on a redecomp::RedecompMesh.  If
- * transferring to a low-order grid function on a refined mesh is also required,
+ * a parent mfem::ParMesh to/from a grid function on a redecomp::RedecompMesh.
+ * If transferring to a low-order grid function on a LOR mesh is also required,
  * this class will perform that transfer as well.
+ *
+ * The hierarchy of transfer is:
+ * parent mesh <--> submesh <--> LOR mesh (optional) <--> redecomp mesh
+ *                 \---------------------------------------------------/
+ *                handled through SubmeshRedecompTransfer member variable
  */
 class ParentRedecompTransfer
 {
@@ -229,49 +254,51 @@ public:
   /**
    * @brief Construct a new ParentRedecompTransfer object
    *
-   * @param parent_fes Finite element space on the original (coarse) mesh
-   * @param submesh_gridfn Grid function on the (coarse) submesh used to
-   * temporarily store variables being transferred
-   * @param lor_xfer (Optional) Low-order grid function, refined mesh transfer
-   * object
-   * @param redecomp RCB redecomposed (refined) submesh
+   * @param parent_fes Finite element space on the parent mesh
+   * @param submesh_gridfn Grid function on the parent-linked boundary submesh
+   * used to temporarily store variables being transferred
+   * @param submesh_lor_xfer (Optional) Low-order grid function, refined mesh
+   * transfer object
+   * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
    */
   ParentRedecompTransfer(
     const mfem::ParFiniteElementSpace& parent_fes,
     mfem::ParGridFunction& submesh_gridfn,
-    SubmeshLORTransfer* lor_xfer,
-    redecomp::RedecompMesh& redecomp
+    SubmeshLORTransfer* submesh_lor_xfer,
+    redecomp::RedecompMesh& redecomp_mesh
   );
 
   /**
-   * @brief Transfer grid function on original mesh to grid function on redecomp
+   * @brief Transfer grid function on parent mesh to grid function on redecomp
    * mesh
    *
-   * @param src Grid function on (coarse) original mesh
-   * @return mfem::GridFunction on (refined) redecomp mesh
+   * @param parent_src Grid function on parent mesh
+   * @return mfem::GridFunction on redecomp mesh
    */
-  mfem::GridFunction ParentToRedecomp(const mfem::ParGridFunction& src) const;
+  mfem::GridFunction ParentToRedecomp(const mfem::ParGridFunction& parent_src) const;
   
   /**
-   * @brief Transfer grid function on redecomp mesh to grid function on original mesh
-   * 
-   * @param src Grid function on (refined) redecomp mesh
-   * @return mfem::ParGridFunction on (coarse) original mesh
-   */
-  mfem::ParGridFunction RedecompToParent(const mfem::GridFunction& src) const;
-
-  /**
-   * @brief Set a new (refined) redecomp mesh associated with the existing (refined) submesh
-   * 
-   * @param redecomp RCB redecomposed (refined) submesh
-   */
-  void UpdateRedecomp(redecomp::RedecompMesh& redecomp);
-
-  /**
-   * @brief Get the (coarse) Submesh finite element space associated with this
-   * transfer object
+   * @brief Transfer grid function on redecomp mesh to grid function on parent
+   * mesh
    *
-   * @return const mfem::ParSubMesh& 
+   * @param redecomp_src Grid function on RedecompMesh
+   * @return mfem::ParGridFunction on parent mesh
+   */
+  mfem::ParGridFunction RedecompToParent(const mfem::GridFunction& redecomp_src) const;
+
+  /**
+   * @brief Set a new redecomp mesh associated with the existing parent-linked
+   * boundary submesh
+   *
+   * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
+   */
+  void UpdateRedecomp(redecomp::RedecompMesh& redecomp_mesh);
+
+  /**
+   * @brief Get the parent-linked boundary submesh finite element space
+   * associated with this transfer object
+   *
+   * @return const mfem::ParFiniteElementSpace& 
    */
   const mfem::ParFiniteElementSpace& GetSubmeshFESpace() const
   {
@@ -280,24 +307,24 @@ public:
 
 private:
   /**
-   * @brief Finite element space on the (coarse) original mesh
+   * @brief Finite element space on the parent mesh
    */
   mutable mfem::ParFiniteElementSpace parent_fes_;
 
   /**
-   * @brief Grid function on the (coarse) submesh
+   * @brief Grid function on the parent-linked boundary submesh
    */
   mfem::ParGridFunction& submesh_gridfn_;
 
   /**
-   * @brief Object to transfer variables to/from the (coarse) submesh level
-   * from/to the (refined) redecomp level
+   * @brief Object to transfer variables to/from the parent-linked boundary
+   * submesh level from/to the redecomp level
    */
-  SubmeshRedecompTransfer redecomp_xfer_;
+  SubmeshRedecompTransfer submesh_redecomp_xfer_;
 };
 
 /**
- * @brief Vector field variable that lives on the original, parent mesh
+ * @brief Vector field variable that lives on the parent mesh
  *
  * This class stores a vector field variable defined on the parent mesh and
  * handles transferring field data to/from different mesh representations used
@@ -311,32 +338,32 @@ public:
   /**
    * @brief Construct a new ParentField object
    * 
-   * @param parent Grid function on the original (parent) mesh
+   * @param parent Grid function on the parent mesh
    */
-  ParentField(const mfem::ParGridFunction& parent);
+  ParentField(const mfem::ParGridFunction& parent_gridfn);
   
   /**
-   * @brief Set a new grid function on the original (parent) mesh
+   * @brief Set a new grid function on the parent mesh
    * 
-   * @param parent Grid function on the original (parent) mesh
+   * @param parent Grid function on the parent mesh
    */
-  void SetParentField(const mfem::ParGridFunction& parent);
+  void SetParentGridFn(const mfem::ParGridFunction& parent_gridfn);
 
   /**
    * @brief Set a new transfer object when the redecomp mesh has been updated
    *
-   * @param xfer Updated parent to redecomp transfer object
+   * @param xfer Updated parent mesh to redecomp mesh transfer object
    */
-  void UpdateField(const ParentRedecompTransfer& xfer);
+  void UpdateField(const ParentRedecompTransfer& parent_redecomp_xfer);
 
   /**
    * @brief Get the parent grid function
    * 
    * @return const mfem::ParGridFunction& 
    */
-  const mfem::ParGridFunction& GetParentField() const
+  const mfem::ParGridFunction& GetParentGridFn() const
   {
-    return parent_;
+    return parent_gridfn_;
   }
 
   /**
@@ -344,16 +371,16 @@ public:
    * 
    * @return mfem::GridFunction& 
    */
-  mfem::GridFunction& GetRedecompField() { return GetUpdateData().redecomp_; }
+  mfem::GridFunction& GetRedecompGridFn() { return GetUpdateData().redecomp_gridfn_; }
 
   /**
    * @brief Get the redecomp mesh grid function
    * 
    * @return const mfem::GridFunction& 
    */
-  const mfem::GridFunction& GetRedecompField() const
+  const mfem::GridFunction& GetRedecompGridFn() const
   {
-    return GetUpdateData().redecomp_;
+    return GetUpdateData().redecomp_gridfn_;
   }
 
   /**
@@ -368,12 +395,12 @@ public:
   /**
    * @brief Get pointers to component arrays of the redecomp mesh grid function
    * 
-   * @param redecomp_fn Redecomp mesh grid function
+   * @param redecomp_gridfn Redecomp mesh grid function
    * @return std::vector<real*> of length 3
    *
    * @note The third entry is nullptr in two dimensions
    */
-  static std::vector<real*> GetRedecompFieldPtrs(mfem::GridFunction& redecomp_fn);
+  static std::vector<real*> GetRedecompFieldPtrs(mfem::GridFunction& redecomp_gridfn);
 
 private:
 
@@ -386,23 +413,23 @@ private:
     /**
      * @brief Construct a new UpdateData object
      * 
-     * @param xfer Parent to redecomp field transfer object
-     * @param parent Grid function on the original, parent mesh
+     * @param parent_redecomp_xfer Parent to redecomp field transfer object
+     * @param parent_gridfn Grid function on the original, parent mesh
      */
     UpdateData(
-      const ParentRedecompTransfer& xfer,
-      const mfem::ParGridFunction& parent
+      const ParentRedecompTransfer& parent_redecomp_xfer,
+      const mfem::ParGridFunction& parent_gridfn
     );
 
     /**
      * @brief Parent to redecomp field transfer object
      */
-    const ParentRedecompTransfer& xfer_;
+    const ParentRedecompTransfer& parent_redecomp_xfer_;
 
     /**
      * @brief Grid function values on the redecomp mesh
      */
-    mfem::GridFunction redecomp_;
+    mfem::GridFunction redecomp_gridfn_;
   };
 
   /**
@@ -420,11 +447,11 @@ private:
   const UpdateData& GetUpdateData() const;
 
   /**
-   * @brief Grid function on the parent, original mesh
+   * @brief Grid function on the parent mesh
    *
    * @note Stored as a reference wrapper so the reference can be updated
    */
-  std::reference_wrapper<const mfem::ParGridFunction> parent_;
+  std::reference_wrapper<const mfem::ParGridFunction> parent_gridfn_;
 
   /**
    * @brief UpdateData object created upon call to UpdateField()
@@ -433,7 +460,8 @@ private:
 };
 
 /**
- * @brief Stores a pressure field variable that lives on the (coarse) submesh
+ * @brief Stores a pressure field variable that lives on the parent-linked
+ * boundary submesh
  *
  * This class handles transferring pressure field data to/from representations
  * used by MFEM from/to representations used by Tribol.
@@ -443,33 +471,33 @@ class PressureField
 public:
   /**
    * @brief Construct a new PressureField object
-   * 
-   * @param submesh Grid function on the (coarse) submesh
+   *
+   * @param submesh_gridfn Grid function on the parent-linked boundary submesh
    */
-  PressureField(const mfem::ParGridFunction& submesh);
+  PressureField(const mfem::ParGridFunction& submesh_gridfn);
 
   /**
-   * @brief Sets a new grid function on the (coarse) submesh
+   * @brief Sets a new grid function on the parent-linked boundary submesh
    * 
-   * @param submesh Grid function on the (coarse) submesh
+   * @param submesh_gridfn Grid function on the parent-linked boundary submesh
    */
-  void SetSubmeshField(const mfem::ParGridFunction& submesh);
+  void SetSubmeshField(const mfem::ParGridFunction& submesh_gridfn);
 
   /**
    * @brief Sets a new transfer object when the redecomp mesh has been updated
    * 
    * @param xfer Updated submesh to redecomp transfer object
    */
-  void UpdateField(const SubmeshRedecompTransfer& xfer);
+  void UpdateField(const SubmeshRedecompTransfer& submesh_redecomp_xfer);
 
   /**
-   * @brief Get the submesh grid function
+   * @brief Get the parent-linked boundary submesh grid function
    * 
    * @return const mfem::ParGridFunction& 
    */
-  const mfem::ParGridFunction& GetSubmeshField() const
+  const mfem::ParGridFunction& GetSubmeshGridFn() const
   {
-    return submesh_;
+    return submesh_gridfn_;
   }
 
   /**
@@ -477,16 +505,16 @@ public:
    * 
    * @return mfem::GridFunction& 
    */
-  mfem::GridFunction& GetRedecompField() { return GetUpdateData().redecomp_; }
+  mfem::GridFunction& GetRedecompGridFn() { return GetUpdateData().redecomp_gridfn_; }
 
   /**
    * @brief Get the redecomp mesh grid function
    * 
    * @return const mfem::GridFunction& 
    */
-  const mfem::GridFunction& GetRedecompField() const
+  const mfem::GridFunction& GetRedecompGridFn() const
   {
-    return GetUpdateData().redecomp_;
+    return GetUpdateData().redecomp_gridfn_;
   }
   
   /**
@@ -500,15 +528,15 @@ public:
   std::vector<const real*> GetRedecompFieldPtrs() const;
   
   /**
-   * @brief Get pointers to component arrays of the redecomp mesh grid function
+   * @brief Get pointers to component arrays of a redecomp mesh grid function
    *
-   * @param redecomp_fn Redecomp mesh grid function
+   * @param redecomp_gridfn Redecomp mesh grid function
    * @return std::vector<real*> of length 3
    *
    * @note Unused entries are nullptr.  Only the first entry is used with
    * frictionless contact.
    */
-  static std::vector<real*> GetRedecompFieldPtrs(mfem::GridFunction& redecomp_fn);
+  static std::vector<real*> GetRedecompFieldPtrs(mfem::GridFunction& redecomp_gridfn);
 
 private:
   /**
@@ -519,24 +547,24 @@ private:
   {
     /**
      * @brief Construct a new UpdateData object
-     * 
-     * @param xfer Submesh to redecomp field transfer object
-     * @param submesh Grid function on the (coarse) submesh
+     *
+     * @param submesh_redecomp_xfer Submesh to redecomp field transfer object
+     * @param submesh_gridfn Grid function on the parent-linked boundary submesh
      */
     UpdateData(
-      const SubmeshRedecompTransfer& xfer,
-      const mfem::ParGridFunction& submesh
+      const SubmeshRedecompTransfer& submesh_redecomp_xfer,
+      const mfem::ParGridFunction& submesh_gridfn
     );
     
     /**
      * @brief Submesh to redecomp field transfer object
      */
-    const SubmeshRedecompTransfer& xfer_;
+    const SubmeshRedecompTransfer& submesh_redecomp_xfer_;
 
     /**
      * @brief Grid function values on the redecomp mesh
      */
-    mfem::GridFunction redecomp_;
+    mfem::GridFunction redecomp_gridfn_;
   };
   
   /**
@@ -554,11 +582,11 @@ private:
   const UpdateData& GetUpdateData() const;
 
   /**
-   * @brief Grid function on the submesh
+   * @brief Grid function on the parent-linked boundary submesh
    *
    * @note Stored as a reference wrapper so the reference can be updated
    */
-  std::reference_wrapper<const mfem::ParGridFunction> submesh_;
+  std::reference_wrapper<const mfem::ParGridFunction> submesh_gridfn_;
 
   /**
    * @brief UpdateData object created upon call to UpdateField()
@@ -575,18 +603,21 @@ class MfemMeshData
 public:
   /**
    * @brief Construct a new MfemMeshData object
-   * 
+   *
    * @param mesh_id_1 Integer identifier for first Tribol registered mesh
    * @param mesh_id_2 Integer identifier for second Tribol registered mesh
-   * @param mesh Volume mesh of parent domain
-   * @param current_coords Grid function (on mesh) holding current coordinates
-   * @param attributes_1 Mesh boundary attributes identifying first mesh
-   * @param attributes_2 Mesh boundary attributes identifying second mesh
+   * @param parent_mesh Parent mesh, i.e. volume mesh of parent domain
+   * @param current_coords Grid function on parent mesh holding current
+   * coordinates
+   * @param attributes_1 Mesh boundary attributes identifying surface elements
+   * in the first Tribol registered mesh
+   * @param attributes_2 Mesh boundary attributes identifying surface elements
+   * in the second Tribol registered mesh
    */
   MfemMeshData(
     integer mesh_id_1,
     integer mesh_id_2,
-    mfem::ParMesh& mesh,
+    mfem::ParMesh& parent_mesh,
     const mfem::ParGridFunction& current_coords,
     const std::set<integer>& attributes_1,
     const std::set<integer>& attributes_2
@@ -599,7 +630,7 @@ public:
    */
   const mfem::ParGridFunction& GetParentCoords() const
   {
-    return coords_.GetParentField();
+    return coords_.GetParentGridFn();
   }
 
   /**
@@ -610,7 +641,8 @@ public:
   void SetParentCoords(const mfem::ParGridFunction& current_coords);
 
   /**
-   * @brief Build a new redecomp mesh and update grid functions
+   * @brief Build a new redecomp mesh and update grid functions on the redecomp
+   * mesh
    *
    * @note This method should be called after the coordinate grid function has
    * changed.
@@ -632,8 +664,8 @@ public:
   integer GetMesh2ID() const { return mesh_id_2_; }
 
   /**
-   * @brief Get the number of elements on the first mesh
-   * 
+   * @brief Get the number of elements in the first Tribol registered mesh
+   *
    * @return integer 
    */
   integer GetMesh1NE() const
@@ -642,8 +674,8 @@ public:
   }
 
   /**
-   * @brief Get the number of elements on the second mesh
-   * 
+   * @brief Get the number of elements in the second Tribol registered mesh
+   *
    * @return integer 
    */
   integer GetMesh2NE() const
@@ -652,15 +684,15 @@ public:
   }
 
   /**
-   * @brief Get the total number of vertices in both meshes
-   * 
+   * @brief Get the total number of vertices in both Tribol registered meshes
+   *
    * @return integer 
    */
-  integer GetNV() const { return GetUpdateData().redecomp_.GetNV(); }
+  integer GetNV() const { return GetUpdateData().redecomp_mesh_.GetNV(); }
 
   /**
-   * @brief Get the connectivity for the first mesh
-   * 
+   * @brief Get the connectivity for the first Tribol registered mesh
+   *
    * @return const IndexType* 
    */
   const IndexType* GetMesh1Conn() const
@@ -669,8 +701,8 @@ public:
   }
 
   /**
-   * @brief Get the connectivity for the second mesh
-   * 
+   * @brief Get the connectivity for the second Tribol registered mesh
+   *
    * @return const IndexType* 
    */
   const IndexType* GetMesh2Conn() const
@@ -679,15 +711,16 @@ public:
   }
 
   /**
-   * @brief Get the element type for the meshes
-   * 
+   * @brief Get the element type for both Tribol registered meshes
+   *
    * @return integer 
    */
   integer GetElemType() const { return elem_type_; }
 
   /**
-   * @brief Get pointers to component arrays of the coordinates on the redecomp mesh
-   * 
+   * @brief Get pointers to component arrays of the coordinates on the
+   * redecomp mesh
+   *
    * @return std::vector<const real*> of length 3
    *
    * @note The third entry is nullptr in two dimensions
@@ -698,8 +731,9 @@ public:
   }
 
   /**
-   * @brief Get pointers to component arrays of the nodal response on the redecomp mesh
-   * 
+   * @brief Get pointers to component arrays of the nodal response on the
+   * redecomp mesh
+   *
    * @return std::vector<real*> of length 3
    *
    * @note The third entry is nullptr in two dimensions
@@ -726,15 +760,15 @@ public:
    */
   mfem::ParGridFunction GetParentResponse() const
   {
-    return GetParentTransfer().RedecompToParent(redecomp_response_);
+    return GetParentRedecompTransfer().RedecompToParent(redecomp_response_);
   }
 
   /**
-   * @brief Get the parent to redecomp transfer object
+   * @brief Get the parent to redecomp grid function transfer object
    * 
    * @return const ParentRedecompTransfer& 
    */
-  const ParentRedecompTransfer& GetParentTransfer() const
+  const ParentRedecompTransfer& GetParentRedecompTransfer() const
   { 
     return GetUpdateData().vector_xfer_;
   }
@@ -755,7 +789,7 @@ public:
   bool HasVelocity() const { return velocity_ != nullptr; }
 
   /**
-   * @brief Get pointers to component arrays of the velocity on the redecomp mesh
+   * @brief Get pointers to component arrays of the velocity on the RedecompMesh
    * 
    * @return std::vector<const real*> of length 3
    *
@@ -767,8 +801,8 @@ public:
   }
 
   /**
-   * @brief Get the map from mesh 1 element indices to redecomp mesh element
-   * indices
+   * @brief Get the map from Tribol registered mesh 1 element indices to
+   * redecomp mesh element indices
    *
    * @return const std::vector<integer>& 
    */
@@ -778,8 +812,8 @@ public:
   }
 
   /**
-   * @brief Get the map from mesh 2 element indices to redecomp mesh element
-   * indices
+   * @brief Get the map from Tribol registered mesh 2 element indices to
+   * redecomp mesh element indices
    *
    * @return const std::vector<integer>& 
    */
@@ -789,48 +823,50 @@ public:
   }
 
   /**
-   * @brief Get the (coarse) boundary submesh containing contact surfaces
-   * 
+   * @brief Get the parent-linked boundary submesh containing both contact
+   * surfaces
+   *
    * @return mfem::ParSubMesh& 
    */
   mfem::ParSubMesh& GetSubmesh() { return submesh_; }
 
   /**
-   * @brief Get the (coarse) boundary submesh containing contact surfaces
-   * 
+   * @brief Get the parent-linked boundary submesh containing both contact
+   * surfaces
+   *
    * @return const mfem::ParSubMesh& 
    */
   const mfem::ParSubMesh& GetSubmesh() const { return submesh_; }
 
   /**
-   * @brief Get the (refined) boundary submesh containing contact surfaces
+   * @brief Get the LOR mesh containing both contact surfaces
    * 
    * @return mfem::ParMesh*
    */
-  mfem::ParMesh* GetLORSubmesh() { return lor_submesh_.get(); }
+  mfem::ParMesh* GetLORMesh() { return lor_mesh_.get(); }
 
   /**
-   * @brief Get the refined boundary submesh containing contact surfaces
-   * 
+   * @brief Get the LOR mesh containing both contact surfaces
+   *
    * @return const mfem::ParMesh*
    *
    * @note nullptr if no refined mesh exists
    */
-  const mfem::ParMesh* GetLORSubmesh() const { return lor_submesh_.get(); }
+  const mfem::ParMesh* GetLORMesh() const { return lor_mesh_.get(); }
 
   /**
-   * @brief Get the (refined) redecomposed boundary submesh
+   * @brief Get the redecomp mesh containing redecomposed contact surfaces
    * 
    * @return redecomp::RedecompMesh& 
    */
   redecomp::RedecompMesh& GetRedecompMesh()
   {
-    return GetUpdateData().redecomp_;
+    return GetUpdateData().redecomp_mesh_;
   }
 
   /**
-   * @brief Get the finite element space on the (coarse) boundary submesh
-   * 
+   * @brief Get the finite element space on the parent-linked boundary submesh
+   *
    * @return const mfem::ParFiniteElementSpace& 
    */
   const mfem::ParFiniteElementSpace& GetSubmeshFESpace() const
@@ -839,92 +875,100 @@ public:
   }
 
   /**
-   * @brief Get the finite element space on the refined boundary submesh
+   * @brief Get the finite element space on the LOR mesh
    * 
    * @return const mfem::ParFiniteElementSpace* 
    *
-   * @note nullptr if no refined mesh exists
+   * @note nullptr if no LOR mesh exists
    */
-  const mfem::ParFiniteElementSpace* GetLORSubmeshFESpace() const
+  const mfem::ParFiniteElementSpace* GetLORMeshFESpace() const
   {
-    return lor_xfer_ ? lor_xfer_->GetLORGridFn().ParFESpace() : nullptr;
+    return submesh_lor_xfer_ ? submesh_lor_xfer_->GetLORGridFn().ParFESpace() : nullptr;
   }
 
   /**
-   * @brief Set the number of element subdivisions per dimension on the refined
-   * mesh
+   * @brief Set the number of element subdivisions per dimension on the LOR mesh
    *
    * @param lor_factor Number of element subdivisions per dimension
    */
-  void SetLowOrderRefinedFactor(integer lor_factor);
+  void SetLORFactor(integer lor_factor);
 private:
   /**
-   * @brief Creates and stores data that changes when the redecomp mesh is
+   * @brief Creates and stores data that changes when the RedecompMesh is
    * updated
    */
   struct UpdateData
   {
     /**
      * @brief Construct a new UpdateData object
-     * 
-     * @param submesh Coarse boundary submesh of contact elements
-     * @param lor_submesh (Optional) Refined boundary submesh of contact elements
+     *
+     * @param submesh Parent-linked boundary submesh of contact elements
+     * @param lor_mesh (Optional) LOR mesh of contact elements
      * @param parent_fes Vector finite element space on the original parent mesh
      * @param submesh_gridfn Grid function on the (coarse) submesh used to
      * temporarily store variables being transferred
-     * @param lor_xfer (Optional) Low-order grid function, refined mesh transfer
-     * object
-     * @param attributes_1 Set of boundary attributes for the first mesh
-     * @param attributes_2 Set of boundary attributes for the second mesh
+     * @param submesh_lor_xfer (Optional) Low-order grid function, refined mesh
+     * transfer object
+     * @param attributes_1 Set of boundary attributes identifying elements in
+     * the first Tribol registered mesh
+     * @param attributes_2 Set of boundary attributes identifying elements in
+     * the second Tribol registered mesh
      * @param num_verts_per_elem Number of vertices on each element
      */
     UpdateData(
       mfem::ParSubMesh& submesh,
-      mfem::ParMesh* lor_submesh,
+      mfem::ParMesh* lor_mesh,
       const mfem::ParFiniteElementSpace& parent_fes,
       mfem::ParGridFunction& submesh_gridfn,
-      SubmeshLORTransfer* lor_xfer,
+      SubmeshLORTransfer* submesh_lor_xfer,
       const std::set<integer>& attributes_1,
       const std::set<integer>& attributes_2,
       integer num_verts_per_elem
     );
 
     /**
-     * @brief Redecomposed (refined) boundary element mesh
+     * @brief Redecomposed boundary element mesh
      */
-    redecomp::RedecompMesh redecomp_;
+    redecomp::RedecompMesh redecomp_mesh_;
 
     /**
-     * @brief Parent to redecomp field transfer object
+     * @brief Parent mesh to redecomp mesh field transfer object
      */
     ParentRedecompTransfer vector_xfer_;
 
     /**
-     * @brief Redecomp mesh element connectivity for the first mesh
+     * @brief Redecomp mesh element connectivity for the first Tribol registered
+     * mesh
      */
     axom::Array<integer, 2> conn_1_;
 
     /**
-     * @brief Redecomp mesh element connectivity for the second mesh
+     * @brief Redecomp mesh element connectivity for the second Tribol
+     * registered mesh
      */
     axom::Array<integer, 2> conn_2_;
 
     /**
-     * @brief Map from mesh 1 element indicies to redecomp mesh element indices
+     * @brief Map from first Tribol registered mesh element indices to redecomp
+     * mesh element indices
      */
     std::vector<integer> elem_map_1_;
 
     /**
-     * @brief Map from mesh 2 element indicies to redecomp mesh element indices
+     * @brief Map from second Tribol registered mesh element indices to redecomp
+     * mesh element indices
      */
     std::vector<integer> elem_map_2_;
 
   private:
     /**
-     * @brief Builds connectivity arrays and redecomp to tribol element maps
-     * 
-     * @param attributes_1 Set of boundary attributes for the first mesh
-     * @param attributes_2 Set of boundary attributes for the second mesh
+     * @brief Builds connectivity arrays and redecomp mesh to Tribol registered
+     * mesh element maps
+     *
+     * @param attributes_1 Set of boundary attributes for the first Tribol
+     * registered mesh
+     * @param attributes_2 Set of boundary attributes for the second Tribol
+     * registered mesh
      * @param num_verts_per_elem Number of vertices on each element
      */
     void UpdateConnectivity(
@@ -949,24 +993,26 @@ private:
   const UpdateData& GetUpdateData() const;
 
   /**
-   * @brief Create the boundary element submesh
-   * 
-   * @param parent Volume mesh of parent domain
-   * @param attributes_1 Mesh boundary attributes identifying first mesh
-   * @param attributes_2 Mesh boundary attributes identifying second mesh
+   * @brief Create the parent-linked boundary submesh
+   *
+   * @param parent_mesh Parent mesh, i.e. volume mesh of parent domain
+   * @param attributes_1 Mesh boundary attributes identifying surface elements
+   * in the first Tribol registered mesh
+   * @param attributes_2 Mesh boundary attributes identifying surface elements
+   * in the second Tribol registered mesh
    * @return mfem::ParSubMesh 
    */
   static mfem::ParSubMesh CreateSubmesh(
-    const mfem::ParMesh& parent,
+    const mfem::ParMesh& parent_mesh,
     const std::set<integer>& attributes_1,
     const std::set<integer>& attributes_2
   );
 
   /**
-   * @brief Create a grid function on the given submesh
-   * 
-   * @param submesh (Coarse) submesh of boundary elements on the contact surface
-   * @param parent_fes Finite element space on the parent (volume) mesh
+   * @brief Create a grid function on the given parent-linked boundary submesh
+   *
+   * @param submesh Parent-linked boundary submesh
+   * @param parent_fes Finite element space on the parent mesh
    * @return mfem::ParGridFunction 
    */
   static mfem::ParGridFunction CreateSubmeshGridFn(
@@ -987,7 +1033,7 @@ private:
   /**
    * @brief Volume mesh of parent domain
    */
-  mfem::ParMesh& mesh_;
+  mfem::ParMesh& parent_mesh_;
 
   /**
    * @brief Mesh boundary attributes identifying first mesh
@@ -1010,8 +1056,7 @@ private:
   ParentField coords_;
 
   /**
-   * @brief (Coarse) submesh grid function to temporarily hold values being
-   * transferred
+   * @brief Submesh grid function to temporarily hold values being transferred
    */
   mfem::ParGridFunction submesh_xfer_gridfn_;
 
@@ -1021,24 +1066,24 @@ private:
   integer lor_factor_;
 
   /**
-   * @brief Contains refined submesh if low-order refinement is being used;
-   * nullptr otherwise
+   * @brief Contains LOR mesh if low-order refinement is being used; nullptr
+   * otherwise
    */
-  std::unique_ptr<mfem::ParMesh> lor_submesh_;
+  std::unique_ptr<mfem::ParMesh> lor_mesh_;
 
   /**
-   * @brief Contains low-order refined submesh transfer operators if low-order
-   * refinement is being used; nullptr otherwise
+   * @brief Contains LOR mesh to submesh transfer operators if LOR is being
+   * used; nullptr otherwise
    */
-  std::unique_ptr<SubmeshLORTransfer> lor_xfer_;
+  std::unique_ptr<SubmeshLORTransfer> submesh_lor_xfer_;
 
   /**
-   * @brief Type of elements on the contact mesh
+   * @brief Type of elements on the contact meshes
    */
   InterfaceElementType elem_type_;
 
   /**
-   * @brief Number of vertices on each element in the contact mesh
+   * @brief Number of vertices on each element in the contact meshes
    */
   integer num_verts_per_elem_;
 
@@ -1095,8 +1140,8 @@ private:
 };
 
 /**
- * @brief Stores MFEM and transfer data associated with submesh pressure and gap
- * fields 
+ * @brief Stores MFEM and transfer data associated with parent-linked boundary
+ * submesh pressure and gap fields 
  */
 class MfemSubmeshData
 {
@@ -1104,29 +1149,30 @@ public:
   /**
    * @brief Construct a new MfemSubmeshData object
    *
-   * @param submesh (Coarse) boundary element mesh containing contact surfaces
-   * @param lor_submesh (Optional) refined boundary element mesh containing
-   * contact surfaces
+   * @param submesh Parent-linked boundary submesh
+   * @param lor_mesh (Optional) LOR mesh of contact surfaces
    * @param pressure_fec Finite element collection of the pressure field
    * @param pressure_vdim Vector dimension of the pressure field
    */
   MfemSubmeshData(
     mfem::ParSubMesh& submesh,
-    mfem::ParMesh* lor_submesh,
+    mfem::ParMesh* lor_mesh,
     std::unique_ptr<mfem::FiniteElementCollection> pressure_fec,
     integer pressure_vdim
   );
 
   /**
-   * @brief Build a new transfer operator and update grid functions
-   * 
-   * @param redecomp Updated (refined) redecomp mesh
+   * @brief Build a new transfer operator and update redecomp-level grid
+   * functions
+   *
+   * @param redecomp_mesh Updated redecomp mesh
    */
-  void UpdateSubmeshData(redecomp::RedecompMesh& redecomp);
+  void UpdateSubmeshData(redecomp::RedecompMesh& redecomp_mesh);
 
   /**
-   * @brief Get pointers to component arrays of the pressure on the redecomp mesh
-   * 
+   * @brief Get pointers to component arrays of the pressure on the redecomp
+   * mesh
+   *
    * @return std::vector<const real*> of length 3
    *
    * @note Unused entries are nullptr.  Only the first entry is used with
@@ -1138,7 +1184,7 @@ public:
   }
 
   /**
-   * @brief Get the (coarse) submesh pressure grid function
+   * @brief Get the parent-linked boundary submesh pressure grid function
    * 
    * @return mfem::ParGridFunction& 
    */
@@ -1148,7 +1194,7 @@ public:
   }
 
   /**
-   * @brief Get the (coarse) submesh pressure grid function
+   * @brief Get the parent-linked boundary submesh pressure grid function
    * 
    * @return const mfem::ParGridFunction& 
    */
@@ -1181,8 +1227,8 @@ public:
   }
 
   /**
-   * @brief Get the gap grid function on the (coarse) submesh
-   * 
+   * @brief Get the gap grid function on the parent-linked boundary submesh
+   *
    * @return mfem::ParGridFunction 
    */
   mfem::ParGridFunction GetSubmeshGap() const
@@ -1191,8 +1237,9 @@ public:
   }
 
   /**
-   * @brief Get the submesh to redecomp pressure transfer object
-   * 
+   * @brief Get the parent-linked boundary submesh to redecomp mesh pressure
+   * transfer object
+   *
    * @return const SubmeshRedecompTransfer& 
    */
   const SubmeshRedecompTransfer& GetPressureTransfer() const
@@ -1201,8 +1248,8 @@ public:
   }
 
   /**
-   * @brief Get the finite element space on the (coarse) submesh
-   * 
+   * @brief Get the finite element space on the parent-linked boundary submesh
+   *
    * @return const mfem::ParFiniteElementSpace& 
    */
   const mfem::ParFiniteElementSpace& GetSubmeshFESpace() const
@@ -1211,13 +1258,13 @@ public:
   }
 
   /**
-   * @brief Get the finite element space on the refined submesh
+   * @brief Get the finite element space on the LOR mesh
    *
-   * @return const mfem::ParFiniteElementSpace* or nullptr if no refined submesh
+   * @return const mfem::ParFiniteElementSpace* or nullptr if no LOR mesh
    */
-  const mfem::ParFiniteElementSpace* GetLORSubmeshFESpace() const
+  const mfem::ParFiniteElementSpace* GetLORMeshFESpace() const
   {
-    return lor_xfer_ ? lor_xfer_->GetLORGridFn().ParFESpace() : nullptr;
+    return submesh_lor_xfer_ ? submesh_lor_xfer_->GetLORGridFn().ParFESpace() : nullptr;
   }
 
 private:
@@ -1230,19 +1277,21 @@ private:
     /**
      * @brief Construct a new UpdateData object
      *
-     * @param submesh_fes Pressure finite element space on the (coarse) submesh
-     * @param lor_xfer (Optional) Low-order grid function, refined mesh transfer
-     * object
-     * @param redecomp Updated (refined) redecomp mesh
+     * @param submesh_fes Pressure finite element space on the parent-linked
+     * boundary submesh
+     * @param submesh_lor_xfer (Optional) Low-order grid function, refined mesh
+     * transfer object
+     * @param redecomp Redecomp mesh
      */
     UpdateData(
       mfem::ParFiniteElementSpace& submesh_fes,
-      SubmeshLORTransfer* lor_xfer,
-      redecomp::RedecompMesh& redecomp
+      SubmeshLORTransfer* submesh_lor_xfer,
+      redecomp::RedecompMesh& redecomp_mesh
     );
 
     /**
-     * @brief Submesh to redecomp field transfer object
+     * @brief Parent-linked boundary submesh to redecomp mesh field transfer
+     * object
      */
     SubmeshRedecompTransfer pressure_xfer_;
   };
@@ -1262,7 +1311,7 @@ private:
   const UpdateData& GetUpdateData() const;
 
   /**
-   * @brief Pressure grid function on the (coarse) submesh
+   * @brief Pressure grid function on the parent-linked boundary submesh
    */
   mfem::ParGridFunction submesh_pressure_;
 
@@ -1272,10 +1321,10 @@ private:
   PressureField pressure_;
 
   /**
-   * @brief Contains low-order refined submesh transfer operators if low-order
-   * refinement is being used; nullptr otherwise
+   * @brief Contains LOR mesh transfer operators if LOR is being used; nullptr
+   * otherwise
    */
-  std::unique_ptr<SubmeshLORTransfer> lor_xfer_;
+  std::unique_ptr<SubmeshLORTransfer> submesh_lor_xfer_;
 
   /**
    * @brief Gap grid function on the redecomp mesh
@@ -1339,7 +1388,7 @@ private:
     );
 
     /**
-     * @brief Redecomp to (refined) submesh transfer operator
+     * @brief Redecomp to parent-linked boundary submesh transfer operator
      */
     std::unique_ptr<redecomp::MatrixTransfer> matrix_xfer_;
   };
