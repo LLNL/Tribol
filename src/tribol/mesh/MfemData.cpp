@@ -639,7 +639,7 @@ const MfemSubmeshData::UpdateData& MfemSubmeshData::GetUpdateData() const
   return *update_data_;
 }
 
-MfemMatrixData::MfemMatrixData(
+MfemJacobianData::MfemJacobianData(
   const MfemMeshData& parent_data,
   const MfemSubmeshData& submesh_data
 )
@@ -680,12 +680,12 @@ MfemMatrixData::MfemMatrixData(
   block_offsets_[2] = disp_size + lm_size;
 }
 
-void MfemMatrixData::UpdateMatrixXfer()
+void MfemJacobianData::UpdateJacobianXfer()
 {
   update_data_ = std::make_unique<UpdateData>(parent_data_, submesh_data_);
 }
 
-std::unique_ptr<mfem::BlockOperator> MfemMatrixData::GetMfemBlockJacobian(
+std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   const MethodData& method_data
 ) const
 {
@@ -723,12 +723,12 @@ std::unique_ptr<mfem::BlockOperator> MfemMatrixData::GetMfemBlockJacobian(
     static_cast<int>(BlockSpace::NONMORTAR)
   );
   // move to submesh level
-  auto submesh_J = GetUpdateData().matrix_xfer_->TransferToParallelSparse(
+  auto submesh_J = GetUpdateData().submesh_redecomp_xfer_->TransferToParallelSparse(
     lm_elems, 
     mortar_elems, 
     elem_J_1
   );
-  submesh_J += GetUpdateData().matrix_xfer_->TransferToParallelSparse(
+  submesh_J += GetUpdateData().submesh_redecomp_xfer_->TransferToParallelSparse(
     lm_elems, 
     nonmortar_elems, 
     elem_J_2
@@ -835,7 +835,7 @@ std::unique_ptr<mfem::BlockOperator> MfemMatrixData::GetMfemBlockJacobian(
   return block_J;
 }
 
-MfemMatrixData::UpdateData::UpdateData(
+MfemJacobianData::UpdateData::UpdateData(
   const MfemMeshData& parent_data,
   const MfemSubmeshData& submesh_data
 )
@@ -847,7 +847,7 @@ MfemMatrixData::UpdateData::UpdateData(
     dual_submesh_fes = submesh_data.GetLORMeshFESpace();
     primal_submesh_fes = parent_data.GetLORMeshFESpace();
   }
-  matrix_xfer_ = std::make_unique<redecomp::MatrixTransfer>(
+  submesh_redecomp_xfer_ = std::make_unique<redecomp::MatrixTransfer>(
     *dual_submesh_fes,
     *primal_submesh_fes,
     *submesh_data.GetRedecompGap().FESpace(),
@@ -855,7 +855,7 @@ MfemMatrixData::UpdateData::UpdateData(
   );
 }
 
-MfemMatrixData::UpdateData& MfemMatrixData::GetUpdateData()
+MfemJacobianData::UpdateData& MfemJacobianData::GetUpdateData()
 {
   SLIC_ERROR_ROOT_IF(
     update_data_ == nullptr,
@@ -864,7 +864,7 @@ MfemMatrixData::UpdateData& MfemMatrixData::GetUpdateData()
   return *update_data_;
 }
 
-const MfemMatrixData::UpdateData& MfemMatrixData::GetUpdateData() const
+const MfemJacobianData::UpdateData& MfemJacobianData::GetUpdateData() const
 {
   SLIC_ERROR_ROOT_IF(
     update_data_ == nullptr,

@@ -397,41 +397,41 @@ public:
   }
 
   /**
-   * @brief Check if coupling scheme has MFEM matrix transfer data
+   * @brief Check if coupling scheme has MFEM jacobian data
    * 
-   * @return true: MFEM matrix transfer data exists
-   * @return false: MFEM matrix transfer data does not exist
+   * @return true: MFEM jacobian data exists
+   * @return false: MFEM jacobian data does not exist
    */
-  bool hasMfemMatrixData() const { return m_mfemMatrixData != nullptr; }
+  bool hasMfemJacobianData() const { return m_mfemJacobianData != nullptr; }
   
   /**
-   * @brief Get the MFEM matrix transfer data object
+   * @brief Get the MFEM jacobian data object
    * 
-   * @return MfemMatrixData* 
+   * @return MfemJacobianData* 
    */
-  MfemMatrixData* getMfemMatrixData()
+  MfemJacobianData* getMfemJacobianData()
   {
-    return m_mfemMatrixData.get();
+    return m_mfemJacobianData.get();
   }
   
   /**
-   * @brief Get the MFEM matrix transfer data object (const overload)
+   * @brief Get the MFEM jacobian data object (const overload)
    * 
-   * @return MfemMatrixData* 
+   * @return MfemJacobianData* 
    */
-  const MfemMatrixData* getMfemMatrixData() const
+  const MfemJacobianData* getMfemJacobianData() const
   {
-    return m_mfemMatrixData.get();
+    return m_mfemJacobianData.get();
   }
 
   /**
-   * @brief Sets the MFEM matrix transfer data object
+   * @brief Sets the MFEM jacobian data object
    * 
-   * @param mfemMatrixData Unique pointer to MFEM matrix transfer data
+   * @param mfemJacobianData Unique pointer to MFEM jacobian data
    */
-  void setMatrixXfer(std::unique_ptr<MfemMatrixData> mfemMatrixData)
+  void setMatrixXfer(std::unique_ptr<MfemJacobianData> mfemJacobianData)
   {
-    m_mfemMatrixData = std::move(mfemMatrixData);
+    m_mfemJacobianData = std::move(mfemJacobianData);
   }
 
 private:
@@ -474,9 +474,9 @@ private:
   CouplingSchemeErrors m_couplingSchemeErrors; ///< struct handling coupling scheme errors
   CouplingSchemeInfo   m_couplingSchemeInfo;   ///< struct handling info to be printed
 
-  std::unique_ptr<MfemMeshData> m_mfemMeshData;       ///< MFEM mesh data
-  std::unique_ptr<MfemSubmeshData> m_mfemSubmeshData; ///< MFEM submesh field data
-  std::unique_ptr<MfemMatrixData> m_mfemMatrixData;   ///< MFEM matrix transfer data
+  std::unique_ptr<MfemMeshData> m_mfemMeshData;          ///< MFEM mesh data
+  std::unique_ptr<MfemSubmeshData> m_mfemSubmeshData;    ///< MFEM submesh field data
+  std::unique_ptr<MfemJacobianData> m_mfemJacobianData;  ///< MFEM jacobian data
   
   DISABLE_COPY_AND_ASSIGNMENT( CouplingScheme );
   DISABLE_MOVE_AND_ASSIGNMENT( CouplingScheme );

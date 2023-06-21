@@ -1344,18 +1344,18 @@ private:
 };
 
 /**
- * @brief Simplifies transfer of matrix data between MFEM and Tribol
+ * @brief Simplifies transfer of Jacobian matrix data between MFEM and Tribol
  */
-class MfemMatrixData
+class MfemJacobianData
 {
 public:
   /**
-   * @brief Construct a new MfemMatrixData object
+   * @brief Construct a new MfemJacobianData object
    * 
    * @param parent_data MFEM data associated with displacement and velocity
    * @param submesh_data MFEM data associated with pressure and gap
    */
-  MfemMatrixData(
+  MfemJacobianData(
     const MfemMeshData& parent_data,
     const MfemSubmeshData& submesh_data
   );
@@ -1363,7 +1363,7 @@ public:
   /**
    * @brief Builds new transfer data after a new redecomp mesh has been built
    */
-  void UpdateMatrixXfer();
+  void UpdateJacobianXfer();
 
   /**
    * @brief Returns Jacobian contributions as an mfem::BlockOperator
@@ -1396,7 +1396,7 @@ private:
     /**
      * @brief Redecomp to parent-linked boundary submesh transfer operator
      */
-    std::unique_ptr<redecomp::MatrixTransfer> matrix_xfer_;
+    std::unique_ptr<redecomp::MatrixTransfer> submesh_redecomp_xfer_;
   };
 
   /**

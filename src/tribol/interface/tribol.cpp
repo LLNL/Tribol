@@ -270,13 +270,13 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
       // MFEM_ELEMENT_DENSE is required to use the MFEM interface
       lm_options.sparse_mode = SparseMode::MFEM_ELEMENT_DENSE;
       if (
-         !couplingScheme->hasMfemMatrixData() && (
+         !couplingScheme->hasMfemJacobianData() && (
             lm_options.eval_mode == ImplicitEvalMode::MORTAR_JACOBIAN ||
             lm_options.eval_mode == ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
          )
       )
       {
-         couplingScheme->setMatrixXfer(std::make_unique<MfemMatrixData>(
+         couplingScheme->setMatrixXfer(std::make_unique<MfemJacobianData>(
             *couplingScheme->getMfemMeshData(),
             *couplingScheme->getMfemSubmeshData()
          ));
@@ -486,7 +486,7 @@ void registerMfemMesh( integer cs_id,
          )
       )
       {
-         coupling_scheme->setMatrixXfer(std::make_unique<MfemMatrixData>(
+         coupling_scheme->setMatrixXfer(std::make_unique<MfemJacobianData>(
             *mfem_data,
             *coupling_scheme->getMfemSubmeshData()
          ));
@@ -769,7 +769,7 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
       "No MFEM data exists. The coupling scheme "
       "must be registered using registerParMesh() to use this method."
    );
-   return coupling_scheme->getMfemMatrixData()->GetMfemBlockJacobian(
+   return coupling_scheme->getMfemJacobianData()->GetMfemBlockJacobian(
       *coupling_scheme->getMethodData()
    );
 }
@@ -1195,9 +1195,9 @@ integer update( integer cycle, real t, real &dt )
             auto p_ptrs = dual_data->GetRedecompPressurePtrs();
             registerMortarPressures(mesh_ids[1], p_ptrs[0]);
             auto lm_options = couplingScheme->getEnforcementOptions().lm_implicit_options;
-            if (couplingScheme->hasMfemMatrixData())
+            if (couplingScheme->hasMfemJacobianData())
             {
-               couplingScheme->getMfemMatrixData()->UpdateMatrixXfer();
+               couplingScheme->getMfemJacobianData()->UpdateJacobianXfer();
             }
          }
       }
