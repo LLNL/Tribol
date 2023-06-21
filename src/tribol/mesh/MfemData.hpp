@@ -139,7 +139,8 @@ public:
    *
    * @param submesh_fes Finite element space on the parent-linked boundary
    * submesh
-   * @param submesh_lor_xfer (Optional) Submesh to LOR mesh transfer object
+   * @param submesh_lor_xfer Submesh to LOR grid function transfer object (if
+   * using LOR; nullptr otherwise)
    * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
    */
   SubmeshRedecompTransfer(
@@ -257,8 +258,8 @@ public:
    * @param parent_fes Finite element space on the parent mesh
    * @param submesh_gridfn Grid function on the parent-linked boundary submesh
    * used to temporarily store variables being transferred
-   * @param submesh_lor_xfer (Optional) Low-order grid function, refined mesh
-   * transfer object
+   * @param submesh_lor_xfer Submesh to LOR grid function transfer object (if
+   * using LOR; nullptr otherwise)
    * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
    */
   ParentRedecompTransfer(
@@ -905,12 +906,13 @@ private:
      * @brief Construct a new UpdateData object
      *
      * @param submesh Parent-linked boundary submesh of contact elements
-     * @param lor_mesh (Optional) LOR mesh of contact elements
+     * @param lor_mesh LOR mesh of contact elements (if using LOR; nullptr
+     * otherwise)
      * @param parent_fes Vector finite element space on the original parent mesh
-     * @param submesh_gridfn Grid function on the (coarse) submesh used to
-     * temporarily store variables being transferred
-     * @param submesh_lor_xfer (Optional) Low-order grid function, refined mesh
-     * transfer object
+     * @param submesh_gridfn Grid function on the parent-linked boundary submesh
+     * used to temporarily store variables being transferred
+     * @param submesh_lor_xfer Submesh to LOR grid function transfer object (if
+     * using LOR; nullptr otherwise)
      * @param attributes_1 Set of boundary attributes identifying elements in
      * the first Tribol registered mesh
      * @param attributes_2 Set of boundary attributes identifying elements in
@@ -1152,7 +1154,8 @@ public:
    * @brief Construct a new MfemSubmeshData object
    *
    * @param submesh Parent-linked boundary submesh
-   * @param lor_mesh (Optional) LOR mesh of contact surfaces
+   * @param lor_mesh LOR mesh of contact surfaces (if using LOR; nullptr
+   * otherwise)
    * @param pressure_fec Finite element collection of the pressure field
    * @param pressure_vdim Vector dimension of the pressure field
    */
@@ -1282,8 +1285,8 @@ private:
      *
      * @param submesh_fes Pressure finite element space on the parent-linked
      * boundary submesh
-     * @param submesh_lor_xfer (Optional) Low-order grid function, refined mesh
-     * transfer object
+     * @param submesh_lor_xfer Submesh to LOR grid function transfer object (if
+     * using LOR; nullptr otherwise)
      * @param redecomp Redecomp mesh
      */
     UpdateData(
