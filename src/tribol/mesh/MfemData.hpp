@@ -842,6 +842,8 @@ public:
    * @brief Get the LOR mesh containing both contact surfaces
    * 
    * @return mfem::ParMesh*
+   *
+   * @note nullptr if no refined mesh exists (polynomial order of parent is 1)
    */
   mfem::ParMesh* GetLORMesh() { return lor_mesh_.get(); }
 
@@ -850,7 +852,7 @@ public:
    *
    * @return const mfem::ParMesh*
    *
-   * @note nullptr if no refined mesh exists
+   * @note nullptr if no refined mesh exists (polynomial order of parent is 1)
    */
   const mfem::ParMesh* GetLORMesh() const { return lor_mesh_.get(); }
 
@@ -876,10 +878,10 @@ public:
 
   /**
    * @brief Get the finite element space on the LOR mesh
-   * 
+   *
    * @return const mfem::ParFiniteElementSpace* 
    *
-   * @note nullptr if no LOR mesh exists
+   * @note nullptr if no LOR mesh exists (polynomial order of parent is 1)
    */
   const mfem::ParFiniteElementSpace* GetLORMeshFESpace() const
   {
@@ -1261,6 +1263,7 @@ public:
    * @brief Get the finite element space on the LOR mesh
    *
    * @return const mfem::ParFiniteElementSpace* or nullptr if no LOR mesh
+   * (polynomial order of parent is 1)
    */
   const mfem::ParFiniteElementSpace* GetLORMeshFESpace() const
   {

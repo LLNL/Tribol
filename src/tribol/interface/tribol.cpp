@@ -472,7 +472,7 @@ void registerMfemMesh( integer cs_id,
       coupling_scheme->setMfemSubmeshData(
          std::make_unique<MfemSubmeshData>(
             mfem_data->GetSubmesh(),
-            mfem_data->GetLORSubmesh(),
+            mfem_data->GetLORMesh(),
             std::move(dual_fec),
             dual_vdim
          )
@@ -506,7 +506,7 @@ void setMfemLowOrderRefinedFactor( integer cs_id,
       "Coupling scheme does not contain MFEM data. "
       "Was the coupling scheme created with registerParMesh()?"
    );
-   coupling_scheme->getMfemMeshData()->SetLowOrderRefinedFactor(lor_factor);
+   coupling_scheme->getMfemMeshData()->SetLORFactor(lor_factor);
 }
 
 //------------------------------------------------------------------------------
@@ -1118,6 +1118,7 @@ integer update( integer cycle, real t, real &dt )
          axom::Array<int> mesh_ids {2, 2};
          mesh_ids[0] = mfem_data->GetMesh1ID();
          mesh_ids[1] = mfem_data->GetMesh2ID();
+         // creates a new RedecompMesh and updates grid functions on RedecompMesh
          mfem_data->UpdateMeshData();
          auto coord_ptrs = mfem_data->GetRedecompCoordsPtrs();
 
