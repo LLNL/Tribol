@@ -398,4 +398,113 @@ protected:
 
 } // end of namespace "tribol"
 
+namespace mfem_ext
+{
+
+/// Simple central difference method with homogeneous velocity BCs.
+class CentralDiffSolver : public mfem::SecondOrderODESolver
+{
+public:
+   /**
+    * @brief Construct a new central difference solver object
+    *
+    * Supports homogeneous velocity BCs
+    * 
+    * @param bc_vdofs_ List of vdofs to set homogeneous velocity BCs
+    */
+   CentralDiffSolver(const mfem::Array<int>& bc_vdofs_);
+
+   /**
+    * @brief Updates x and dxdt after taking a step of size dt
+    * 
+    * @param x Displacement vector
+    * @param dxdt Velocity vector
+    * @param t Current time
+    * @param dt Timestep size
+    */
+   void Step(mfem::Vector& x, mfem::Vector& dxdt, double& t, double& dt) override;
+
+private:
+   /**
+    * @brief Acceleration vector
+    */
+   mfem::Vector accel;
+
+   /**
+    * @brief List of vdofs to apply homogeneous velocity BCs
+    */
+   mfem::Array<int> bc_vdofs;
+
+   /**
+    * @brief Tracks whether a step has been taken yet
+    */
+   bool first_step;
+
+   /**
+    * @brief Applies homogeneous BCs to dxdt
+    * 
+    * @param dxdt Velocity vector
+    */
+   void SetHomogeneousBC(mfem::Vector& dxdt) const;
+};
+
+/// Explicit solid mechanics update (lumped mass, optional damping)
+class ExplicitMechanics : public mfem::SecondOrderTimeDependentOperator
+{
+public:
+   /**
+    * @brief Construct a new explicit mechanics operator (elasticity, lumped
+    * mass, optional damping, and external force vector)
+    *
+    * @param fespace Finite element space of the primary fields
+    * @param rho Density
+    * @param lambda Lame constant
+    * @param mu Lame constant
+    * @param damping_ Damping matrix
+    */
+   ExplicitMechanics(
+      mfem::ParFiniteElementSpace& fespace, 
+      mfem::Coefficient& rho,
+      mfem::Coefficient& lambda,
+      mfem::Coefficient& mu,
+      std::unique_ptr<mfem::ParBilinearForm> damping_ = nullptr
+   );
+
+   /**
+    * @brief Compute acceleration given displacement and velocity
+    * 
+    * @param u Displacement vector
+    * @param dudt Velocity vector
+    * @param a Acceleration vector
+    */
+   void Mult(
+      const mfem::Vector& u,
+      const mfem::Vector& dudt,
+      mfem::Vector& a
+   ) const override;
+
+   /**
+    * @brief External force contribution (must be manually updated)
+    */
+   mfem::Vector f_ext;
+
+private:
+   /**
+    * @brief Elasticity bilinear form
+    */
+   mfem::ParBilinearForm elasticity;
+
+   /**
+    * @brief Damping bilinear form
+    */
+   std::unique_ptr<mfem::ParBilinearForm> damping;
+   
+   /**
+    * @brief Inverse lumped mass matrix
+    */
+   mfem::Vector inv_lumped_mass;
+};
+
+} // end of namespace "mfem_ext"
+
 #endif /* SRC_UTILS_TESTUTILS_HPP_ */

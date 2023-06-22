@@ -24,130 +24,7 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/config.hpp"
 #include "tribol/interface/tribol.hpp"
-
-/// Simple central difference method.
-class CentralDiffSolver : public mfem::SecondOrderODESolver
-{
-public:
-  CentralDiffSolver(const mfem::Array<int>& bc_vdofs_)
-  : bc_vdofs { bc_vdofs_ },
-    first_step { true } {}
-
-  void Step(mfem::Vector& x, mfem::Vector& dxdt, double& t, double& dt) override
-  {
-    // acceleration at t
-    f->SetTime(t);
-    if (first_step)
-    {
-      accel.SetSize(x.Size());
-      f->Mult(x, dxdt, accel);
-      first_step = false;
-    }
-
-    // velocity at t + dt/2
-    dxdt.Add(0.5*dt, accel);
-
-    // set homogeneous velocity BC at t + dt/2
-    SetHomogeneousBC(dxdt);
-
-    // set displacement at t + dt
-    x.Add(dt, dxdt);
-
-    // acceleration at t + dt
-    f->SetTime(t + dt);
-    f->Mult(x, dxdt, accel);
-
-    // velocity at t + dt
-    dxdt.Add(0.5*dt, accel);
-  }
-private:
-  mfem::Vector accel;
-  mfem::Array<int> bc_vdofs;
-  bool first_step;
-
-  void SetHomogeneousBC(mfem::Vector& dxdt) const
-  {
-    for (auto bc_vdof : bc_vdofs)
-    {
-      dxdt[bc_vdof] = 0.0;
-    }
-  }
-};
-
-/// Explicit solid mechanics update (lumped mass, optional damping)
-class ExplicitMechanics : public mfem::SecondOrderTimeDependentOperator
-{
-public:
-  ExplicitMechanics(
-    mfem::ParFiniteElementSpace& fespace, 
-    mfem::Coefficient& rho,
-    mfem::Coefficient& lambda,
-    mfem::Coefficient& mu,
-    std::unique_ptr<mfem::ParBilinearForm> damping_ = nullptr
-  )
-  : elasticity { &fespace },
-    damping { std::move(damping_) },
-    inv_lumped_mass { fespace.GetVSize() }
-  {
-    mfem::ParBilinearForm mass { &fespace };
-    mass.AddDomainIntegrator(new mfem::VectorMassIntegrator(rho));
-    mass.Assemble();
-    mfem::Vector ones {fespace.GetVSize()};
-    ones = 1.0;
-    mass.SpMat().Mult(ones, inv_lumped_mass);
-    mfem::Vector mass_true(fespace.GetTrueVSize());
-    const Operator& P = *fespace.GetProlongationMatrix();
-    P.MultTranspose(inv_lumped_mass, mass_true);
-    for (int i {0}; i < mass_true.Size(); ++i)
-    {
-      mass_true[i] = 1.0 / mass_true[i];
-    }
-    P.Mult(mass_true, inv_lumped_mass);
-
-    elasticity.AddDomainIntegrator(new mfem::ElasticityIntegrator(lambda, mu));
-    elasticity.Assemble();
-  }
-
-  void Mult(
-    const mfem::Vector& u,
-    const mfem::Vector& dudt,
-    mfem::Vector& a
-  ) const override
-  {
-    mfem::Vector f { u.Size() };
-    f = 0.0;
-
-    mfem::Vector f_int { f.Size() };
-    elasticity.Mult(u, f_int);
-    f.Add(-1.0, f_int);
-
-    if (damping)
-    {
-      damping->Mult(dudt, f_int);
-      f.Add(-1.0, f_int);
-    }
-
-    // sum forces over ranks
-    auto& fespace = *elasticity.ParFESpace();
-    const Operator& P = *fespace.GetProlongationMatrix();
-    mfem::Vector f_true {fespace.GetTrueVSize()};
-    P.MultTranspose(f, f_true);
-    P.Mult(f_true, f);
-
-    // force already summed over ranks
-    f.Add(1.0, tribol::getMfemResponse(0));
-
-    for (int i {0}; i < inv_lumped_mass.Size(); ++i)
-    {
-      a[i] = inv_lumped_mass[i] * f[i];
-    }
-  }
-
-private:
-  mfem::ParBilinearForm elasticity;
-  std::unique_ptr<mfem::ParBilinearForm> damping;
-  mfem::Vector inv_lumped_mass;
-};
+#include "tribol/utils/TestUtils.hpp"
 
 int main( int argc, char** argv )
 {
@@ -351,14 +228,14 @@ int main( int argc, char** argv )
   mfem::ConstantCoefficient rho {100.0};
   mfem::ConstantCoefficient lambda {100000.0};
   mfem::ConstantCoefficient mu {100000.0};
-  ExplicitMechanics op {par_fe_space, rho, lambda, mu};
+  mfem_ext::ExplicitMechanics op {par_fe_space, rho, lambda, mu};
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to set up elasticity bilinear form: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
 
   // set up time integrator
-  CentralDiffSolver solver { ess_vdof_list };
+  mfem_ext::CentralDiffSolver solver { ess_vdof_list };
   solver.Init(op);
 
   // set up tribol
@@ -404,6 +281,7 @@ int main( int argc, char** argv )
     }
 
     tribol::update(cycle, t, dt);
+    op.f_ext = tribol::getMfemResponse(0);
 
     op.SetTime(t);
     solver.Step(u, v, t, dt);
