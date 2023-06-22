@@ -90,9 +90,9 @@ int main( int argc, char** argv )
   // fixed options
   // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
   std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_apart.mesh";
-  // boundary element attributes of surface 1
+  // boundary element attributes of contact surface 1
   auto surf1_attribs = std::set<int>({4});
-  // boundary element attributes of surface 2
+  // boundary element attributes of contact surface 2
   auto surf2_attribs = std::set<int>({5});
   // boundary element attributes of fixed surface (all t)
   auto fix_attribs = std::set<int>({3});
