@@ -66,6 +66,7 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
   penalty calculation options. See setKinematicConstantPenalty() and setKinematicElementPenalty(). 
 - API support for setting different enforcement options has changed. See setPenaltyOptions() and 
   setLagrangeMultiplierImplicitOptions(). 
+- Refactored how surface elements are characterized, now using finite element order and type of cell.
 
 ### Fixed
 - Preliminary bugfix for binning of small surface elements.
