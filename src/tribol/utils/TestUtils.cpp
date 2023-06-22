@@ -1740,6 +1740,7 @@ ExplicitMechanics::ExplicitMechanics(
    damping { std::move(damping_) },
    inv_lumped_mass { fespace.GetVSize() }
 {
+   // create inverse lumped mass matrix; store as a vector
    mfem::ParBilinearForm mass { &fespace };
    mass.AddDomainIntegrator(new mfem::VectorMassIntegrator(rho));
    mass.Assemble();
@@ -1755,6 +1756,7 @@ ExplicitMechanics::ExplicitMechanics(
    }
    P.Mult(mass_true, inv_lumped_mass);
 
+   // create elasticity stiffness matrix
    elasticity.AddDomainIntegrator(new mfem::ElasticityIntegrator(lambda, mu));
    elasticity.Assemble();
 }
