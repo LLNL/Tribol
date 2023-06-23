@@ -54,6 +54,9 @@ public:
    real* m_x {nullptr};
    real* m_y {nullptr};
    real* m_z {nullptr};
+   real* m_fx {nullptr};
+   real* m_fy {nullptr};
+   real* m_fz {nullptr};
 
 protected:
 
@@ -80,14 +83,16 @@ protected:
          m_connectivity = new int[ m_lengthNodalData ];
          m_x = new real[ m_lengthNodalData ];
          m_y = new real[ m_lengthNodalData ];
-         //m_z = new real[ m_lengthNodalData ];
+         m_fx = new real[ m_lengthNodalData ];
+         m_fy = new real[ m_lengthNodalData ];
 
          for (int i=0; i<m_lengthNodalData; ++i)
          {
             m_connectivity[i] = i;
             m_x[i] = 0.;
             m_y[i] = 0.;
-            //m_z[i] = 0.;
+            m_fx[i] = 0.;
+            m_fy[i] = 0.;
          }
       }
 
@@ -97,6 +102,8 @@ protected:
                             m_connectivity,
                             m_elementType,
                             m_x, m_y, m_z ); 
+
+      tribol::registerNodalResponse( mesh_id, m_fx, m_fy, m_fz );
 
    }
 
@@ -114,6 +121,9 @@ protected:
          m_x = new real[ m_lengthNodalData ];
          m_y = new real[ m_lengthNodalData ];
          m_z = new real[ m_lengthNodalData ];
+         m_fx = new real[ m_lengthNodalData ];
+         m_fy = new real[ m_lengthNodalData ];
+         m_fz = new real[ m_lengthNodalData ];
 
          for (int i=0; i<m_lengthNodalData; ++i)
          {
@@ -121,6 +131,9 @@ protected:
             m_x[i] = 0.;
             m_y[i] = 0.;
             m_z[i] = 0.;
+            m_fx[i] = 0;
+            m_fy[i] = 0;
+            m_fz[i] = 0;
          }
       }
 
@@ -130,6 +143,8 @@ protected:
                             m_connectivity,
                             m_elementType,
                             m_x, m_y, m_z ); 
+
+      tribol::registerNodalResponse( mesh_id, m_fx, m_fy, m_fz );
 
    }
 
@@ -154,6 +169,21 @@ protected:
       {
          delete [] m_z;
          m_z = nullptr;
+      }
+      if (m_fx != nullptr)
+      {
+         delete [] m_fx;
+         m_fx = nullptr;
+      }
+      if (m_fy != nullptr)
+      {
+         delete [] m_fy;
+         m_fy = nullptr;
+      }
+      if (m_fz != nullptr)
+      {
+         delete [] m_fz;
+         m_fz = nullptr;
       }
    }
 };

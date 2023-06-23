@@ -319,20 +319,25 @@ void registerMesh( integer meshId,
    }
 
    const int dim = (z == nullptr) ? 2 : 3;
-   if (x == nullptr || y == nullptr)
-   {
-      SLIC_WARNING("Pointer to x and y-component mesh coordinate arrays are null pointers " <<
-                   " for mesh id, " << meshId << ".");
-      mesh.m_isValid = false;
-   }
 
-   if (dim == 3)
+   // check for null pointers for non-null meshes
+   if (numCells > 0)
    {
-      if (z == nullptr)
+      if (x == nullptr || y == nullptr)
       {
-         SLIC_WARNING("Pointer to z-component mesh coordinates is null for " << 
-                      "mesh id, " << meshId << ".");
+         SLIC_WARNING("Pointer to x and y-component mesh coordinate arrays are null pointers " <<
+                      " for mesh id, " << meshId << ".");
          mesh.m_isValid = false;
+      }
+
+      if (dim == 3)
+      {
+         if (z == nullptr)
+         {
+            SLIC_WARNING("Pointer to z-component mesh coordinates is null for " << 
+                         "mesh id, " << meshId << ".");
+            mesh.m_isValid = false;
+         }
       }
    }
 
@@ -422,22 +427,20 @@ void registerNodalDisplacements( integer meshId,
                  "no mesh with id, " << meshId << "exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
+   mesh.m_nodalFields.m_is_nodal_displacement_set = true;
 
    if (dx == nullptr || dy == nullptr)
    {
-      mesh.m_isValid = false;
+      mesh.m_nodalFields.m_is_nodal_displacement_set = false;
    }
 
    if (mesh.m_dim == 3)
    {
       if (dz == nullptr)
       {
-         mesh.m_isValid = false;
+         mesh.m_nodalFields.m_is_nodal_displacement_set = false;
       }
    }
-
-   SLIC_WARNING_IF( !mesh.m_isValid, "tribol::registerNodalDisplacements(): " << 
-                    "null pointer to nodal displacement components." );
 
    mesh.m_dispX = dx;
    mesh.m_dispY = dy;
@@ -457,27 +460,24 @@ void registerNodalVelocities( integer meshId,
                  "no mesh with id, " << meshId << "exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
+   mesh.m_nodalFields.m_is_velocity_set = true;
+
    if (vx == nullptr || vy == nullptr)
    {
-      mesh.m_isValid = false;
+      mesh.m_nodalFields.m_is_velocity_set = false;
    }
    
    if (mesh.m_dim == 3)
    {
       if (vz == nullptr)
       {
-         mesh.m_isValid = false;
+         mesh.m_nodalFields.m_is_velocity_set = false;
       }
    }   
-
-   SLIC_WARNING_IF( !mesh.m_isValid, "tribol::registerNodalVelocities(): " << 
-                    "null pointer to nodal velocity components." );
 
    mesh.m_velX = vx;
    mesh.m_velY = vy;
    mesh.m_velZ = vz;
-
-   mesh.m_nodalFields.m_is_velocity_set = true;
 
 } // end registerNodalVelocities()
 
@@ -493,21 +493,19 @@ void registerNodalResponse( integer meshId,
                  "no mesh with id, " << meshId << "exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
+   mesh.m_nodalFields.m_is_nodal_response_set = true;
    if (rx == nullptr || ry == nullptr)
    {
-      mesh.m_isValid = false;
+      mesh.m_nodalFields.m_is_nodal_response_set = false;
    }
 
    if (mesh.m_dim == 3)
    {
       if (rz == nullptr)
       {
-         mesh.m_isValid = false;
+         mesh.m_nodalFields.m_is_nodal_response_set = false;
       }
    }   
-
-   SLIC_WARNING_IF(!mesh.m_isValid, "tribol::registerNodalResponse(): " << 
-                   "null pointer to nodal response components.");
 
    mesh.m_forceX = rx;
    mesh.m_forceY = ry;
@@ -647,7 +645,7 @@ void registerRealNodalField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealNodalField(): null pointer to data for " << 
                           "'MORTAR_GAPS' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_nodalFields.m_is_node_gap_set = false;
          }
          else
          {
@@ -662,7 +660,7 @@ void registerRealNodalField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealNodalField(): null pointer to data for " << 
                           "'MORTAR_PRESSURES' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_nodalFields.m_is_node_pressure_set = false;
          }
          else
          {
@@ -719,7 +717,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'KINEMATIC_CONSTANT_STIFFNESS' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_kinematic_constant_penalty_set = false;
          }
          else
          {
@@ -734,7 +732,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'RATE_CONSTANT_STIFFNESS' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_rate_constant_penalty_set = false;
          }
          else
          {
@@ -749,7 +747,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'RATE_PERCENT_STIFFNESS' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_rate_percent_penalty_set = false;
          }
          else
          {
@@ -764,7 +762,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'BULK_MODULUS' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
          }
          else
          {
@@ -783,7 +781,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'YOUNGS_MODULUS' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
          }
          else
          {
@@ -802,7 +800,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'ELEMENT_THICKNESS' on mesh, " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
          }
          else
          {

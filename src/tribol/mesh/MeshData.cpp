@@ -865,7 +865,8 @@ int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
          }
          if (!this->m_nodalFields.m_is_velocity_set)
          {
-            SLIC_WARNING("Nodal velocities not set for use with gap rate penalty enforcement.");
+            SLIC_WARNING("Nodal velocities not set or null pointers; please set for " << 
+                         "use with gap rate penalty enforcement.");
             err = 1;
          }
          break;

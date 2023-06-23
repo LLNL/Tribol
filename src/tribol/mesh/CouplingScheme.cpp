@@ -132,6 +132,10 @@ void CouplingSchemeErrors::printMethodErrors()
          SLIC_WARNING("The specified ContactMethod is not implemented for the problem dimension.");
          break;
       }
+      case NULL_NODAL_RESPONSE:
+      {
+         SLIC_WARNING("User must call tribol::registerNodalResponse() for each mesh to use this ContactMethod.");
+      }
       case NO_METHOD_ERROR:
       {
          break;
@@ -398,11 +402,10 @@ bool CouplingScheme::isValidCouplingScheme()
       return false;
    }
    
-   // return early for null meshes. We don't want to perform all of the checks 
-   // for valid coupling schemes since null-mesh coupling schemes will be no-ops.
-   if ( mesh1.m_numCells <= 0 && mesh2.m_numCells <= 0 )
+   // return early for coupling schemes with one or two null meshes. These are no-op coupling schemes
+   if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
-      SLIC_INFO("Coupling scheme, " << this->m_id << ", has null-meshes.");
+      SLIC_INFO("Coupling scheme, " << this->m_id << ", has null-mesh(es).");
       return false; 
    }
 
@@ -546,58 +549,67 @@ bool CouplingScheme::isValidMethod()
    double dim = this->spatialDimension();
 
    // check all methods for basic validity issues
-   switch (this->m_contactMethod)
+   if ( this->m_contactMethod == ALIGNED_MORTAR ||
+        this->m_contactMethod == MORTAR_WEIGHTS ||
+        this->m_contactMethod == SINGLE_MORTAR )
    {
-      case ALIGNED_MORTAR:
+      if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
       {
-         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
-         {
-            this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
-            return false;
-         }
-         [[fallthrough]];
-         // do not break; single mortar checks apply
+         this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
+         return false;
       }
-      case MORTAR_WEIGHTS:
-      case SINGLE_MORTAR:
+      if( this->m_meshId1 == this->m_meshId2 )
       {
-         if( this->m_meshId1 == this->m_meshId2 )
-         {
-            this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS;
-            if (dim != 3)
-            {
-               this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS_INVALID_DIM;
-            }
-            return false;
-         }
-
+         this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS;
          if (dim != 3)
          {
-            this->m_couplingSchemeErrors.cs_method_error = INVALID_DIM;
-            return false;
-         } 
-         break;
-      }
-     
-      case COMMON_PLANE:
-      {
-         // check for different face types. This is not yet supported
-         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
-         {
-            this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
-            return false;
+            this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS_INVALID_DIM;
          }
-         break;
-      }
-      default:
-      {
-         // if we are here there may be a method with no implementation. 
-         // See note at top of routine.
-         this->m_couplingSchemeErrors.cs_method_error = NO_METHOD_IMPLEMENTATION;
          return false;
-         break;
+      }
+
+      if (dim != 3)
+      {
+         this->m_couplingSchemeErrors.cs_method_error = INVALID_DIM;
+         return false;
+      } 
+   }
+   else if ( this->m_contactMethod == COMMON_PLANE )
+   {
+      // check for different face types. This is not yet supported
+      if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
+      {
+         this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
+         return false;
       }
    } // end switch on contact method
+   else
+   {
+      // if we are here there may be a method with no implementation. 
+      // See note at top of routine.
+      this->m_couplingSchemeErrors.cs_method_error = NO_METHOD_IMPLEMENTATION;
+      return false;
+   }
+
+   if ( this->m_contactMethod == ALIGNED_MORTAR ||
+        this->m_contactMethod == SINGLE_MORTAR  ||
+        this->m_contactMethod == COMMON_PLANE )
+   {
+      if ( mesh1.m_numCells > 0 && !mesh1.m_nodalFields.m_is_nodal_response_set )
+      {
+         this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
+         return false; 
+      }
+ 
+      if ( mesh2.m_numCells > 0 && !mesh2.m_nodalFields.m_is_nodal_response_set )
+      {
+         this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
+         return false; 
+      }
+   
+   }
+
+   // TODO check for nodal displacements for methods that require this data 
 
    this->m_couplingSchemeErrors.cs_method_error = NO_METHOD_ERROR;
    return true;

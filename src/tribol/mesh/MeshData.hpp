@@ -39,7 +39,9 @@ struct MeshNodalData
    bool m_is_node_pressure_set {false}; ///< true if nodal pressure field is set
    /////////////////////////
 
-   bool m_is_velocity_set {false}; ///< true if nodal velocities have been registered
+   bool m_is_velocity_set           {false}; ///< true if nodal velocities have been registered
+   bool m_is_nodal_displacement_set {false}; ///< true if nodal displacements have been registered
+   bool m_is_nodal_response_set     {false}; ///< true if the nodal responses have been registered
 
 }; // end of struct MeshNodalData
 
