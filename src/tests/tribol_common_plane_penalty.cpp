@@ -199,9 +199,9 @@ void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
       // loop over faces and nodes
       for (tribol::IndexType kf = 0; kf < mesh.m_numCells; ++kf)
       {
-         for (tribol::IndexType a = 0; a<mesh.m_numCellNodes; ++a)
+         for (tribol::IndexType a = 0; a<mesh.m_numNodesPerCell; ++a)
          {
-            int idx = mesh.m_numCellNodes * kf + a;
+            int idx = mesh.m_numNodesPerCell * kf + a;
             int node_id = mesh.m_connectivity[ idx ];
             real force_mag = tribol::dotProd( mesh.m_forceX[ node_id ],
                                               mesh.m_forceY[ node_id ], 

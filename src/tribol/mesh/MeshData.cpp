@@ -232,7 +232,7 @@ MeshData::MeshData()
   , m_lengthNodalData(0)
   , m_numSurfaceNodes(0)
   , m_numCells(0)
-  , m_numCellNodes(0)
+  , m_numNodesPerCell(0)
   , m_isValid(true)
   , m_positionX(nullptr), m_positionY(nullptr), m_positionZ(nullptr)
   , m_dispX(nullptr), m_dispY(nullptr), m_dispZ(nullptr)
@@ -356,7 +356,7 @@ void MeshData::computeFaceData( int const dim )
   int nodeId;
   int nextNodeId;
   int nodeIndex;
-  real fac = 1.0 / m_numCellNodes;
+  real fac = 1.0 / m_numNodesPerCell;
   real mag, invMag;
   real nrmlMagTol = 1.E-6;
 
@@ -368,8 +368,8 @@ void MeshData::computeFaceData( int const dim )
      // an approximate centroid for warped faces, both in 3D.
 
      // loop over the nodes per cell
-     for (int j=0; j<m_numCellNodes; ++j) {
-        nodeIndex = m_numCellNodes * i + j;
+     for (int j=0; j<m_numNodesPerCell; ++j) {
+        nodeIndex = m_numNodesPerCell * i + j;
         nodeId = m_connectivity[ nodeIndex ];
         // always compute the x and y components for 2D and 3D
         m_cX[i] += m_positionX[ nodeId ];
@@ -380,8 +380,8 @@ void MeshData::computeFaceData( int const dim )
      m_cY[i] = fac * m_cY[i];
 
      if (dim == 3) {
-        for (int j=0; j<m_numCellNodes; ++j) {
-           nodeIndex = m_numCellNodes * i + j;
+        for (int j=0; j<m_numNodesPerCell; ++j) {
+           nodeIndex = m_numNodesPerCell * i + j;
            nodeId = m_connectivity[ nodeIndex ];
            m_cZ[i] += m_positionZ[ nodeId ];
         } // end loop over nodes
@@ -398,7 +398,7 @@ void MeshData::computeFaceData( int const dim )
         // counter-clockwise ordering of the quad4 area element
         // to which the 1D line segment belongs. This is to properly 
         // orient the normal outward
-        nodeIndex = m_numCellNodes * i;
+        nodeIndex = m_numNodesPerCell * i;
         nodeId = m_connectivity[ nodeIndex ];
         nextNodeId = m_connectivity[ nodeIndex+1 ];
         real lambdaX = m_positionX[ nextNodeId ] - m_positionX[ nodeId ];
@@ -443,10 +443,10 @@ void MeshData::computeFaceData( int const dim )
         real vX2, vY2, vZ2;
         real nX, nY, nZ; 
 
-        // loop over m_numCellNodes-1 cell edges and compute pallet normal
-        for (int j=0; j<(m_numCellNodes-1); ++j) 
+        // loop over m_numNodesPerCell-1 cell edges and compute pallet normal
+        for (int j=0; j<(m_numNodesPerCell-1); ++j) 
         {
-           nodeIndex = m_numCellNodes * i + j;
+           nodeIndex = m_numNodesPerCell * i + j;
            nodeId = m_connectivity[ nodeIndex ];
            nextNodeId = m_connectivity[ nodeIndex + 1 ];
            // first triangle edge vector between the face's two 
@@ -480,9 +480,9 @@ void MeshData::computeFaceData( int const dim )
         }
 
         // compute the pallet normal contribution for the last pallet
-        nodeIndex = m_numCellNodes * i;
+        nodeIndex = m_numNodesPerCell * i;
         nodeId = m_connectivity[ nodeIndex ];
-        nextNodeId = m_connectivity[ nodeIndex + m_numCellNodes - 1 ];
+        nextNodeId = m_connectivity[ nodeIndex + m_numNodesPerCell - 1 ];
         vX1 = m_positionX[ nodeId ] - m_positionX[ nextNodeId ];
         vY1 = m_positionY[ nodeId ] - m_positionY[ nextNodeId ];
         vZ1 = m_positionZ[ nodeId ] - m_positionZ[ nextNodeId ];
@@ -535,7 +535,7 @@ real MeshData::computeFaceRadius( int faceId )
    // loop over nodes of the face and determine the maximum 
    // "link" vector from the ith node to the face center
    real sqrRadius = 0.0;
-   for (int i=0; i<m_numCellNodes; ++i) {
+   for (int i=0; i<m_numNodesPerCell; ++i) {
       const int nodeId = getFaceNodeId(faceId, i);
       real lvx = m_positionX[nodeId] - m_cX[faceId];
       real lvy = m_positionY[nodeId] - m_cY[faceId];
@@ -580,9 +580,9 @@ void MeshData::getFaceCoords( int const faceId, real * coords )
 {
    int dim =  (m_positionZ != nullptr) ? 3 : 2;
 
-   for (IndexType a=0; a<m_numCellNodes; ++a)
+   for (IndexType a=0; a<m_numNodesPerCell; ++a)
    {
-     IndexType nodeId = m_connectivity[ faceId*m_numCellNodes + a ];
+     IndexType nodeId = m_connectivity[ faceId*m_numNodesPerCell + a ];
 
      coords[dim * a]     = m_positionX[ nodeId ];
      coords[dim * a + 1] = m_positionY[ nodeId ];
@@ -608,9 +608,9 @@ void MeshData::getFaceNodalVelocities( int const faceId, real * nodalVel )
 
    int dim =  (m_velZ != nullptr) ? 3 : 2;
 
-   for (IndexType a=0; a<m_numCellNodes; ++a)
+   for (IndexType a=0; a<m_numNodesPerCell; ++a)
    {
-     IndexType nodeId = m_connectivity[ faceId*m_numCellNodes + a ];
+     IndexType nodeId = m_connectivity[ faceId*m_numNodesPerCell + a ];
 
      nodalVel[dim * a]     = m_velX[ nodeId ];
      nodalVel[dim * a + 1] = m_velY[ nodeId ];
@@ -691,14 +691,14 @@ void MeshData::computeNodalNormals( int const dim )
    for (int i=0; i<this->m_numCells; ++i)
    {
       // loop over cell nodes
-      for (int j=0; j<this->m_numCellNodes; ++j)
+      for (int j=0; j<this->m_numNodesPerCell; ++j)
       {
 
          // SRW: note the connectivity array must be local to the mesh for indexing into 
          // the mesh nodal normal array. If it is not, then nodeId will access some other
          // piece of memory and there may be a memory issue when numFaceNrmlsToNodes is deleted
          // at the end of this routine.
-         integer nodeId = this->m_connectivity[ this->m_numCellNodes * i + j ]; 
+         integer nodeId = this->m_connectivity[ this->m_numNodesPerCell * i + j ]; 
          m_node_nX[ nodeId ] += this->m_nX[ i ]; // m_nX[i] is the ith face normal x-component
          m_node_nY[ nodeId ] += this->m_nY[ i ]; // see above...
 
@@ -712,9 +712,9 @@ void MeshData::computeNodalNormals( int const dim )
       {
 
          // repeat loop over cell nodes for z-component
-         for (int k=0; k<this->m_numCellNodes; ++k)
+         for (int k=0; k<this->m_numNodesPerCell; ++k)
          {
-            integer nodeId = this->m_connectivity[ this->m_numCellNodes * i + k ]; 
+            integer nodeId = this->m_connectivity[ this->m_numNodesPerCell * i + k ]; 
             m_node_nZ[ nodeId ] += this->m_nZ[ i ];
          } // end loop over cell nodes
 
@@ -783,10 +783,10 @@ void MeshData::sortSurfaceNodeIds()
 
    // check that the number of cell nodes is greater than 2 (minimum number of cell 
    // nodes for 1D segment
-   SLIC_ERROR_IF( (this->m_numCellNodes < 2), "MeshData::sortSurfaceNodeIds(): " << 
-                   "m_numCellNodes on mesh cannot be equal to zero.");
+   SLIC_ERROR_IF( (this->m_numNodesPerCell < 2), "MeshData::sortSurfaceNodeIds(): " << 
+                   "m_numNodesPerCell on mesh cannot be equal to zero.");
 
-   int conn_size = this->m_numCells * this->m_numCellNodes;
+   int conn_size = this->m_numCells * this->m_numNodesPerCell;
 
    int sorted_conn[ conn_size ];
    for (int i=0; i<conn_size; ++i)
@@ -924,7 +924,7 @@ void MeshData::print(std::ostream& os) const
    
    if( m_connectivity != nullptr )
    {
-      os << fmt::format("\n\tconnectivity: {{ {} }}", fmt::join(m_connectivity, m_connectivity+(num_elem*m_numCellNodes), ", "));
+      os << fmt::format("\n\tconnectivity: {{ {} }}", fmt::join(m_connectivity, m_connectivity+(num_elem*m_numNodesPerCell), ", "));
    }
 
    // normals

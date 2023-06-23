@@ -170,6 +170,7 @@ TEST_F( MortarGeomTest, mortar_good_patch )
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
@@ -283,6 +284,7 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
@@ -397,6 +399,7 @@ TEST_F( MortarGeomTest, mortar_ironing )
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
@@ -555,6 +558,7 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,

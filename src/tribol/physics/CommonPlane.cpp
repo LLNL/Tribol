@@ -87,8 +87,8 @@ real ComputeGapRatePressure( ContactPlaneManager& cpMgr,
    } // end switch on rate_calc
 
    // compute the velocity gap and pressure contribution
-   int numNodesPerCell1 = m1.m_numCellNodes;
-   int numNodesPerCell2 = m2.m_numCellNodes;
+   int numNodesPerCell1 = m1.m_numNodesPerCell;
+   int numNodesPerCell2 = m2.m_numNodesPerCell;
 
    double x1[dim * numNodesPerCell1];
    double v1[dim * numNodesPerCell1];
@@ -172,7 +172,6 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
-   IndexType const numNodesPerFace = (dim == 3) ? 4 : 2;
 
    ////////////////////////////////
    // Grab pointers to mesh data //
@@ -182,6 +181,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 
    MeshData& mesh1 = meshManager.GetMeshInstance( meshId1 );
    MeshData& mesh2 = meshManager.GetMeshInstance( meshId2 );
+   IndexType const numNodesPerFace = mesh1.m_numNodesPerCell;
 
    real * const fx1 = mesh1.m_forceX;
    real * const fy1 = mesh1.m_forceY; 

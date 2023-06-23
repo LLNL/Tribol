@@ -25,6 +25,7 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
   and reals.
 - Added support for gap-rate penalization for the common plane method.
   See setPenaltyOptions().
+- Added support for a linear tetrahedral mesh under the TestMesh class.
 
 ### Changed
 - Examples now use `CLI11` for command line argument parsing.
@@ -65,6 +66,7 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
   penalty calculation options. See setKinematicConstantPenalty() and setKinematicElementPenalty(). 
 - API support for setting different enforcement options has changed. See setPenaltyOptions() and 
   setLagrangeMultiplierImplicitOptions(). 
+- Refactored how surface elements are characterized, now using finite element order and type of cell.
 
 ### Fixed
 - Preliminary bugfix for binning of small surface elements.

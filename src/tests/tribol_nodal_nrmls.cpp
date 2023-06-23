@@ -33,7 +33,8 @@ public:
    int numNodes;
    int dim;
 
-   void computeNodalNormals( real const * const x, 
+   void computeNodalNormals( int cell_type,
+                             real const * const x, 
                              real const * const y, 
                              real const * const z,
                              int const * const conn,
@@ -42,12 +43,9 @@ public:
                              int const dim )
    {
       // register the mesh with tribol
-      const int cellType = (dim == 3) ? (int)(tribol::FACE) : 
-                                        (int)(tribol::EDGE);
-
       const int meshId = 0;
       tribol::registerMesh( meshId, numCells, numNodes, 
-                            conn, cellType, x, y, z );
+                            conn, cell_type, x, y, z );
 
 
       // get instance of mesh in order to compute nodally averaged normals
@@ -85,6 +83,7 @@ TEST_F( NodalNormalTest, two_quad_inverted_v )
    //
    int numFaces = 2;
    int numNodesPerFace = 4;
+   int cellType = (int)(tribol::LINEAR_QUAD);
    int conn[ numFaces * numNodesPerFace ];
 
    // setup connectivity for the two faces ensuring nodes 
@@ -126,7 +125,7 @@ TEST_F( NodalNormalTest, two_quad_inverted_v )
    z[5] = -1.;
 
    // compute the nodal normals
-   computeNodalNormals( &x[0], &y[0], &z[0], &conn[0], 
+   computeNodalNormals( cellType, &x[0], &y[0], &z[0], &conn[0], 
                         numFaces, 6, 3 );
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();

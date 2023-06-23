@@ -71,8 +71,8 @@ protected:
       // Single element meshes are usesd in these tests out of 
       // simplicity. 
       m_numCells = (numCells >= 1) ? 1 : 0;
-      m_lengthNodalData = 4;
-      m_elementType = 2; // 1D edge for 2D mesh 
+      m_lengthNodalData = 4; // Quad 4
+      m_elementType = (int)(tribol::LINEAR_EDGE); // 1D edge for 2D mesh 
 
       if (m_numCells > 0)
       {
@@ -80,14 +80,14 @@ protected:
          m_connectivity = new int[ m_lengthNodalData ];
          m_x = new real[ m_lengthNodalData ];
          m_y = new real[ m_lengthNodalData ];
-         m_z = new real[ m_lengthNodalData ];
+         //m_z = new real[ m_lengthNodalData ];
 
          for (int i=0; i<m_lengthNodalData; ++i)
          {
             m_connectivity[i] = i;
             m_x[i] = 0.;
             m_y[i] = 0.;
-            m_z[i] = 0.;
+            //m_z[i] = 0.;
          }
       }
 
@@ -105,8 +105,8 @@ protected:
       // Single element meshes are usesd in these tests out of 
       // simplicity. 
       m_numCells = (numCells >= 1) ? 1 : 0;
-      m_lengthNodalData = 8; 
-      m_elementType = 3; // 2D face in 3D mesh
+      m_lengthNodalData = 8; // Hex 8
+      m_elementType = (int)(tribol::LINEAR_QUAD); // 2D face in 3D mesh
 
       if (m_numCells > 0)
       {
@@ -170,11 +170,11 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps;
-   real pressures;
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -204,11 +204,11 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps;
-   real pressures;
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -264,11 +264,11 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps;
-   real pressures;
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -350,11 +350,11 @@ TEST_F( CouplingSchemeTest, mortar_tied )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps;
-   real pressures;
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -384,11 +384,11 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps;
-   real pressures;
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
+   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -517,13 +517,13 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    tribol::registerMesh( mesh.mortarMeshId,
                          mesh.numMortarFaces,
                          mesh.numTotalNodes,
-                         mesh.faceConn1, 3, 
+                         mesh.faceConn1, (int)(tribol::LINEAR_QUAD),
                          mesh.x, mesh.y, mesh.z );
 
    tribol::registerMesh( mesh.nonmortarMeshId,
                          mesh.numNonmortarFaces,
                          mesh.numTotalNodes,
-                         mesh.faceConn2, 3,
+                         mesh.faceConn2, (int)(tribol::LINEAR_QUAD),
                          mesh.x, mesh.y, mesh.z );
 
    // set penalty data so coupling scheme initialization passes 
@@ -578,8 +578,9 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    ///////////////////////////////////////////////////////////////
 
    // register same mesh IDs as NULL meshes
-   tribol::registerMesh( 0, 0, 0, nullptr, 3, nullptr, nullptr, nullptr );
-   tribol::registerMesh( 1, 0, 0, nullptr, 3, nullptr, nullptr, nullptr );
+   int elementType = (int)(tribol::LINEAR_QUAD);
+   tribol::registerMesh( 0, 0, 0, nullptr, elementType, nullptr, nullptr, nullptr );
+   tribol::registerMesh( 1, 0, 0, nullptr, elementType, nullptr, nullptr, nullptr );
 
    // set penalty data for valid coupling scheme with penalty enforcement. 
    // Previous meshes and mesh associated penalty data is overwritten with 
@@ -611,6 +612,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    // call update() to make sure there is a no-op for this coupling scheme
    EXPECT_EQ(tribol::update(1, 1., dt), 0);
    EXPECT_EQ(cs_null->getNumActivePairs(), 0);
+
 }
 
 TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
@@ -646,10 +648,12 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
    tribol::initRealArray( &fz2[0], numTotalNodes2, 0. );
 
    tribol::registerMesh( id1, numFaces1, numTotalNodes1,
-                         &faceConn1[0], 2, &x1[0], &y1[0], &z1[0] );
+                         &faceConn1[0], (int)(tribol::LINEAR_EDGE),
+                         &x1[0], &y1[0], &z1[0] );
 
    tribol::registerMesh( id2, numFaces2, numTotalNodes2,
-                         &faceConn2[0], 3, &x2[0], &y2[0], &z2[0] );
+                         &faceConn2[0], (int)(tribol::LINEAR_QUAD),
+                         &x2[0], &y2[0], &z2[0] );
 
    // set penalty data so coupling scheme initialization passes 
    real penalty = 1.0;
@@ -729,13 +733,13 @@ TEST_F( CouplingSchemeTest, finalize )
    tribol::registerMesh( mesh.mortarMeshId,
                          mesh.numMortarFaces,
                          mesh.numTotalNodes,
-                         mesh.faceConn1, 3, 
+                         mesh.faceConn1, (int)(tribol::LINEAR_QUAD),
                          mesh.x, mesh.y, mesh.z );
 
    tribol::registerMesh( mesh.nonmortarMeshId,
                          mesh.numNonmortarFaces,
                          mesh.numTotalNodes,
-                         mesh.faceConn2, 3,
+                         mesh.faceConn2, (int)(tribol::LINEAR_QUAD),
                          mesh.x, mesh.y, mesh.z );
 
    // set penalty data so coupling scheme initialization passes 

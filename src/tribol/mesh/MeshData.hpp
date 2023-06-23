@@ -113,7 +113,7 @@ public:
   int m_lengthNodalData;              ///< Total number of elements in data arrays (used to create new arrays an index in using connectivity ids)
   int m_numSurfaceNodes;              ///< Total number of unique node ids in the surface connectivity (computed from MeshData::sortSurfaceNodeIds() )
   int m_numCells;                     ///< Total number of SURFACE cells in the mesh
-  int m_numCellNodes;                 ///< Number of nodes per SURFACE cell based on cell type
+  int m_numNodesPerCell;                 ///< Number of nodes per SURFACE cell based on cell type
   int m_dim;                          ///< Dimension of mesh
   int m_meshId;                       ///< Mesh Id associated with this data
   bool m_isValid;                     ///< True if the mesh is valid
@@ -146,7 +146,7 @@ public:
 
   real * m_area; ///< Cell areas
 
-  IndexType const * m_connectivity; ///< Cell connectivity arrays of length, m_numCells * m_numCellNodes
+  IndexType const * m_connectivity; ///< Cell connectivity arrays of length, m_numCells * m_numNodesPerCell
 
   IndexType * m_sortedSurfaceNodeIds; ///< List of sorted node ids from connectivity w/o duplicates, length = m_numSurfaceNodes.
 
@@ -197,7 +197,7 @@ public:
    * \return Global mesh node id
    */
   int getFaceNodeId(int faceId, int localNodeId) const
-     { return m_connectivity[m_numCellNodes*faceId+localNodeId]; }
+     { return m_connectivity[m_numNodesPerCell*faceId+localNodeId]; }
   
   /*!
    *
