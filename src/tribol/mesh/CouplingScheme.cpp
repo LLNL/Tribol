@@ -1064,8 +1064,8 @@ void CouplingScheme::computeTimeStep(real &dt)
 
    if (dt < 1.e-8)
    {
-      SLIC_INFO("CouplingScheme::computeTimeStep(): time step too small " <<
-                "for Tribol timestep vote." );
+      // current timestep too small for Tribol vote. Leave unchanged and return
+      return;
    }
 
    bool meshVel1 = true;
@@ -1075,17 +1075,11 @@ void CouplingScheme::computeTimeStep(real &dt)
       if (mesh1.m_velX == nullptr || mesh1.m_velY == nullptr)
       {
          meshVel1 = false;
-         SLIC_WARNING( "CouplingScheme::computeTimeStep(): please register nodal "  << 
-                       "velocities for mesh id, " << m_meshId1 << ", in order to " <<
-                       "compute a Tribol timestep vote." );
       }
 
       if (mesh2.m_velX == nullptr || mesh2.m_velY == nullptr)
       {
          meshVel2 = false;
-         SLIC_WARNING( "CouplingScheme::computeTimeStep(): please register nodal "  << 
-                       "velocities for mesh id, " << m_meshId2 << ", in order to " <<
-                       "compute a Tribol timestep vote." );
       }
    }
    else 
@@ -1093,17 +1087,11 @@ void CouplingScheme::computeTimeStep(real &dt)
       if (mesh1.m_velX == nullptr || mesh1.m_velY == nullptr || mesh1.m_velZ == nullptr)
       {
          meshVel1 = false;
-         SLIC_WARNING( "CouplingScheme::computeTimeStep(): please register nodal "  << 
-                       "velocities for mesh id, " << m_meshId1 << ", in order to " <<
-                       "compute a Tribol timestep vote." );
       }
 
       if (mesh2.m_velX == nullptr || mesh2.m_velY == nullptr || mesh2.m_velZ == nullptr)
       {
          meshVel2 = false;
-         SLIC_WARNING( "CouplingScheme::computeTimeStep(): please register nodal "  << 
-                       "velocities for mesh id, " << m_meshId2 << ", in order to " <<
-                       "compute a Tribol timestep vote." );
       }
    } // end if-check on dim for velocity registration
 
@@ -1115,27 +1103,18 @@ void CouplingScheme::computeTimeStep(real &dt)
    // if we are here we have registered velocities and can compute the timestep vote
    switch( m_contactMethod ) {
       case SINGLE_MORTAR :
-         SLIC_INFO( "CouplingScheme::computeTimeStep(): timestep vote for " << 
-                    "'SINGLE_MORTAR' method not yet implemented." );
+         // no-op
          break;
       case ALIGNED_MORTAR :
-         SLIC_INFO( "CouplingScheme::computeTimeStep(): timestep vote for " << 
-                    "'ALIGNED_MORTAR' method not yet implemented." );
+         // no-op
          break;
       case MORTAR_WEIGHTS :
-         SLIC_INFO( "CouplingScheme::computeTimeStep(): there is no timestep " << 
-                    "vote for 'MORTAR_WEIGHTS'." );
+         // no-op
          break;
       case COMMON_PLANE : 
          if ( m_enforcementMethod == PENALTY )
          {
             this->computeCommonPlaneTimeStep( dt ); 
-         }
-         else
-         {
-            SLIC_INFO( "CouplingScheme::computeTimeStep(): " << 
-                       "there is no timestep vote for 'COMMON_PLANE' " << 
-                       "with chosen enforcement method." );
          }
          break;
       default :
@@ -1170,11 +1149,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    KinematicPenaltyCalculation kin_calc = pen_enfrc_options.kinematic_calculation;
    if ( kin_calc == KINEMATIC_CONSTANT )
    {
-      SLIC_WARNING("Tribol timestep vote may be inaccurate when " << 
-                   "using constant kinematic penalty option with " << 
-                   "penalty enforced methods. Consider registering " << 
-                   "'element_wise' data in call to tribol::setKinematicElementPenalty() " << 
-                   "for element-specific penalty calculations.");
+      // Tribol timestep vote only used with KINEMATIC_ELEMENT penalty is used
+      // because element thicknesses are supplied
       return; 
    }
 
@@ -1439,9 +1415,9 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
    if (tiny_vel_msg)
    {
-      SLIC_INFO( "computeCommonPlaneTimeStep(): initial mesh overlap is too large " << 
-                 "with very small velocity. Cannot provide timestep vote. "         << 
-                 "Reduce overlap in initial configuration, otherwise penalty "      <<
+      SLIC_INFO( "tribol::computeCommonPlaneTimeStep(): initial mesh overlap is too large " <<
+                 "with very small velocity. Cannot provide timestep vote. "                 <<
+                 "Reduce overlap in initial configuration, otherwise penalty "              <<
                  "instability may result." );
    }
 
