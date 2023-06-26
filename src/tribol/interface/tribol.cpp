@@ -325,7 +325,7 @@ void registerMesh( integer meshId,
    {
       if (x == nullptr || y == nullptr)
       {
-         SLIC_WARNING("Pointer to x and y-component mesh coordinate arrays are null pointers " <<
+         SLIC_WARNING("Pointer to x or y-component mesh coordinate arrays are null pointers " <<
                       " for mesh id, " << meshId << ".");
          mesh.m_isValid = false;
       }

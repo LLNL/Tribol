@@ -1148,7 +1148,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    KinematicPenaltyCalculation kin_calc = pen_enfrc_options.kinematic_calculation;
    if ( kin_calc == KINEMATIC_CONSTANT )
    {
-      // Tribol timestep vote only used with KINEMATIC_ELEMENT penalty is used
+      // Tribol timestep vote only used with KINEMATIC_ELEMENT penalty
       // because element thicknesses are supplied
       return; 
    }
