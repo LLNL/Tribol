@@ -31,8 +31,8 @@ struct MeshNodalData
    /////////////////////////
    // MORTAR NODAL FIELDS //
    /////////////////////////
-   real * m_node_gap;      ///< scalar nodal gap (used on nonmortar mesh) 
-   real * m_node_pressure; ///< scalar nodal pressure (used on nonmortar mesh) 
+   real* m_node_gap;      ///< scalar nodal gap (used on nonmortar mesh) 
+   real* m_node_pressure; ///< scalar nodal pressure (used on nonmortar mesh) 
 
    bool m_isGapComputed        {false}; ///< true if the nodal gaps have been computed
    bool m_is_node_gap_set      {false}; ///< true if nodal gap field is set
@@ -62,8 +62,8 @@ struct MeshElemData
    //////////////////////////////////////
    // PENALTY ENFORCEMENT ELEMENT DATA //
    //////////////////////////////////////
-   real * m_mat_mod;                   ///< Bulk/Young's modulus for contact faces
-   real * m_thickness;                 ///< Volume element thickness associated with each contact face
+   const real * m_mat_mod;             ///< Bulk/Young's modulus for contact faces
+   const real * m_thickness;           ///< Volume element thickness associated with each contact face
 
    real m_penalty_stiffness {0.};      ///< single scalar kinematic penalty stiffness for each mesh
    real m_penalty_scale {1.};          ///< scale factor applied to kinematic penalty only
@@ -120,41 +120,41 @@ public:
   int m_meshId;                       ///< Mesh Id associated with this data
   bool m_isValid;                     ///< True if the mesh is valid
 
-  real const * m_positionX; ///< X-coordinates of nodes in mesh 
-  real const * m_positionY; ///< Y-coordinates of nodes in mesh 
-  real const * m_positionZ; ///< Z-coordinates of nodes in mesh 
+  const real* m_positionX; ///< X-coordinates of nodes in mesh 
+  const real* m_positionY; ///< Y-coordinates of nodes in mesh 
+  const real* m_positionZ; ///< Z-coordinates of nodes in mesh 
 
-  real const * m_dispX; ///< X-component of nodal displacements 
-  real const * m_dispY; ///< Y-component of nodal displacements 
-  real const * m_dispZ; ///< Z-component of nodal displacements 
+  const real* m_dispX; ///< X-component of nodal displacements 
+  const real* m_dispY; ///< Y-component of nodal displacements 
+  const real* m_dispZ; ///< Z-component of nodal displacements 
 
   real * m_forceX; ///< X-component of nodal forces 
   real * m_forceY; ///< Y-component of nodal forces 
   real * m_forceZ; ///< Z-component of nodal forces 
 
-  real const * m_velX; ///< X-component of nodal velocity 
-  real const * m_velY; ///< Y-component of nodal velocity
-  real const * m_velZ; ///< Z-component of nodal velocity
+  const real* m_velX; ///< X-component of nodal velocity 
+  const real* m_velY; ///< Y-component of nodal velocity
+  const real* m_velZ; ///< Z-component of nodal velocity
 
-  real * m_nX; ///< X-component of outward unit face normals
-  real * m_nY; ///< Y-component of outward unit face normals
-  real * m_nZ; ///< Z-component of outward unit face normals
+  real* m_nX; ///< X-component of outward unit face normals
+  real* m_nY; ///< Y-component of outward unit face normals
+  real* m_nZ; ///< Z-component of outward unit face normals
 
-  real * m_cX; ///< X-component of vertex averaged cell centroids
-  real * m_cY; ///< Y-component of vertex averaged cell centroids
-  real * m_cZ; ///< Z-component of vertex averaged cell centroids
+  real* m_cX; ///< X-component of vertex averaged cell centroids
+  real* m_cY; ///< Y-component of vertex averaged cell centroids
+  real* m_cZ; ///< Z-component of vertex averaged cell centroids
 
-  real * m_faceRadius; ///< Face radius used in low level proximity check
+  real* m_faceRadius; ///< Face radius used in low level proximity check
 
-  real * m_area; ///< Cell areas
+  real* m_area; ///< Cell areas
 
-  IndexType const * m_connectivity; ///< Cell connectivity arrays of length, m_numCells * m_numNodesPerCell
+  const IndexType* m_connectivity; ///< Cell connectivity arrays of length, m_numCells * m_numNodesPerCell
 
-  IndexType * m_sortedSurfaceNodeIds; ///< List of sorted node ids from connectivity w/o duplicates, length = m_numSurfaceNodes.
+  IndexType* m_sortedSurfaceNodeIds; ///< List of sorted node ids from connectivity w/o duplicates, length = m_numSurfaceNodes.
 
-  real * m_node_nX; ///< X-component of outward unit node normals
-  real * m_node_nY; ///< Y-component of outward unit node normals
-  real * m_node_nZ; ///< Z-component of outward unit node normals
+  real* m_node_nX; ///< X-component of outward unit node normals
+  real* m_node_nY; ///< Y-component of outward unit node normals
+  real* m_node_nZ; ///< Z-component of outward unit node normals
 
   MeshNodalData m_nodalFields; ///< method specific nodal fields
   MeshElemData  m_elemData;    ///< method/enforcement specific element data 

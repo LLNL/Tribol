@@ -156,8 +156,8 @@ void setKinematicConstantPenalty( int meshId, double k )
 
 //------------------------------------------------------------------------------
 void setKinematicElementPenalty( int meshId, 
-                                 double *material_modulus,
-                                 double *element_thickness )
+                                 const double *material_modulus,
+                                 const double *element_thickness )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -700,7 +700,7 @@ void registerIntNodalField( integer meshId,
 //------------------------------------------------------------------------------
 void registerRealElementField( integer meshId,
                                const RealElementFields field,
-                               real * fieldVariable )
+                               const real * fieldVariable )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
