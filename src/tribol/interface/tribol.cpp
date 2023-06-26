@@ -942,8 +942,8 @@ integer update( integer cycle, real t, real &dt )
       // initialize and check for valid coupling scheme
       if (!couplingScheme->init())
       {
-         // should we error out entirely for one invalid coupling scheme? SRW
-         SLIC_WARNING("Invalid coupling scheme; please see warnings.");
+         // don't issue warning here. Warnings are issued when checking
+         // if the coupling scheme is valid.
          continue;
       }
 
