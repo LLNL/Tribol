@@ -385,9 +385,7 @@ bool CouplingScheme::isValidCouplingScheme()
    MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
    MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
 
-   // TODO these mesh checks are coupled. Put them in a routine checking for valid meshes
-   // as they pertain to a coupling scheme
-   // check for non-matching surface topology
+   // check for invalid mesh topology matches in a coupling scheme
    if (mesh1.m_elementType != mesh2.m_elementType)
    {
       SLIC_WARNING("Coupling scheme, " << this->m_id << ", does not support meshes with " << 
@@ -611,6 +609,7 @@ bool CouplingScheme::isValidMethod()
 
    // TODO check for nodal displacements for methods that require this data 
 
+   // no method error if here
    this->m_couplingSchemeErrors.cs_method_error = NO_METHOD_ERROR;
    return true;
 

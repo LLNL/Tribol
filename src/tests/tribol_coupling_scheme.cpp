@@ -816,6 +816,82 @@ TEST_F( CouplingSchemeTest, finalize )
 
 }
 
+TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   registerDummy3DMesh( 0 );
+   registerDummy3DMesh( 1 );
+
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty(0, penalty);
+   tribol::setKinematicConstantPenalty(1, penalty);
+
+   tribol::registerCouplingScheme(0, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+
+   tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   // register null nodal velocity pointers. The coupling scheme 
+   // should initialize correctly for kinematic penalty only.
+   real* v_x {nullptr};
+   real* v_y {nullptr};
+   real* v_z {nullptr};
+   tribol::registerNodalVelocities(0, v_x, v_y, v_z);
+   tribol::registerNodalVelocities(1, v_x, v_y, v_z);
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, true );
+}
+
+TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   registerDummy3DMesh( 0 );
+   registerDummy3DMesh( 1 );
+
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty(0, penalty);
+   tribol::setKinematicConstantPenalty(1, penalty);
+
+   tribol::registerCouplingScheme(0, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+
+   tribol::setPenaltyOptions( 0, tribol::KINEMATIC_AND_RATE,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   // register null nodal velocity pointers. The coupling scheme 
+   // should NOT initialize correctly for kinematic-and-rate penalty.
+   real* v_x {nullptr};
+   real* v_y {nullptr};
+   real* v_z {nullptr};
+   tribol::registerNodalVelocities(0, v_x, v_y, v_z);
+   tribol::registerNodalVelocities(1, v_x, v_y, v_z);
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+}
+
 int main(int argc, char* argv[])
 {
   int result = 0;
