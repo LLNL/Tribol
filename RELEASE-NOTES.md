@@ -11,6 +11,7 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
 - Added coupling scheme tests with null pointer registration
 
 ### Changed
+- Return negative timestep vote for non-null meshes with null velocity pointers
 
 ### Fixed
 - Allow null velocity and response pointers for various use cases
