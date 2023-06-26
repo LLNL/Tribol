@@ -400,7 +400,7 @@ bool CouplingScheme::isValidCouplingScheme()
       return false;
    }
    
-   // return early for coupling schemes with one or two null meshes. These are no-op coupling schemes
+   // return early for coupling schemes with one or both null meshes. These are no-op coupling schemes
    if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
       SLIC_INFO("Coupling scheme, " << this->m_id << ", has null-mesh(es).");
