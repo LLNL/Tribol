@@ -229,68 +229,75 @@ public:
    *
    * \return bool indicating if coupling scheme is valid;
    */
-   bool isValidCouplingScheme();
+  bool isValidCouplingScheme();
+
+  /*!
+   * \brief Returns true if one or both meshes are zero-element, null meshes 
+   *
+   * \return true if one or both null meshes in coupling scheme
+   */
+  bool nullMeshes() { return m_nullMeshes; }
 
   /*!
    * \brief Returns true if a valid mode is specified, otherwise false
    *
    * \return true indicating if the mode is valid;
    */
-   bool isValidMode();
+  bool isValidMode();
 
   /*!
    * \brief Returns true if a valid case is specified, otherwise false
    *
    * \return true indicating if the case is valid;
    */
-   bool isValidCase();
+  bool isValidCase();
 
   /*!
    * \brief Returns true if a valid method is specified, otherwise false
    *
    * \return true indicating if the method is valid;
    */
-   bool isValidMethod();
+  bool isValidMethod();
 
   /*!
    * \brief Returns true if a valid model is specified, otherwise false
    *
    * \return true indicating if the model is valid;
    */
-   bool isValidModel();
+  bool isValidModel();
 
   /*!
    * \brief Returns true if a valid enforcement is specified, otherwise false
    *
    * \return true indicating if the enforcement is valid;
    */
-   bool isValidEnforcement();
+  bool isValidEnforcement();
 
   /*!
    * \brief Check for correct enforcement data for a given method
    *
    * \return 0 for correct enforcement data, 1 otherwise
    */
-   int checkEnforcementData();
+  int checkEnforcementData();
 
   /*!
    * \brief Initializes the coupling scheme
    *
    * \return true if the coupling scheme was successfully initialized
    */
-   bool init();
+  bool init();
 
   /*!
    * \brief Allocate method data on the coupling scheme
    *
    */
-   void allocateMethodData();
+  void allocateMethodData();
 
   /*!
    * \brief Performs the binning between mesh 1 and mesh 2 
    *
    */
-   void performBinning();
+  void performBinning();
 
   /*!
    * \brief Applies the CouplingScheme
@@ -310,7 +317,7 @@ public:
    * \param [in/out] dt simulation timestep at given cycle
    *
    */
-   void computeTimeStep( real &dt );
+  void computeTimeStep( real &dt );
 
   /*!
    * \brief Wrapper to call method specific visualization output routines
@@ -321,10 +328,10 @@ public:
    * \param [in] t simulation time at given cycle
    *
    */
-   void writeInterfaceOutput( const std::string& dir,
-                              const VisType v_type, 
-                              const integer cycle, 
-                              const real t );
+  void writeInterfaceOutput( const std::string& dir,
+                             const VisType v_type, 
+                             const integer cycle, 
+                             const real t );
 
 private:
 
@@ -334,7 +341,7 @@ private:
    * \param [in/out] dt simulation timestep at given cycle
    *
    */
-   void computeCommonPlaneTimeStep( real &dt );
+  void computeCommonPlaneTimeStep( real &dt );
 
 private:
 
@@ -342,6 +349,8 @@ private:
 
   integer m_meshId1; ///< Integer id for mesh 1
   integer m_meshId2; ///< Integer id for mesh 2
+
+  bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
 
   integer m_numTotalNodes; ///< Total number of nodes in the coupling scheme
 

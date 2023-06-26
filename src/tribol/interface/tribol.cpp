@@ -942,9 +942,16 @@ integer update( integer cycle, real t, real &dt )
       // initialize and check for valid coupling scheme
       if (!couplingScheme->init())
       {
-         // don't issue warning here. Warnings are issued when checking
-         // if the coupling scheme is valid.
-         continue;
+         if (couplingScheme->nullMeshes())
+         {
+            continue;
+         }
+         else
+         {
+            SLIC_WARNING("Skipping invalid CouplingScheme " << couplingScheme->getId() << ". " << 
+                         "Please see warnings.");
+            continue;
+         }
       }
 
       // perform binning between meshes on the coupling scheme

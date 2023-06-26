@@ -405,6 +405,7 @@ bool CouplingScheme::isValidCouplingScheme()
    if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
       SLIC_INFO("Coupling scheme, " << this->m_id << ", has null-mesh(es).");
+      this->m_nullMeshes = true;
       return false; 
    }
 
