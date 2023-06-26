@@ -1067,6 +1067,8 @@ void CouplingScheme::computeTimeStep(real &dt)
       return;
    }
 
+   // check for null velocities needed to compute timestep. Allow for null-meshes
+   // (i.e. zero-element on rank meshes)
    bool meshVel1 = true;
    bool meshVel2 = true;
    if (this->spatialDimension() == 2)
@@ -1096,10 +1098,21 @@ void CouplingScheme::computeTimeStep(real &dt)
 
    if (!meshVel1 || !meshVel2)
    {
-      return;
+      if (mesh1.m_numCells > 0 && mesh2.m_numCells > 0)
+      {
+         // invalid registration of nodal velocities for non-null meshes
+         dt = -1.0;
+         return;
+      }
+      else
+      {
+         // at least one null mesh with allowable null velocities; don't modify dt
+         return;
+      } 
    }
 
-   // if we are here we have registered velocities and can compute the timestep vote
+   // if we are here we have registered velocities for non-null meshes
+   // and can compute the timestep vote
    switch( m_contactMethod ) {
       case SINGLE_MORTAR :
          // no-op
