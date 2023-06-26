@@ -135,6 +135,7 @@ void CouplingSchemeErrors::printMethodErrors()
       case NULL_NODAL_RESPONSE:
       {
          SLIC_WARNING("User must call tribol::registerNodalResponse() for each mesh to use this ContactMethod.");
+         break;
       }
       case NO_METHOD_ERROR:
       {
