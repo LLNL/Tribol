@@ -7,6 +7,31 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
 ## [Unreleased] - Release date yyyy-mm-dd 
 
 ### Added
+- Added support for a linear tetrahedral mesh under the TestMesh class.
+- Added coupling scheme tests with null pointer registration
+
+### Changed
+- Return negative timestep vote for non-null meshes with null velocity pointers
+
+### Fixed
+- Allow null velocity and response pointers for various use cases
+
+## [Version 0.1.0] - Release date 2023-04-21
+
+### Added
+- Licensing information for open source release
+- NOTICE file in root directory
+- LICENSE file in root directory
+
+### Changed
+- None
+
+### Fixed
+- None
+
+## [Version 0.0.0] - Release date yyyy-mm-dd 
+
+### Added
 - Binning for intermediate level search utilizing Axom.
 - Common plane with single integration point penalty enforcement.
 - Single mortar method per Puso 2004 with Lagrange multiplier enforcment.
@@ -25,7 +50,6 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
   and reals.
 - Added support for gap-rate penalization for the common plane method.
   See setPenaltyOptions().
-- Added support for a linear tetrahedral mesh under the TestMesh class.
 
 ### Changed
 - Examples now use `CLI11` for command line argument parsing.
@@ -99,16 +123,3 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
 - Added some specific tests for computational geometry and mortar weights.
 - Added and/or modified tests for element-based penalty and timestep vote features.
 - Added gap-rate tests and modified tests based on associated refactoring.
-
-## [Version 0.1.0] - Release date 2023-04-21
-
-### Added
-- Licensing information for open source release
-- NOTICE file in root directory
-- LICENSE file in root directory
-
-### Changed
-- None
-
-### Fixed
-- None

@@ -54,6 +54,9 @@ public:
    real* m_x {nullptr};
    real* m_y {nullptr};
    real* m_z {nullptr};
+   real* m_fx {nullptr};
+   real* m_fy {nullptr};
+   real* m_fz {nullptr};
 
 protected:
 
@@ -66,7 +69,7 @@ protected:
       clear();
    }
 
-   void registerDummy2DMesh( int mesh_id, int numCells = 1 )
+   void registerDummy2DMesh( int mesh_id, int numCells = 1, bool set_response = true )
    {
       // Single element meshes are usesd in these tests out of 
       // simplicity. 
@@ -80,14 +83,26 @@ protected:
          m_connectivity = new int[ m_lengthNodalData ];
          m_x = new real[ m_lengthNodalData ];
          m_y = new real[ m_lengthNodalData ];
-         //m_z = new real[ m_lengthNodalData ];
+         if (set_response)
+         {
+            m_fx = new real[ m_lengthNodalData ];
+            m_fy = new real[ m_lengthNodalData ];
+         }
 
          for (int i=0; i<m_lengthNodalData; ++i)
          {
             m_connectivity[i] = i;
             m_x[i] = 0.;
             m_y[i] = 0.;
-            //m_z[i] = 0.;
+         }
+
+         if (set_response)
+         {
+            for (int i=0; i<m_lengthNodalData; ++i)
+            {
+               m_fx[i] = 0;
+               m_fy[i] = 0;
+            }
          }
       }
 
@@ -98,9 +113,11 @@ protected:
                             m_elementType,
                             m_x, m_y, m_z ); 
 
+      tribol::registerNodalResponse( mesh_id, m_fx, m_fy, m_fz );
+
    }
 
-   void registerDummy3DMesh( int mesh_id, int numCells = 1 )
+   void registerDummy3DMesh( int mesh_id, int numCells = 1, bool set_response = true )
    {
       // Single element meshes are usesd in these tests out of 
       // simplicity. 
@@ -114,6 +131,12 @@ protected:
          m_x = new real[ m_lengthNodalData ];
          m_y = new real[ m_lengthNodalData ];
          m_z = new real[ m_lengthNodalData ];
+         if (set_response)
+         {
+            m_fx = new real[ m_lengthNodalData ];
+            m_fy = new real[ m_lengthNodalData ];
+            m_fz = new real[ m_lengthNodalData ];
+         }
 
          for (int i=0; i<m_lengthNodalData; ++i)
          {
@@ -121,6 +144,16 @@ protected:
             m_x[i] = 0.;
             m_y[i] = 0.;
             m_z[i] = 0.;
+         }
+
+         if (set_response)
+         {
+            for (int i=0; i<m_lengthNodalData; ++i)
+            {
+               m_fx[i] = 0;
+               m_fy[i] = 0;
+               m_fz[i] = 0;
+            }
          }
       }
 
@@ -130,6 +163,8 @@ protected:
                             m_connectivity,
                             m_elementType,
                             m_x, m_y, m_z ); 
+
+      tribol::registerNodalResponse( mesh_id, m_fx, m_fy, m_fz );
 
    }
 
@@ -154,6 +189,21 @@ protected:
       {
          delete [] m_z;
          m_z = nullptr;
+      }
+      if (m_fx != nullptr)
+      {
+         delete [] m_fx;
+         m_fx = nullptr;
+      }
+      if (m_fy != nullptr)
+      {
+         delete [] m_fy;
+         m_fy = nullptr;
+      }
+      if (m_fz != nullptr)
+      {
+         delete [] m_fz;
+         m_fz = nullptr;
       }
    }
 };
@@ -784,6 +834,210 @@ TEST_F( CouplingSchemeTest, finalize )
          tribol::CouplingSchemeManager::getInstance();
    EXPECT_EQ( csManager.hasCoupling(csIndex), false );
 
+}
+
+TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   registerDummy3DMesh( 0 );
+   registerDummy3DMesh( 1 );
+
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty(0, penalty);
+   tribol::setKinematicConstantPenalty(1, penalty);
+
+   tribol::registerCouplingScheme(0, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+
+   tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   // register null nodal velocity pointers. The coupling scheme 
+   // should initialize correctly for kinematic penalty only.
+   real* v_x {nullptr};
+   real* v_y {nullptr};
+   real* v_z {nullptr};
+   tribol::registerNodalVelocities(0, v_x, v_y, v_z);
+   tribol::registerNodalVelocities(1, v_x, v_y, v_z);
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, true );
+}
+
+TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   registerDummy3DMesh( 0 );
+   registerDummy3DMesh( 1 );
+
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty(0, penalty);
+   tribol::setKinematicConstantPenalty(1, penalty);
+
+   tribol::registerCouplingScheme(0, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+
+   tribol::setPenaltyOptions( 0, tribol::KINEMATIC_AND_RATE,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   // register null nodal velocity pointers. The coupling scheme 
+   // should NOT initialize correctly for kinematic-and-rate penalty.
+   real* v_x {nullptr};
+   real* v_y {nullptr};
+   real* v_z {nullptr};
+   tribol::registerNodalVelocities(0, v_x, v_y, v_z);
+   tribol::registerNodalVelocities(1, v_x, v_y, v_z);
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+}
+
+TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   bool setResponse = false;
+   int numCells = 1;
+   registerDummy3DMesh( 0, numCells, setResponse );
+   registerDummy3DMesh( 1, numCells, setResponse );
+
+   tribol::registerCouplingScheme(0, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::MORTAR_WEIGHTS,
+                                  tribol::FRICTIONLESS,
+                                  tribol::LAGRANGE_MULTIPLIER,
+                                  tribol::BINNING_GRID );
+
+   tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_WEIGHTS_EVAL, 
+                                         tribol::SparseMode::MFEM_LINKED_LIST );
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, true );
+}
+
+TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   bool setResponse = false;
+   int numCells = 1;
+   registerDummy3DMesh( 0, numCells, setResponse );
+   registerDummy3DMesh( 1, numCells, setResponse );
+
+   tribol::registerCouplingScheme(0, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::SINGLE_MORTAR,
+                                  tribol::FRICTIONLESS,
+                                  tribol::LAGRANGE_MULTIPLIER,
+                                  tribol::BINNING_GRID );
+
+   tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN, 
+                                         tribol::SparseMode::MFEM_LINKED_LIST );
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+}
+
+TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   int numCells = 1;
+   bool setResponse = false;
+   registerDummy3DMesh( 0, numCells, setResponse );
+   registerDummy3DMesh( 1, numCells, setResponse );
+
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty(0, penalty);
+   tribol::setKinematicConstantPenalty(1, penalty);
+
+   tribol::registerCouplingScheme(0, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+
+   tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+}
+
+TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   int numCells = 0;
+   bool setResponse = false;
+   registerDummy3DMesh( 0, numCells, setResponse );
+   registerDummy3DMesh( 1, numCells, setResponse );
+
+   real penalty = 1.0;
+   tribol::setKinematicConstantPenalty(0, penalty);
+   tribol::setKinematicConstantPenalty(1, penalty);
+
+   tribol::registerCouplingScheme(0, 0, 1, 
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+
+   // register null nodal velocity pointers. The coupling scheme 
+   // should NOT initialize correctly for kinematic-and-rate penalty.
+   real* v_x {nullptr};
+   real* v_y {nullptr};
+   real* v_z {nullptr};
+   tribol::registerNodalVelocities(0, v_x, v_y, v_z);
+   tribol::registerNodalVelocities(1, v_x, v_y, v_z);
+
+   tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
 }
 
 int main(int argc, char* argv[])

@@ -132,6 +132,11 @@ void CouplingSchemeErrors::printMethodErrors()
          SLIC_WARNING("The specified ContactMethod is not implemented for the problem dimension.");
          break;
       }
+      case NULL_NODAL_RESPONSE:
+      {
+         SLIC_WARNING("User must call tribol::registerNodalResponse() for each mesh to use this ContactMethod.");
+         break;
+      }
       case NO_METHOD_ERROR:
       {
          break;
@@ -381,9 +386,7 @@ bool CouplingScheme::isValidCouplingScheme()
    MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
    MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
 
-   // TODO these mesh checks are coupled. Put them in a routine checking for valid meshes
-   // as they pertain to a coupling scheme
-   // check for non-matching surface topology
+   // check for invalid mesh topology matches in a coupling scheme
    if (mesh1.m_elementType != mesh2.m_elementType)
    {
       SLIC_WARNING("Coupling scheme, " << this->m_id << ", does not support meshes with " << 
@@ -398,11 +401,11 @@ bool CouplingScheme::isValidCouplingScheme()
       return false;
    }
    
-   // return early for null meshes. We don't want to perform all of the checks 
-   // for valid coupling schemes since null-mesh coupling schemes will be no-ops.
-   if ( mesh1.m_numCells <= 0 && mesh2.m_numCells <= 0 )
+   // return early for coupling schemes with one or both null meshes. These are no-op coupling schemes
+   if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
-      SLIC_INFO("Coupling scheme, " << this->m_id << ", has null-meshes.");
+      SLIC_INFO("Coupling scheme, " << this->m_id << ", has null-mesh(es).");
+      this->m_nullMeshes = true;
       return false; 
    }
 
@@ -546,59 +549,69 @@ bool CouplingScheme::isValidMethod()
    double dim = this->spatialDimension();
 
    // check all methods for basic validity issues
-   switch (this->m_contactMethod)
+   if ( this->m_contactMethod == ALIGNED_MORTAR ||
+        this->m_contactMethod == MORTAR_WEIGHTS ||
+        this->m_contactMethod == SINGLE_MORTAR )
    {
-      case ALIGNED_MORTAR:
+      if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
       {
-         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
-         {
-            this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
-            return false;
-         }
-         [[fallthrough]];
-         // do not break; single mortar checks apply
+         this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
+         return false;
       }
-      case MORTAR_WEIGHTS:
-      case SINGLE_MORTAR:
+      if( this->m_meshId1 == this->m_meshId2 )
       {
-         if( this->m_meshId1 == this->m_meshId2 )
-         {
-            this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS;
-            if (dim != 3)
-            {
-               this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS_INVALID_DIM;
-            }
-            return false;
-         }
-
+         this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS;
          if (dim != 3)
          {
-            this->m_couplingSchemeErrors.cs_method_error = INVALID_DIM;
-            return false;
-         } 
-         break;
-      }
-     
-      case COMMON_PLANE:
-      {
-         // check for different face types. This is not yet supported
-         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
-         {
-            this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
-            return false;
+            this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS_INVALID_DIM;
          }
-         break;
-      }
-      default:
-      {
-         // if we are here there may be a method with no implementation. 
-         // See note at top of routine.
-         this->m_couplingSchemeErrors.cs_method_error = NO_METHOD_IMPLEMENTATION;
          return false;
-         break;
+      }
+
+      if (dim != 3)
+      {
+         this->m_couplingSchemeErrors.cs_method_error = INVALID_DIM;
+         return false;
+      } 
+   }
+   else if ( this->m_contactMethod == COMMON_PLANE )
+   {
+      // check for different face types. This is not yet supported
+      if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
+      {
+         this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
+         return false;
       }
    } // end switch on contact method
+   else
+   {
+      // if we are here there may be a method with no implementation. 
+      // See note at top of routine.
+      this->m_couplingSchemeErrors.cs_method_error = NO_METHOD_IMPLEMENTATION;
+      return false;
+   }
 
+   if ( this->m_contactMethod == ALIGNED_MORTAR ||
+        this->m_contactMethod == SINGLE_MORTAR  ||
+        this->m_contactMethod == COMMON_PLANE )
+   {
+      if ( mesh1.m_numCells > 0 && !mesh1.m_nodalFields.m_is_nodal_response_set )
+      {
+         this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
+         return false; 
+      }
+ 
+      if ( mesh2.m_numCells > 0 && !mesh2.m_nodalFields.m_is_nodal_response_set )
+      {
+         this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
+         return false; 
+      }
+   
+   }
+
+   // TODO check for nodal displacements for methods that require this data 
+
+   // no method error if here
    this->m_couplingSchemeErrors.cs_method_error = NO_METHOD_ERROR;
    return true;
 
@@ -1052,10 +1065,12 @@ void CouplingScheme::computeTimeStep(real &dt)
 
    if (dt < 1.e-8)
    {
-      SLIC_INFO("CouplingScheme::computeTimeStep(): time step too small " <<
-                "for Tribol timestep vote." );
+      // current timestep too small for Tribol vote. Leave unchanged and return
+      return;
    }
 
+   // check for null velocities needed to compute timestep. Allow for null-meshes
+   // (i.e. zero-element on rank meshes)
    bool meshVel1 = true;
    bool meshVel2 = true;
    if (this->spatialDimension() == 2)
@@ -1063,17 +1078,11 @@ void CouplingScheme::computeTimeStep(real &dt)
       if (mesh1.m_velX == nullptr || mesh1.m_velY == nullptr)
       {
          meshVel1 = false;
-         SLIC_WARNING( "CouplingScheme::computeTimeStep(): please register nodal "  << 
-                       "velocities for mesh id, " << m_meshId1 << ", in order to " <<
-                       "compute a Tribol timestep vote." );
       }
 
       if (mesh2.m_velX == nullptr || mesh2.m_velY == nullptr)
       {
          meshVel2 = false;
-         SLIC_WARNING( "CouplingScheme::computeTimeStep(): please register nodal "  << 
-                       "velocities for mesh id, " << m_meshId2 << ", in order to " <<
-                       "compute a Tribol timestep vote." );
       }
    }
    else 
@@ -1081,49 +1090,45 @@ void CouplingScheme::computeTimeStep(real &dt)
       if (mesh1.m_velX == nullptr || mesh1.m_velY == nullptr || mesh1.m_velZ == nullptr)
       {
          meshVel1 = false;
-         SLIC_WARNING( "CouplingScheme::computeTimeStep(): please register nodal "  << 
-                       "velocities for mesh id, " << m_meshId1 << ", in order to " <<
-                       "compute a Tribol timestep vote." );
       }
 
       if (mesh2.m_velX == nullptr || mesh2.m_velY == nullptr || mesh2.m_velZ == nullptr)
       {
          meshVel2 = false;
-         SLIC_WARNING( "CouplingScheme::computeTimeStep(): please register nodal "  << 
-                       "velocities for mesh id, " << m_meshId2 << ", in order to " <<
-                       "compute a Tribol timestep vote." );
       }
    } // end if-check on dim for velocity registration
 
    if (!meshVel1 || !meshVel2)
    {
-      return;
+      if (mesh1.m_numCells > 0 && mesh2.m_numCells > 0)
+      {
+         // invalid registration of nodal velocities for non-null meshes
+         dt = -1.0;
+         return;
+      }
+      else
+      {
+         // at least one null mesh with allowable null velocities; don't modify dt
+         return;
+      } 
    }
 
-   // if we are here we have registered velocities and can compute the timestep vote
+   // if we are here we have registered velocities for non-null meshes
+   // and can compute the timestep vote
    switch( m_contactMethod ) {
       case SINGLE_MORTAR :
-         SLIC_INFO( "CouplingScheme::computeTimeStep(): timestep vote for " << 
-                    "'SINGLE_MORTAR' method not yet implemented." );
+         // no-op
          break;
       case ALIGNED_MORTAR :
-         SLIC_INFO( "CouplingScheme::computeTimeStep(): timestep vote for " << 
-                    "'ALIGNED_MORTAR' method not yet implemented." );
+         // no-op
          break;
       case MORTAR_WEIGHTS :
-         SLIC_INFO( "CouplingScheme::computeTimeStep(): there is no timestep " << 
-                    "vote for 'MORTAR_WEIGHTS'." );
+         // no-op
          break;
       case COMMON_PLANE : 
          if ( m_enforcementMethod == PENALTY )
          {
             this->computeCommonPlaneTimeStep( dt ); 
-         }
-         else
-         {
-            SLIC_INFO( "CouplingScheme::computeTimeStep(): " << 
-                       "there is no timestep vote for 'COMMON_PLANE' " << 
-                       "with chosen enforcement method." );
          }
          break;
       default :
@@ -1158,11 +1163,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    KinematicPenaltyCalculation kin_calc = pen_enfrc_options.kinematic_calculation;
    if ( kin_calc == KINEMATIC_CONSTANT )
    {
-      SLIC_WARNING("Tribol timestep vote may be inaccurate when " << 
-                   "using constant kinematic penalty option with " << 
-                   "penalty enforced methods. Consider registering " << 
-                   "'element_wise' data in call to tribol::setKinematicElementPenalty() " << 
-                   "for element-specific penalty calculations.");
+      // Tribol timestep vote only used with KINEMATIC_ELEMENT penalty
+      // because element thicknesses are supplied
       return; 
    }
 
@@ -1427,9 +1429,9 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
    if (tiny_vel_msg)
    {
-      SLIC_INFO( "computeCommonPlaneTimeStep(): initial mesh overlap is too large " << 
-                 "with very small velocity. Cannot provide timestep vote. "         << 
-                 "Reduce overlap in initial configuration, otherwise penalty "      <<
+      SLIC_INFO( "tribol::computeCommonPlaneTimeStep(): initial mesh overlap is too large " <<
+                 "with very small velocity. Cannot provide timestep vote. "                 <<
+                 "Reduce overlap in initial configuration, otherwise penalty "              <<
                  "instability may result." );
    }
 
