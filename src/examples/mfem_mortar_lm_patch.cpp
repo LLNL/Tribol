@@ -25,6 +25,25 @@
 #include "tribol/config.hpp"
 #include "tribol/interface/tribol.hpp"
 
+
+/**
+ * @file mfem_mortar_lm_patch.cpp
+ *
+ * @brief Demonstrates contact patch test using the mortar method
+ *
+ * Demonstrates a contact patch test using the mortar method in Tribol.
+ * Enforcement is through Lagrange multipliers and no active set (i.e. tied +
+ * sliding contact).  Small deformation contact is assumed and, consequently,
+ * the solution is determined through a single linear solve (no timestepping).
+ *
+ * The example uses the Tribol MFEM interface, which supports decomposed (MPI)
+ * meshes and will support higher order meshes (through LOR) in a future update.
+ *
+ * Example runs (from repo root directory):
+ *   - mpirun -np 4 {build_dir}/examples/mfem_mortar_lm_patch_ex
+ *
+ * Example output can be viewed in VisIt or ParaView.
+ */
 int main( int argc, char** argv )
 {
   // initialize MPI
@@ -47,13 +66,24 @@ int main( int argc, char** argv )
   int ref_levels = 2;
   // polynomial order of the finite element discretization
   int order = 1;
+  // Lame parameter
+  double lambda = 50.0;
+  // Lame parameter (shear modulus)
+  double mu = 50.0;
 
   axom::CLI::App app { "mfem_mortar_lm_patch" };
   app.add_option("-r,--refine", ref_levels,
     "Number of times to refine the mesh uniformly.")
     ->capture_default_str();
-  app.add_option("-o,--order", order, 
-    "Finite element order (polynomial degree).")
+  // TODO: LOR support for implicit contact
+  // app.add_option("-o,--order", order, 
+  //   "Finite element order (polynomial degree).")
+  //   ->capture_default_str();
+  app.add_option("-l,--lambda", lambda, 
+    "Lame parameter.")
+    ->capture_default_str();
+  app.add_option("-m,--mu", mu, 
+    "Lame parameter (shear modulus).")
     ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
@@ -66,13 +96,13 @@ int main( int argc, char** argv )
   std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_overlap.mesh";
   // boundary element attributes of mortar surface
   auto mortar_attribs = std::set<int>({4});
-  // boundary element attributes of nonmortar surface
+  // boundary element attributes of nonmortar surface 
   auto nonmortar_attribs = std::set<int>({5});
-  // boundary element attributes of x-fixed surfaces
+  // boundary element attributes of x-fixed surfaces (at x = 0)
   auto xfix_attribs = std::set<int>({1});
-  // boundary element attributes of y-fixed surfaces
+  // boundary element attributes of y-fixed surfaces (at y = 0)
   auto yfix_attribs = std::set<int>({2});
-  // boundary element attributes of z-fixed surfaces
+  // boundary element attributes of z-fixed surfaces (3: surface at z = 0, 6: surface at z = 1.95)
   auto zfix_attribs = std::set<int>({3, 6});
   
   axom::utilities::Timer timer { false };
@@ -191,12 +221,12 @@ int main( int argc, char** argv )
   // set up mfem elasticity bilinear form
   timer.start();
   mfem::ParBilinearForm a(&par_fe_space);
-  mfem::ConstantCoefficient lambda(50.0);
-  mfem::ConstantCoefficient mu(50.0);
-  a.AddDomainIntegrator(new mfem::ElasticityIntegrator(lambda, mu));
-  a.Assemble();
+  mfem::ConstantCoefficient lambda_coeff(lambda);
+  mfem::ConstantCoefficient mu_coeff(mu);
+  a.AddDomainIntegrator(new mfem::ElasticityIntegrator(lambda_coeff, mu_coeff));
 
   // compute elasticity contribution to stiffness
+  a.Assemble();
   auto A = std::make_unique<mfem::HypreParMatrix>();
   a.FormSystemMatrix(ess_tdof_list, *A);
   timer.stop();

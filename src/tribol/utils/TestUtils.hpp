@@ -466,8 +466,7 @@ public:
       mfem::ParFiniteElementSpace& fespace, 
       mfem::Coefficient& rho,
       mfem::Coefficient& lambda,
-      mfem::Coefficient& mu,
-      std::unique_ptr<mfem::ParBilinearForm> damping_ = nullptr
+      mfem::Coefficient& mu
    );
 
    /**
@@ -493,11 +492,6 @@ private:
     * @brief Elasticity bilinear form
     */
    mfem::ParBilinearForm elasticity;
-
-   /**
-    * @brief Damping bilinear form
-    */
-   std::unique_ptr<mfem::ParBilinearForm> damping;
    
    /**
     * @brief Inverse lumped mass matrix

@@ -3,6 +3,25 @@
 //
 // SPDX-License-Identifier: (MIT)
 
+/**
+ * @file mfem_common_plane.cpp
+ *
+ * @brief Demonstrates explicit contact using Tribol's common plane algorithm
+ *
+ * Demonstrates contact in an explicit finite element code through a simple two
+ * block impact problem.  Contact constraints are enforced using the common
+ * plane algorithm.
+ *
+ * The example uses the Tribol MFEM interface, which supports decomposed (MPI)
+ * meshes and has experimental support for higher order meshes using low-order
+ * refinement of higher-order geometry representations.
+ *
+ * Example runs (from repo root directory):
+ *   - mpirun -np 4 {build_dir}/examples/mfem_common_plane_ex
+ *
+ * Example output can be viewed in VisIt or ParaView.
+ */
+
 #include <set>
 
 #ifdef TRIBOL_USE_UMPIRE
@@ -58,6 +77,12 @@ int main( int argc, char** argv )
   double p_kine = 500.0;
   // number of cycles to skip before output
   int output_cycles = 5;
+  // material density
+  double rho = 100.0;
+  // lame parameter
+  double lambda = 100000.0;
+  // lame parameter (shear modulus)
+  double mu = 100000.0;
 
   axom::CLI::App app { "mfem_common_plane" };
   app.add_option("-r,--refine", ref_levels,
@@ -81,6 +106,15 @@ int main( int argc, char** argv )
   app.add_option("-c,--outputcycles", output_cycles, 
     "Cycles to skip before next output.")
     ->capture_default_str();
+  app.add_option("-R,--rho", rho, 
+    "Material density.")
+    ->capture_default_str();
+  app.add_option("-l,--lambda", lambda, 
+    "Lame parameter.")
+    ->capture_default_str();
+  app.add_option("-m,--mu", mu, 
+    "Lame parameter (shear modulus).")
+    ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
   SLIC_INFO_ROOT("Running mfem_common_plane with the following options:");
@@ -94,9 +128,10 @@ int main( int argc, char** argv )
   auto surf1_attribs = std::set<int>({4});
   // boundary element attributes of contact surface 2
   auto surf2_attribs = std::set<int>({5});
-  // boundary element attributes of fixed surface (all t)
+  // boundary element attributes of fixed surface (points on z = 0, all t)
   auto fix_attribs = std::set<int>({3});
-  // element attributes of moving volumes (initial condition)
+  // element attribute corresponding to volume elements where an initial
+  // velocity will be applied
   auto move_attribs = std::set<int>({2});
 
   axom::utilities::Timer timer { false };
@@ -225,10 +260,10 @@ int main( int argc, char** argv )
 
   // set up mfem elasticity bilinear form
   timer.start();
-  mfem::ConstantCoefficient rho {100.0};
-  mfem::ConstantCoefficient lambda {100000.0};
-  mfem::ConstantCoefficient mu {100000.0};
-  mfem_ext::ExplicitMechanics op {par_fe_space, rho, lambda, mu};
+  mfem::ConstantCoefficient rho_coeff {rho};
+  mfem::ConstantCoefficient lambda_coeff {lambda};
+  mfem::ConstantCoefficient mu_coeff {mu};
+  mfem_ext::ExplicitMechanics op {par_fe_space, rho_coeff, lambda_coeff, mu_coeff};
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to set up elasticity bilinear form: {0:f}ms", timer.elapsedTimeInMilliSec()
@@ -287,6 +322,7 @@ int main( int argc, char** argv )
     solver.Step(u, v, t, dt);
 
     coords += u;
+    // nodal coordinates stored in Nodes grid function for higher order
     if (order == 1)
     {
       pmesh->SetVertices(coords);

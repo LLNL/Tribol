@@ -1700,6 +1700,8 @@ void CentralDiffSolver::Step(mfem::Vector& x, mfem::Vector& dxdt, double& t, dou
    if (first_step)
    {
       accel.SetSize(x.Size());
+      // update acceleration given displacement, velocity using linked
+      // SecondOrderTimeDependentOperator (set using Init() method)
       f->Mult(x, dxdt, accel);
       first_step = false;
    }
@@ -1715,6 +1717,8 @@ void CentralDiffSolver::Step(mfem::Vector& x, mfem::Vector& dxdt, double& t, dou
 
    // acceleration at t + dt
    f->SetTime(t + dt);
+   // update acceleration given displacement, velocity using linked
+   // SecondOrderTimeDependentOperator (set using Init() method)
    f->Mult(x, dxdt, accel);
 
    // velocity at t + dt
@@ -1733,11 +1737,9 @@ ExplicitMechanics::ExplicitMechanics(
    mfem::ParFiniteElementSpace& fespace, 
    mfem::Coefficient& rho,
    mfem::Coefficient& lambda,
-   mfem::Coefficient& mu,
-   std::unique_ptr<mfem::ParBilinearForm> damping_
+   mfem::Coefficient& mu
 )
 :  elasticity { &fespace },
-   damping { std::move(damping_) },
    inv_lumped_mass { fespace.GetVSize() }
 {
    // create inverse lumped mass matrix; store as a vector
@@ -1763,7 +1765,7 @@ ExplicitMechanics::ExplicitMechanics(
 
 void ExplicitMechanics::Mult(
    const mfem::Vector& u,
-   const mfem::Vector& dudt,
+   const mfem::Vector& AXOM_UNUSED_PARAM(dudt),
    mfem::Vector& a
 ) const
 {
@@ -1773,12 +1775,6 @@ void ExplicitMechanics::Mult(
    mfem::Vector f_int { f.Size() };
    elasticity.Mult(u, f_int);
    f.Add(-1.0, f_int);
-
-   if (damping)
-   {
-      damping->Mult(dudt, f_int);
-      f.Add(-1.0, f_int);
-   }
 
    // sum forces over ranks
    auto& fespace = *elasticity.ParFESpace();
