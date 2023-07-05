@@ -198,7 +198,7 @@ void ParentField::SetParentGridFn(const mfem::ParGridFunction& parent_gridfn)
   parent_gridfn_ = parent_gridfn;
 }
 
-void ParentField::UpdateField(const ParentRedecompTransfer& parent_redecomp_xfer)
+void ParentField::UpdateField(ParentRedecompTransfer& parent_redecomp_xfer)
 {
   update_data_ = std::make_unique<UpdateData>(parent_redecomp_xfer, parent_gridfn_);
 }
@@ -263,7 +263,7 @@ void PressureField::SetSubmeshField(const mfem::ParGridFunction& submesh_gridfn)
   submesh_gridfn_ = submesh_gridfn;
 }
 
-void PressureField::UpdateField(const SubmeshRedecompTransfer& submesh_redecomp_xfer)
+void PressureField::UpdateField(SubmeshRedecompTransfer& submesh_redecomp_xfer)
 {
   update_data_ = std::make_unique<UpdateData>(submesh_redecomp_xfer, submesh_gridfn_);
 }
@@ -365,21 +365,23 @@ MfemMeshData::MfemMeshData(
 
   switch (element_type) 
   {
-    case mfem::Element::POINT:
-      elem_type_ = NODE;
-      break;
     case mfem::Element::SEGMENT:
-      elem_type_ = EDGE;
+      elem_type_ = LINEAR_EDGE;
+      break;
+    case mfem::Element::TRIANGLE:
+      elem_type_ = LINEAR_TRIANGLE;
       break;
     case mfem::Element::QUADRILATERAL:
-      elem_type_ = FACE;
+      elem_type_ = LINEAR_QUAD;
+      break;
+    case mfem::Element::TETRAHEDRON:
+      elem_type_ = LINEAR_TET;
       break;
     case mfem::Element::HEXAHEDRON:
-      elem_type_ = CELL;
+      elem_type_ = LINEAR_HEX;
       break;
 
-    case mfem::Element::TRIANGLE:
-    case mfem::Element::TETRAHEDRON:
+    case mfem::Element::POINT:
       SLIC_ERROR_ROOT("Unsupported element type!");
       break;
 
@@ -597,6 +599,13 @@ void MfemSubmeshData::UpdateSubmeshData(redecomp::RedecompMesh& redecomp_mesh)
   pressure_.UpdateField(update_data_->pressure_xfer_);
   redecomp_gap_.SetSpace(pressure_.GetRedecompGridFn().FESpace());
   redecomp_gap_ = 0.0;
+}
+
+void MfemSubmeshData::GetSubmeshGap(mfem::ParGridFunction& g) const
+{
+  g.SetSpace(submesh_pressure_.ParFESpace());
+  g = 0.0;
+  GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g);
 }
 
 MfemSubmeshData::UpdateData::UpdateData(

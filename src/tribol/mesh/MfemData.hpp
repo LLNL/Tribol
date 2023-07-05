@@ -377,7 +377,7 @@ public:
    *
    * @param xfer Updated parent mesh to redecomp mesh transfer object
    */
-  void UpdateField(const ParentRedecompTransfer& parent_redecomp_xfer);
+  void UpdateField(ParentRedecompTransfer& parent_redecomp_xfer);
 
   /**
    * @brief Get the parent grid function
@@ -511,7 +511,7 @@ public:
    * 
    * @param xfer Updated submesh to redecomp transfer object
    */
-  void UpdateField(const SubmeshRedecompTransfer& submesh_redecomp_xfer);
+  void UpdateField(SubmeshRedecompTransfer& submesh_redecomp_xfer);
 
   /**
    * @brief Get the parent-linked boundary submesh grid function
@@ -1259,12 +1259,7 @@ public:
    *
    * @param [out] g Un-initialized mfem::ParGridFunction holding the nodal gap values
    */
-  void GetSubmeshGap(mfem::ParGridFunction& g) const
-  {
-    g.SetSize(submesh_pressure_.Size());
-    g = 0.0;
-    GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g);
-  }
+  void GetSubmeshGap(mfem::ParGridFunction& g) const;
 
   /**
    * @brief Get the parent-linked boundary submesh to redecomp mesh pressure

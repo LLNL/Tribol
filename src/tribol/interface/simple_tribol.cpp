@@ -153,7 +153,7 @@ int Update( double &dt )
 int GetSimpleCouplingCSR( int** I, int** J, double** vals,
                           int* n_offsets, int* n_nonzeros )
 {
-   int err = tribol::getCSRMatrix( I, J, vals, 0, n_offsets, n_nonzeros );
+   int err = tribol::getJacobianCSRMatrix( I, J, vals, 0, n_offsets, n_nonzeros );
    return err;
 }
 

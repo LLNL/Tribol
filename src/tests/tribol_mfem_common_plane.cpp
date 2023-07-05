@@ -26,6 +26,7 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/config.hpp"
 #include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
 #include "tribol/utils/TestUtils.hpp"
 
 /**
@@ -51,18 +52,25 @@ protected:
     double t_end = 0.35;
     // kinematic penalty
     double p_kine = 500.0;
+    // material density
+    double rho = 100.0;
+    // lame parameter
+    double lambda = 100000.0;
+    // lame parameter (shear modulus)
+    double mu = 100000.0;
 
     // fixed options
     // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
     std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_apart.mesh";
-    // boundary element attributes of surface 1
-    auto surf1_attribs = std::set<int>({4});
-    // boundary element attributes of surface 2
-    auto surf2_attribs = std::set<int>({5});
-    // boundary element attributes of fixed surface (all t)
-    auto fix_attribs = std::set<int>({3});
-    // element attributes of moving volumes (initial condition)
-    auto move_attribs = std::set<int>({2});
+  // boundary element attributes of contact surface 1
+  auto surf1_attribs = std::set<int>({4});
+  // boundary element attributes of contact surface 2
+  auto surf2_attribs = std::set<int>({5});
+  // boundary element attributes of fixed surface (points on z = 0, all t)
+  auto fix_attribs = std::set<int>({3});
+  // element attribute corresponding to volume elements where an initial
+  // velocity will be applied
+  auto move_attribs = std::set<int>({2});
 
     // read mesh
     std::unique_ptr<mfem::ParMesh> pmesh { nullptr };
@@ -162,10 +170,10 @@ protected:
     }
 
     // set up mfem elasticity bilinear form
-    mfem::ConstantCoefficient rho {100.0};
-    mfem::ConstantCoefficient lambda {100000.0};
-    mfem::ConstantCoefficient mu {100000.0};
-    mfem_ext::ExplicitMechanics op {par_fe_space, rho, lambda, mu};
+    mfem::ConstantCoefficient rho_coeff {rho};
+    mfem::ConstantCoefficient lambda_coeff {lambda};
+    mfem::ConstantCoefficient mu_coeff {mu};
+    mfem_ext::ExplicitMechanics op {par_fe_space, rho_coeff, lambda_coeff, mu_coeff};
 
     // set up time integrator
     mfem_ext::CentralDiffSolver solver { ess_vdof_list };
@@ -189,14 +197,16 @@ protected:
       tribol::KINEMATIC_CONSTANT,
       tribol::NO_RATE_PENALTY
     );
-    tribol::setKinematicConstantPenalty(0, p_kine);
-    tribol::setKinematicConstantPenalty(1, p_kine);
 
     int cycle {0};
     for (double t {0.0}; t < t_end; t+=dt)
     {
+      tribol::updateMfemParallelDecomposition();
+      tribol::setKinematicConstantPenalty(0, p_kine);
+      tribol::setKinematicConstantPenalty(1, p_kine);
       tribol::update(cycle, t, dt);
-      op.f_ext = tribol::getMfemResponse(0);
+      op.f_ext = 0.0;
+      tribol::getMfemResponse(0, op.f_ext);
 
       op.SetTime(t);
       solver.Step(u, v, t, dt);

@@ -165,7 +165,7 @@ int main( int argc, char** argv )
      // to sum in MFEM equilibrium contributions after which the matrix 
      // will be finalized.
      mfem::SparseMatrix * tribolJac { nullptr };
-     int sparseMatErr = tribol::getMfemSparseMatrix( &tribolJac, 0 );    
+     int sparseMatErr = tribol::getJacobianSparseMatrix( &tribolJac, 0 );    
 
      SLIC_ERROR_IF( sparseMatErr != 0, "mortar_lm_patch_test.cpp: error " << 
                                        "gettting Tribol mfem sparse matrix." );

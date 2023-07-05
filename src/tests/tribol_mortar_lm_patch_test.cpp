@@ -162,7 +162,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
 
    // get Jacobian sparse matrix from Tribol
    mfem::SparseMatrix * tribolJac { nullptr };
-   int sparseMatErr = tribol::getMfemSparseMatrix( &tribolJac, 0 );
+   int sparseMatErr = tribol::getJacobianSparseMatrix( &tribolJac, 0 );
 
    EXPECT_EQ( sparseMatErr, 0 ); 
 

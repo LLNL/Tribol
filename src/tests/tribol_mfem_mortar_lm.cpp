@@ -26,6 +26,7 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/config.hpp"
 #include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
 
 /**
  * @brief This tests the Tribol MFEM interface running a contact patch test.
@@ -47,13 +48,13 @@ protected:
     std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_overlap.mesh";
     // boundary element attributes of mortar surface
     auto mortar_attribs = std::set<int>({4});
-    // boundary element attributes of nonmortar surface
+    // boundary element attributes of nonmortar surface 
     auto nonmortar_attribs = std::set<int>({5});
-    // boundary element attributes of x-fixed surfaces
+    // boundary element attributes of x-fixed surfaces (at x = 0)
     auto xfix_attribs = std::set<int>({1});
-    // boundary element attributes of y-fixed surfaces
+    // boundary element attributes of y-fixed surfaces (at y = 0)
     auto yfix_attribs = std::set<int>({2});
-    // boundary element attributes of z-fixed surfaces
+    // boundary element attributes of z-fixed surfaces (3: surface at z = 0, 6: surface at z = 1.95)
     auto zfix_attribs = std::set<int>({3, 6});
 
     // read mesh
@@ -168,7 +169,8 @@ protected:
     );
 
     // update tribol (compute contact contribution to force and stiffness)
-    double dt {1.0};
+    tribol::updateMfemParallelDecomposition();
+    double dt {1.0};  // time is arbitrary here (no timesteps)
     tribol::update(1, 1.0, dt);
 
     // retrieve block stiffness matrix
@@ -182,9 +184,10 @@ protected:
     X_blk = 0.0;
 
     // retrieve gap vector (RHS) from contact
-    auto g = tribol::getMfemGap(0);
+    mfem::ParGridFunction g;
+    tribol::getMfemGap(0, g);
 
-    // restriction on submesh
+  // restriction operator on submesh: maps dofs stored in g to tdofs stored in G
     {
       auto& G = B_blk.GetBlock(1);
       auto& R_submesh = *g.ParFESpace()->GetRestrictionOperator();

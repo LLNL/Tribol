@@ -531,7 +531,7 @@ void registerNodalResponse( integer meshId,
 } // end registerNodalResponse()
 
 //------------------------------------------------------------------------------
-int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
+int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
 {
 
    if (*sMat != nullptr)
@@ -566,7 +566,7 @@ int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
 } // end getMfemSparseMatrix()
 
 //------------------------------------------------------------------------------
-int getCSRMatrix( int** I, int** J, real** vals, int csId,
+int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
                   int* n_offsets, int* n_nonzero )
 {
    // check to make sure input pointers are null

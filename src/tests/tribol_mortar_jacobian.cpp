@@ -312,7 +312,7 @@ TEST_F( MortarJacTest, jac_input_test )
 
    // check Jacobian sparse matrix
    mfem::SparseMatrix * jac { nullptr };
-   int sparseMatErr = tribol::getMfemSparseMatrix( &jac, 0 );
+   int sparseMatErr = tribol::getJacobianSparseMatrix( &jac, 0 );
 
    EXPECT_EQ( sparseMatErr, 0 );
 
@@ -408,7 +408,7 @@ TEST_F( MortarJacTest, update_jac_test )
 
    // check Jacobian sparse matrix
    mfem::SparseMatrix * jac { nullptr };
-   int sparseMatErr = tribol::getMfemSparseMatrix( &jac, 0 );
+   int sparseMatErr = tribol::getJacobianSparseMatrix( &jac, 0 );
 
    EXPECT_EQ( sparseMatErr, 0 );
 
