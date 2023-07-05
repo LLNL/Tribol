@@ -69,8 +69,8 @@ void setKinematicConstantPenalty( int meshId, double k );
  *       is the number of contact faces registered for mesh with id, \p meshId.
  */
 void setKinematicElementPenalty( int meshId, 
-                                 double *material_modulus, 
-                                 double *element_thickness );
+                                 const double *material_modulus, 
+                                 const double *element_thickness );
 
 /* \brief Sets the constant rate penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
@@ -343,7 +343,7 @@ void registerIntNodalField( integer meshId,
 /// register a real element field or parameter 
 void registerRealElementField( int meshId,
                                const RealElementFields field,
-                               double * fieldVariable );
+                               const double * fieldVariable );
 
 /// register an integer element field
 void registerIntElementField( int meshId,

@@ -157,8 +157,8 @@ void setKinematicConstantPenalty( int meshId, double k )
 
 //------------------------------------------------------------------------------
 void setKinematicElementPenalty( int meshId, 
-                                 double *material_modulus,
-                                 double *element_thickness )
+                                 const double *material_modulus,
+                                 const double *element_thickness )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -328,28 +328,34 @@ void registerMesh( integer meshId,
    MeshData & mesh = meshManager.CreateMesh( meshId );
 
    // check supported element types
-   if (static_cast< InterfaceElementType >(elementType) != EDGE && 
-       static_cast< InterfaceElementType >(elementType) != FACE)
+   if (static_cast< InterfaceElementType >(elementType) != LINEAR_EDGE && 
+       static_cast< InterfaceElementType >(elementType) != LINEAR_TRIANGLE &&
+       static_cast< InterfaceElementType >(elementType) != LINEAR_QUAD)
    {
       SLIC_WARNING("Mesh topology not supported for mesh id, " << meshId << ".");
       mesh.m_isValid = false;
    }
 
    const int dim = (z == nullptr) ? 2 : 3;
-   if (x == nullptr || y == nullptr)
-   {
-      SLIC_WARNING("Pointer to x and y-component mesh coordinate arrays are null pointers " <<
-                   " for mesh id, " << meshId << ".");
-      mesh.m_isValid = false;
-   }
 
-   if (dim == 3)
+   // check for null pointers for non-null meshes
+   if (numCells > 0)
    {
-      if (z == nullptr)
+      if (x == nullptr || y == nullptr)
       {
-         SLIC_WARNING("Pointer to z-component mesh coordinates is null for " << 
-                      "mesh id, " << meshId << ".");
+         SLIC_WARNING("Pointer to x or y-component mesh coordinate arrays are null pointers " <<
+                      " for mesh id, " << meshId << ".");
          mesh.m_isValid = false;
+      }
+
+      if (dim == 3)
+      {
+         if (z == nullptr)
+         {
+            SLIC_WARNING("Pointer to z-component mesh coordinates is null for " << 
+                         "mesh id, " << meshId << ".");
+            mesh.m_isValid = false;
+         }
       }
    }
 
@@ -372,8 +378,26 @@ void registerMesh( integer meshId,
    mesh.m_nodalFields.m_numNodes = lengthNodalData;
 
    // set the number of nodes per cell on the mesh.
-   // NOTE: this handles linear segments and bilinear quads
-   mesh.m_numCellNodes = (mesh.m_elementType == tribol::EDGE) ? 2 : 4;
+   switch (mesh.m_elementType)
+   {
+      case tribol::LINEAR_EDGE:
+      {
+         mesh.m_numNodesPerCell = 2;
+         break;
+      }
+      case tribol::LINEAR_TRIANGLE:
+      {
+         mesh.m_numNodesPerCell = 3;
+         break;
+      } 
+      case tribol::LINEAR_QUAD:
+      { 
+         mesh.m_numNodesPerCell = 4;
+         break;
+      }
+      default:
+         SLIC_WARNING("Element type not supported.");
+   } // end switch over element type
 
    // compute the number of unique surface nodes from the connectivity
    // Note: this routine assigns mesh.m_numSurfaceNodes and allocates
@@ -409,107 +433,6 @@ void registerMesh( integer meshId,
 } // end of registerMesh()
 
 //------------------------------------------------------------------------------
-void registerMfemMesh( integer cs_id,
-                      integer mesh_id_1,
-                      integer mesh_id_2,
-                      mfem::ParMesh& mesh,
-                      const mfem::ParGridFunction& current_coords,
-                      const std::set<integer>& attributes_1,
-                      const std::set<integer>& attributes_2,
-                      integer contact_mode,
-                      integer contact_case,
-                      integer contact_method,
-                      integer contact_model,
-                      integer enforcement_method,
-                      integer binning_method)
-{
-   std::unique_ptr<mfem::FiniteElementCollection> dual_fec = nullptr;
-   integer dual_vdim = 0;
-   auto mfem_data = std::make_unique<MfemMeshData>(
-      mesh_id_1,
-      mesh_id_2,
-      mesh,
-      current_coords,
-      attributes_1,
-      attributes_2
-   );
-   // register empty meshes so the coupling scheme is valid
-   registerMesh(
-      mesh_id_1, 0, 0, nullptr, mfem_data->GetElemType(), nullptr, nullptr);
-   registerMesh(
-      mesh_id_2, 0, 0, nullptr, mfem_data->GetElemType(), nullptr, nullptr);
-   registerCouplingScheme(
-      cs_id,
-      mesh_id_1,
-      mesh_id_2,
-      contact_mode,
-      contact_case,
-      contact_method,
-      contact_model,
-      enforcement_method,
-      binning_method
-   );
-   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
-   if (enforcement_method == LAGRANGE_MULTIPLIER)
-   {
-      dual_fec = std::make_unique<mfem::H1_FECollection>(
-         current_coords.FESpace()->FEColl()->GetOrder(),
-         mesh.SpaceDimension()
-      );
-      if (contact_model == FRICTIONLESS)
-      {
-         dual_vdim = 1;
-      }
-      else if (contact_model == TIED || contact_model == COULOMB)
-      {
-         dual_vdim = mesh.SpaceDimension();
-      }
-      else
-      {
-         SLIC_ERROR_ROOT("Unsupported contact model. "
-           "Only FRICTIONLESS, TIED, and COULOMB supported.");
-      }
-      coupling_scheme->setMfemSubmeshData(
-         std::make_unique<MfemSubmeshData>(
-            mfem_data->GetSubmesh(),
-            mfem_data->GetLORMesh(),
-            std::move(dual_fec),
-            dual_vdim
-         )
-      );
-      auto lm_options = coupling_scheme->getEnforcementOptions().lm_implicit_options;
-      if (
-         lm_options.enforcement_option_set && 
-         (
-            lm_options.eval_mode == ImplicitEvalMode::MORTAR_JACOBIAN ||
-            lm_options.eval_mode == ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
-         )
-      )
-      {
-         coupling_scheme->setMatrixXfer(std::make_unique<MfemJacobianData>(
-            *mfem_data,
-            *coupling_scheme->getMfemSubmeshData()
-         ));
-      }
-   }
-   coupling_scheme->setMfemMeshData(std::move(mfem_data));
-
-} // end of registerParMesh()
-
-//------------------------------------------------------------------------------
-void setMfemLowOrderRefinedFactor( integer cs_id,
-                                   integer lor_factor)
-{
-   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
-   SLIC_ERROR_ROOT_IF(
-      !coupling_scheme->hasMfemData(),
-      "Coupling scheme does not contain MFEM data. "
-      "Was the coupling scheme created with registerParMesh()?"
-   );
-   coupling_scheme->getMfemMeshData()->SetLORFactor(lor_factor);
-}
-
-//------------------------------------------------------------------------------
 void registerNodalDisplacements( integer meshId,
                                  const real* dx,
                                  const real* dy,
@@ -521,22 +444,20 @@ void registerNodalDisplacements( integer meshId,
                  "no mesh with id, " << meshId << "exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
+   mesh.m_nodalFields.m_is_nodal_displacement_set = true;
 
    if (dx == nullptr || dy == nullptr)
    {
-      mesh.m_isValid = false;
+      mesh.m_nodalFields.m_is_nodal_displacement_set = false;
    }
 
    if (mesh.m_dim == 3)
    {
       if (dz == nullptr)
       {
-         mesh.m_isValid = false;
+         mesh.m_nodalFields.m_is_nodal_displacement_set = false;
       }
    }
-
-   SLIC_WARNING_IF( !mesh.m_isValid, "tribol::registerNodalDisplacements(): " << 
-                    "null pointer to nodal displacement components." );
 
    mesh.m_dispX = dx;
    mesh.m_dispY = dy;
@@ -556,41 +477,26 @@ void registerNodalVelocities( integer meshId,
                  "no mesh with id, " << meshId << "exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
+   mesh.m_nodalFields.m_is_velocity_set = true;
+
    if (vx == nullptr || vy == nullptr)
    {
-      mesh.m_isValid = false;
+      mesh.m_nodalFields.m_is_velocity_set = false;
    }
    
    if (mesh.m_dim == 3)
    {
       if (vz == nullptr)
       {
-         mesh.m_isValid = false;
+         mesh.m_nodalFields.m_is_velocity_set = false;
       }
    }   
-
-   SLIC_WARNING_IF( !mesh.m_isValid, "tribol::registerNodalVelocities(): " << 
-                    "null pointer to nodal velocity components." );
 
    mesh.m_velX = vx;
    mesh.m_velY = vy;
    mesh.m_velZ = vz;
 
-   mesh.m_nodalFields.m_is_velocity_set = true;
-
 } // end registerNodalVelocities()
-
-//------------------------------------------------------------------------------
-void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction &v )
-{
-   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
-   SLIC_ERROR_ROOT_IF(
-      !coupling_scheme->hasMfemData(), 
-      "Coupling scheme does not contain MFEM data. "
-      "Was the coupling scheme created with registerParMesh()?"
-   );
-   coupling_scheme->getMfemMeshData()->SetParentVelocity(v);
-}
 
 //------------------------------------------------------------------------------
 void registerNodalResponse( integer meshId,
@@ -604,39 +510,25 @@ void registerNodalResponse( integer meshId,
                  "no mesh with id, " << meshId << "exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
+   mesh.m_nodalFields.m_is_nodal_response_set = true;
    if (rx == nullptr || ry == nullptr)
    {
-      mesh.m_isValid = false;
+      mesh.m_nodalFields.m_is_nodal_response_set = false;
    }
 
    if (mesh.m_dim == 3)
    {
       if (rz == nullptr)
       {
-         mesh.m_isValid = false;
+         mesh.m_nodalFields.m_is_nodal_response_set = false;
       }
    }   
-
-   SLIC_WARNING_IF(!mesh.m_isValid, "tribol::registerNodalResponse(): " << 
-                   "null pointer to nodal response components.");
 
    mesh.m_forceX = rx;
    mesh.m_forceY = ry;
    mesh.m_forceZ = rz;
 
 } // end registerNodalResponse()
-
-//------------------------------------------------------------------------------
-mfem::ParGridFunction getMfemResponse( integer cs_id )
-{
-   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
-   SLIC_ERROR_ROOT_IF(
-      !coupling_scheme->hasMfemData(), 
-      "Coupling scheme does not contain MFEM data. "
-      "Was the coupling scheme created with registerParMesh()?"
-   );
-   return coupling_scheme->getMfemMeshData()->GetParentResponse();
-}
 
 //------------------------------------------------------------------------------
 int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
@@ -751,30 +643,6 @@ int getElementBlockJacobians( integer csId,
 }
 
 //------------------------------------------------------------------------------
-std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
-{
-   CouplingScheme* coupling_scheme = CouplingSchemeManager::getInstance().
-      getCoupling(csId);
-   SparseMode sparse_mode = coupling_scheme
-      ->getEnforcementOptions().lm_implicit_options.sparse_mode;
-   if (sparse_mode != SparseMode::MFEM_ELEMENT_DENSE)
-   {
-      SLIC_ERROR_ROOT("Jacobian is assembled and can be accessed by " 
-         "getMfemSparseMatrix() or getCSRMatrix(). For (unassembled) element "
-         "Jacobian contributions, call setLagrangeMultiplierOptions() with "
-         "SparseMode::MFEM_ELEMENT_DENSE before calling update().");
-   }
-   SLIC_ERROR_ROOT_IF(
-      !coupling_scheme->hasMfemData(), 
-      "No MFEM data exists. The coupling scheme "
-      "must be registered using registerParMesh() to use this method."
-   );
-   return coupling_scheme->getMfemJacobianData()->GetMfemBlockJacobian(
-      *coupling_scheme->getMethodData()
-   );
-}
-
-//------------------------------------------------------------------------------
 void registerMortarGaps( integer meshId,
                          real * nodal_gaps )
 {
@@ -797,19 +665,6 @@ void registerMortarGaps( integer meshId,
       mesh.m_nodalFields.m_is_node_gap_set = true;
    }
    
-}
-
-//------------------------------------------------------------------------------
-mfem::ParGridFunction getMfemGap( integer cs_id )
-{
-   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
-   SLIC_ERROR_ROOT_IF(
-      !coupling_scheme->hasMfemSubmeshData(), 
-      "Coupling scheme does not contain MFEM dual field data. "
-      "Was the coupling scheme created with registerParMesh() and is the "
-      "enforcement method LAGRANGE_MULTIPLIER?"
-   );
-   return coupling_scheme->getMfemSubmeshData()->GetSubmeshGap();
 }
 
 //------------------------------------------------------------------------------
@@ -838,19 +693,6 @@ void registerMortarPressures( integer meshId,
 }
 
 //------------------------------------------------------------------------------
-mfem::ParGridFunction& getMfemPressure( integer cs_id )
-{
-   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
-   SLIC_ERROR_ROOT_IF(
-      !coupling_scheme->hasMfemSubmeshData(), 
-      "Coupling scheme does not contain MFEM dual field data. "
-      "Was the coupling scheme created with registerParMesh() and is the "
-      "enforcement method LAGRANGE_MULTIPLIER?"
-   );
-   return coupling_scheme->getMfemSubmeshData()->GetSubmeshPressure();
-}
-
-//------------------------------------------------------------------------------
 void registerIntNodalField( integer meshId,
                             const IntNodalFields field,
                             integer * TRIBOL_UNUSED_PARAM(fieldVariable) )
@@ -872,7 +714,7 @@ void registerIntNodalField( integer meshId,
 //------------------------------------------------------------------------------
 void registerRealElementField( integer meshId,
                                const RealElementFields field,
-                               real * fieldVariable )
+                               const real * fieldVariable )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -889,7 +731,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'KINEMATIC_CONSTANT_STIFFNESS' on mesh " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_kinematic_constant_penalty_set = false;
          }
          else
          {
@@ -904,7 +746,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'RATE_CONSTANT_STIFFNESS' on mesh " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_rate_constant_penalty_set = false;
          }
          else
          {
@@ -919,7 +761,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'RATE_PERCENT_STIFFNESS' on mesh " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_rate_percent_penalty_set = false;
          }
          else
          {
@@ -934,7 +776,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'BULK_MODULUS' on mesh " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
          }
          else
          {
@@ -953,7 +795,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'YOUNGS_MODULUS' on mesh " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
          }
          else
          {
@@ -972,7 +814,7 @@ void registerRealElementField( integer meshId,
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
                           "'ELEMENT_THICKNESS' on mesh " << meshId << ".");
-            mesh.m_isValid = false;
+            mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
          }
          else
          {
@@ -1111,103 +953,19 @@ integer update( integer cycle, real t, real &dt )
 
       CouplingScheme* couplingScheme  = csManager.getCoupling(csIndex);
 
-      // update redecomp meshes if supplied mfem data
-      if (couplingScheme->hasMfemData())
-      {
-         auto mfem_data = couplingScheme->getMfemMeshData();
-         axom::Array<int> mesh_ids {2, 2};
-         mesh_ids[0] = mfem_data->GetMesh1ID();
-         mesh_ids[1] = mfem_data->GetMesh2ID();
-         // creates a new RedecompMesh and updates grid functions on RedecompMesh
-         mfem_data->UpdateMeshData();
-         auto coord_ptrs = mfem_data->GetRedecompCoordsPtrs();
-
-         // save penalty data for old meshes
-         auto& mesh_manager = MeshManager::getInstance();
-         axom::Array<MeshElemData> mesh_data {0, 2};
-         mesh_data.push_back(mesh_manager.GetMeshInstance(mesh_ids[0]).m_elemData);
-         mesh_data.push_back(mesh_manager.GetMeshInstance(mesh_ids[1]).m_elemData);
-
-         registerMesh(
-            mesh_ids[0],
-            mfem_data->GetMesh1NE(),
-            mfem_data->GetNV(),
-            mfem_data->GetMesh1Conn(),
-            mfem_data->GetElemType(),
-            coord_ptrs[0],
-            coord_ptrs[1],
-            coord_ptrs[2]
-         );
-         registerMesh(
-            mesh_ids[1],
-            mfem_data->GetMesh2NE(),
-            mfem_data->GetNV(),
-            mfem_data->GetMesh2Conn(),
-            mfem_data->GetElemType(),
-            coord_ptrs[0],
-            coord_ptrs[1],
-            coord_ptrs[2]
-         );
-
-         // apply penalty data
-         for (int i {0}; i < 2; ++i)
-         {
-            auto& new_mesh_data = mesh_manager.GetMeshInstance(mesh_ids[i]).m_elemData;
-            new_mesh_data.m_is_kinematic_constant_penalty_set
-               = mesh_data[i].m_is_kinematic_constant_penalty_set;
-            new_mesh_data.m_is_kinematic_element_penalty_set
-               = mesh_data[i].m_is_kinematic_element_penalty_set;
-            new_mesh_data.m_is_rate_constant_penalty_set
-               = mesh_data[i].m_is_rate_constant_penalty_set;
-            new_mesh_data.m_is_rate_percent_penalty_set
-               = mesh_data[i].m_is_rate_percent_penalty_set;
-            new_mesh_data.m_penalty_scale = mesh_data[i].m_penalty_scale;
-            new_mesh_data.m_penalty_stiffness = mesh_data[i].m_penalty_stiffness;
-            new_mesh_data.m_rate_penalty_stiffness
-               = mesh_data[i].m_rate_penalty_stiffness;
-            new_mesh_data.m_rate_percent_stiffness
-               = mesh_data[i].m_rate_percent_stiffness;
-            SLIC_ERROR_ROOT_IF(mesh_data[i].m_is_kinematic_element_penalty_set,
-               "Element penalties not supported for MFEM meshes.");
-         }
-
-         auto f_ptrs = mfem_data->GetRedecompResponsePtrs();
-         registerNodalResponse(
-            mesh_ids[0], f_ptrs[0], f_ptrs[1], f_ptrs[2]);
-         registerNodalResponse(
-            mesh_ids[1], f_ptrs[0], f_ptrs[1], f_ptrs[2]);
-         if (mfem_data->HasVelocity())
-         {
-            auto v_ptrs = mfem_data->GetRedecompVelocityPtrs();
-            registerNodalVelocities(
-               mesh_ids[0], v_ptrs[0], v_ptrs[1], v_ptrs[2]);
-            registerNodalVelocities(
-               mesh_ids[1], v_ptrs[0], v_ptrs[1], v_ptrs[2]);
-         }
-         if (couplingScheme->getEnforcementMethod() == LAGRANGE_MULTIPLIER)
-         {
-            SLIC_ERROR_ROOT_IF(couplingScheme->getContactModel() != FRICTIONLESS,
-              "Only frictionless contact is supported.");
-            auto dual_data = couplingScheme->getMfemSubmeshData();
-            dual_data->UpdateSubmeshData(mfem_data->GetRedecompMesh());
-            auto g_ptrs = dual_data->GetRedecompGapPtrs();
-            registerMortarGaps(mesh_ids[1], g_ptrs[0]);
-            auto p_ptrs = dual_data->GetRedecompPressurePtrs();
-            registerMortarPressures(mesh_ids[1], p_ptrs[0]);
-            auto lm_options = couplingScheme->getEnforcementOptions().lm_implicit_options;
-            if (couplingScheme->hasMfemJacobianData())
-            {
-               couplingScheme->getMfemJacobianData()->UpdateJacobianXfer();
-            }
-         }
-      }
-      
       // initialize and check for valid coupling scheme
       if (!couplingScheme->init())
       {
-         // should we error out entirely for one invalid coupling scheme? SRW
-         SLIC_WARNING("Invalid coupling scheme; please see warnings.");
-         continue;
+         if (couplingScheme->nullMeshes())
+         {
+            continue;
+         }
+         else
+         {
+            SLIC_WARNING("Skipping invalid CouplingScheme " << couplingScheme->getId() << ". " << 
+                         "Please see warnings.");
+            continue;
+         }
       }
 
       // perform binning between meshes on the coupling scheme

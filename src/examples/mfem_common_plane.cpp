@@ -293,8 +293,6 @@ int main( int argc, char** argv )
     tribol::KINEMATIC_CONSTANT,
     tribol::NO_RATE_PENALTY
   );
-  tribol::setKinematicConstantPenalty(0, p_kine);
-  tribol::setKinematicConstantPenalty(1, p_kine);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to set up Tribol: {0:f}ms", timer.elapsedTimeInMilliSec()
@@ -316,6 +314,9 @@ int main( int argc, char** argv )
       dc_vi.Save();
     }
 
+    tribol::updateMfemParallelDecomposition();
+    tribol::setKinematicConstantPenalty(0, p_kine);
+    tribol::setKinematicConstantPenalty(1, p_kine);
     tribol::update(cycle, t, dt);
     op.f_ext = 0.0;
     tribol::getMfemResponse(0, op.f_ext);

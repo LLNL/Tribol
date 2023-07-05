@@ -39,7 +39,7 @@ int TRIBOL_SIMPLE_finalize_0(void);
 
 int TRIBOL_SIMPLE_finalize_1(bool finalize_slic);
 
-void TRIBOL_SIMPLE_simple_coupling_setup(const int dim, int contact_method, int mortar_numCells, int mortar_lengthNodalData, const int * mortar_connectivity, const double * mortar_x, const double * mortar_y, const double * mortar_z, int nonmortar_numCells, int nonmortar_lengthNodalData, const int * nonmortar_connectivity, const double * nonmortar_x, const double * nonmortar_y, const double * nonmortar_z, const double area_frac, double * mortar_gaps, double * mortar_pressures);
+void TRIBOL_SIMPLE_simple_coupling_setup(const int dim, int cell_type, int contact_method, int mortar_numCells, int mortar_lengthNodalData, const int * mortar_connectivity, const double * mortar_x, const double * mortar_y, const double * mortar_z, int nonmortar_numCells, int nonmortar_lengthNodalData, const int * nonmortar_connectivity, const double * nonmortar_x, const double * nonmortar_y, const double * nonmortar_z, const double area_frac, double * mortar_gaps, double * mortar_pressures);
 
 int TRIBOL_SIMPLE_update(double dt);
 

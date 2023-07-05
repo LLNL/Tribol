@@ -31,12 +31,18 @@ int GetVtkElementId( const InterfaceElementType type )
 {
    switch( type )
    {
-      case EDGE:
+      case LINEAR_EDGE:
          return 3;  // vtk 2-node line
-      case FACE:
+         break;
+      case LINEAR_TRIANGLE:
+         return 5;  // vtk 3-node triangle
+         break;
+      case LINEAR_QUAD:
          return 9;  // vtk 4-node quad
-      case CELL:
+         break;
+      case LINEAR_HEX:
          return 12; // vtk 8-node hex
+         break;
       default:
          SLIC_ERROR("Unsupported element type in Tribol's VTK output");
          break;
@@ -129,7 +135,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          int numPoints = 0;
          for (int i=0; i<cpSize; ++i)
          {
-            numPoints += mesh1.m_numCellNodes + mesh2.m_numCellNodes;
+            numPoints += mesh1.m_numNodesPerCell + mesh2.m_numNodesPerCell;
          } // end i-loop over contact planes
 
          // output the number of points
@@ -160,7 +166,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
             else // print the current configuration faces
             {
-               for (int j=0; j<mesh1.m_numCellNodes; ++j)
+               for (int j=0; j<mesh1.m_numNodesPerCell; ++j)
                {
                   const int nodeId = mesh1.getFaceNodeId(cpMgr.m_fId1[i], j);
                   fmt::print(faces, "{} {} {}\n",
@@ -169,7 +175,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
                      dim==3 ? mesh1.m_positionZ[nodeId] : 0.);
                }
 
-               for (int j=0; j<mesh2.m_numCellNodes; ++j)
+               for (int j=0; j<mesh2.m_numNodesPerCell; ++j)
                {
                   const int nodeId = mesh2.getFaceNodeId(cpMgr.m_fId2[i], j);
                   fmt::print(faces, "{} {} {}\n",
@@ -190,8 +196,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
          // loop over contact plane instances and print current configuration
          // face polygon connectivity
-         const int nNodes1 = mesh1.m_numCellNodes;
-         const int nNodes2 = mesh2.m_numCellNodes;
+         const int nNodes1 = mesh1.m_numNodesPerCell;
+         const int nNodes2 = mesh2.m_numNodesPerCell;
          for (int i=0; i<cpSize; ++i)
          {
             fmt::print(faces, "{} {}\n", nNodes1, fmt::join(RSet(connIter, connIter+nNodes1), " "));
@@ -415,17 +421,17 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
       // print mesh element connectivity
       int numTotalElements = mesh1.m_numCells + mesh2.m_numCells;
-      int numSurfaceNodes = mesh1.m_numCells * mesh1.m_numCellNodes
-                          + mesh2.m_numCells * mesh2.m_numCellNodes;
+      int numSurfaceNodes = mesh1.m_numCells * mesh1.m_numNodesPerCell
+                          + mesh2.m_numCells * mesh2.m_numNodesPerCell;
 
       fmt::print(mesh, "CELLS {} {}\n", numTotalElements, numTotalElements + numSurfaceNodes);
 
       for (int i=0; i<mesh1.m_numCells; ++i)
       {
-         mesh << mesh1.m_numCellNodes;
-         for (int a=0; a<mesh1.m_numCellNodes; ++a)
+         mesh << mesh1.m_numNodesPerCell;
+         for (int a=0; a<mesh1.m_numNodesPerCell; ++a)
          {
-            int id = mesh1.m_numCellNodes * i + a;
+            int id = mesh1.m_numNodesPerCell * i + a;
             mesh << " " << mesh1.m_connectivity[id];
          } // end a-loop over nodes
          mesh << std::endl;
@@ -434,10 +440,10 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       const int m2_offset = mesh1.m_lengthNodalData;
       for (int i=0; i<mesh2.m_numCells; ++i)
       {
-         mesh << mesh2.m_numCellNodes;
-         for (int a=0; a<mesh2.m_numCellNodes; ++a)
+         mesh << mesh2.m_numNodesPerCell;
+         for (int a=0; a<mesh2.m_numNodesPerCell; ++a)
          {
-            int id = mesh2.m_numCellNodes * i + a;
+            int id = mesh2.m_numNodesPerCell * i + a;
             mesh << " " << m2_offset + mesh2.m_connectivity[id];
          } // end a-loop over nodes
          mesh << std::endl;

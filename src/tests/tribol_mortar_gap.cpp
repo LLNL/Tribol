@@ -95,11 +95,6 @@ public:
                          int * conn2,
                          tribol::ContactMethod method )
    {
-      if (this->numNodesPerFace != 4)
-      {
-         SLIC_ERROR("checkMortarWts: number of nodes per face not equal to 4.");
-      }
-
       // declare arrays to hold stacked coordinates for each
       // face used in initializing a SurfaceContactElem struct
       real xyz1[ this->dim * this->numNodesPerFace ];
@@ -154,8 +149,20 @@ public:
       } // end loop over nodes
 
       // register the mesh with tribol
-      const int cellType = (dim == 3) ? (int)(tribol::FACE) :
-                                        (int)(tribol::EDGE);
+      int cellType;
+      switch (this->numNodesPerFace)
+      {
+         case 4:
+         {
+            cellType = (int)(tribol::LINEAR_QUAD);
+            break;
+         }
+         default:
+         {
+            SLIC_ERROR("checkMortarWts: number of nodes per face not equal to 4.");
+         }
+      }
+
       const int mortarMeshId = 0;
       const int nonmortarMeshId = 1;
 

@@ -26,21 +26,21 @@ namespace tribol
 //                            //
 ////////////////////////////////
 TestMesh::TestMesh()
-   : mfem_mesh    ( nullptr ) 
-   , mortarMeshId       ( 0 )
-   , nonmortarMeshId        ( 0 )
-   , numTotalNodes      ( 0 )
-   , numMortarNodes     ( 0 )
-   , numNonmortarNodes      ( 0 )
-   , numTotalElements   ( 0 )
-   , numMortarElements  ( 0 )
-   , numNonmortarElements   ( 0 )
-   , numTotalFaces      ( 0 )
-   , numMortarFaces     ( 0 )
-   , numNonmortarFaces      ( 0 )
-   , numNodesPerFace    ( 4 )
-   , numNodesPerElement ( 8 )
-   , dim                ( 3 )
+   : mfem_mesh            (nullptr)
+   , mortarMeshId         ( 0 )
+   , nonmortarMeshId      ( 0 )
+   , numTotalNodes        ( 0 )
+   , numMortarNodes       ( 0 )
+   , numNonmortarNodes    ( 0 )
+   , numTotalElements     ( 0 )
+   , numMortarElements    ( 0 )
+   , numNonmortarElements ( 0 )
+   , numTotalFaces        ( 0 )
+   , numMortarFaces       ( 0 )
+   , numNonmortarFaces    ( 0 )
+   , numNodesPerFace      ( 0 )
+   , numNodesPerElement   ( 0 ) 
+   , dim                  ( 3 ) // no 2D support
    , dirNodesX1 ( nullptr )
    , dirNodesY1 ( nullptr )
    , dirNodesZ1 ( nullptr )
@@ -53,12 +53,12 @@ TestMesh::TestMesh()
    , iDirValX2  ( nullptr )
    , iDirValY2  ( nullptr )
    , iDirValZ2  ( nullptr )
+   , presDofs1  ( nullptr )
+   , presDofs2  ( nullptr )
    , faceConn1  ( nullptr )
    , faceConn2  ( nullptr )
    , elConn1    ( nullptr )
    , elConn2    ( nullptr )
-   , presDofs1  ( nullptr )
-   , presDofs2  ( nullptr )
    , fx1        ( nullptr )
    , fy1        ( nullptr )
    , fz1        ( nullptr )
@@ -94,28 +94,32 @@ TestMesh::~TestMesh()
 }
 
 //------------------------------------------------------------------------------
-void TestMesh::clear()
+void TestMesh::clear( bool keepCoords )
 {
    if (this->mfem_mesh != nullptr)
    {
       delete this->mfem_mesh;
       this->mfem_mesh = nullptr;
    }
+
    // coordinates
-   if (this->x != nullptr)
+   if (!keepCoords)
    {
-      delete [] this->x;
-      this->x = nullptr;
-   }
-   if (this->y != nullptr)
-   {
-      delete [] this->y;
-      this->y = nullptr;
-   }
-   if (this->z != nullptr)
-   {
-      delete [] this->z;
-      this->z = nullptr;
+      if (this->x != nullptr)
+      {
+         delete [] this->x;
+         this->x = nullptr;
+      }
+      if (this->y != nullptr)
+      {
+         delete [] this->y;
+         this->y = nullptr;
+      }
+      if (this->z != nullptr)
+      {
+         delete [] this->z;
+         this->z = nullptr;
+      }
    }
    // boundary condition nodes side 1
    if (this->dirNodesX1 != nullptr)
@@ -343,10 +347,14 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
    // AT THE MOMENT.
 
    // allocate mesh data arrays
+   this->cellType = (int)(tribol::LINEAR_QUAD);
    this->numNodesPerElement = 8; // hard coded for hex8 elements
    this->numNodesPerFace = 4; // hard code for quad4 faces
    int numElementsBlock1, numNodesBlock1;
    int numElementsBlock2, numNodesBlock2;
+
+   this->mortarMeshId = 0;
+   this->nonmortarMeshId = 1;
 
    // ASSUMING contact is in the Z-Direction, check to make sure that the 
    // gap of interpenetration is not greater than either block's element 
@@ -363,37 +371,29 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
                   "Initial mesh configuration has a gap greater than the " << 
                   "element thickness in block 2.");
 
-   for (int iblk=0; iblk<2; ++iblk)
-   {
-      if (iblk == 0)
-      {
-         numElementsBlock1 = numElemsX1 * numElemsY1 * numElemsZ1;
-         numNodesBlock1 = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1);
-         this->numMortarFaces = numElemsX1 * numElemsY1;
-      }
-      else
-      {
-         numElementsBlock2 = numElemsX2 * numElemsY2 * numElemsZ2;
-         numNodesBlock2 = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
-         this->numNonmortarFaces = numElemsX2 * numElemsY2;
-      }
-   }
+   numElementsBlock1       = numElemsX1 * numElemsY1 * numElemsZ1;
+   numNodesBlock1          = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1);
+   this->numMortarFaces    = numElemsX1 * numElemsY1;
+   numElementsBlock2       = numElemsX2 * numElemsY2 * numElemsZ2;
+   numNodesBlock2          = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
+   this->numNonmortarFaces = numElemsX2 * numElemsY2;
 
-   this->numMortarNodes = numNodesBlock1;
-   this->numNonmortarNodes = numNodesBlock2;
+   this->numMortarNodes           = numNodesBlock1;
+   this->numNonmortarNodes        = numNodesBlock2;
    this->numNonmortarSurfaceNodes = (numElemsX2+1) * (numElemsY2+1);
-   this->numTotalNodes = numNodesBlock1 + numNodesBlock2;
-   this->numMortarElements = numElementsBlock1;
-   this->numNonmortarElements = numElementsBlock2;
-   this->numTotalElements = numElementsBlock1 + numElementsBlock2;
+   this->numTotalNodes            = numNodesBlock1 + numNodesBlock2;
+   this->numMortarElements        = numElementsBlock1;
+   this->numNonmortarElements     = numElementsBlock2;
+   this->numTotalElements         = numElementsBlock1 + numElementsBlock2;
+   this->numTotalFaces            = this->numNonmortarFaces + this->numMortarFaces;
 
-   this->elConn1 = new int[ this->numNodesPerElement * this->numMortarElements ];
-   this->elConn2 = new int[ this->numNodesPerElement * this->numNonmortarElements ];
+   this->elConn1   = new int[ this->numNodesPerElement * this->numMortarElements ];
+   this->elConn2   = new int[ this->numNodesPerElement * this->numNonmortarElements ];
    this->faceConn1 = new int[ this->numNodesPerFace * this->numMortarFaces ];
    this->faceConn2 = new int[ this->numNodesPerFace * this->numNonmortarFaces ];
-   this->x = new real[ this->numTotalNodes ];
-   this->y = new real[ this->numTotalNodes ];
-   this->z = new real[ this->numTotalNodes ];
+   this->x = new double[ this->numTotalNodes ];
+   this->y = new double[ this->numTotalNodes ];
+   this->z = new double[ this->numTotalNodes ];
 
    // setup mesh nodal coordinate arrays
    int ndOffset;
@@ -509,13 +509,15 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
                elConn[ this->numNodesPerElement * ctr + 5] = lclZOffset + 1;
                elConn[ this->numNodesPerElement * ctr + 6] = lclZOffset + numNodesX + 1;
                elConn[ this->numNodesPerElement * ctr + 7] = lclZOffset + numNodesX;
-               
                ++ctr;
+
             } // end loop over x elements
          } // end loop over y elements
       } // end loop over z elements
 
       // populate contact surface connectivity
+      // Note: element connectivity is not necessarily consistent with outward unit normal at 
+      //       contact faces
       ctr = 0;
       for (int j=0; j<numElemsY; ++j)
       { 
@@ -546,18 +548,234 @@ void TestMesh::setupContactMeshHex( int numElemsX1, int numElemsY1, int numElems
 
    } // end loop over blocks
 
+   this->mesh_constructed = true;
+
 } // end setupContactMeshHex()
 
 //------------------------------------------------------------------------------
+void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElemsZ1,
+                                    real xMin1, real yMin1, real zMin1,
+                                    real xMax1, real yMax1, real zMax1,
+                                    int numElemsX2, int numElemsY2, int numElemsZ2,
+                                    real xMin2, real yMin2, real zMin2,
+                                    real xMax2, real yMax2, real zMax2,
+                                    real thetaMortar, real thetaNonmortar )
+{
+   // NOTE: ONLY CONTACT INTERACTIONS IN THE Z-DIRECTION ARE SUPPORTED 
+   // AT THE MOMENT.
+
+   // Construct hex mesh first
+   setupContactMeshHex( numElemsX1, numElemsY1, numElemsZ1,
+                        xMin1, yMin1, zMin1,
+                        xMax1, yMax1, zMax1,
+                        numElemsX2, numElemsY2, numElemsZ2,
+                        xMin2, yMin2, zMin2,
+                        xMax2, yMax2, zMax2,
+                        thetaMortar, thetaNonmortar );
+
+   // allocate temporary storage for tet mesh data while pulling 
+   // from hex mesh data
+   int numTetsPerHex          = 6;
+   this->mesh_constructed     = false; // will reset after tet mesh has been constructed
+   this->cellType = (int)(tribol::LINEAR_TRIANGLE);
+   this->numNodesPerFace      = 3; // linear triangle faces
+   this->numNodesPerElement   = 4; // linear four node tets
+   this->numTotalElements     = numTetsPerHex * this->numTotalElements; // 6 tets per hex
+   this->numMortarElements    = numTetsPerHex * numElemsX1 * numElemsY1 * numElemsZ1; 
+   this->numNonmortarElements = numTetsPerHex * numElemsX2 * numElemsY2 * numElemsZ2;
+   this->numMortarFaces       = 2 * numElemsX1 * numElemsY1; // only on contact surface
+   this->numNonmortarFaces    = 2 * numElemsX2 * numElemsY2; // only on contact surface
+   this->numMortarNodes       = (numElemsX1+1) * (numElemsY1+1) * (numElemsZ1+1); 
+   this->numNonmortarNodes    = (numElemsX2+1) * (numElemsY2+1) * (numElemsZ2+1);
+   this->numTotalNodes        = this->numMortarNodes + this->numNonmortarNodes; 
+   this->numTotalFaces        = this->numMortarFaces + this->numNonmortarFaces; 
+
+   // clear prior mesh, but keep same nodal coordinate arrays
+   // Note, at this point nodal data arrays should not have been allocated 
+   // on the new hex mesh, but this makes sure of that
+   bool keep_coords = true;
+   this->clear(keep_coords);
+
+   allocIntArray( &this->faceConn1, this->numNodesPerFace*this->numMortarFaces, -1 );
+   allocIntArray( &this->faceConn2, this->numNodesPerFace*this->numNonmortarFaces, -1 ); 
+   allocIntArray( &this->elConn1, this->numNodesPerElement*this->numMortarElements, -1 );
+   allocIntArray( &this->elConn2, this->numNodesPerElement*this->numNonmortarElements, -1 );
+   
+   // tet element connectivity
+   int ndOffset;
+   int numElemsX, numElemsY, numElemsZ;
+   int * elConn, * faceConn;
+   for ( int iblk = 0; iblk<2; ++iblk)
+   {
+      if ( iblk == 0 )
+      {
+         ndOffset  = 0;
+         numElemsX = numElemsX1;
+         numElemsY = numElemsY1;
+         numElemsZ = numElemsZ1;
+         elConn    = this->elConn1;
+         faceConn  = this->faceConn1;
+      }
+      else
+      {
+         ndOffset  = this->numMortarNodes;
+         numElemsX = numElemsX2;
+         numElemsY = numElemsY2;
+         numElemsZ = numElemsZ2;
+         elConn    = this->elConn2;
+         faceConn  = this->faceConn2;
+      }
+
+      int numNodesX = numElemsX + 1;
+      int numNodesY = numElemsY + 1;
+
+      // populate element connectivity arrays
+      int ctr = 0;
+      for (int k=0; k<numElemsZ; ++k) // loop over row in z-direction
+      {
+         for (int j=0; j<numElemsY; ++j) // loop over row in y-direction
+         {
+            for (int i=0; i<numElemsX; ++i) // loop over elements in x-direction
+            {
+               // same node ids and offsets as hex mesh
+               int zIdOffset = k * (numNodesX * numNodesY); // offset for z-direction node ids
+               int yIdOffset = j * numNodesX; // offset for y-direction node ids
+               int icr = ndOffset + zIdOffset + yIdOffset + i; // first node starting counter
+               int lclZOffset = icr + numNodesX * numNodesY; // local element z-offset for top nodes of hex
+
+               // write out the 6 tet elements per this hex  // code for each local hex node
+               // local node numbering for each hex          // 1) icr;
+               // 1)  1, 5, 6, 4                             // 2) icr + 1;
+               // 2)  1, 6, 2, 4                             // 3) icr + numNodesX + 1;
+               // 3)  3, 2, 6, 4                             // 4) icr + numNodesX;
+               // 4)  3, 6, 7, 4                             // 5) lclZOffset;
+               // 5)  8, 7, 6, 4                             // 6) lclZOffset + 1;
+               // 6)  8, 6, 5, 4                             // 7) lclZOffset + numNodesX + 1;
+               //                                            // 8) lclZOffset + numNodesX;
+
+               // local tet element 1
+               elConn[ this->numNodesPerElement * ctr ]    = icr;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
+
+               // local tet element 2 
+               elConn[ this->numNodesPerElement * ctr ]    = icr;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = icr + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
+
+               // local tet element 3
+               elConn[ this->numNodesPerElement * ctr ]    = icr + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 1] = icr + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
+ 
+               // local tet element 4
+               elConn[ this->numNodesPerElement * ctr ]    = icr + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1; 
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + numNodesX + 1; 
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
+
+               // local tet element 5 
+               elConn[ this->numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + numNodesX + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
+
+               // local tet element 6
+               elConn[ this->numNodesPerElement * ctr ]    = lclZOffset + numNodesX;
+               elConn[ this->numNodesPerElement * ctr + 1] = lclZOffset + 1;
+               elConn[ this->numNodesPerElement * ctr + 2] = lclZOffset;
+               elConn[ this->numNodesPerElement * ctr + 3] = icr + numNodesX;
+               ++ctr; // incrememnt for next local tet
+               
+            } // end loop over x elements
+         } // end loop over y elements
+      } // end loop over z elements
+
+      // populate contact surface connectivity
+      // Note: element connectivity is not necessarily consistent with outward unit normal at 
+      //       contact faces
+      ctr = 0;
+      for (int j=0; j<numElemsY; ++j)
+      { 
+         for (int i=0; i<numElemsX; ++i)
+         {
+            if (ndOffset == 0) // top surface of mortar bottom block
+            {
+               int yIdOffset = j * numNodesX;
+               int icr = (numElemsX+1)*(numElemsY+1)*(numElemsZ) + yIdOffset + i; // top surface node id
+
+               // local tet face connectivity for top surface of bottom block
+               // 2 tet faces per hex face   // code for each local hex node
+               // local el 1) 6, 7, 8        5) icr
+               // local el 2) 5, 6, 8        6) icr + 1
+               //                            7) icr + numNodesX + 1
+               //                            8) icr + numNodesX
+               
+               // local tet face 1
+               faceConn[ this->numNodesPerFace * ctr ]     = icr + 1;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + numNodesX + 1;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + numNodesX;
+               ++ctr; // increment counter to next tet face
+
+               // local tet face 2
+               faceConn[ this->numNodesPerFace * ctr ]     = icr;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + 1;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + numNodesX;
+               ++ctr; // increment counter to next tet face
+
+            }
+            // bottom surface of nonmortar top block
+            // reorient nonmortar face connectivity per outward unit normal requirement
+            if (ndOffset != 0) 
+            {
+               int yIdOffset = j * numNodesX;
+               int icr = ndOffset + yIdOffset + i; // bottom surface node id
+
+               // local tet face connectivity for top block
+               // 2 tet faces per hex face   // code for each local hex node
+               // local el 1) 1, 4, 2        1) icr
+               // local el 2) 2, 4, 3        2) icr + 1;
+               //                            3) icr + numNodesX + 1
+               //                            4) icr + numNodesX; 
+
+               // local tet face 1
+               faceConn[ this->numNodesPerFace * ctr ]     = icr;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + numNodesX;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + 1; 
+               ++ctr; // increment counter to next tet face
+
+               // local tet face 2
+               faceConn[ this->numNodesPerFace * ctr ]     = icr + 1;
+               faceConn[ this->numNodesPerFace * ctr + 1 ] = icr + numNodesX;
+               faceConn[ this->numNodesPerFace * ctr + 2 ] = icr + numNodesX + 1;
+               ++ctr; // increment counter to next tet face
+
+            }
+         } // end loop over x-direction elements
+      } // end loop over y-direction elements
+
+   } // end for loop over blocks
+   
+   this->mesh_constructed = true;
+
+} // end setupContactMeshTet()
+//------------------------------------------------------------------------------
 void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real valZ )
 {
-   // check mesh Ids. Tribol supports autocontact, but for the TestMesh 
-   // class the Ids have to be different
-   if (mortarMeshId == nonmortarMeshId)
-   {
-      SLIC_WARNING("TestMesh::allocateAndSetVelocities(): please set unique " << 
-                   "mortarMeshId and nonmortarMeshId prior to calling this routine.");
-   }
+   // Check that mesh ids are not the same. The TestMesh class was built around 
+   // testing the mortar method with Lagrange multiplier enforcement, which does not 
+   // support auto contact.
+   SLIC_WARNING_IF( this->mortarMeshId == this->nonmortarMeshId, 
+                    "TestMesh::allocateAndSetVelocities(): please set unique " << 
+                    "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
    // check to see if pointers have been set
    bool deleteVels = false;
@@ -615,24 +833,20 @@ void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real 
                   "not a valid mesh id." );
    }
 
-   if (deleteVels)
-   {
-      SLIC_INFO( "TestMesh::allocateAndSetVelocities(): " << 
+   SLIC_INFO_IF( deleteVels, "TestMesh::allocateAndSetVelocities(): " << 
                  "a velocity array has been deleted and reallocated." );
-   }
 
 } // end TestMesh::allocateAndSetVelocities()
 
 //------------------------------------------------------------------------------
 void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
 {
-   // check mesh ids. While Tribol supports auto-contact, the TestMesh class 
-   // has to have unique mesh Ids set prior to calling this routine
-   if (mortarMeshId == nonmortarMeshId)
-   {
-      SLIC_WARNING("TestMesh::allocateAndSetVelocities(): please set unique " << 
-                   "mortarMeshId and nonmortarMeshId prior to calling this routine.");
-   }
+   // Check that mesh ids are the same. The TestMesh class was built around 
+   // testing the mortar method with Lagrange multiplier enforcement, which does 
+   // not support auto contact.
+   SLIC_WARNING_IF( this->mortarMeshId == this->nonmortarMeshId, 
+                    "TestMesh::allocateAndSetVelocities(): please set unique " << 
+                    "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
    // check to see if pointers have been set
    bool deleteData = false;
@@ -662,11 +876,9 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
                   "not a valid mesh id." );
    }
 
-   if (deleteData)
-   {
-      SLIC_INFO( "TestMesh::allocateAndSetBulkModulus(): " << 
+   SLIC_INFO_IF( deleteData, "TestMesh::allocateAndSetBulkModulus(): " << 
                  "a bulk modulus array has been deleted and reallocated." );
-   }
+
 } // end TestMesh::allocateAndSetBulkModulus()
 
 //------------------------------------------------------------------------------
@@ -700,11 +912,9 @@ void TestMesh::allocateAndSetElementThickness( int meshId, real t )
                   "not a valid mesh id." );
    }
 
-   if (deleteData)
-   {
-      SLIC_INFO( "TestMesh::allocateAndSetElementThickness(): " << 
+   SLIC_INFO_IF( deleteData, "TestMesh::allocateAndSetElementThickness(): " << 
                  "an element thickness array has been deleted and reallocated." );
-   }
+
 } // end TestMesh::allocateAndSetElementThickness()
 
 //------------------------------------------------------------------------------
@@ -714,33 +924,42 @@ int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
                                           bool TRIBOL_UNUSED_PARAM(visualization),
                                           TestControlParameters& params )
 {
-   if (this->numNodesPerFace != 4)
-   {
-      SLIC_ERROR("simpleTribolSetupAndUpdate: number of nodes per face not equal to 4.");
-   }
+   SLIC_ERROR_IF( !this->mesh_constructed, "TestMesh::simpleTribolSetupAndUpdate(): " <<
+                  "must construct hex or tet mesh prior to calling this routine." );
 
    // grab coordinate data
    real * x = this->x;
    real * y = this->y;
    real * z = this->z;
- 
-   if ( method == SINGLE_MORTAR ||
-        method == ALIGNED_MORTAR )
-   { 
-      // allocate gaps and pressures with length of total mesh to allow use 
-      // of global connectivity for indexing
-      allocRealArray( &this->gaps, this->numTotalNodes, 0. );
-      allocRealArray( &this->pressures, this->numTotalNodes, 1. );
-   }
-   else if ( method == MORTAR_WEIGHTS)
-   {
-      allocRealArray( &this->gaps, this->numTotalNodes, 0. );
-      this->pressures = nullptr;
-   }
 
+   switch (method)
+   {
+      case SINGLE_MORTAR:
+      case ALIGNED_MORTAR:
+      {
+         // allocate gaps and pressures with length of total mesh to allow use 
+         // of global connectivity for indexing
+         allocRealArray( &this->gaps, this->numTotalNodes, 0. );
+         allocRealArray( &this->pressures, this->numTotalNodes, 1. );
+         break;
+      }
+      case MORTAR_WEIGHTS:
+      {
+         allocRealArray( &this->gaps, this->numTotalNodes, 0. );
+         this->pressures = nullptr;
+         break;
+      }
+      default:
+      {
+         // no-op
+         break;
+      }
+   } // end switch on method
+ 
    const double area_frac = 1.e-03;
 
    SimpleCouplingSetup( this->dim,
+                        this->cellType,
                         method,
                         this->numMortarFaces,
                         this->numTotalNodes,
@@ -767,30 +986,10 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                                     bool visualization,
                                     TestControlParameters& params )
 {
-   // Note, this assumes that numTotalNodes is the total number of 
-   // nodes encompassing the two meshes that will be registered 
-   // with tribol, and that the conn1 and conn2 connectivity arrays 
-   // reflect a global, contiguous index space
-   if (this->numNodesPerFace != 4)
-   {
-      SLIC_ERROR("tribolSetupAndUpdate: number of nodes per face not equal to 4.");
-   }
-
    // grab coordinate data
    real * x = this->x;
    real * y = this->y;
    real * z = this->z;
-
-   // register the mesh with tribol
-   const int cellType = (this->dim == 3) ? (int)(FACE) : 
-                                           (int)(EDGE);
-   // set mortar/nonmortar mesh ids. Note, mortar/nonmortar designation can 
-   // still work for common plane
-   if (this->mortarMeshId == 0 && this->nonmortarMeshId == 0)
-   {
-      this->mortarMeshId = 0;
-      this->nonmortarMeshId = 1;
-   }
 
    // initialize tribol
    CommType problem_comm = TRIBOL_COMM_WORLD;
@@ -800,10 +999,10 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    // ids for the connectivity and array lengths of numTotalNodes. 
    registerMesh( this->mortarMeshId, this->numMortarFaces, 
                  this->numTotalNodes,
-                 this->faceConn1, cellType, x, y, z );
+                 this->faceConn1, this->cellType, x, y, z );
    registerMesh( this->nonmortarMeshId, this->numNonmortarFaces, 
                  this->numTotalNodes,
-                 this->faceConn2, cellType, x, y, z );
+                 this->faceConn2, this->cellType, x, y, z );
 
    // register nodal forces. Note, I was getting a seg fault when 
    // registering the same pointer to a single set of force arrays 
@@ -847,24 +1046,32 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 
    // register nodal pressure and nodal gap array for the nonmortar mesh
    // for mortar based methods
-   if ( method == SINGLE_MORTAR  ||
-        method == ALIGNED_MORTAR )
+   switch (method)
    {
-      allocRealArray( &this->gaps, this->numTotalNodes, 0. );
-      allocRealArray( &this->pressures, this->numTotalNodes, 1. );
+      case SINGLE_MORTAR:
+      case ALIGNED_MORTAR:
+      {
+         allocRealArray( &this->gaps, this->numTotalNodes, 0. );
+         allocRealArray( &this->pressures, this->numTotalNodes, 1. );
 
-      // register nodal gaps and pressures
-      registerMortarGaps( nonmortarMeshId, this->gaps );
-      registerMortarPressures( nonmortarMeshId, this->pressures );
+         // register nodal gaps and pressures
+         registerMortarGaps( this->nonmortarMeshId, this->gaps );
+         registerMortarPressures( this->nonmortarMeshId, this->pressures );
+         break;
+      }
+      case MORTAR_WEIGHTS:
+      {
+         allocRealArray( &this->gaps, this->numTotalNodes, 0. );
+         this->pressures = nullptr;
 
-   }
-   else if (method == MORTAR_WEIGHTS)
-   {
-      allocRealArray( &this->gaps, this->numTotalNodes, 0. );
-      this->pressures = nullptr;
-
-      registerMortarGaps( nonmortarMeshId, this->gaps );
-   }
+         registerMortarGaps( this->nonmortarMeshId, this->gaps );
+         break;
+      }
+      default:
+      {
+         // no-op
+      }
+   } // end switch on method
 
    // if enforcement is penalty, register penalty parameters
    if (enforcement == PENALTY)
@@ -1015,17 +1222,29 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 } // end tribolSetupAndUpdate()
       
 //------------------------------------------------------------------------------
-void TestMesh::setupPatchTestDirichletBCs( int numElemsX, 
+void TestMesh::setupPatchTestDirichletBCs( int meshId, 
+                                           int numElemsX, 
                                            int numElemsY, 
                                            int numElemsZ, 
-                                           bool mortar, 
                                            int nodeIdOffset, 
                                            bool inHomogeneousGap, 
                                            real inHomogeneousZVal )
 {
+   SLIC_ERROR_IF( !this->mesh_constructed, "TestMesh::setupPatchTestDirichletBCs(): " << 
+                  "mesh must be constructed prior to calling this routine." );
+
+   bool mortar = false;
+   if (meshId == this->mortarMeshId)
+   {
+      mortar = true;
+   }
+
    // This routine sets up x,y, and z-component Dirichlet BCs on 
    // three faces of each block specifically for the classical contact 
    // patch test problem
+   //
+   // NOTE: the number of nodes in the x, y and z-directions is the same 
+   // for a hex mesh and tet mesh
    int numNodesX = numElemsX + 1;
    int numNodesY = numElemsY + 1;
    int numNodesZ = numElemsZ + 1;
@@ -1194,13 +1413,22 @@ void TestMesh::setupPatchTestDirichletBCs( int numElemsX,
 } // end setupPatchTestDirichletBCs()
 
 //------------------------------------------------------------------------------
-void TestMesh::setupPatchTestPressureDofs( int numElemsX, 
-                                           int numElemsY, 
-                                           int numElemsZ, 
-                                           int nodeIdOffset, 
-                                           bool contact, 
-                                           bool mortar )
+void TestMesh::setupPatchTestPressureDofs( int meshId,
+                                           int numElemsX,
+                                           int numElemsY,
+                                           int numElemsZ,
+                                           int nodeIdOffset,
+                                           bool contact )
 {
+   SLIC_ERROR_IF( !this->mesh_constructed, "TestMesh::setupPatchTestPressureDofs(): " << 
+                  "mesh must be constructed prior to calling this routine." );
+
+   bool mortar = false;
+   if (meshId == this->mortarMeshId)
+   {
+      mortar = true;
+   }
+
    // this routine hard codes nonmortar pressure dofs for the bottom surface 
    // of the top (nonmortar) block
    int numNodes = (numElemsX+1) * (numElemsY+1) * (numElemsZ+1);
@@ -1233,20 +1461,28 @@ void TestMesh::setupPatchTestPressureDofs( int numElemsX,
 } // end setupPatchTestPressureDofs()
 
 //------------------------------------------------------------------------------
-void TestMesh::setupMfemMesh( )
+void TestMesh::setupMfemMesh( bool fix_orientation )
 {
-   if (this->dim != 3)
+   SLIC_ERROR_IF( !this->mesh_constructed, "TestMesh::setupMfemMesh(): " << 
+                  "test mesh must be constructed prior to calling this routine." );
+
+   SLIC_ERROR_IF( this->dim != 3, "TestMesh::setupMfemMesh(): Mfem meshes of dimension, " << 
+                  this->dim << ", are not supported at this time." );
+
+   SLIC_INFO( "Setting up 3D linear mfem mesh." );
+
+   // construct new mfem mesh
+   if (this->mfem_mesh != nullptr)
    {
-      SLIC_ERROR("TestMesh::setupMfemMesh(): Mfem meshes of dimension, " << 
-                 this->dim << ", are not supported at this time." );
+      SLIC_WARNING( "TestMesh::setupMfemMesh(): deleting previously constructed mesh." );
+      this->mfem_mesh->Clear();
    }
 
-   SLIC_INFO( "Setting up 3D linear hex mfem mesh." );
-
-   // instantiate and point to new mfem mesh object
    this->mfem_mesh = new mfem::Mesh( this->dim,
                                      this->numTotalNodes,
                                      this->numTotalElements );
+
+   SLIC_INFO("After calling mfem mesh constructor.");
 
    // add mortar elements and vertices. Not sure if order of adding 
    // elements matters, but adding vertices should probably correspond 
@@ -1259,8 +1495,24 @@ void TestMesh::setupMfemMesh( )
          int index = iel * this->numNodesPerElement + idx;
          mConn[ idx ] = this->elConn1[ index ];
       }
-      this->mfem_mesh->AddHex( &mConn[0] );
-   }
+      switch (this->cellType)
+      {
+         case LINEAR_TRIANGLE:
+         {
+            this->mfem_mesh->AddTet( &mConn[0] );
+            break;
+         }
+         case LINEAR_QUAD:
+         {
+            this->mfem_mesh->AddHex( &mConn[0] );
+            break;
+         }
+         default:
+         {
+            SLIC_ERROR("Element type not supported for creating mfem mesh from test mesh.");
+         }
+      } // end switch on surface element type
+   } // end loop over mortar elements
 
    for (int i=0; i<this->numMortarNodes; ++i)
    {
@@ -1283,8 +1535,24 @@ void TestMesh::setupMfemMesh( )
          int index = iel * this->numNodesPerElement + idx;
          sConn[ idx ] = this->elConn2[ index ];
       }
-      this->mfem_mesh->AddHex( &sConn[0] );
-   }
+      switch (this->cellType)
+      {
+         case LINEAR_TRIANGLE:
+         {
+            this->mfem_mesh->AddTet( &sConn[0] );
+            break;
+         }
+         case LINEAR_QUAD:
+         {
+            this->mfem_mesh->AddHex( &sConn[0] );
+            break;
+         }
+         default:
+         {
+            SLIC_ERROR("Element type not supported for creating mfem mesh from test mesh.");
+         }
+      } // end switch on surface element type
+   } // end loop over nonmortar elements
 
    for (int i=0; i<this->numNonmortarNodes; ++i)
    { 
@@ -1297,7 +1565,28 @@ void TestMesh::setupMfemMesh( )
       this->mfem_mesh->AddVertex( &vert[0] );
    }
 
-   this->mfem_mesh->FinalizeHexMesh();
+   int gen_edges = 0; // mfem default
+   int refine = 0; // mfem default
+   switch (this->cellType)
+   {
+      case LINEAR_TRIANGLE:
+      {
+         this->mfem_mesh->FinalizeTetMesh( gen_edges, refine, fix_orientation );
+         break;
+      }
+      case LINEAR_QUAD:
+      {
+         this->mfem_mesh->FinalizeHexMesh( gen_edges, refine, fix_orientation );
+         break;
+      }
+      default:
+      {
+         // no-op
+         break;
+      }
+   } // end switch on surface cell type
+
+   SLIC_INFO( "3D linear mfem mesh finalized." );
 
 } // end setupMfemMesh()
 
@@ -1306,6 +1595,10 @@ void TestMesh::setupMfemMesh( )
 void TestMesh::computeEquilibriumJacobian( mfem::SparseMatrix* A,
                                            real const nu, real const youngs )
 {
+   SLIC_ERROR_IF( this->mfem_mesh == nullptr, 
+                  "TestMesh::computeEquilibriumJacobian(): must call setupMfemMesh() " << 
+                  "prior to calling this routine." );
+
    // define the FE collection and finite element space
    mfem::FiniteElementSpace * fes { nullptr };
    int order = 1; // hard coded for linear elements
@@ -1350,6 +1643,13 @@ void TestMesh::computeElementJacobianContributions( mfem::SparseMatrix * const A
                                                     mfem::FiniteElementSpace * fe_space,
                                                     bool matrixDebug )
 {
+   SLIC_ERROR_IF( A == nullptr, "TestMesh::computeElementJacobianContributions(): " <<
+                  "input pointer to sparse matrix is null." );
+   SLIC_ERROR_IF( eInt == nullptr, "TestMesh::computeElementJacobianContributions(): " <<
+                  "input pointer to elasticity integrator is null." );
+   SLIC_ERROR_IF( fe_space == nullptr, "TestMesh::computeElementJacobianContributions(): " <<
+                  "input pointer to finite element space is null." );
+
    mfem::ElementTransformation *T;
    mfem::DenseMatrix elmat;
    const mfem::FiniteElement *fe; 
@@ -1482,7 +1782,7 @@ void TestMesh::tribolMatrixToSystemMatrix( mfem::DenseMatrix * const ATribol,
 
    // KEEP this as debug code for unit tests, but in general 
    // there should be no contributions
-   // TEST compose bottom-diagonal block diagonal elements
+   // TEST: compose bottom-diagonal block diagonal elements
 //   for (int i=0; i<this->m_mesh.numNonmortarSurfaceNodes; ++i)
 //   {
 //      int newOffset = this->m_mesh.dim * this->m_mesh.numTotalNodes;
@@ -1497,6 +1797,7 @@ void TestMesh::tribolMatrixToSystemMatrix( mfem::DenseMatrix * const ATribol,
 //------------------------------------------------------------------------------
 void TestMesh::getGapEvals( real * const v )
 {
+   SLIC_ERROR_IF( v == nullptr, "TestMesh::getGapEvals(): input pointer is null." );
    int presDofCtr = 0;
    for (int a=0; a<this->numNonmortarNodes; ++a)
    {
@@ -1516,6 +1817,11 @@ void TestMesh::enforceDirichletBCs( mfem::SparseMatrix * const A,
                                     mfem::Vector * const b,
                                     bool contact )
 {
+   SLIC_ERROR_IF( A == nullptr, "TestMesh::enforceDirichletBCs(): " << 
+                  "input pointer to sparse matrix is null." );
+   SLIC_ERROR_IF( b == nullptr, "TestMesh::enforceDirichletBCs(): " << 
+                  "input pointer to rhs vector, b, is null." );
+
    int * dirBCX, * dirBCY, * dirBCZ, * presDofs;
    double *dirValX, *dirValY, *dirValZ;
    int numBlkNodes;
@@ -1659,15 +1965,17 @@ void TestMesh::testMeshToVtk( const std::string& dir, int cycle, double time )
       mesh << std::endl;
    }
 
-   // specify integer id for each cell type. For 8 node 
-   // hexes this is id = 12.
+   // specify integer id for each cell type. 
    mesh << "CELL_TYPES " << this->numTotalElements << std::endl;
 
    int element_id;
    switch (this->numNodesPerElement)
    {
       case 8:
-         element_id = 12; // vtk 8-node hex
+         element_id = 12; // vtk 8-node hexahedron
+         break;
+      case 4:
+         element_id = 10; // vtk 4-node tetra
          break;
       default :
          SLIC_ERROR("TestMesh::testMeshToVtk(): element type not supported by vtk.");

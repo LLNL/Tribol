@@ -52,18 +52,17 @@ bool geomFilter( InterfacePair const & iPair, ContactMode const mode )
    // get instance of mesh data
    MeshData& mesh1 = meshManager.GetMeshInstance(meshId1);
    MeshData& mesh2 = meshManager.GetMeshInstance(meshId2);
-
-   int dim = ( mesh1.m_elementType == tribol::EDGE ) ? 2 : 3;
+   int dim = mesh1.m_dim;
 
    /// CHECK #2: Check to make sure faces don't share a common
    ///           node for the case where meshId1 = meshId2.
    ///           We want to preclude two adjacent faces from interacting.
    if (meshId1 == meshId2)
    {
-      for (int i=0; i<mesh1.m_numCellNodes; ++i)
+      for (int i=0; i<mesh1.m_numNodesPerCell; ++i)
       {
          int node1 = mesh1.getFaceNodeId(faceId1, i);
-         for (int j=0; j<mesh2.m_numCellNodes; ++j)
+         for (int j=0; j<mesh2.m_numNodesPerCell; ++j)
          {
             int node2 = mesh2.getFaceNodeId(faceId2, j);
             if (node1 == node2)
@@ -211,9 +210,9 @@ public:
           .fromSet( &m_elemSet)
           .toSet( &m_vertSet)
           .begins( typename BuilderType::BeginsSetBuilder()
-                   .stride( m_meshData->m_numCellNodes))
+                   .stride( m_meshData->m_numNodesPerCell))
           .indices( typename BuilderType::IndicesSetBuilder()
-                    .size( m_elemSet.size() * m_meshData->m_numCellNodes)
+                    .size( m_elemSet.size() * m_meshData->m_numNodesPerCell)
                     .data( m_meshData->m_connectivity ));
    }
 

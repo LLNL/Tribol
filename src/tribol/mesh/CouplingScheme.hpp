@@ -232,6 +232,13 @@ public:
   bool isValidCouplingScheme();
 
   /*!
+   * \brief Returns true if one or both meshes are zero-element, null meshes 
+   *
+   * \return true if one or both null meshes in coupling scheme
+   */
+  bool nullMeshes() { return m_nullMeshes; }
+
+  /*!
    * \brief Returns true if a valid mode is specified, otherwise false
    *
    * \return true indicating if the mode is valid;
@@ -322,9 +329,9 @@ public:
    *
    */
   void writeInterfaceOutput( const std::string& dir,
-                              const VisType v_type, 
-                              const integer cycle, 
-                              const real t );
+                             const VisType v_type, 
+                             const integer cycle, 
+                             const real t );
 
   /**
    * @brief Check if coupling scheme has MFEM mesh data
@@ -442,7 +449,7 @@ private:
    * \param [in/out] dt simulation timestep at given cycle
    *
    */
-   void computeCommonPlaneTimeStep( real &dt );
+  void computeCommonPlaneTimeStep( real &dt );
 
 private:
 
@@ -450,6 +457,8 @@ private:
 
   integer m_meshId1; ///< Integer id for mesh 1
   integer m_meshId2; ///< Integer id for mesh 2
+
+  bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
 
   integer m_numTotalNodes; ///< Total number of nodes in the coupling scheme
 

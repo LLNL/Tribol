@@ -253,6 +253,7 @@ int main( int argc, char** argv )
   );
 
   // update tribol (compute contact contribution to force and stiffness)
+  tribol::updateMfemParallelDecomposition();
   double dt {1.0};  // time is arbitrary here (no timesteps)
   tribol::update(1, 1.0, dt);
   pv_dc.SetCycle(1);

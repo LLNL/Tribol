@@ -36,11 +36,12 @@ constexpr integer ANY_MESH = -1;
 enum InterfaceElementType
 {
    UNDEFINED_ELEMENT, ///! Undefined
-   NODE,              ///! 0D node
-   EDGE,              ///! 1D edge
-   FACE,              ///! 2D face
-   CELL,              ///! 3D volume
-   NUM_CONTACT_ELEMENTS = CELL
+   LINEAR_EDGE,       ///! 1D linear edge 
+   LINEAR_TRIANGLE,   ///! 2D linear triangle
+   LINEAR_QUAD,       ///! 2D linear quadrilateral
+   LINEAR_TET,        ///! 3D linear tetrahedron (volume methods and test mesh class)
+   LINEAR_HEX,        ///! 3D linear hexahedron (volume methods and test mesh class)
+   NUM_CONTACT_ELEMENTS = LINEAR_HEX
 };
 
 /*!
@@ -307,6 +308,7 @@ enum MethodError
    SAME_MESH_IDS,
    SAME_MESH_IDS_INVALID_DIM,
    INVALID_DIM,
+   NULL_NODAL_RESPONSE,
    NO_METHOD_ERROR,
    NUM_METHOD_ERRORS
 };

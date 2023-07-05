@@ -73,10 +73,6 @@ public:
       // nodes encompassing the two meshes that will be registered 
       // with tribol, and that the conn1 and conn2 connectivity arrays 
       // reflect a global, contiguous index space
-      if (this->numNodesPerFace != 4)
-      {
-         SLIC_ERROR("setupTribol: number of nodes per face not equal to 4.");
-      }
 
       // grab coordinate data
       real * x = this->x;
@@ -84,8 +80,20 @@ public:
       real * z = this->z;
 
       // register the mesh with tribol
-      const int cellType = (dim == 3) ? (int)(tribol::FACE) : 
-                                        (int)(tribol::EDGE);
+      int cellType;
+      switch (this->numNodesPerFace)
+      {
+         case 4:
+         {
+            cellType = (int)(tribol::LINEAR_QUAD);
+            break;
+         }
+         default:
+         {
+            SLIC_ERROR("setupTribol: number of nodes per face not equal to 4.");
+         }
+      }
+
       const int mortarMeshId = 0;
       const int nonmortarMeshId = 1;
 

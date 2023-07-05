@@ -238,6 +238,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
@@ -351,6 +352,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
@@ -464,6 +466,7 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
