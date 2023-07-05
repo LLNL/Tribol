@@ -43,6 +43,7 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/config.hpp"
 #include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
 #include "tribol/utils/TestUtils.hpp"
 
 int main( int argc, char** argv )
@@ -316,7 +317,8 @@ int main( int argc, char** argv )
     }
 
     tribol::update(cycle, t, dt);
-    op.f_ext = tribol::getMfemResponse(0);
+    op.f_ext = 0.0;
+    tribol::getMfemResponse(0, op.f_ext);
 
     op.SetTime(t);
     solver.Step(u, v, t, dt);

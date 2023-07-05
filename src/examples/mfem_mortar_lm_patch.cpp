@@ -24,6 +24,7 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/config.hpp"
 #include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
 
 
 /**
@@ -252,7 +253,7 @@ int main( int argc, char** argv )
   );
 
   // update tribol (compute contact contribution to force and stiffness)
-  double dt {1.0};
+  double dt {1.0};  // time is arbitrary here (no timesteps)
   tribol::update(1, 1.0, dt);
   pv_dc.SetCycle(1);
   pv_dc.SetTime(1.0);
@@ -277,9 +278,10 @@ int main( int argc, char** argv )
   X_blk = 0.0;
 
   // retrieve gap vector (RHS) from contact
-  auto g = tribol::getMfemGap(0);
+  mfem::ParGridFunction g;
+  tribol::getMfemGap(0, g);
 
-  // restriction on submesh
+  // restriction operator on submesh: maps dofs stored in g to tdofs stored in G
   {
     auto& G = B_blk.GetBlock(1);
     auto& R_submesh = *g.ParFESpace()->GetRestrictionOperator();

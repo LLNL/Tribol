@@ -485,7 +485,7 @@ public:
    /**
     * @brief External force contribution (must be manually updated)
     */
-   mfem::Vector f_ext;
+   mfem::ParGridFunction f_ext;
 
 private:
    /**

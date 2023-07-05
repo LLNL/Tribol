@@ -153,19 +153,13 @@ public:
    * @brief Transfer grid function on parent-linked boundary submesh to grid
    * function on redecomp mesh
    *
-   * @param submesh_src Grid function on parent-linked boundary submesh
-   * @return mfem::GridFunction on redecomp mesh
+   * @param [in] submesh_src Grid function on parent-linked boundary submesh
+   * @param [out] redecomp_dst Zero-valued grid function on redecomp mesh
    */
-  mfem::GridFunction SubmeshToRedecomp(const mfem::ParGridFunction& submesh_src) const;
-
-  /**
-   * @brief Transfer grid function on redecomp mesh to grid function on
-   * parent-linked boundary submesh
-   *
-   * @param redecomp_src Grid function on redecomp mesh
-   * @return mfem::ParGridFunction on parent-linked boundary submesh
-   */
-  mfem::ParGridFunction RedecompToSubmesh(const mfem::GridFunction& redecomp_src) const;
+  void SubmeshToRedecomp(
+    const mfem::ParGridFunction& submesh_src,
+    mfem::GridFunction& redecomp_dst
+  ) const;
 
   /**
    * @brief Transfer grid function on redecomp mesh to grid function on
@@ -198,6 +192,17 @@ public:
    * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
    */
   void UpdateRedecomp(redecomp::RedecompMesh& redecomp_mesh);
+
+  /**
+   * @brief Returns finite element space on the redecomp mesh associated with
+   * this transfer object
+   *
+   * @return mfem::FiniteElementSpace& 
+   */
+  mfem::FiniteElementSpace& GetRedecompFESpace()
+  {
+    return *redecomp_fes_;
+  }
 
 private:
   /**
@@ -273,19 +278,25 @@ public:
    * @brief Transfer grid function on parent mesh to grid function on redecomp
    * mesh
    *
-   * @param parent_src Grid function on parent mesh
-   * @return mfem::GridFunction on redecomp mesh
+   * @param [in] parent_src Grid function on parent mesh
+   * @param [out] redecomp_dst Zero-valued grid function on redecomp mesh
    */
-  mfem::GridFunction ParentToRedecomp(const mfem::ParGridFunction& parent_src) const;
+  void ParentToRedecomp(
+    const mfem::ParGridFunction& parent_src,
+    mfem::GridFunction& redecomp_dst
+  ) const;
   
   /**
    * @brief Transfer grid function on redecomp mesh to grid function on parent
    * mesh
    *
-   * @param redecomp_src Grid function on RedecompMesh
-   * @return mfem::ParGridFunction on parent mesh
+   * @param [in] redecomp_src Grid function on RedecompMesh
+   * @param [out] parent_dst Zero-valued grid function on parent mesh
    */
-  mfem::ParGridFunction RedecompToParent(const mfem::GridFunction& redecomp_src) const;
+  void RedecompToParent(
+    const mfem::GridFunction& redecomp_src, 
+    mfem::ParGridFunction& parent_dst
+  ) const;
 
   /**
    * @brief Set a new redecomp mesh associated with the existing parent-linked
@@ -304,6 +315,17 @@ public:
   const mfem::ParFiniteElementSpace& GetSubmeshFESpace() const
   {
     return *submesh_gridfn_.ParFESpace();
+  }
+
+  /**
+   * @brief Returns finite element space on the redecomp mesh associated with
+   * this transfer object
+   *
+   * @return mfem::FiniteElementSpace& 
+   */
+  mfem::FiniteElementSpace& GetRedecompFESpace()
+  {
+    return submesh_redecomp_xfer_.GetRedecompFESpace();
   }
 
 private:
@@ -418,7 +440,7 @@ private:
      * @param parent_gridfn Grid function on the original, parent mesh
      */
     UpdateData(
-      const ParentRedecompTransfer& parent_redecomp_xfer,
+      ParentRedecompTransfer& parent_redecomp_xfer,
       const mfem::ParGridFunction& parent_gridfn
     );
 
@@ -553,7 +575,7 @@ private:
      * @param submesh_gridfn Grid function on the parent-linked boundary submesh
      */
     UpdateData(
-      const SubmeshRedecompTransfer& submesh_redecomp_xfer,
+      SubmeshRedecompTransfer& submesh_redecomp_xfer,
       const mfem::ParGridFunction& submesh_gridfn
     );
     
@@ -756,12 +778,13 @@ public:
 
   /**
    * @brief Get the nodal response grid function on the parent mesh
-   * 
-   * @return mfem::ParGridFunction 
+   *
+   * @param [out] r Pre-allocated, initialized mfem::Vector to which response
+   * vector is added
    */
-  mfem::ParGridFunction GetParentResponse() const
+  void GetParentResponse(mfem::ParGridFunction& r) const
   {
-    return GetParentRedecompTransfer().RedecompToParent(redecomp_response_);
+    GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r);
   }
 
   /**
@@ -1234,11 +1257,13 @@ public:
   /**
    * @brief Get the gap grid function on the parent-linked boundary submesh
    *
-   * @return mfem::ParGridFunction 
+   * @param [out] g Un-initialized mfem::ParGridFunction holding the nodal gap values
    */
-  mfem::ParGridFunction GetSubmeshGap() const
+  void GetSubmeshGap(mfem::ParGridFunction& g) const
   {
-    return GetPressureTransfer().RedecompToSubmesh(redecomp_gap_);
+    g.SetSize(submesh_pressure_.Size());
+    g = 0.0;
+    GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g);
   }
 
   /**

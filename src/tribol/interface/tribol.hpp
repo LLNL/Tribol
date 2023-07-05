@@ -180,62 +180,6 @@ void registerMesh( integer meshId,
                    const real* z=nullptr );
 
 /*!
- * @brief Define and register a coupling scheme over an MFEM mesh.
- *
- * This method is designed to enable simple registration of a contact coupling
- * scheme over a parallel decomposed MFEM mesh.  Contact surfaces are defined
- * via a list of boundary attributes, which is used to construct a contact
- * surface mfem::ParSubMesh.  The parallel domains are then rebalanced using the
- * redecomp library and the redecomp-level mesh and fields are automatically
- * registered with Tribol.  Mesh re-decomposition is done with each call to
- * update(), ensuring the redecomp mesh is still representative of the current
- * state of the mesh.
- *
- * @param [in] cs_id Index to use for the coupling scheme.
- * @param [in] mesh_id_1 The first ID of the contact surface mesh.
- * @param [in] mesh_id_2 The second ID of the contact surface mesh.
- * @param [in] mesh MFEM volume mesh.
- * @param [in] current_coords Coordinates associated with mesh.
- * @param [in] attributes_1 Boundary attributes defining the first mesh.
- * @param [in] attributes_2 Boundary attributes defining the second mesh.
- * @param [in] contact_mode 
- * @param [in] contact_case 
- * @param [in] contact_method 
- * @param [in] contact_model 
- * @param [in] enforcement_method 
- * @param [in] binning_method 
- */
-void registerMfemMesh( integer cs_id,
-                       integer mesh_id_1,
-                       integer mesh_id_2,
-                       mfem::ParMesh& mesh,
-                       const mfem::ParGridFunction& current_coords,
-                       const std::set<integer>& attributes_1,
-                       const std::set<integer>& attributes_2,
-                       integer contact_mode,
-                       integer contact_case,
-                       integer contact_method,
-                       integer contact_model,
-                       integer enforcement_method,
-                       integer binning_method = DEFAULT_BINNING_METHOD );
-
-/*!
- * @brief Turns on low order refined (LOR) representation of the contact mesh.
- *
- * This method enables coupling schemes registered with MFEM meshes to use a
- * refined, low-order mesh to represent the contact surface and the field
- * quantities captured by the mesh.  Transfer of field quantities is mass
- * preserving and is accomplished through L2 minimization.  Given a higher-order
- * MFEM mesh, LOR enables first order contact methodologies to be applied on
- * higher-order meshes.
- *
- * @param cs_id The ID of the coupling scheme.
- * @param lor_factor The refinement factor of the mesh.
- */
-void setMfemLowOrderRefinedFactor( integer cs_id,
-                             integer lor_factor );
-
-/*!
  * \brief Registers nodal displacements on the contact surface.
  *
  * \param [in] meshId the ID of the contact surface.
@@ -276,14 +220,6 @@ void registerNodalVelocities( integer meshId,
                               const real* vz=nullptr );
 
 /*!
- * @brief Registers a velocity field on a MFEM volume mesh.
- * 
- * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh.
- * @param [in] v MFEM velocity ParGridFunction defined over the volume mesh.
- */
-void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
-
-/*!
  * \brief Registers nodal response buffers.
  *
  * \param [in] meshId the ID of the contact surface.
@@ -304,16 +240,7 @@ void registerNodalResponse( integer meshId,
                             real* rz=nullptr );
 
 /*!
- * @brief Returns the response (RHS) vector as a ParGridFunction
- * 
- * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh.
- *
- * @return mfem::ParGridFunction of the response (RHS) vector.
- */
-mfem::ParGridFunction getMfemResponse( integer cs_id );
-
-/*!
- * \brief Get mfem sparse matrix for method specific matrix output 
+ * \brief Get mfem sparse matrix for method specific Jacobian matrix output 
  *
  * \param [in,out] sMat double pointer to mfem sparse matrix object
  * \param [in] csId Coupling scheme id
@@ -328,10 +255,10 @@ mfem::ParGridFunction getMfemResponse( integer cs_id );
  *       which assumes contiguous and unique node ids between mortar and 
  *       nonmortar meshes registered in a given coupling scheme.
  */
-int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
+int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
 
 /*!
- * \brief Gets CSR storage arrays for method specific matrix output
+ * \brief Gets CSR storage arrays for method specific Jacobian matrix output
  *
  * \param [out] I pointer to row offset integer array
  * \param [out] J pointer to column index array
@@ -351,7 +278,7 @@ int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
  * \return 0 success (if CSR data exists and pointed to), nonzero for failure
  *
  */
-int getCSRMatrix( int** I, int** J, real** vals, int csId,
+int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
                   int* n_offsets = nullptr, int* n_nonzero = nullptr );
 
 /*!
@@ -400,36 +327,13 @@ int getElementBlockJacobians( integer csId,
                               const axom::Array<integer>* col_elem_idx,
                               const axom::Array<mfem::DenseMatrix>* jacobians );
 
-/*!
- * @brief Get assembled contact contributions for the Jacobian matrix
- *
- * This method requires registration of an mfem::ParMesh with the coupling
- * scheme. The Jacobian contributions are split into a 2x2 block structure. The
- * first row (or column) block is associated with the coordinate grid function
- * degrees of freedom and the second row (or column) block is associated with
- * the Lagrange multiplier degrees of freedom.
- *
- * @param csId Coupling scheme id with a registered MFEM mesh
- *
- * @return Jacobian contributions as an mfem::BlockOperator
- */
-std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
-
 /// register mortar gaps scalar nodal field
 void registerMortarGaps( integer meshId,
                          real * nodal_gaps );
 
-/// return mortar gaps on the non mortar surface for a given coupling scheme
-/// with a registered MFEM mesh
-mfem::ParGridFunction getMfemGap( integer cs_id );
-
 /// register mortar pressure scalar nodal field
 void registerMortarPressures( integer meshId,
                               const real * nodal_pressures );
-
-/// return mortar pressures on the non mortar surface for a given coupling
-/// scheme with a registered MFEM mesh
-mfem::ParGridFunction& getMfemPressure( integer cs_id );
 
 /// register an integer nodal field
 void registerIntNodalField( integer meshId,
@@ -524,7 +428,7 @@ void finalize( );
 
 /// @}
 
-} /* end contact namespace */
+} /* namespace tribol */
 
 
 #endif /* TRIBOL_HPP_ */

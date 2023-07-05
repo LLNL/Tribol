@@ -19,6 +19,7 @@ set(tribol_headers
     common/logger.hpp
     common/Parameters.hpp
 
+    interface/mfem_tribol.hpp
     interface/simple_tribol.hpp
     interface/tribol.hpp
 
@@ -52,6 +53,7 @@ set(tribol_headers
 ## list of sources
 set(tribol_sources
 
+    interface/mfem_tribol.cpp
     interface/simple_tribol.cpp
     interface/tribol.cpp
 

@@ -1739,7 +1739,8 @@ ExplicitMechanics::ExplicitMechanics(
    mfem::Coefficient& lambda,
    mfem::Coefficient& mu
 )
-:  elasticity { &fespace },
+:  f_ext { &fespace },
+   elasticity { &fespace },
    inv_lumped_mass { fespace.GetVSize() }
 {
    // create inverse lumped mass matrix; store as a vector

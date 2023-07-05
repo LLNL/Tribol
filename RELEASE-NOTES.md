@@ -4,9 +4,23 @@ All notable changes to this project will be documented in this file
 
 The format of this file is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased] - Release date yyyy-mm-dd 
+## [Version 0.2.0] - Release date YYYY-MM-DD
 
 ### Added
+- Multi-rank contact for MFEM data structures
+- New API calls for MFEM data structures (see `interface/mfem_tribol.hpp`)
+
+### Changed
+- Renamed getMfemSparseMatrix() to getJacobianSparseMatrix() and getCSRMatrix()
+  to getJacobianCSRMatrix() to avoid confusion with the separate new MFEM
+  interface
+
+## [Version 0.1.0] - Release date 2023-04-21
+
+### Added
+- Licensing information for open source release
+- NOTICE file in root directory
+- LICENSE file in root directory
 - Binning for intermediate level search utilizing Axom.
 - Common plane with single integration point penalty enforcement.
 - Single mortar method per Puso 2004 with Lagrange multiplier enforcment.
@@ -64,7 +78,7 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
 - setPenaltyData() has been deprecated in favor of more explicit routines to set the different 
   penalty calculation options. See setKinematicConstantPenalty() and setKinematicElementPenalty(). 
 - API support for setting different enforcement options has changed. See setPenaltyOptions() and 
-  setLagrangeMultiplierImplicitOptions(). 
+  setLagrangeMultiplierImplicitOptions().
 
 ### Fixed
 - Preliminary bugfix for binning of small surface elements.
@@ -97,16 +111,3 @@ The format of this file is based on [Keep a Changelog](http://keepachangelog.com
 - Added some specific tests for computational geometry and mortar weights.
 - Added and/or modified tests for element-based penalty and timestep vote features.
 - Added gap-rate tests and modified tests based on associated refactoring.
-
-## [Version 0.1.0] - Release date 2023-04-21
-
-### Added
-- Licensing information for open source release
-- NOTICE file in root directory
-- LICENSE file in root directory
-
-### Changed
-- None
-
-### Fixed
-- None
