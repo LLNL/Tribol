@@ -333,6 +333,8 @@ public:
                              const integer cycle, 
                              const real t );
 
+#ifdef BUILD_REDECOMP
+
   /**
    * @brief Check if coupling scheme has MFEM mesh data
    * 
@@ -441,6 +443,8 @@ public:
     m_mfemJacobianData = std::move(mfemJacobianData);
   }
 
+#endif /* BUILD_REDECOMP */
+
 private:
 
   /*!
@@ -483,9 +487,13 @@ private:
   CouplingSchemeErrors m_couplingSchemeErrors; ///< struct handling coupling scheme errors
   CouplingSchemeInfo   m_couplingSchemeInfo;   ///< struct handling info to be printed
 
+#ifdef BUILD_REDECOMP
+
   std::unique_ptr<MfemMeshData> m_mfemMeshData;          ///< MFEM mesh data
   std::unique_ptr<MfemSubmeshData> m_mfemSubmeshData;    ///< MFEM submesh field data
   std::unique_ptr<MfemJacobianData> m_mfemJacobianData;  ///< MFEM jacobian data
+
+#endif /* BUILD_REDECOMP */
   
   DISABLE_COPY_AND_ASSIGNMENT( CouplingScheme );
   DISABLE_MOVE_AND_ASSIGNMENT( CouplingScheme );

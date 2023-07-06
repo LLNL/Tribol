@@ -265,6 +265,9 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
 
    lm_options.eval_mode = evalMode;
    lm_options.sparse_mode = sparseMode;
+
+#ifdef BUILD_REDECOMP
+
    if (couplingScheme->hasMfemData())
    {
       // MFEM_ELEMENT_DENSE is required to use the MFEM interface
@@ -282,6 +285,9 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
          ));
       }
    }
+
+#endif /* BUILD_REDECOMP */
+
    lm_options.enforcement_option_set = true;
 
 } // end setLagrangeMultiplierOptions()

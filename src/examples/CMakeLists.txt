@@ -64,7 +64,7 @@ if(ENABLE_FORTRAN AND TRIBOL_USE_MPI)
 endif()
 
 ## Redecomp examples
-if ( TRIBOL_USE_MPI )
+if ( BUILD_REDECOMP )
 
   set( redecomp_examples
       domain_redecomp.cpp
@@ -92,7 +92,7 @@ if ( TRIBOL_USE_MPI )
 endif()
 
 ## Tribol + redecomp examples
-if ( TRIBOL_USE_MPI )
+if ( BUILD_REDECOMP )
 
   set( examples
       mfem_mortar_lm_patch.cpp

@@ -7,6 +7,9 @@
 #define MFEM_TRIBOL_HPP_
 
 #include "tribol/types.hpp"
+
+#ifdef BUILD_REDECOMP
+
 #include "tribol/common/Parameters.hpp"
 
 // MFEM includes
@@ -140,5 +143,7 @@ mfem::ParGridFunction& getMfemPressure( integer cs_id );
 void updateMfemParallelDecomposition();
 
 } /* namespace tribol */
+
+#endif /* BUILD_REDECOMP */
 
 #endif /* MFEM_TRIBOL_HPP_ */

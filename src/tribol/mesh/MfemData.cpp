@@ -3,7 +3,10 @@
 //
 // SPDX-License-Identifier: (MIT)
 
+
 #include "tribol/mesh/MfemData.hpp"
+
+#ifdef BUILD_REDECOMP
 
 #include "axom/slic.hpp"
 
@@ -869,3 +872,5 @@ const MfemJacobianData::UpdateData& MfemJacobianData::GetUpdateData() const
 }
 
 } // end tribol namespace
+
+#endif /* BUILD_REDECOMP */

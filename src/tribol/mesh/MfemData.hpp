@@ -6,6 +6,10 @@
 #ifndef SRC_MESH_MFEMDATA_HPP_
 #define SRC_MESH_MFEMDATA_HPP_
 
+#include "tribol/types.hpp"
+
+#ifdef BUILD_REDECOMP
+
 #include <set>
 #include <vector>
 
@@ -14,7 +18,6 @@
 #include "axom/core.hpp"
 #include "redecomp/redecomp.hpp"
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 
@@ -1461,5 +1464,7 @@ private:
 };
 
 } // end namespace tribol
+
+#endif /* BUILD_REDECOMP */
 
 #endif /* SRC_MESH_MFEMDATA_HPP_ */

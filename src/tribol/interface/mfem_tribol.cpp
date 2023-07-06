@@ -5,6 +5,8 @@
 
 #include "mfem_tribol.hpp"
 
+#ifdef BUILD_REDECOMP
+
 // Tribol includes
 #include "tribol.hpp"
 #include "tribol/mesh/CouplingSchemeManager.hpp"
@@ -263,3 +265,4 @@ void updateMfemParallelDecomposition()
 
 } // end tribol namespace
 
+#endif /* BUILD_REDECOMP */
