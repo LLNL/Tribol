@@ -61,7 +61,7 @@ endforeach()
 #------------------------------------------------------------------------------
 # Add redecomp tests
 #------------------------------------------------------------------------------
-if ( TRIBOL_USE_MPI )
+if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
 
   set( redecomp_tests
       redecomp_transfer.cpp
@@ -101,7 +101,7 @@ endif()
 #------------------------------------------------------------------------------
 # Add tribol + redecomp tests
 #------------------------------------------------------------------------------
-if ( TRIBOL_USE_MPI )
+if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
 
   set( combined_tests
       tribol_mfem_common_plane.cpp

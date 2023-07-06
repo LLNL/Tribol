@@ -15,8 +15,17 @@ add_subdirectory(tribol)
 #------------------------------------------------------------------------------
 # add redecomp
 #------------------------------------------------------------------------------
-if ( TRIBOL_USE_MPI )
-  add_subdirectory(redecomp)
+if ( NOT DEFINED BUILD_REDECOMP )
+  set(BUILD_REDECOMP ON)
+endif()
+if ( BUILD_REDECOMP )
+  if ( TRIBOL_USE_MPI )
+    add_subdirectory(redecomp)
+  else()
+    message(STATUS "Redecomp requested, but MPI not enabled. "
+      "Build will proceed with redecomp disabled.")
+    set(BUILD_REDECOMP OFF)
+  endif()
 endif()
 
 #------------------------------------------------------------------------------
