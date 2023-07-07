@@ -670,10 +670,10 @@ public:
    * @brief Build a new redecomp mesh and update grid functions on the redecomp
    * mesh
    *
-   * @note This method should be called after the coordinate grid function has
-   * changed.
+   * @note This method should be called after the coordinate grid function is
+   * updated.
    */
-  void UpdateMeshData();
+  void UpdateMfemMeshData();
 
   /**
    * @brief Get the integer identifier for the first Tribol registered mesh
@@ -1198,7 +1198,7 @@ public:
    *
    * @param redecomp_mesh Updated redecomp mesh
    */
-  void UpdateSubmeshData(redecomp::RedecompMesh& redecomp_mesh);
+  void UpdateMfemSubmeshData(redecomp::RedecompMesh& redecomp_mesh);
 
   /**
    * @brief Get pointers to component arrays of the pressure on the redecomp

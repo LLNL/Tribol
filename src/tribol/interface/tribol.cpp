@@ -416,6 +416,7 @@ void registerMesh( integer meshId,
 
    // allocate outward unit face normal arrays and centroid arrays and cell area array
    mesh.m_dim = dim;
+   mesh.deallocateArrays();
 
    if (mesh.m_numCells > 0)
    {
@@ -650,7 +651,7 @@ int getElementBlockJacobians( integer csId,
 
 //------------------------------------------------------------------------------
 void registerMortarGaps( integer meshId,
-                         real * nodal_gaps )
+                         real * gaps )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -659,7 +660,7 @@ void registerMortarGaps( integer meshId,
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
 
-   if (nodal_gaps == nullptr)
+   if (gaps == nullptr)
    {
       SLIC_WARNING( "tribol::registerMortarGaps(): null pointer to data " << 
                     "on mesh " << meshId << ".");
@@ -667,7 +668,7 @@ void registerMortarGaps( integer meshId,
    }
    else
    {
-      mesh.m_nodalFields.m_node_gap = nodal_gaps;
+      mesh.m_nodalFields.m_node_gap = gaps;
       mesh.m_nodalFields.m_is_node_gap_set = true;
    }
    
@@ -675,7 +676,7 @@ void registerMortarGaps( integer meshId,
 
 //------------------------------------------------------------------------------
 void registerMortarPressures( integer meshId,
-                              const real * nodal_pressures )
+                              const real * pressures )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -684,7 +685,7 @@ void registerMortarPressures( integer meshId,
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
 
-   if (nodal_pressures == nullptr)
+   if (pressures == nullptr)
    {
       SLIC_WARNING( "tribol::registerMortarPressures(): null pointer to data " << 
                     "on mesh " << meshId << ".");
@@ -692,7 +693,7 @@ void registerMortarPressures( integer meshId,
    }
    else
    {
-      mesh.m_nodalFields.m_node_pressure = nodal_pressures;
+      mesh.m_nodalFields.m_node_pressure = pressures;
       mesh.m_nodalFields.m_is_node_pressure_set = true;
    }
    

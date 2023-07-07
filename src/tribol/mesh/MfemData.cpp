@@ -401,7 +401,7 @@ void MfemMeshData::SetParentCoords(const mfem::ParGridFunction& current_coords)
   coords_.SetParentGridFn(current_coords);
 }
 
-void MfemMeshData::UpdateMeshData()
+void MfemMeshData::UpdateMfemMeshData()
 {
   update_data_ = std::make_unique<UpdateData>(
     submesh_,
@@ -592,7 +592,7 @@ MfemSubmeshData::MfemSubmeshData(
   submesh_pressure_ = 0.0;
 }
 
-void MfemSubmeshData::UpdateSubmeshData(redecomp::RedecompMesh& redecomp_mesh)
+void MfemSubmeshData::UpdateMfemSubmeshData(redecomp::RedecompMesh& redecomp_mesh)
 {
   update_data_ = std::make_unique<UpdateData>(
     *submesh_pressure_.ParFESpace(),

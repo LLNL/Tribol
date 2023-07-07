@@ -204,7 +204,7 @@ void updateMfemParallelDecomposition()
          mesh_ids[0] = mfem_data->GetMesh1ID();
          mesh_ids[1] = mfem_data->GetMesh2ID();
          // creates a new RedecompMesh and updates grid functions on RedecompMesh
-         mfem_data->UpdateMeshData();
+         mfem_data->UpdateMfemMeshData();
          auto coord_ptrs = mfem_data->GetRedecompCoordsPtrs();
 
          registerMesh(
@@ -245,11 +245,12 @@ void updateMfemParallelDecomposition()
          {
             SLIC_ERROR_ROOT_IF(couplingScheme->getContactModel() != FRICTIONLESS,
               "Only frictionless contact is supported.");
-            auto dual_data = couplingScheme->getMfemSubmeshData();
-            dual_data->UpdateSubmeshData(mfem_data->GetRedecompMesh());
-            auto g_ptrs = dual_data->GetRedecompGapPtrs();
+            auto submesh_data = couplingScheme->getMfemSubmeshData();
+            // updates submesh-native grid functions on the redecomp mesh
+            submesh_data->UpdateMfemSubmeshData(mfem_data->GetRedecompMesh());
+            auto g_ptrs = submesh_data->GetRedecompGapPtrs();
             registerMortarGaps(mesh_ids[1], g_ptrs[0]);
-            auto p_ptrs = dual_data->GetRedecompPressurePtrs();
+            auto p_ptrs = submesh_data->GetRedecompPressurePtrs();
             registerMortarPressures(mesh_ids[1], p_ptrs[0]);
             auto lm_options = couplingScheme->getEnforcementOptions().lm_implicit_options;
             if (couplingScheme->hasMfemJacobianData())
