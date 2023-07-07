@@ -277,8 +277,12 @@ int main( int argc, char** argv )
   // set up tribol
   timer.start();
   tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
-  tribol::registerMfemMesh(
-    0, 0, 1, *pmesh, coords, surf1_attribs, surf2_attribs,
+  int coupling_scheme_id = 0;
+  int mesh1_id = 0;
+  int mesh2_id = 1;
+  tribol::registerMfemCouplingScheme(
+    coupling_scheme_id, mesh1_id, mesh2_id,
+    *pmesh, coords, surf1_attribs, surf2_attribs,
     tribol::SURFACE_TO_SURFACE, 
     tribol::NO_CASE, 
     tribol::COMMON_PLANE, 

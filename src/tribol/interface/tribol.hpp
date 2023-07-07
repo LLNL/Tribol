@@ -328,22 +328,22 @@ int getElementBlockJacobians( integer csId,
                               const axom::Array<mfem::DenseMatrix>* jacobians );
 
 /*!
- * @brief Register gap field on a nonmortar surface mesh associated with the
+ * \brief Register gap field on a nonmortar surface mesh associated with the
  * mortar method
  *
- * @param meshId Mesh id
- * @param gaps Array of degree-of-freedom values on the nodes of the mesh
+ * \param meshId Mesh id
+ * \param gaps Array of degree-of-freedom values on the nodes of the mesh
  * representing the scalar gap field
  */
 void registerMortarGaps( integer meshId,
                          real * gaps );
 
 /*!
- * @brief Register pressure field on a nonmortar surface mesh associated with
+ * \brief Register pressure field on a nonmortar surface mesh associated with
  * the mortar method
  *
- * @param meshId Mesh id
- * @param gaps Array of degree-of-freedom values on the nodes of the mesh
+ * \param meshId Mesh id
+ * \param gaps Array of degree-of-freedom values on the nodes of the mesh
  * representing the scalar pressure field
  */
 void registerMortarPressures( integer meshId,

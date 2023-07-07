@@ -241,7 +241,7 @@ int main( int argc, char** argv )
   int coupling_scheme_id = 0;
   int mesh1_id = 0;
   int mesh2_id = 1;
-  tribol::registerMfemMesh(
+  tribol::registerMfemCouplingScheme(
     coupling_scheme_id, mesh1_id, mesh2_id,
     *pmesh, coords, mortar_attribs, nonmortar_attribs,
     tribol::SURFACE_TO_SURFACE, 

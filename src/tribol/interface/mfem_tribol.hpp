@@ -23,11 +23,11 @@ namespace tribol
  *
  * This method is designed to enable simple registration of a contact coupling
  * scheme over a parallel decomposed MFEM mesh.  Contact surfaces are defined
- * via a list of boundary attributes, which is used to construct a contact
- * surface mfem::ParSubMesh.  The parallel domains are then rebalanced using the
- * redecomp library and the redecomp-level mesh and fields are automatically
- * registered with Tribol.  Mesh re-decomposition using redecomp is done with a
- * call to updateMfemParallelDecomposition().
+ * via a list of one or more boundary attributes, which is used to construct a
+ * single contact surface mfem::ParSubMesh.  The parallel domains are then
+ * rebalanced using the redecomp library and the redecomp-level mesh and fields
+ * are automatically registered with Tribol.  Mesh re-decomposition using
+ * redecomp is done with a call to updateMfemParallelDecomposition().
  *
  * If the registered mesh contains a higher-order Nodes grid function, then
  * low-order refinement (LOR) of the mesh is applied (if needed) to use Tribol's
@@ -41,8 +41,8 @@ namespace tribol
  * @param [in] mesh_id_2 The second ID of the contact surface mesh.
  * @param [in] mesh MFEM volume mesh.
  * @param [in] current_coords Coordinates associated with mesh.
- * @param [in] attributes_1 Boundary attributes defining the first mesh.
- * @param [in] attributes_2 Boundary attributes defining the second mesh.
+ * @param [in] b_attributes_1 Boundary attributes defining the first mesh.
+ * @param [in] b_attributes_2 Boundary attributes defining the second mesh.
  * @param [in] contact_mode 
  * @param [in] contact_case 
  * @param [in] contact_method 
@@ -50,19 +50,19 @@ namespace tribol
  * @param [in] enforcement_method 
  * @param [in] binning_method 
  */
-void registerMfemMesh( integer cs_id,
-                       integer mesh_id_1,
-                       integer mesh_id_2,
-                       mfem::ParMesh& mesh,
-                       const mfem::ParGridFunction& current_coords,
-                       const std::set<integer>& attributes_1,
-                       const std::set<integer>& attributes_2,
-                       integer contact_mode,
-                       integer contact_case,
-                       integer contact_method,
-                       integer contact_model,
-                       integer enforcement_method,
-                       integer binning_method = DEFAULT_BINNING_METHOD );
+void registerMfemCouplingScheme( integer cs_id,
+                                 integer mesh_id_1,
+                                 integer mesh_id_2,
+                                 mfem::ParMesh& mesh,
+                                 const mfem::ParGridFunction& current_coords,
+                                 const std::set<integer>& b_attributes_1,
+                                 const std::set<integer>& b_attributes_2,
+                                 integer contact_mode,
+                                 integer contact_case,
+                                 integer contact_method,
+                                 integer contact_model,
+                                 integer enforcement_method,
+                                 integer binning_method = DEFAULT_BINNING_METHOD );
 
 /**
  * @brief Sets factor of refinement in low order refined (LOR) representation of
@@ -82,6 +82,9 @@ void registerMfemMesh( integer cs_id,
  * higher-order MFEM mesh, LOR enables linear mesh contact methodologies to be
  * applied on higher-order meshes.
  *
+ * @pre Coupling scheme cs_id must be registered using
+ * registerMfemCouplingScheme()
+ *
  * @param cs_id The ID of the coupling scheme.
  * @param lor_factor The refinement factor of the mesh.
  */
@@ -90,7 +93,10 @@ void setMfemLowOrderRefinedFactor( integer cs_id,
 
 /**
  * @brief Registers a velocity field on a MFEM volume mesh.
- * 
+ *
+ * @pre Coupling scheme cs_id must be registered using
+ * registerMfemCouplingScheme()
+ *
  * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh.
  * @param [in] v MFEM velocity ParGridFunction defined over the volume mesh.
  */
@@ -98,6 +104,13 @@ void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
 
 /**
  * @brief Returns the response (RHS) vector to a given mfem::ParGridFunction
+ *
+ * @pre Coupling scheme cs_id must be registered using
+ * registerMfemCouplingScheme()
+ * @pre Redecomp mesh must be created and up to date by calling
+ * updateMfemParallelDecomposition()
+ * @pre Response vector must be up to date for current geometry by calling
+ * update()
  *
  * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh.
  * @param [out] r mfem::ParGridFunction of the response (RHS) vector
@@ -108,6 +121,13 @@ void getMfemResponse( integer cs_id, mfem::ParGridFunction& r );
 /**
  * @brief Get assembled contact contributions for the Jacobian matrix
  *
+ * @pre Coupling scheme cs_id must be registered using
+ * registerMfemCouplingScheme()
+ * @pre Redecomp mesh must be created and up to date by calling
+ * updateMfemParallelDecomposition()
+ * @pre Response vector must be up to date for current geometry by calling
+ * update()
+ *
  * This method requires registration of an mfem::ParMesh with the coupling
  * scheme. The Jacobian contributions are split into a 2x2 block structure. The
  * first row (or column) block is associated with the coordinate grid function
@@ -115,13 +135,19 @@ void getMfemResponse( integer cs_id, mfem::ParGridFunction& r );
  * the Lagrange multiplier degrees of freedom.
  *
  * @param csId Coupling scheme id with a registered MFEM mesh
- *
  * @return Jacobian contributions as an mfem::BlockOperator
  */
 std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
 
 /**
  * @brief Returns gap vector to a given mfem::ParGridFunction
+ *
+ * @pre Coupling scheme cs_id must be registered using
+ * registerMfemCouplingScheme()
+ * @pre Redecomp mesh must be created and up to date by calling
+ * updateMfemParallelDecomposition()
+ * @pre Response vector must be up to date for current geometry by calling
+ * update()
  * 
  * @param [in] cs_id Coupling scheme id with a registered MFEM mesh
  * @param [out] g Nodal gap values (values do not have to be pre-allocated)
@@ -129,7 +155,10 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
 void getMfemGap( integer cs_id, mfem::ParGridFunction& g );
 
 /**
- * @brief Returns reference to nodal pressure vector
+ * @brief Returns reference to nodal pressure vector on the submesh surface
+ *
+ * @pre Coupling scheme cs_id must be registered using
+ * registerMfemCouplingScheme()
  * 
  * @param cs_id Coupling scheme id with a registered MFEM mesh 
  * @return mfem::ParGridFunction& Nodal pressure vector
@@ -139,6 +168,8 @@ mfem::ParGridFunction& getMfemPressure( integer cs_id );
 /**
  * @brief Updates mesh parallel decomposition and related grid
  * functions/Jacobian when coordinates are updated
+ *
+ * @pre Coupling schemes must be registered using registerMfemCouplingScheme()
  */
 void updateMfemParallelDecomposition();
 

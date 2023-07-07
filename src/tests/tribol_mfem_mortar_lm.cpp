@@ -154,8 +154,12 @@ protected:
 
     // set up tribol
     tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
-    tribol::registerMfemMesh(
-      0, 0, 1, *pmesh, coords, mortar_attribs, nonmortar_attribs,
+    int coupling_scheme_id = 0;
+    int mesh1_id = 0;
+    int mesh2_id = 1;
+    tribol::registerMfemCouplingScheme(
+      coupling_scheme_id, mesh1_id, mesh2_id,
+      *pmesh, coords, mortar_attribs, nonmortar_attribs,
       tribol::SURFACE_TO_SURFACE, 
       tribol::NO_SLIDING, 
       tribol::SINGLE_MORTAR, 
