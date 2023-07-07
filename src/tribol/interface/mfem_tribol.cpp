@@ -85,6 +85,7 @@ void registerMfemCouplingScheme( integer cs_id,
             pressure_vdim
          )
       );
+      // set up Jacobian transfer if the coupling scheme requires it
       auto lm_options = coupling_scheme->getEnforcementOptions().lm_implicit_options;
       if (
          lm_options.enforcement_option_set && 
@@ -113,7 +114,7 @@ void setMfemLowOrderRefinedFactor( integer cs_id,
    SLIC_ERROR_ROOT_IF(
       !coupling_scheme->hasMfemData(),
       "Coupling scheme does not contain MFEM data. "
-      "Was the coupling scheme created with registerParMesh()?"
+      "Create the coupling scheme using registerMfemCouplingScheme() to set the LOR factor."
    );
    coupling_scheme->getMfemMeshData()->SetLORFactor(lor_factor);
 }
@@ -124,7 +125,7 @@ void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v )
    SLIC_ERROR_ROOT_IF(
       !coupling_scheme->hasMfemData(), 
       "Coupling scheme does not contain MFEM data. "
-      "Was the coupling scheme created with registerParMesh()?"
+      "Create the coupling scheme using registerMfemCouplingScheme() to register a velocity."
    );
    coupling_scheme->getMfemMeshData()->SetParentVelocity(v);
 }
@@ -135,7 +136,7 @@ void getMfemResponse( integer cs_id, mfem::ParGridFunction& r )
    SLIC_ERROR_ROOT_IF(
       !coupling_scheme->hasMfemData(), 
       "Coupling scheme does not contain MFEM data. "
-      "Was the coupling scheme created with registerParMesh()?"
+      "Create the coupling scheme using registerMfemCouplingScheme() to return a response vector."
    );
    coupling_scheme->getMfemMeshData()->GetParentResponse(r);
 }
@@ -155,8 +156,8 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
    }
    SLIC_ERROR_ROOT_IF(
       !coupling_scheme->hasMfemData(), 
-      "No MFEM data exists. The coupling scheme "
-      "must be registered using registerParMesh() to use this method."
+      "Coupling scheme does not contain MFEM data."
+      "Create the coupling scheme using registerMfemCouplingScheme() to return a MFEM block Jacobian."
    );
    return coupling_scheme->getMfemJacobianData()->GetMfemBlockJacobian(
       *coupling_scheme->getMethodData()
@@ -168,9 +169,9 @@ void getMfemGap( integer cs_id, mfem::ParGridFunction& g )
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
       !coupling_scheme->hasMfemSubmeshData(), 
-      "Coupling scheme does not contain MFEM dual field data. "
-      "Was the coupling scheme created with registerParMesh() and is the "
-      "enforcement method LAGRANGE_MULTIPLIER?"
+      "Coupling scheme does not contain MFEM pressure field data. "
+      "Create the coupling scheme using registerMfemCouplingScheme() and set the "
+      "enforcement_method to LAGRANGE_MULTIPLIER to set the gap vector."
    );
    coupling_scheme->getMfemSubmeshData()->GetSubmeshGap(g);
 }
@@ -180,9 +181,9 @@ mfem::ParGridFunction& getMfemPressure( integer cs_id )
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
       !coupling_scheme->hasMfemSubmeshData(), 
-      "Coupling scheme does not contain MFEM dual field data. "
-      "Was the coupling scheme created with registerParMesh() and is the "
-      "enforcement method LAGRANGE_MULTIPLIER?"
+      "Coupling scheme does not contain MFEM pressure field data. "
+      "Create the coupling scheme using registerMfemCouplingScheme() and set the "
+      "enforcement_method to LAGRANGE_MULTIPLIER to access the pressure field."
    );
    return coupling_scheme->getMfemSubmeshData()->GetSubmeshPressure();
 }
