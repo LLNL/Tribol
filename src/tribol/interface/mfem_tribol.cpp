@@ -28,6 +28,7 @@ void registerMfemCouplingScheme( integer cs_id,
                                  integer enforcement_method,
                                  integer binning_method)
 {
+   // create transfer operators from parent mesh to redecomp mesh
    auto mfem_data = std::make_unique<MfemMeshData>(
       mesh_id_1,
       mesh_id_2,
@@ -74,6 +75,8 @@ void registerMfemCouplingScheme( integer cs_id,
          SLIC_ERROR_ROOT("Unsupported contact model. "
            "Only FRICTIONLESS, TIED, and COULOMB supported.");
       }
+      // create pressure field on the parent-linked boundary submesh and
+      // transfer operators to the redecomp level
       coupling_scheme->setMfemSubmeshData(
          std::make_unique<MfemSubmeshData>(
             mfem_data->GetSubmesh(),
@@ -91,6 +94,8 @@ void registerMfemCouplingScheme( integer cs_id,
          )
       )
       {
+         // create matrix transfer operator between redecomp and
+         // parent/parent-linked boundary submesh
          coupling_scheme->setMatrixXfer(std::make_unique<MfemJacobianData>(
             *mfem_data,
             *coupling_scheme->getMfemSubmeshData()
