@@ -159,6 +159,8 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
       "Coupling scheme does not contain MFEM data."
       "Create the coupling scheme using registerMfemCouplingScheme() to return a MFEM block Jacobian."
    );
+   // creates a block Jacobian on the parent mesh/parent-linked boundary submesh
+   // based on the element Jacobians stored in the coupling scheme's method data
    return coupling_scheme->getMfemJacobianData()->GetMfemBlockJacobian(
       *coupling_scheme->getMethodData()
    );
