@@ -28,8 +28,6 @@ void registerMfemCouplingScheme( integer cs_id,
                                  integer enforcement_method,
                                  integer binning_method)
 {
-   std::unique_ptr<mfem::FiniteElementCollection> dual_fec = nullptr;
-   integer dual_vdim = 0;
    auto mfem_data = std::make_unique<MfemMeshData>(
       mesh_id_1,
       mesh_id_2,
@@ -57,17 +55,19 @@ void registerMfemCouplingScheme( integer cs_id,
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    if (enforcement_method == LAGRANGE_MULTIPLIER)
    {
-      dual_fec = std::make_unique<mfem::H1_FECollection>(
-         current_coords.FESpace()->FEColl()->GetOrder(),
-         mesh.SpaceDimension()
-      );
+      std::unique_ptr<mfem::FiniteElementCollection> pressure_fec 
+         = std::make_unique<mfem::H1_FECollection>(
+            current_coords.FESpace()->FEColl()->GetOrder(),
+            mesh.SpaceDimension()
+         );
+      integer pressure_vdim = 0;
       if (contact_model == FRICTIONLESS)
       {
-         dual_vdim = 1;
+         pressure_vdim = 1;
       }
       else if (contact_model == TIED || contact_model == COULOMB)
       {
-         dual_vdim = mesh.SpaceDimension();
+         pressure_vdim = mesh.SpaceDimension();
       }
       else
       {
@@ -78,8 +78,8 @@ void registerMfemCouplingScheme( integer cs_id,
          std::make_unique<MfemSubmeshData>(
             mfem_data->GetSubmesh(),
             mfem_data->GetLORMesh(),
-            std::move(dual_fec),
-            dual_vdim
+            std::move(pressure_fec),
+            pressure_vdim
          )
       );
       auto lm_options = coupling_scheme->getEnforcementOptions().lm_implicit_options;
