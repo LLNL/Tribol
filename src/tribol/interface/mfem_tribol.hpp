@@ -19,7 +19,7 @@ namespace tribol
 {
 
 /**
- * @brief Define and register a coupling scheme over an MFEM mesh.
+ * @brief Define and register a coupling scheme over an MFEM mesh
  *
  * This method is designed to enable simple registration of a contact coupling
  * scheme over a parallel decomposed MFEM mesh.  Contact surfaces are defined
@@ -36,13 +36,13 @@ namespace tribol
  * low-order refinement factor equals the order of the Nodes grid function, but
  * can be overridden using setMfemLowOrderRefinedFactor().
  *
- * @param [in] cs_id Index to use for the coupling scheme.
- * @param [in] mesh_id_1 The first ID of the contact surface mesh.
- * @param [in] mesh_id_2 The second ID of the contact surface mesh.
- * @param [in] mesh MFEM volume mesh.
- * @param [in] current_coords Coordinates associated with mesh.
- * @param [in] b_attributes_1 Boundary attributes defining the first mesh.
- * @param [in] b_attributes_2 Boundary attributes defining the second mesh.
+ * @param [in] cs_id Index to use for the coupling scheme
+ * @param [in] mesh_id_1 The first ID of the contact surface mesh
+ * @param [in] mesh_id_2 The second ID of the contact surface mesh
+ * @param [in] mesh MFEM volume mesh
+ * @param [in] current_coords Coordinates associated with mesh
+ * @param [in] b_attributes_1 Boundary attributes defining the first mesh
+ * @param [in] b_attributes_2 Boundary attributes defining the second mesh
  * @param [in] contact_mode 
  * @param [in] contact_case 
  * @param [in] contact_method 
@@ -66,7 +66,7 @@ void registerMfemCouplingScheme( integer cs_id,
 
 /**
  * @brief Sets factor of refinement in low order refined (LOR) representation of
- * the contact mesh.
+ * the contact mesh
  *
  * This method sets the low-order mesh refinement factor for coupling schemes
  * registered with MFEM meshes.  Low-order refinement (LOR) enables
@@ -85,20 +85,20 @@ void registerMfemCouplingScheme( integer cs_id,
  * @pre Coupling scheme cs_id must be registered using
  * registerMfemCouplingScheme()
  *
- * @param cs_id The ID of the coupling scheme.
- * @param lor_factor The refinement factor of the mesh.
+ * @param cs_id The ID of the coupling scheme
+ * @param lor_factor The refinement factor of the mesh
  */
 void setMfemLowOrderRefinedFactor( integer cs_id,
                                    integer lor_factor );
 
 /**
- * @brief Registers a velocity field on a MFEM volume mesh.
+ * @brief Registers a velocity field on a MFEM mesh-defined coupling scheme
  *
  * @pre Coupling scheme cs_id must be registered using
  * registerMfemCouplingScheme()
  *
- * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh.
- * @param [in] v MFEM velocity ParGridFunction defined over the volume mesh.
+ * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh
+ * @param [in] v MFEM velocity ParGridFunction defined over the parent mesh
  */
 void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
 
@@ -112,9 +112,9 @@ void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
  * @pre Response vector must be up to date for current geometry by calling
  * update()
  *
- * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh.
+ * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh
  * @param [out] r mfem::ParGridFunction of the response (RHS) vector
- * (pre-allocated and initialized).
+ * (pre-allocated and initialized) on the parent mesh
  */
 void getMfemResponse( integer cs_id, mfem::ParGridFunction& r );
 
@@ -148,9 +148,10 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
  * updateMfemParallelDecomposition()
  * @pre Response vector must be up to date for current geometry by calling
  * update()
- * 
+ *
  * @param [in] cs_id Coupling scheme id with a registered MFEM mesh
- * @param [out] g Nodal gap values (values do not have to be pre-allocated)
+ * @param [out] g Nodal gap values (values do not have to be pre-allocated) on
+ * the parent-linked boundary submesh
  */
 void getMfemGap( integer cs_id, mfem::ParGridFunction& g );
 
@@ -159,9 +160,10 @@ void getMfemGap( integer cs_id, mfem::ParGridFunction& g );
  *
  * @pre Coupling scheme cs_id must be registered using
  * registerMfemCouplingScheme()
- * 
+ *
  * @param cs_id Coupling scheme id with a registered MFEM mesh 
- * @return mfem::ParGridFunction& Nodal pressure vector
+ * @return mfem::ParGridFunction& Nodal pressure vector defined on the
+ * parent-linked boundary submesh
  */
 mfem::ParGridFunction& getMfemPressure( integer cs_id );
 
