@@ -25,16 +25,15 @@ namespace tribol
 {
 
 /**
- * @brief Facilitates transfer of variables to/from parent-linked boundary
- * submesh to LOR mesh
+ * @brief Facilitates transfer of fields to/from parent-linked boundary submesh
+ * to LOR mesh
  *
- * This class simplifies transferring 1) a variable (e.g. displacement) from a
- * higher-order grid function on a parent-linked boundary submesh to a low-order
- * grid function on a LOR boundary mesh and 2) a variable in the dual space
- * (e.g. force) from a low-order grid function on a LOR mesh to a higher-order
- * grid function on a parent-linked boundary submesh. The submesh grid function
- * usually lives on a mfem::ParSubMesh, but this is not required to use this
- * class.
+ * This class simplifies transferring 1) a primal field such as displacement and
+ * velocity from a higher-order grid function on a parent-linked boundary
+ * submesh to a low-order grid function on a LOR boundary mesh and 2) the
+ * energetic conjugate to a primal field (such as nodal force, which is
+ * conjugate to nodal displacement) from a low-order grid function on a LOR mesh
+ * to a higher-order grid function on a parent-linked boundary submesh.
  */
 class SubmeshLORTransfer
 {
@@ -59,7 +58,7 @@ public:
    * be accessed using GetLORGridFn().
    *
    * @param submesh_src Source higher-order grid function on the parent-linked
-   * submesh
+   * boundary submesh
    */
   void TransferToLORGridFn(
     const mfem::ParGridFunction& submesh_src
@@ -73,7 +72,7 @@ public:
    * using GetLORGridFn().
    *
    * @param submesh_dst Destination higher-order grid function on the
-   * parent-linked submesh
+   * parent-linked boundary submesh
    */
   void TransferFromLORGridFn(
     mfem::ParGridFunction& submesh_dst
