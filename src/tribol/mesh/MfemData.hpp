@@ -189,14 +189,6 @@ public:
   }
 
   /**
-   * @brief Set a new redecomp mesh associated with the existing parent-linked
-   * submesh
-   *
-   * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
-   */
-  void UpdateRedecomp(redecomp::RedecompMesh& redecomp_mesh);
-
-  /**
    * @brief Returns finite element space on the redecomp mesh associated with
    * this transfer object
    *
@@ -300,14 +292,6 @@ public:
     const mfem::GridFunction& redecomp_src, 
     mfem::ParGridFunction& parent_dst
   ) const;
-
-  /**
-   * @brief Set a new redecomp mesh associated with the existing parent-linked
-   * boundary submesh
-   *
-   * @param redecomp_mesh RedecompMesh of the redecomposed contact surface mesh
-   */
-  void UpdateRedecomp(redecomp::RedecompMesh& redecomp_mesh);
 
   /**
    * @brief Get the parent-linked boundary submesh finite element space

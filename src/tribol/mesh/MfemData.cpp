@@ -122,11 +122,6 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   }
 }
 
-void SubmeshRedecompTransfer::UpdateRedecomp(redecomp::RedecompMesh& redecomp_mesh)
-{
-  redecomp_fes_ = CreateRedecompFESpace(redecomp_mesh, submesh_fes_);
-}
-
 std::unique_ptr<mfem::FiniteElementSpace> SubmeshRedecompTransfer::CreateRedecompFESpace(
   redecomp::RedecompMesh& redecomp_mesh,
   mfem::ParFiniteElementSpace& submesh_fes
@@ -185,11 +180,6 @@ void ParentRedecompTransfer::RedecompToParent(
   submesh_redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, parent_dst);
 }
 
-void ParentRedecompTransfer::UpdateRedecomp(redecomp::RedecompMesh& redecomp_mesh)
-{
-  submesh_redecomp_xfer_.UpdateRedecomp(redecomp_mesh);
-}
-
 ParentField::ParentField(
   const mfem::ParGridFunction& parent_gridfn
 )
@@ -199,6 +189,7 @@ ParentField::ParentField(
 void ParentField::SetParentGridFn(const mfem::ParGridFunction& parent_gridfn)
 {
   parent_gridfn_ = parent_gridfn;
+  update_data_.reset(nullptr);
 }
 
 void ParentField::UpdateField(ParentRedecompTransfer& parent_redecomp_xfer)
@@ -264,6 +255,7 @@ PressureField::PressureField(
 void PressureField::SetSubmeshField(const mfem::ParGridFunction& submesh_gridfn)
 {
   submesh_gridfn_ = submesh_gridfn;
+  update_data_.reset(nullptr);
 }
 
 void PressureField::UpdateField(SubmeshRedecompTransfer& submesh_redecomp_xfer)
