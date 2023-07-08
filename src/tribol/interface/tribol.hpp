@@ -72,12 +72,14 @@ void setKinematicElementPenalty( int meshId,
                                  const double *material_modulus, 
                                  const double *element_thickness );
 
+/*!
 /* \brief Sets the constant rate penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] r_k constant rate penalty stiffness
  */
 void setRateConstantPenalty( int meshId, double r_k );
 
+/*!
 /* \brief Sets the percent rate penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] r_p rate penalty as percent of kinematic penalty
