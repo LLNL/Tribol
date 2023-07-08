@@ -211,7 +211,9 @@ void updateMfemParallelDecomposition()
          axom::Array<int> mesh_ids {2, 2};
          mesh_ids[0] = mfem_data->GetMesh1ID();
          mesh_ids[1] = mfem_data->GetMesh2ID();
-         // creates a new RedecompMesh and updates grid functions on RedecompMesh
+         // creates a new redecomp mesh based on updated coordinates and updates
+         // transfer operators and displacement, velocity, and response grid
+         // functions based on new redecomp mesh
          mfem_data->UpdateMfemMeshData();
          auto coord_ptrs = mfem_data->GetRedecompCoordsPtrs();
 
@@ -254,7 +256,8 @@ void updateMfemParallelDecomposition()
             SLIC_ERROR_ROOT_IF(couplingScheme->getContactModel() != FRICTIONLESS,
               "Only frictionless contact is supported.");
             auto submesh_data = couplingScheme->getMfemSubmeshData();
-            // updates submesh-native grid functions on the redecomp mesh
+            // updates submesh-native grid functions and transfer operators on
+            // the new redecomp mesh
             submesh_data->UpdateMfemSubmeshData(mfem_data->GetRedecompMesh());
             auto g_ptrs = submesh_data->GetRedecompGapPtrs();
             registerMortarGaps(mesh_ids[1], g_ptrs[0]);
@@ -262,6 +265,7 @@ void updateMfemParallelDecomposition()
             registerMortarPressures(mesh_ids[1], p_ptrs[0]);
             if (couplingScheme->hasMfemJacobianData())
             {
+               // updates Jacobian transfer operator for new redecomp mesh
                couplingScheme->getMfemJacobianData()->UpdateJacobianXfer();
             }
          }
