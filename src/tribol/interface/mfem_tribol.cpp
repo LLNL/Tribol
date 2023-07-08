@@ -260,7 +260,6 @@ void updateMfemParallelDecomposition()
             registerMortarGaps(mesh_ids[1], g_ptrs[0]);
             auto p_ptrs = submesh_data->GetRedecompPressurePtrs();
             registerMortarPressures(mesh_ids[1], p_ptrs[0]);
-            auto lm_options = couplingScheme->getEnforcementOptions().lm_implicit_options;
             if (couplingScheme->hasMfemJacobianData())
             {
                couplingScheme->getMfemJacobianData()->UpdateJacobianXfer();
