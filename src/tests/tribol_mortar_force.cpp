@@ -160,8 +160,8 @@ public:
       }
 
       // register nodal gaps and pressure arrays
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, gaps );
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_PRESSURES, pressures );
+      tribol::registerMortarGaps( nonmortarMeshId, gaps );
+      tribol::registerMortarPressures( nonmortarMeshId, pressures );
 
       // register coupling scheme
       const int csIndex = 0;

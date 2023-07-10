@@ -190,17 +190,6 @@ enum IntElementFields
 };
 
 /*!
- * \brief Enumerates supported real nodal fields
- */
-enum RealNodalFields
-{
-   UNDEFINED_REAL_NODAL_FIELDS,
-   MORTAR_GAPS,
-   MORTAR_PRESSURES,
-   NUM_REAL_NODAL_FIELDS = MORTAR_PRESSURES
-};
-
-/*!
  * \brief Enumerates supported integer nodal fields
  */
 enum IntNodalFields

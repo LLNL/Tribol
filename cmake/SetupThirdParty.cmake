@@ -24,7 +24,7 @@ if (DEFINED AXOM_DIR)
 else()
   message(FATAL_ERROR 
      "Axom is a required dependency for tribol. "
-     "Please configure tribol with a path to axom via the AXOM_DIR variable.")
+     "Please configure tribol with a path to Axom via the AXOM_DIR variable.")
 endif()
 
 
@@ -40,8 +40,8 @@ if (DEFINED MFEM_DIR)
   list(APPEND TPL_DEPS mfem)
 else()
   message(FATAL_ERROR 
-     "MFEM is a required dependency for tribol."
-     " Please configure tribol with a path to axom via the MFEM_DIR variable.")
+     "MFEM is a required dependency for tribol. "
+     "Please configure tribol with a path to MFEM via the MFEM_DIR variable.")
 endif()
 
 

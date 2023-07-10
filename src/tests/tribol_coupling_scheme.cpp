@@ -223,8 +223,8 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
    real gaps[this->m_lengthNodalData];
    real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
+   tribol::registerMortarGaps( 1, &gaps[0] );
+   tribol::registerMortarPressures( 1, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -257,8 +257,8 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
    real gaps[this->m_lengthNodalData];
    real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
+   tribol::registerMortarGaps( 1, &gaps[0] );
+   tribol::registerMortarPressures( 1, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -317,8 +317,8 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
    real gaps[this->m_lengthNodalData];
    real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
+   tribol::registerMortarGaps( 1, &gaps[0] );
+   tribol::registerMortarPressures( 1, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -403,8 +403,8 @@ TEST_F( CouplingSchemeTest, mortar_tied )
    real gaps[this->m_lengthNodalData];
    real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
+   tribol::registerMortarGaps( 1, &gaps[0] );
+   tribol::registerMortarPressures( 1, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -437,8 +437,8 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
    real gaps[this->m_lengthNodalData];
    real pressures[this->m_lengthNodalData];
 
-   tribol::registerRealNodalField( 1, tribol::MORTAR_GAPS, &gaps[0] );
-   tribol::registerRealNodalField( 1, tribol::MORTAR_PRESSURES, &pressures[0] );
+   tribol::registerMortarGaps( 1, &gaps[0] );
+   tribol::registerMortarPressures( 1, &pressures[0] );
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
