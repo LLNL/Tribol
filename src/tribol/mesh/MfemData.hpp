@@ -34,6 +34,9 @@ namespace tribol
  * energetic conjugate to a primal field (such as nodal force, which is
  * conjugate to nodal displacement) from a low-order grid function on a LOR mesh
  * to a higher-order grid function on a parent-linked boundary submesh.
+ *
+ * Field data on the LOR mesh are stored internally in this class, and accessed
+ * through the GetLORGridFn() method.
  */
 class SubmeshLORTransfer
 {
