@@ -63,14 +63,14 @@ protected:
     // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
     std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_apart.mesh";
   // boundary element attributes of contact surface 1
-  auto surf1_attribs = std::set<int>({4});
+  auto contact_surf_1 = std::set<int>({4});
   // boundary element attributes of contact surface 2
-  auto surf2_attribs = std::set<int>({5});
+  auto contact_surf_2 = std::set<int>({5});
   // boundary element attributes of fixed surface (points on z = 0, all t)
-  auto fix_attribs = std::set<int>({3});
+  auto fixed_attrs = std::set<int>({3});
   // element attribute corresponding to volume elements where an initial
   // velocity will be applied
-  auto move_attribs = std::set<int>({2});
+  auto moving_attrs = std::set<int>({2});
 
     // read mesh
     std::unique_ptr<mfem::ParMesh> pmesh { nullptr };
@@ -116,8 +116,8 @@ protected:
     }
 
     // grid function for displacement
-    mfem::ParGridFunction u { &par_fe_space };
-    u = 0.0;
+    mfem::ParGridFunction displacement { &par_fe_space };
+    displacement = 0.0;
 
     // grid function for velocity
     mfem::ParGridFunction v { &par_fe_space };
@@ -127,9 +127,9 @@ protected:
     {
       mfem::Array<int> attrib_marker(pmesh->attributes.Max());
       attrib_marker = 0;
-      for (auto move_attrib : move_attribs)
+      for (auto moving_attr : moving_attrs)
       {
-        attrib_marker[move_attrib-1] = 1;
+        attrib_marker[moving_attr-1] = 1;
       }
       mfem::Array<int> vdof_marker(par_fe_space.GetVSize());
       vdof_marker = 0;
@@ -161,9 +161,9 @@ protected:
       mfem::Array<int> ess_vdof_marker;
       mfem::Array<int> ess_bdr(pmesh->bdr_attributes.Max());
       ess_bdr = 0;
-      for (auto fix_attrib : fix_attribs)
+      for (auto fixed_attr : fixed_attrs)
       {
-        ess_bdr[fix_attrib-1] = 1;
+        ess_bdr[fixed_attr-1] = 1;
       }
       par_fe_space.GetEssentialVDofs(ess_bdr, ess_vdof_marker);
       mfem::FiniteElementSpace::MarkerToList(ess_vdof_marker, ess_vdof_list);
@@ -186,7 +186,7 @@ protected:
     int mesh2_id = 1;
     tribol::registerMfemCouplingScheme(
       coupling_scheme_id, mesh1_id, mesh2_id,
-      *pmesh, coords, surf1_attribs, surf2_attribs,
+      *pmesh, coords, contact_surf_1, contact_surf_2,
       tribol::SURFACE_TO_SURFACE, 
       tribol::NO_CASE, 
       tribol::COMMON_PLANE, 
@@ -213,9 +213,9 @@ protected:
       tribol::getMfemResponse(0, op.f_ext);
 
       op.SetTime(t);
-      solver.Step(u, v, t, dt);
+      solver.Step(displacement, v, t, dt);
 
-      coords += u;
+      coords += displacement;
       if (order == 1)
       {
         pmesh->SetVertices(coords);
@@ -224,7 +224,7 @@ protected:
       ++cycle;
     }
 
-    auto local_max = u.Max();
+    auto local_max = displacement.Max();
     max_disp_ = 0.0;
     MPI_Allreduce(&local_max, &max_disp_, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   }

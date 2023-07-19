@@ -7,7 +7,6 @@
 #define TRIBOL_HPP_
 
 #include "tribol/types.hpp"
-#include "tribol/common/Parameters.hpp"
 #include "tribol/geom/ContactPlaneManager.hpp"
 
 #include <string>
@@ -73,14 +72,14 @@ void setKinematicElementPenalty( int meshId,
                                  const double *element_thickness );
 
 /*!
-/* \brief Sets the constant rate penalty stiffness
+ * \brief Sets the constant rate penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] r_k constant rate penalty stiffness
  */
 void setRateConstantPenalty( int meshId, double r_k );
 
 /*!
-/* \brief Sets the percent rate penalty stiffness
+ * \brief Sets the percent rate penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] r_p rate penalty as percent of kinematic penalty
  */
@@ -325,9 +324,9 @@ int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
 int getElementBlockJacobians( integer csId, 
                               BlockSpace row_block,
                               BlockSpace col_block,
-                              const axom::Array<integer>* row_elem_idx,
-                              const axom::Array<integer>* col_elem_idx,
-                              const axom::Array<mfem::DenseMatrix>* jacobians );
+                              const axom::Array<integer>** row_elem_idx,
+                              const axom::Array<integer>** col_elem_idx,
+                              const axom::Array<mfem::DenseMatrix>** jacobians );
 
 /*!
  * \brief Register gap field on a nonmortar surface mesh associated with the

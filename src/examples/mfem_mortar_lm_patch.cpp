@@ -96,13 +96,13 @@ int main( int argc, char** argv )
   // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
   std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_overlap.mesh";
   // boundary element attributes of mortar surface
-  auto mortar_attribs = std::set<int>({4});
+  auto mortar_attrs = std::set<int>({4});
   // boundary element attributes of nonmortar surface 
-  auto nonmortar_attribs = std::set<int>({5});
+  auto nonmortar_attrs = std::set<int>({5});
   // boundary element attributes of x-fixed surfaces (at x = 0)
-  auto xfix_attribs = std::set<int>({1});
+  auto xfixed_attrs = std::set<int>({1});
   // boundary element attributes of y-fixed surfaces (at y = 0)
-  auto yfix_attribs = std::set<int>({2});
+  auto yfixed_attrs = std::set<int>({2});
   // boundary element attributes of z-fixed surfaces (3: surface at z = 0, 6: surface at z = 1.95)
   auto zfix_attribs = std::set<int>({3, 6});
   
@@ -143,8 +143,8 @@ int main( int argc, char** argv )
   ));
   
   // set up data collection for output
-  auto pv_dc = mfem::ParaViewDataCollection("mortar_patch_pv", pmesh.get());
-  auto vi_dc = mfem::VisItDataCollection("mortar_patch_vi", pmesh.get());
+  auto paraview_datacoll = mfem::ParaViewDataCollection("mortar_patch_pv", pmesh.get());
+  auto visit_datacoll = mfem::VisItDataCollection("mortar_patch_vi", pmesh.get());
 
   // grid function for higher-order nodes
   timer.start();
@@ -160,22 +160,22 @@ int main( int argc, char** argv )
   {
     pmesh->GetNodes(coords);
   }
-  pv_dc.RegisterField("pos", &coords);
-  vi_dc.RegisterField("pos", &coords);
+  paraview_datacoll.RegisterField("pos", &coords);
+  visit_datacoll.RegisterField("pos", &coords);
 
   // grid function for displacement
-  mfem::ParGridFunction u { &par_fe_space };
-  pv_dc.RegisterField("disp", &u);
-  vi_dc.RegisterField("disp", &u);
-  u = 0.0;
+  mfem::ParGridFunction displacement { &par_fe_space };
+  paraview_datacoll.RegisterField("disp", &displacement);
+  visit_datacoll.RegisterField("disp", &displacement);
+  displacement = 0.0;
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to create grid functions: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
 
   // save initial configuration
-  pv_dc.Save();
-  vi_dc.Save();
+  paraview_datacoll.Save();
+  visit_datacoll.Save();
 
   // recover dirichlet bc tdof list
   timer.start();
@@ -184,16 +184,16 @@ int main( int argc, char** argv )
     mfem::Array<int> ess_vdof_marker;
     mfem::Array<int> ess_bdr(pmesh->bdr_attributes.Max());
     ess_bdr = 0;
-    for (auto xfix_attrib : xfix_attribs)
+    for (auto xfixed_attr : xfixed_attrs)
     {
-      ess_bdr[xfix_attrib-1] = 1;
+      ess_bdr[xfixed_attr-1] = 1;
     }
     par_fe_space.GetEssentialVDofs(ess_bdr, ess_vdof_marker, 0);
     mfem::Array<int> new_ess_vdof_marker;
     ess_bdr = 0;
-    for (auto yfix_attrib : yfix_attribs)
+    for (auto yfixed_attr : yfixed_attrs)
     {
-      ess_bdr[yfix_attrib-1] = 1;
+      ess_bdr[yfixed_attr-1] = 1;
     }
     par_fe_space.GetEssentialVDofs(ess_bdr, new_ess_vdof_marker, 1);
     for (int i{0}; i < ess_vdof_marker.Size(); ++i)
@@ -243,7 +243,7 @@ int main( int argc, char** argv )
   int mesh2_id = 1;
   tribol::registerMfemCouplingScheme(
     coupling_scheme_id, mesh1_id, mesh2_id,
-    *pmesh, coords, mortar_attribs, nonmortar_attribs,
+    *pmesh, coords, mortar_attrs, nonmortar_attrs,
     tribol::SURFACE_TO_SURFACE, 
     tribol::NO_SLIDING, 
     tribol::SINGLE_MORTAR, 
@@ -260,12 +260,12 @@ int main( int argc, char** argv )
   tribol::updateMfemParallelDecomposition();
   double dt {1.0};  // time is arbitrary here (no timesteps)
   tribol::update(1, 1.0, dt);
-  pv_dc.SetCycle(1);
-  pv_dc.SetTime(1.0);
-  pv_dc.SetTimeStep(1.0);
-  vi_dc.SetCycle(1);
-  vi_dc.SetTime(1.0);
-  vi_dc.SetTimeStep(1.0);
+  paraview_datacoll.SetCycle(1);
+  paraview_datacoll.SetTime(1.0);
+  paraview_datacoll.SetTimeStep(1.0);
+  visit_datacoll.SetCycle(1);
+  visit_datacoll.SetTime(1.0);
+  visit_datacoll.SetTimeStep(1.0);
 
   // retrieve block stiffness matrix
   auto A_blk = tribol::getMfemBlockJacobian(0);
@@ -306,12 +306,12 @@ int main( int argc, char** argv )
   {
     auto& U = X_blk.GetBlock(0);
     auto& P = *par_fe_space.GetProlongationMatrix();
-    P.Mult(U, u);
+    P.Mult(U, displacement);
   }
-  u.Neg();
+  displacement.Neg();
 
   // update mesh coordinates
-  coords += u;
+  coords += displacement;
   pmesh->SetVertices(coords);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -319,8 +319,8 @@ int main( int argc, char** argv )
   ));
 
   // save deformed configuration
-  pv_dc.Save();
-  vi_dc.Save();
+  paraview_datacoll.Save();
+  visit_datacoll.Save();
 
   // cleanup
   tribol::finalize();

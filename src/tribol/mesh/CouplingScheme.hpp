@@ -337,7 +337,11 @@ public:
 
   /**
    * @brief Check if coupling scheme has MFEM mesh data
-   * 
+   *
+   * MFEM mesh data includes the MFEM mesh, transfer operators to move mesh data
+   * from the MFEM mesh to the Tribol surface mesh, and mesh data such as
+   * displacement, velocity, and force (response).
+   *
    * @return true: MFEM mesh data exists
    * @return false: MFEM mesh data does not exist
    */
@@ -345,6 +349,10 @@ public:
 
   /**
    * @brief Get the MFEM mesh data object
+   *
+   * MFEM mesh data includes the MFEM mesh, transfer operators to move mesh data
+   * from the MFEM mesh to the Tribol surface mesh, and mesh data such as
+   * displacement, velocity, and force (response).
    * 
    * @return MfemMeshData* 
    */
@@ -352,6 +360,10 @@ public:
   
   /**
    * @brief Get the MFEM mesh data object (const overload)
+   *
+   * MFEM mesh data includes the MFEM mesh, transfer operators to move mesh data
+   * from the MFEM mesh to the Tribol surface mesh, and mesh data such as
+   * displacement, velocity, and force (response).
    * 
    * @return const MfemMeshData* 
    */
@@ -363,6 +375,10 @@ public:
   /**
    * @brief Sets the MFEM mesh data object
    * 
+   * MFEM mesh data includes the MFEM mesh, transfer operators to move mesh data
+   * from the MFEM mesh to the Tribol surface mesh, and mesh data such as
+   * displacement, velocity, and force (response).
+   *
    * @param mfemMeshData Unique pointer to MFEM mesh data
    */
   void setMfemMeshData(std::unique_ptr<MfemMeshData> mfemMeshData)
@@ -372,7 +388,11 @@ public:
 
   /**
    * @brief Check if coupling scheme has MFEM submesh field data
-   * 
+   *
+   * MFEM submesh field data includes a parent-linked boundary mfem::ParSubMesh,
+   * transfer operators to move mesh data from the boundary submesh to the
+   * Tribol surface mesh, and mesh data such as gap and pressure.
+   *
    * @return true: MFEM submesh field data exists
    * @return false: MFEM submesh field data does not exist
    */
@@ -380,6 +400,10 @@ public:
 
   /**
    * @brief Get the MFEM submesh field data object
+   *
+   * MFEM submesh field data includes a parent-linked boundary mfem::ParSubMesh,
+   * transfer operators to move mesh data from the boundary submesh to the
+   * Tribol surface mesh, and mesh data such as gap and pressure.
    * 
    * @return MfemSubmeshData* 
    */
@@ -387,6 +411,10 @@ public:
   
   /**
    * @brief Get the MFEM submesh field data object (const overload)
+   *
+   * MFEM submesh field data includes a parent-linked boundary mfem::ParSubMesh,
+   * transfer operators to move mesh data from the boundary submesh to the
+   * Tribol surface mesh, and mesh data such as gap and pressure.
    * 
    * @return const MfemSubmeshData* 
    */
@@ -397,6 +425,10 @@ public:
 
   /**
    * @brief Sets the MFEM submesh field data object
+   *
+   * MFEM submesh field data includes a parent-linked boundary mfem::ParSubMesh,
+   * transfer operators to move mesh data from the boundary submesh to the
+   * Tribol surface mesh, and mesh data such as gap and pressure.
    * 
    * @param MfemSubmeshData Unique pointer to MFEM submesh field data
    */
@@ -407,7 +439,11 @@ public:
 
   /**
    * @brief Check if coupling scheme has MFEM jacobian data
-   * 
+   *
+   * MFEM jacobian data includes transfer operators to move Jacobian
+   * contributions from the Tribol surface mesh to the MFEM parent mesh and
+   * parent-linked boundary submesh.
+   *
    * @return true: MFEM jacobian data exists
    * @return false: MFEM jacobian data does not exist
    */
@@ -415,6 +451,10 @@ public:
   
   /**
    * @brief Get the MFEM jacobian data object
+   *
+   * MFEM jacobian data includes transfer operators to move Jacobian
+   * contributions from the Tribol surface mesh to the MFEM parent mesh and
+   * parent-linked boundary submesh.
    * 
    * @return MfemJacobianData* 
    */
@@ -425,6 +465,10 @@ public:
   
   /**
    * @brief Get the MFEM jacobian data object (const overload)
+   *
+   * MFEM jacobian data includes transfer operators to move Jacobian
+   * contributions from the Tribol surface mesh to the MFEM parent mesh and
+   * parent-linked boundary submesh.
    * 
    * @return MfemJacobianData* 
    */
@@ -435,6 +479,10 @@ public:
 
   /**
    * @brief Sets the MFEM jacobian data object
+   *
+   * MFEM jacobian data includes transfer operators to move Jacobian
+   * contributions from the Tribol surface mesh to the MFEM parent mesh and
+   * parent-linked boundary submesh.
    * 
    * @param mfemJacobianData Unique pointer to MFEM jacobian data
    */

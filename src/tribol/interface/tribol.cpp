@@ -624,9 +624,9 @@ int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
 int getElementBlockJacobians( integer csId, 
                               BlockSpace row_block, 
                               BlockSpace col_block,
-                              const axom::Array<integer>* row_elem_idx,
-                              const axom::Array<integer>* col_elem_idx,
-                              const axom::Array<mfem::DenseMatrix>* jacobians )
+                              const axom::Array<integer>** row_elem_idx,
+                              const axom::Array<integer>** col_elem_idx,
+                              const axom::Array<mfem::DenseMatrix>** jacobians )
 {
    SparseMode sparse_mode = CouplingSchemeManager::getInstance().
       getCoupling(csId)->getEnforcementOptions().lm_implicit_options.sparse_mode;
@@ -640,9 +640,9 @@ int getElementBlockJacobians( integer csId,
    }
    MethodData* method_data = 
       CouplingSchemeManager::getInstance().getCoupling( csId )->getMethodData();
-   row_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(row_block)];
-   col_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(col_block)];
-   jacobians = &method_data->getBlockJ()(
+   *row_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(row_block)];
+   *col_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(col_block)];
+   *jacobians = &method_data->getBlockJ()(
       static_cast<int>(row_block),
       static_cast<int>(col_block)
    );

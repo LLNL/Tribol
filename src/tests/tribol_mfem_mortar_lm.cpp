@@ -47,15 +47,15 @@ protected:
     // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
     std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_overlap.mesh";
     // boundary element attributes of mortar surface
-    auto mortar_attribs = std::set<int>({4});
+    auto mortar_attrs = std::set<int>({4});
     // boundary element attributes of nonmortar surface 
-    auto nonmortar_attribs = std::set<int>({5});
+    auto nonmortar_attrs = std::set<int>({5});
     // boundary element attributes of x-fixed surfaces (at x = 0)
-    auto xfix_attribs = std::set<int>({1});
+    auto xfixed_attrs = std::set<int>({1});
     // boundary element attributes of y-fixed surfaces (at y = 0)
-    auto yfix_attribs = std::set<int>({2});
+    auto yfixed_attrs = std::set<int>({2});
     // boundary element attributes of z-fixed surfaces (3: surface at z = 0, 6: surface at z = 1.95)
-    auto zfix_attribs = std::set<int>({3, 6});
+    auto zfixed_attrs = std::set<int>({3, 6});
 
     // read mesh
     std::unique_ptr<mfem::ParMesh> pmesh { nullptr };
@@ -101,8 +101,8 @@ protected:
     }
 
     // grid function for displacement
-    mfem::ParGridFunction u { &par_fe_space };
-    u = 0.0;
+    mfem::ParGridFunction displacement { &par_fe_space };
+    displacement = 0.0;
 
     // recover dirichlet bc tdof list
     mfem::Array<int> ess_tdof_list;
@@ -110,16 +110,16 @@ protected:
       mfem::Array<int> ess_vdof_marker;
       mfem::Array<int> ess_bdr(pmesh->bdr_attributes.Max());
       ess_bdr = 0;
-      for (auto xfix_attrib : xfix_attribs)
+      for (auto xfixed_attr : xfixed_attrs)
       {
-        ess_bdr[xfix_attrib-1] = 1;
+        ess_bdr[xfixed_attr-1] = 1;
       }
       par_fe_space.GetEssentialVDofs(ess_bdr, ess_vdof_marker, 0);
       mfem::Array<int> new_ess_vdof_marker;
       ess_bdr = 0;
-      for (auto yfix_attrib : yfix_attribs)
+      for (auto yfixed_attr : yfixed_attrs)
       {
-        ess_bdr[yfix_attrib-1] = 1;
+        ess_bdr[yfixed_attr-1] = 1;
       }
       par_fe_space.GetEssentialVDofs(ess_bdr, new_ess_vdof_marker, 1);
       for (int i{0}; i < ess_vdof_marker.Size(); ++i)
@@ -127,9 +127,9 @@ protected:
         ess_vdof_marker[i] = ess_vdof_marker[i] || new_ess_vdof_marker[i];
       }
       ess_bdr = 0;
-      for (auto zfix_attrib : zfix_attribs)
+      for (auto zfixed_attr : zfixed_attrs)
       {
-        ess_bdr[zfix_attrib-1] = 1;
+        ess_bdr[zfixed_attr-1] = 1;
       }
       par_fe_space.GetEssentialVDofs(ess_bdr, new_ess_vdof_marker, 2);
       for (int i{0}; i < ess_vdof_marker.Size(); ++i)
@@ -159,7 +159,7 @@ protected:
     int mesh2_id = 1;
     tribol::registerMfemCouplingScheme(
       coupling_scheme_id, mesh1_id, mesh2_id,
-      *pmesh, coords, mortar_attribs, nonmortar_attribs,
+      *pmesh, coords, mortar_attrs, nonmortar_attrs,
       tribol::SURFACE_TO_SURFACE, 
       tribol::NO_SLIDING, 
       tribol::SINGLE_MORTAR, 
@@ -211,11 +211,11 @@ protected:
     {
       auto& U = X_blk.GetBlock(0);
       auto& P = *par_fe_space.GetProlongationMatrix();
-      P.Mult(U, u);
+      P.Mult(U, displacement);
     }
-    u.Neg();
+    displacement.Neg();
 
-    auto local_max = u.Max();
+    auto local_max = displacement.Max();
     max_disp_ = 0.0;
     MPI_Allreduce(&local_max, &max_disp_, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   }

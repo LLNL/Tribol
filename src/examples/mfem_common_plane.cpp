@@ -126,14 +126,14 @@ int main( int argc, char** argv )
   // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
   std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_apart.mesh";
   // boundary element attributes of contact surface 1
-  auto surf1_attribs = std::set<int>({4});
+  auto contact_surf_1 = std::set<int>({4});
   // boundary element attributes of contact surface 2
-  auto surf2_attribs = std::set<int>({5});
+  auto contact_surf_2 = std::set<int>({5});
   // boundary element attributes of fixed surface (points on z = 0, all t)
-  auto fix_attribs = std::set<int>({3});
+  auto fixed_attrs = std::set<int>({3});
   // element attribute corresponding to volume elements where an initial
   // velocity will be applied
-  auto move_attribs = std::set<int>({2});
+  auto moving_attrs = std::set<int>({2});
 
   axom::utilities::Timer timer { false };
 
@@ -172,8 +172,8 @@ int main( int argc, char** argv )
   ));
   
   // set up data collection for output
-  auto dc_pv = mfem::ParaViewDataCollection("common_plane_pv", pmesh.get());
-  auto dc_vi = mfem::VisItDataCollection("common_plane_vi", pmesh.get());
+  auto paraview_datacoll = mfem::ParaViewDataCollection("common_plane_pv", pmesh.get());
+  auto visit_datacoll = mfem::VisItDataCollection("common_plane_vi", pmesh.get());
 
   // grid function for higher-order nodes
   timer.start();
@@ -189,20 +189,20 @@ int main( int argc, char** argv )
   {
     pmesh->GetNodes(coords);
   }
-  dc_pv.RegisterField("pos", &coords);
-  dc_vi.RegisterField("pos", &coords);
+  paraview_datacoll.RegisterField("pos", &coords);
+  visit_datacoll.RegisterField("pos", &coords);
 
   // grid function for displacement
-  mfem::ParGridFunction u { &par_fe_space };
-  dc_pv.RegisterField("disp", &u);
-  dc_vi.RegisterField("disp", &u);
-  u = 0.0;
+  mfem::ParGridFunction displacement { &par_fe_space };
+  paraview_datacoll.RegisterField("disp", &displacement);
+  visit_datacoll.RegisterField("disp", &displacement);
+  displacement = 0.0;
 
   // grid function for velocity
-  mfem::ParGridFunction v { &par_fe_space };
-  dc_pv.RegisterField("vel", &v);
-  dc_vi.RegisterField("vel", &v);
-  v = 0.0;
+  mfem::ParGridFunction velocity { &par_fe_space };
+  paraview_datacoll.RegisterField("vel", &velocity);
+  visit_datacoll.RegisterField("vel", &velocity);
+  velocity = 0.0;
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to create grid functions: {0:f}ms", timer.elapsedTimeInMilliSec()
@@ -213,9 +213,9 @@ int main( int argc, char** argv )
   {
     mfem::Array<int> attrib_marker(pmesh->attributes.Max());
     attrib_marker = 0;
-    for (auto move_attrib : move_attribs)
+    for (auto moving_attr : moving_attrs)
     {
-      attrib_marker[move_attrib-1] = 1;
+      attrib_marker[moving_attr-1] = 1;
     }
     mfem::Array<int> vdof_marker(par_fe_space.GetVSize());
     vdof_marker = 0;
@@ -236,7 +236,7 @@ int main( int argc, char** argv )
     {
       if (vdof_marker[i])
       {
-        v[i] = -std::abs(initial_v);
+        velocity[i] = -std::abs(initial_v);
       }
     }
   }
@@ -247,9 +247,9 @@ int main( int argc, char** argv )
     mfem::Array<int> ess_vdof_marker;
     mfem::Array<int> ess_bdr(pmesh->bdr_attributes.Max());
     ess_bdr = 0;
-    for (auto fix_attrib : fix_attribs)
+    for (auto fixed_attr : fixed_attrs)
     {
-      ess_bdr[fix_attrib-1] = 1;
+      ess_bdr[fixed_attr-1] = 1;
     }
     par_fe_space.GetEssentialVDofs(ess_bdr, ess_vdof_marker);
     mfem::FiniteElementSpace::MarkerToList(ess_vdof_marker, ess_vdof_list);
@@ -282,7 +282,7 @@ int main( int argc, char** argv )
   int mesh2_id = 1;
   tribol::registerMfemCouplingScheme(
     coupling_scheme_id, mesh1_id, mesh2_id,
-    *pmesh, coords, surf1_attribs, surf2_attribs,
+    *pmesh, coords, contact_surf_1, contact_surf_2,
     tribol::SURFACE_TO_SURFACE, 
     tribol::NO_CASE, 
     tribol::COMMON_PLANE, 
@@ -290,7 +290,7 @@ int main( int argc, char** argv )
     tribol::PENALTY,
     tribol::BINNING_GRID
   );
-  tribol::registerMfemVelocity(0, v);
+  tribol::registerMfemVelocity(0, velocity);
   tribol::setPenaltyOptions(
     0,
     tribol::KINEMATIC,
@@ -305,17 +305,17 @@ int main( int argc, char** argv )
   int cycle {0};
   for (double t {0.0}; t < t_end; t+=dt)
   {
-    dc_pv.SetCycle(cycle);
-    dc_pv.SetTime(t);
-    dc_pv.SetTimeStep(dt);
-    dc_vi.SetCycle(cycle);
-    dc_vi.SetTime(t);
-    dc_vi.SetTimeStep(dt);
+    paraview_datacoll.SetCycle(cycle);
+    paraview_datacoll.SetTime(t);
+    paraview_datacoll.SetTimeStep(dt);
+    visit_datacoll.SetCycle(cycle);
+    visit_datacoll.SetTime(t);
+    visit_datacoll.SetTimeStep(dt);
 
     if (cycle % output_cycles == 0)
     {
-      dc_pv.Save();
-      dc_vi.Save();
+      paraview_datacoll.Save();
+      visit_datacoll.Save();
     }
 
     tribol::updateMfemParallelDecomposition();
@@ -326,9 +326,9 @@ int main( int argc, char** argv )
     tribol::getMfemResponse(0, op.f_ext);
 
     op.SetTime(t);
-    solver.Step(u, v, t, dt);
+    solver.Step(displacement, velocity, t, dt);
 
-    coords += u;
+    coords += displacement;
     // nodal coordinates stored in Nodes grid function for higher order
     if (order == 1)
     {
@@ -339,8 +339,8 @@ int main( int argc, char** argv )
   }
 
   // save output after last timestep
-  dc_pv.Save();
-  dc_vi.Save();
+  paraview_datacoll.Save();
+  visit_datacoll.Save();
 
   // cleanup
   tribol::finalize();

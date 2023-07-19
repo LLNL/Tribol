@@ -21,12 +21,12 @@ void registerMfemCouplingScheme( integer cs_id,
                                  const mfem::ParGridFunction& current_coords,
                                  const std::set<integer>& b_attributes_1,
                                  const std::set<integer>& b_attributes_2,
-                                 integer contact_mode,
-                                 integer contact_case,
-                                 integer contact_method,
-                                 integer contact_model,
-                                 integer enforcement_method,
-                                 integer binning_method)
+                                 ContactMode contact_mode,
+                                 ContactCase contact_case,
+                                 ContactMethod contact_method,
+                                 ContactModel contact_model,
+                                 EnforcementMethod enforcement_method,
+                                 BinningMethod binning_method)
 {
    // create transfer operators from parent mesh to redecomp mesh
    auto mfem_data = std::make_unique<MfemMeshData>(
