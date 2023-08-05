@@ -494,19 +494,18 @@ private:
    void SetHomogeneousBC(mfem::Vector& dxdt) const;
 };
 
-/// Explicit solid mechanics update (lumped mass, optional damping)
+/// Explicit solid mechanics update with lumped mass
 class ExplicitMechanics : public mfem::SecondOrderTimeDependentOperator
 {
 public:
    /**
     * @brief Construct a new explicit mechanics operator (elasticity, lumped
-    * mass, optional damping, and external force vector)
+    * mass, and external force vector)
     *
     * @param fespace Finite element space of the primary fields
     * @param rho Density
     * @param lambda Lame constant
     * @param mu Lame constant
-    * @param damping_ Damping matrix
     */
    ExplicitMechanics(
       mfem::ParFiniteElementSpace& fespace, 

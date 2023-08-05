@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: (MIT)
 
+#include <mpi.h>
 #include <set>
 
 #include <gtest/gtest.h>
@@ -45,15 +46,15 @@ protected:
     // polynomial order of the finite element discretization
     int order = GetParam();
     // initial velocity
-    double initial_v = 0.001;
+    double initial_v = 0.02;
     // timestep size
     double dt = 0.001;
     // end time
-    double t_end = 0.35;
+    double t_end = 2.0;
     // kinematic penalty
-    double p_kine = 500.0;
+    double p_kine = 10000.0;
     // material density
-    double rho = 100.0;
+    double rho = 1000.0;
     // lame parameter
     double lambda = 100000.0;
     // lame parameter (shear modulus)
@@ -114,6 +115,8 @@ protected:
     {
       pmesh->GetNodes(coords);
     }
+
+    mfem::ParGridFunction ref_coords { coords };
 
     // grid function for displacement
     mfem::ParGridFunction displacement { &par_fe_space };
@@ -215,6 +218,7 @@ protected:
       op.SetTime(t);
       solver.Step(displacement, v, t, dt);
 
+      coords.Set(1.0, ref_coords);
       coords += displacement;
       if (order == 1)
       {
@@ -224,15 +228,14 @@ protected:
       ++cycle;
     }
 
-    auto local_max = displacement.Max();
-    max_disp_ = 0.0;
-    MPI_Allreduce(&local_max, &max_disp_, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    max_disp_ = displacement.Max();
+    MPI_Allreduce(MPI_IN_PLACE, &max_disp_, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   }
 };
 
 TEST_P(MfemCommonPlaneTest, mass_matrix_transfer)
 {
-  EXPECT_LT(std::abs(max_disp_ - 0.000559868), 1.0e-6);
+  EXPECT_LT(std::abs(max_disp_ - 0.0000033982222612802126), 1.0e-8);
 
   MPI_Barrier(MPI_COMM_WORLD);
 }
