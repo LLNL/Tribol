@@ -54,7 +54,7 @@ protected:
     auto xfixed_attrs = std::set<int>({1});
     // boundary element attributes of y-fixed surfaces (at y = 0)
     auto yfixed_attrs = std::set<int>({2});
-    // boundary element attributes of z-fixed surfaces (3: surface at z = 0, 6: surface at z = 1.95)
+    // boundary element attributes of z-fixed surfaces (3: surface at z = 0, 6: surface at z = 1.99)
     auto zfixed_attrs = std::set<int>({3, 6});
 
     // read mesh
@@ -223,7 +223,7 @@ protected:
 
 TEST_P(MfemCommonPlaneTest, mass_matrix_transfer)
 {
-  EXPECT_LT(std::abs(max_disp_ - 0.025), 1.0e-6);
+  EXPECT_LT(std::abs(max_disp_ - 0.005), 1.0e-6);
 
   MPI_Barrier(MPI_COMM_WORLD);
 }

@@ -1,6 +1,6 @@
 MFEM mesh v1.0
 
-# two unit cubes occupying [0,1]^3 and [0,1]x[0,1]x[0.95,1.05]
+# two unit cubes occupying [0,1]^3 and [0,1]x[0,1]x[0.99,1.99]
 
 #
 # MFEM Geometry Types (see mesh/geom.hpp):
@@ -47,11 +47,11 @@ vertices
 1 0 1
 0 1 1
 1 1 1
-0 0 0.95
-1 0 0.95
-0 1 0.95
-1 1 0.95
-0 0 1.95
-1 0 1.95
-0 1 1.95
-1 1 1.95
+0 0 0.99
+1 0 0.99
+0 1 0.99
+1 1 0.99
+0 0 1.99
+1 0 1.99
+0 1 1.99
+1 1 1.99

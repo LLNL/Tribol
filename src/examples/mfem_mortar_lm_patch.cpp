@@ -10,10 +10,10 @@
  *
  * Demonstrates a three dimensional contact patch test using the mortar method
  * in Tribol. Contact is enforced between two blocks which are initially in
- * contact. The blocks occupy [0, 1]^3 and [0, 1]x[0, 1]x[0.95, 1.95]. To
+ * contact. The blocks occupy [0, 1]^3 and [0, 1]x[0, 1]x[0.99, 1.99]. To
  * enforce symmetry and prevent rigid body modes, dirichlet boundary conditions
  * are applied in the x-direction along the x = 0 plane, in the y-direction
- * along y = 0 plane, and in the z-direction along the z = 0 and z = 1.95
+ * along y = 0 plane, and in the z-direction along the z = 0 and z = 1.99
  * planes. Enforcement is through Lagrange multipliers and no active set (i.e.
  * tied + sliding contact). Small deformation contact is assumed and,
  * consequently, the system is linear and the solution is determined through a
@@ -117,7 +117,7 @@ int main( int argc, char** argv )
   // boundary element attributes of mortar surface, the z = 1 plane of the first
   // block
   auto mortar_attrs = std::set<int>({4});
-  // boundary element attributes of nonmortar surface, the z = 0.95 plane of the
+  // boundary element attributes of nonmortar surface, the z = 0.99 plane of the
   // second block
   auto nonmortar_attrs = std::set<int>({5});
   // boundary element attributes of x-fixed surfaces (at x = 0)
@@ -125,7 +125,7 @@ int main( int argc, char** argv )
   // boundary element attributes of y-fixed surfaces (at y = 0)
   auto yfixed_attrs = std::set<int>({2});
   // boundary element attributes of z-fixed surfaces (3: surface at z = 0, 6:
-  // surface at z = 1.95)
+  // surface at z = 1.99)
   auto zfix_attribs = std::set<int>({3, 6});
   
   // create an axom timer to give wall times for each step
