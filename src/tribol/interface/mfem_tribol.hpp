@@ -53,7 +53,7 @@ namespace tribol
 void registerMfemCouplingScheme( integer cs_id,
                                  integer mesh_id_1,
                                  integer mesh_id_2,
-                                 mfem::ParMesh& mesh,
+                                 const mfem::ParMesh& mesh,
                                  const mfem::ParGridFunction& current_coords,
                                  const std::set<integer>& b_attributes_1,
                                  const std::set<integer>& b_attributes_2,

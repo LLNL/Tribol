@@ -629,7 +629,7 @@ public:
   MfemMeshData(
     integer mesh_id_1,
     integer mesh_id_2,
-    mfem::ParMesh& parent_mesh,
+    const mfem::ParMesh& parent_mesh,
     const mfem::ParGridFunction& current_coords,
     const std::set<integer>& attributes_1,
     const std::set<integer>& attributes_2
@@ -1049,7 +1049,7 @@ private:
   /**
    * @brief Volume mesh of parent domain
    */
-  mfem::ParMesh& parent_mesh_;
+  const mfem::ParMesh& parent_mesh_;
 
   /**
    * @brief Mesh boundary attributes identifying first mesh
