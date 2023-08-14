@@ -130,7 +130,7 @@ void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v )
    coupling_scheme->getMfemMeshData()->SetParentVelocity(v);
 }
 
-void getMfemResponse( integer cs_id, mfem::ParGridFunction& r )
+void getMfemResponse( integer cs_id, mfem::Vector& r )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -166,7 +166,7 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
    );
 }
 
-void getMfemGap( integer cs_id, mfem::ParGridFunction& g )
+void getMfemGap( integer cs_id, mfem::Vector& g )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(

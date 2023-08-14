@@ -766,15 +766,12 @@ public:
   }
 
   /**
-   * @brief Get the nodal response grid function on the parent mesh
+   * @brief Get the nodal response vector on the parent mesh
    *
    * @param [out] r Pre-allocated, initialized mfem::Vector to which response
    * vector is added
    */
-  void GetParentResponse(mfem::ParGridFunction& r) const
-  {
-    GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r);
-  }
+  void GetParentResponse(mfem::Vector& r) const;
 
   /**
    * @brief Get the parent to redecomp grid function transfer object
@@ -1244,11 +1241,11 @@ public:
   }
 
   /**
-   * @brief Get the gap grid function on the parent-linked boundary submesh
+   * @brief Get the gap vector on the parent-linked boundary submesh
    *
-   * @param [out] g Un-initialized mfem::ParGridFunction holding the nodal gap values
+   * @param [out] g Un-initialized mfem::Vector holding the nodal gap values
    */
-  void GetSubmeshGap(mfem::ParGridFunction& g) const;
+  void GetSubmeshGap(mfem::Vector& g) const;
 
   /**
    * @brief Get the parent-linked boundary submesh to redecomp mesh pressure

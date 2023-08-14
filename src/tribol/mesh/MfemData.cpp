@@ -414,6 +414,12 @@ void MfemMeshData::UpdateMfemMeshData()
   }
 }
 
+void MfemMeshData::GetParentResponse(mfem::Vector& r) const
+{
+    mfem::ParGridFunction r_gridfn(coords_.GetParentGridFn().ParFESpace(), r);
+    GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r_gridfn);
+}
+
 void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
 {
   if (velocity_)
@@ -596,11 +602,12 @@ void MfemSubmeshData::UpdateMfemSubmeshData(redecomp::RedecompMesh& redecomp_mes
   redecomp_gap_ = 0.0;
 }
 
-void MfemSubmeshData::GetSubmeshGap(mfem::ParGridFunction& g) const
+void MfemSubmeshData::GetSubmeshGap(mfem::Vector& g) const
 {
-  g.SetSpace(submesh_pressure_.ParFESpace());
-  g = 0.0;
-  GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g);
+  g.SetSize(submesh_pressure_.ParFESpace()->GetVSize());
+  mfem::ParGridFunction g_gridfn(submesh_pressure_.ParFESpace(), g);
+  g_gridfn = 0.0;
+  GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g_gridfn);
 }
 
 MfemSubmeshData::UpdateData::UpdateData(

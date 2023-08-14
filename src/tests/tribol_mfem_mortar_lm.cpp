@@ -194,7 +194,7 @@ protected:
   // restriction operator on submesh: maps dofs stored in g to tdofs stored in G
     {
       auto& G = B_blk.GetBlock(1);
-      auto& R_submesh = *g.ParFESpace()->GetRestrictionOperator();
+      auto& R_submesh = *tribol::getMfemPressure(0).ParFESpace()->GetRestrictionOperator();
       R_submesh.Mult(g, G);
     }
 

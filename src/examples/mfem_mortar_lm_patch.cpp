@@ -358,14 +358,15 @@ int main( int argc, char** argv )
   // This API call saves nodal mortar gap normal contributions to an
   // (uninitialized) grid function. The function sizes and initializes the grid
   // function.
-  mfem::ParGridFunction g;
-  tribol::getMfemGap(0, g);
+  mfem::Vector g;
+  tribol::getMfemGap(coupling_scheme_id, g);
 
   // Apply a restriction operator on the submesh: maps dofs stored in g to tdofs
   // stored in G for parallel solution of the linear system.
   {
     auto& G = B_blk.GetBlock(1);
-    auto& R_submesh = *g.ParFESpace()->GetRestrictionOperator();
+    auto& R_submesh = *tribol::getMfemPressure(coupling_scheme_id)
+      .ParFESpace()->GetRestrictionOperator();
     R_submesh.Mult(g, G);
   }
 

@@ -103,20 +103,19 @@ void setMfemLowOrderRefinedFactor( integer cs_id,
 void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
 
 /**
- * @brief Returns the response (RHS) vector to a given mfem::ParGridFunction
+ * @brief Returns the response (RHS) vector to a given mfem::Vector
  *
  * @pre Coupling scheme cs_id must be registered using
  * registerMfemCouplingScheme()
  * @pre Redecomp mesh must be created and up to date by calling
  * updateMfemParallelDecomposition()
- * @pre Response vector must be up to date for current geometry by calling
- * update()
+ * @pre Tribol data must be up to date for current geometry by calling update()
  *
  * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh
- * @param [out] r mfem::ParGridFunction of the response (RHS) vector
- * (pre-allocated and initialized) on the parent mesh
+ * @param [out] r mfem::Vector of the response (RHS) vector (properly sized,
+ * pre-allocated, and initialized)
  */
-void getMfemResponse( integer cs_id, mfem::ParGridFunction& r );
+void getMfemResponse( integer cs_id, mfem::Vector& r );
 
 /**
  * @brief Get assembled contact contributions for the Jacobian matrix
@@ -125,8 +124,7 @@ void getMfemResponse( integer cs_id, mfem::ParGridFunction& r );
  * registerMfemCouplingScheme()
  * @pre Redecomp mesh must be created and up to date by calling
  * updateMfemParallelDecomposition()
- * @pre Response vector must be up to date for current geometry by calling
- * update()
+ * @pre Tribol data must be up to date for current geometry by calling update()
  *
  * This method requires registration of an mfem::ParMesh with the coupling
  * scheme. The Jacobian contributions are split into a 2x2 block structure. The
@@ -140,7 +138,7 @@ void getMfemResponse( integer cs_id, mfem::ParGridFunction& r );
 std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
 
 /**
- * @brief Returns gap vector to a given mfem::ParGridFunction
+ * @brief Returns gap vector to a given mfem::Vector
  *
  * @pre Coupling scheme cs_id must be registered using
  * registerMfemCouplingScheme()
@@ -153,7 +151,7 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
  * @param [out] g Nodal gap values (values do not have to be pre-allocated) on
  * the parent-linked boundary submesh
  */
-void getMfemGap( integer cs_id, mfem::ParGridFunction& g );
+void getMfemGap( integer cs_id, mfem::Vector& g );
 
 /**
  * @brief Returns reference to nodal pressure vector on the submesh surface
