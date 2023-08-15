@@ -110,12 +110,15 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
 ) const
 {
   auto dst_ptr = &submesh_dst;
+  // first initialize LOR grid function (if using LOR)
   if (submesh_lor_xfer_)
   {
     submesh_lor_xfer_->GetLORGridFn() = 0.0;
     dst_ptr = &submesh_lor_xfer_->GetLORGridFn();
   }
+  // transfer data from redecomp mesh
   redecomp_xfer_.TransferToParallel(redecomp_src, *dst_ptr);
+  // if using LOR, transfer data from LOR mesh to submesh
   if (submesh_lor_xfer_)
   {
     submesh_lor_xfer_->TransferFromLORGridFn(submesh_dst);
@@ -472,6 +475,7 @@ MfemMeshData::UpdateData::UpdateData(
   },
   vector_xfer_ { parent_fes, submesh_gridfn, submesh_lor_xfer, redecomp_mesh_ }
 {
+  // updates the connectivity of the tribol surface mesh
   UpdateConnectivity(attributes_1, attributes_2, num_verts_per_elem);
 }
 
@@ -687,9 +691,9 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
 ) const
 {
   // 0 = displacement DOFs, 1 = lagrange multiplier DOFs
-  // (0,0) block is empty (for now)
+  // (0,0) block is empty (for now using SINGLE_MORTAR with approximate tangent)
   // (1,1) block is empty
-  // (0,1) and (1,0) are symmetric (for now)
+  // (0,1) and (1,0) are symmetric (for now using SINGLE_MORTAR with approximate tangent)
   const auto& elem_map_1 = parent_data_.GetElemMap1();
   const auto& elem_map_2 = parent_data_.GetElemMap2();
   auto mortar_elems = method_data
@@ -732,11 +736,13 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   );
   submesh_J.Finalize();
 
-  // transform J values from submesh to parent
+  // transform J values from submesh to parent mesh
   auto J = submesh_J.GetJ();
   auto submesh_vector_fes = parent_data_.GetSubmeshFESpace();
   auto mpi = redecomp::MPIUtility(submesh_vector_fes.GetComm());
   auto submesh_dof_offsets = axom::Array<int>(mpi.NRanks() + 1, mpi.NRanks() + 1);
+  // we need the dof offsets of each rank.  check if mfem stores this or if we
+  // need to create it.
   if (HYPRE_AssumedPartitionCheck())
   {
     submesh_dof_offsets[mpi.MyRank()+1] = submesh_vector_fes.GetDofOffsets()[1];
@@ -750,6 +756,12 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
     }
     
   }
+  // the submesh to parent vdof map only exists for vdofs on rank, so J values
+  // not on rank will need to be transferred to the rank that the vdof exists on
+  // to query the map. the steps are laid out below.
+  
+  // step 1) query J values on rank for their parent vdof and package J values
+  // not on rank to send
   auto send_J_by_rank = redecomp::MPIArray<int>(&mpi);
   auto J_idx = redecomp::MPIArray<int>(&mpi);
   auto est_num_J = submesh_J.NumNonZeroElems() / mpi.NRanks();
@@ -787,9 +799,10 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
         }
     }
   }
+  // step 2) sends the J values to the ranks that own them
   auto recv_J_by_rank = redecomp::MPIArray<int>(&mpi);
   recv_J_by_rank.SendRecvArrayEach(send_J_by_rank);
-  // update recv_J_by_rank
+  // step 3) query the on-rank map to recover J values
   for (int r{}; r < mpi.NRanks(); ++r)
   {
     for (auto& recv_J : recv_J_by_rank[r])
@@ -797,7 +810,7 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
         recv_J = submesh2parent_vdof_list_[recv_J];
     }
   }
-  // give it back to send_J_by_rank
+  // step 4) send the updated parent J values back and update the J vector
   send_J_by_rank.SendRecvArrayEach(recv_J_by_rank);
   for (int r{}; r < mpi.NRanks(); ++r)
   {
@@ -844,6 +857,8 @@ MfemJacobianData::UpdateData::UpdateData(
     dual_submesh_fes = submesh_data.GetLORMeshFESpace();
     primal_submesh_fes = parent_data.GetLORMeshFESpace();
   }
+  // create a matrix transfer operator for moving data from redecomp to the
+  // submesh
   submesh_redecomp_xfer_ = std::make_unique<redecomp::MatrixTransfer>(
     *dual_submesh_fes,
     *primal_submesh_fes,

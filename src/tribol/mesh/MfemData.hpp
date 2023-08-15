@@ -26,7 +26,7 @@ namespace tribol
 
 /**
  * @brief Facilitates transfer of fields to/from parent-linked boundary submesh
- * to LOR mesh
+ * (a higher-order mesh) to LOR mesh
  *
  * This class simplifies transferring 1) a primal field such as displacement and
  * velocity from a higher-order grid function on a parent-linked boundary

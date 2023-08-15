@@ -313,11 +313,18 @@ int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
  * multiple mortar faces and vice-versa.
  *
  * \param [in]  csId Coupling scheme id
- * \param [in]  row_block Row Jacobian block (MORTAR, NONMORTAR, or LAGRANGE_MULTIPLIER)
- * \param [in]  col_block Column Jacobian block (MORTAR, NONMORTAR, or LAGRANGE_MULTIPLIER)
- * \param [out] row_elem_idx Pointer to array of element indices for the row block
- * \param [out] col_elem_idx Pointer to array of element indices for the column block
- * \param [out] jacobians Pointer to array of Jacobian dense matrices
+ * \param [in]  row_block Row Jacobian block (MORTAR, NONMORTAR, or 
+ * LAGRANGE_MULTIPLIER)
+ * \param [in]  col_block Column Jacobian block (MORTAR, NONMORTAR, or 
+ * LAGRANGE_MULTIPLIER)
+ * \param [out] row_elem_idx Pointer to pointer to array of element indices for
+ * the row block
+ * \param [out] col_elem_idx Pointer to pointer to array of element indices for
+ * the column block
+ * \param [out] jacobians Pointer to pointer to array of Jacobian dense matrices
+ *
+ * @note The second pointer of the double pointer is updated by this function to 
+ * point to internally stored arrays of indices and Jacobian values.
  *
  * \return 0 success (if Jacobians exist), nonzero for failure
  */

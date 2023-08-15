@@ -21,26 +21,27 @@ namespace tribol
 /**
  * @brief Define and register a coupling scheme over an MFEM mesh
  *
- * This method is designed to enable simple registration of a contact coupling
- * scheme over a parallel decomposed MFEM mesh.  Contact surfaces are defined
- * via a list of one or more boundary attributes, which is used to construct a
- * single contact surface mfem::ParSubMesh.  The parallel domains are then
- * rebalanced using the redecomp library and the redecomp-level mesh and fields
- * are automatically registered with Tribol.  Mesh re-decomposition using
- * redecomp is done with a call to updateMfemParallelDecomposition().
+ * This function is designed to enable simple registration of a contact coupling
+ * scheme over a parallel MFEM mesh. Contact surfaces are defined via a list of
+ * one or more boundary attributes, which is used to construct a single contact
+ * surface mfem::ParSubMesh. Calling this function stores the data needed to
+ * create a coupling scheme; however, the coupling scheme is not created until
+ * updateMfemParallelDecomposition() is called. The meshes used in the Tribol
+ * coupling scheme are created after the parallel domains are rebalanced (using
+ * the redecomp library) through the call to updateMfemParallelDecomposition().
  *
- * If the registered mesh contains a higher-order Nodes grid function, then
- * low-order refinement (LOR) of the mesh is applied (if needed) to use Tribol's
- * linear contact methodologies.  LOR support is currently limited to methods
- * that do not require Jacobian calculations, and is still experimental.  The
- * low-order refinement factor equals the order of the Nodes grid function, but
- * can be overridden using setMfemLowOrderRefinedFactor().
+ * If the registered mesh contains a higher-order Nodes grid function, then a
+ * low-order refined (LOR) mesh is created (if needed) to use Tribol's linear
+ * contact methodologies. LOR support is currently limited to methods that do
+ * not require Jacobian calculations, and is still experimental. The low-order
+ * refinement factor equals the order of the Nodes grid function, but can be
+ * overridden using setMfemLowOrderRefinedFactor().
  *
  * @param [in] cs_id Index to use for the coupling scheme
  * @param [in] mesh_id_1 The first ID of the contact surface mesh
  * @param [in] mesh_id_2 The second ID of the contact surface mesh
  * @param [in] mesh MFEM volume mesh
- * @param [in] current_coords Coordinates associated with mesh
+ * @param [in] current_coords Coordinates associated with the MFEM volume mesh
  * @param [in] b_attributes_1 Boundary attributes defining the first mesh
  * @param [in] b_attributes_2 Boundary attributes defining the second mesh
  * @param [in] contact_mode 
@@ -65,31 +66,30 @@ void registerMfemCouplingScheme( integer cs_id,
                                  BinningMethod binning_method = DEFAULT_BINNING_METHOD );
 
 /**
- * @brief Sets factor of refinement in low order refined (LOR) representation of
+ * @brief Sets factor of refinement in low-order refined (LOR) representation of
  * the contact mesh
  *
  * This method sets the low-order mesh refinement factor for coupling schemes
- * registered with MFEM meshes.  Low-order refinement (LOR) enables
- * representation of higher-order contact surfaces and field quantities on a
- * refined, low-order mesh.  A LOR refinement factor of e.g. 2 results in twice
- * the number of elements on the LOR mesh in each dimension.  By default, the
- * LOR refinement factor equals the order of the mesh, such that the number of
- * degrees of freedom remain constant in the higher-order mesh and the low order
- * mesh.  This method allows the LOR mesh to be further refined, if desired.
+ * registered with MFEM meshes.  Low-order refinement enables representation of
+ * higher-order contact surfaces and field quantities on a refined, low-order
+ * mesh.  A low-order refinement factor of e.g. 2 results in twice the number of
+ * elements on the LOR mesh in each dimension.  By default, the low-order
+ * refinement factor equals the order of the mesh, such that the number of
+ * degrees of freedom remain constant in the higher-order mesh and the LOR mesh.
+ * This method allows the LOR mesh to be further refined, if desired.
  *
  * Transfer of field quantities between higher-order and LOR representations is
  * mass preserving and is accomplished through L2 minimization.  Given a
- * higher-order MFEM mesh, LOR enables linear mesh contact methodologies to be
- * applied on higher-order meshes.
+ * higher-order MFEM mesh, low-order refinement enables linear mesh contact
+ * methodologies to be applied on higher-order meshes.
  *
  * @pre Coupling scheme cs_id must be registered using
  * registerMfemCouplingScheme()
  *
- * @param cs_id The ID of the coupling scheme
- * @param lor_factor The refinement factor of the mesh
+ * @param [in] cs_id The ID of the coupling scheme
+ * @param [in] lor_factor The refinement factor of the LOR mesh
  */
-void setMfemLowOrderRefinedFactor( integer cs_id,
-                                   integer lor_factor );
+void setMfemLORFactor( integer cs_id, integer lor_factor );
 
 /**
  * @brief Registers a velocity field on a MFEM mesh-defined coupling scheme

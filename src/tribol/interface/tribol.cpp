@@ -279,7 +279,7 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
          )
       )
       {
-         couplingScheme->setMatrixXfer(std::make_unique<MfemJacobianData>(
+         couplingScheme->setMfemJacobianData(std::make_unique<MfemJacobianData>(
             *couplingScheme->getMfemMeshData(),
             *couplingScheme->getMfemSubmeshData()
          ));

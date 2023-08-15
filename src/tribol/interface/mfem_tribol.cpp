@@ -97,7 +97,7 @@ void registerMfemCouplingScheme( integer cs_id,
       {
          // create matrix transfer operator between redecomp and
          // parent/parent-linked boundary submesh
-         coupling_scheme->setMatrixXfer(std::make_unique<MfemJacobianData>(
+         coupling_scheme->setMfemJacobianData(std::make_unique<MfemJacobianData>(
             *mfem_data,
             *coupling_scheme->getMfemSubmeshData()
          ));
@@ -107,8 +107,8 @@ void registerMfemCouplingScheme( integer cs_id,
 
 }
 
-void setMfemLowOrderRefinedFactor( integer cs_id,
-                                   integer lor_factor)
+void setMfemLORFactor( integer cs_id,
+                       integer lor_factor )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(

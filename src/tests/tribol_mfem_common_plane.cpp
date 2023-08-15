@@ -32,7 +32,8 @@
 
 /**
  * @brief This tests the Tribol MFEM interface running a small common plane
- * explicit contact example.
+ * explicit contact example using a central difference explicit time integration
+ * scheme.
  *
  */
 class MfemCommonPlaneTest : public testing::TestWithParam<int> {
@@ -63,15 +64,15 @@ protected:
     // fixed options
     // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
     std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_apart.mesh";
-  // boundary element attributes of contact surface 1
-  auto contact_surf_1 = std::set<int>({4});
-  // boundary element attributes of contact surface 2
-  auto contact_surf_2 = std::set<int>({5});
-  // boundary element attributes of fixed surface (points on z = 0, all t)
-  auto fixed_attrs = std::set<int>({3});
-  // element attribute corresponding to volume elements where an initial
-  // velocity will be applied
-  auto moving_attrs = std::set<int>({2});
+    // boundary element attributes of contact surface 1
+    auto contact_surf_1 = std::set<int>({4});
+    // boundary element attributes of contact surface 2
+    auto contact_surf_2 = std::set<int>({5});
+    // boundary element attributes of fixed surface (points on z = 0, all t)
+    auto fixed_attrs = std::set<int>({3});
+    // element attribute corresponding to volume elements where an initial
+    // velocity will be applied
+    auto moving_attrs = std::set<int>({2});
 
     // read mesh
     std::unique_ptr<mfem::ParMesh> pmesh { nullptr };
@@ -208,6 +209,8 @@ protected:
     int cycle {0};
     for (double t {0.0}; t < t_end; t+=dt)
     {
+      // build new parallel decomposed redecomp mesh and update grid functions
+      // on each mesh
       tribol::updateMfemParallelDecomposition();
       tribol::setKinematicConstantPenalty(0, p_kine);
       tribol::setKinematicConstantPenalty(1, p_kine);
