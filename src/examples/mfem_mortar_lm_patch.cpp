@@ -397,6 +397,11 @@ int main( int argc, char** argv )
   // Fix the sign on the displacements.
   displacement.Neg();
 
+  // Update the pressure degrees of freedom (not used here)
+  auto& pressure_true = X_blk.GetBlock(1);
+  auto& pressure = tribol::getMfemPressure(0);
+  pressure.ParFESpace()->GetProlongationMatrix()->Mult(pressure_true, pressure);
+
   // Update mesh coordinates given the displacement.
   coords += displacement;
   timer.stop();
@@ -411,7 +416,6 @@ int main( int argc, char** argv )
   mfem::Vector contact_force_true(int_force_true);
   auto& displacement_true = X_blk.GetBlock(0);
   A_blk->GetBlock(0, 0).Mult(displacement_true, int_force_true);
-  auto& pressure_true = X_blk.GetBlock(1);
   A_blk->GetBlock(0, 1).Mult(pressure_true, contact_force_true);
   mfem::Vector force_resid_true(int_force_true);
   force_resid_true += contact_force_true;
