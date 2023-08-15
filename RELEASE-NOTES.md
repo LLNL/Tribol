@@ -10,7 +10,7 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
 ### Added
 - Added support for a linear tetrahedral mesh under the TestMesh class.
 - Added coupling scheme tests with null pointer registration.
-- Multi-rank contact for MFEM data structures.
+- Multi-rank contact API using MFEM data structures.
 - New API calls for MFEM data structures (see `interface/mfem_tribol.hpp`).
 
 ### Changed

@@ -11,27 +11,31 @@
  * Demonstrates a three dimensional contact patch test using the mortar method
  * in Tribol. Contact is enforced between two blocks which are initially in
  * contact. The blocks occupy [0, 1]^3 and [0, 1]x[0, 1]x[0.99, 1.99]. To
- * enforce symmetry and prevent rigid body modes, dirichlet boundary conditions
+ * enforce symmetry and prevent rigid body modes, Dirichlet boundary conditions
  * are applied in the x-direction along the x = 0 plane, in the y-direction
  * along y = 0 plane, and in the z-direction along the z = 0 and z = 1.99
- * planes. Enforcement is through Lagrange multipliers and no active set (i.e.
- * tied + sliding contact). Small deformation contact is assumed and,
- * consequently, the system is linear and the solution is determined through a
- * single linear solve (no timestepping).
+ * planes. Enforcement is through Lagrange multipliers. Small deformation
+ * contact is assumed and, consequently, the system is linear and the solution
+ * is determined through a single linear solve (no timestepping). The elasticity
+ * solution for this problem predicts a constant pressure field on the contact
+ * surface and linearly varying pressures. Since these fields can be exactly
+ * represented by the finite element space, we expect the solution to be exact
+ * to machine precision.
  *
  * The linear system solved is
  *  | A B^T | | d | = | f |
  *  | B 0   | | p |   | g | ,
+ *
  * where A is the system matrix for elasticity, B is the constraint matrix for
  * mortar contact, d is the vector of nodal displacements, p is the vector of
  * contact pressures, f is the vector of nodal forces, and g is the vector of
- * gaps on the contact surface.  MFEM block operators and vectors are used to 
+ * gaps on the contact surface.  MFEM block operators and vectors are used to
  * store the linear system.
  *
  * The example uses the Tribol MFEM interface, which supports decomposed (MPI)
- * meshes and will support higher order meshes (through LOR) in a future update.
- * Comments in the main function below give details on each step of the example
- * code.
+ * meshes and will support higher order meshes (through LOR) in a future update
+ * (pending implementation of transfer of Jacobian from LOR to HO). Comments in
+ * the main function below give details on each step of the example code.
  *
  * Example runs (from repo root directory):
  *   - mpirun -np 4 {build_dir}/examples/mfem_mortar_lm_patch_ex
@@ -264,7 +268,8 @@ int main( int argc, char** argv )
     "Time to set up boundary conditions: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
 
-  // This block of code constructs a small-deformation elasticity bilinear form.
+  // This block of code constructs a small-deformation linear elastic bilinear
+  // form.
   timer.start();
   mfem::ParBilinearForm a(&par_fe_space);
   mfem::ConstantCoefficient lambda_coeff(lambda);
@@ -284,17 +289,20 @@ int main( int argc, char** argv )
 
   // This block of code does initial setup of Tribol.
   timer.start();
-  // First, Tribol is initialized with the dimension of the space and the MPI
+  // First, Tribol is initialized with the spatial dimension and the MPI
   // communicator. These are stored globally.
   tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
   // Next, we create a Tribol coupling scheme between the contact surfaces on
   // the MFEM mesh. To create the coupling scheme requires several steps: 1)
   // building a boundary submesh, 2) building a LOR mesh (if required), 3)
   // re-decomposing the domain to move spatially close surface element pairs on
-  // to the same rank, and 4) creating a Tribol mesh. Steps 1 and 2 are
-  // performed when this method is called. Steps 3 and 4 are accomplished via a
-  // call to updateMfemParallelDecomposition(), which is typically called before
-  // calling update().
+  // to the same rank, 4) creating Tribol meshes of each surface, and 5)
+  // registering the meshes and coupling scheme with Tribol. These 5 steps are
+  // performed by calling two methods: 1) registerMfemCouplingScheme() (steps 1
+  // and 2) and 2) updateMfemParallelDecomposition() (steps 3, 4, and 5).
+  // registerMfemCouplingScheme() is called here and
+  // updateMfemParallelDecomposition() is typically called before calling
+  // update().
   int coupling_scheme_id = 0;
   int mesh1_id = 0;
   int mesh2_id = 1;
@@ -320,7 +328,8 @@ int main( int argc, char** argv )
   paraview_datacoll.Save();
   visit_datacoll.Save();
   
-  // Update the cycle information for the data collections.
+  // Update the cycle information for the data collections. Also update time
+  // with a pseudotime for the solution.
   paraview_datacoll.SetCycle(1);
   paraview_datacoll.SetTime(1.0);
   paraview_datacoll.SetTimeStep(1.0);
@@ -329,7 +338,7 @@ int main( int argc, char** argv )
   visit_datacoll.SetTimeStep(1.0);
 
   // This creates the parallel adjacency-based mesh redecomposition. It also
-  // constructs new Tribol meshes as subdomains of the redecomposed mesh.
+  // constructs new Tribol meshes as subsets of the redecomposed mesh.
   tribol::updateMfemParallelDecomposition();
   double dt {1.0};  // time is arbitrary here (no timesteps)
   // This API call computes the contact response and Jacobian given the current
@@ -355,19 +364,19 @@ int main( int argc, char** argv )
   mfem::BlockVector X_blk { A_blk->ColOffsets() };
   X_blk = 0.0;
 
-  // This API call saves nodal mortar gap normal contributions to an
-  // (uninitialized) grid function. The function sizes and initializes the grid
-  // function.
+  // This API call returns the mortar nodal gap vector to an (uninitialized)
+  // vector. The function sizes and initializes the vector.
   mfem::Vector g;
   tribol::getMfemGap(coupling_scheme_id, g);
 
-  // Apply a restriction operator on the submesh: maps dofs stored in g to tdofs
-  // stored in G for parallel solution of the linear system.
+  // Apply a transpose prologation operator on the submesh: maps dofs stored in
+  // dual field g to tdofs stored in G for parallel solution of the linear
+  // system.
   {
     auto& G = B_blk.GetBlock(1);
     auto& R_submesh = *tribol::getMfemPressure(coupling_scheme_id)
-      .ParFESpace()->GetRestrictionOperator();
-    R_submesh.Mult(g, G);
+      .ParFESpace()->GetProlongationMatrix();
+    R_submesh.MultTranspose(g, G);
   }
 
   // Use a linear solver to find the block displacement/pressure vector.
@@ -393,6 +402,39 @@ int main( int argc, char** argv )
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to solve for updated displacements: {0:f}ms", timer.elapsedTimeInMilliSec()
+  ));
+
+  // Verify the forces are in equilibrium, i.e. f_int = A*u = f_contact = B^T*p.
+  // This should be true if the solver converges.
+  mfem::Vector int_force_true(par_fe_space.GetTrueVSize());
+  int_force_true = 0.0;
+  mfem::Vector contact_force_true(int_force_true);
+  auto& displacement_true = X_blk.GetBlock(0);
+  A_blk->GetBlock(0, 0).Mult(displacement_true, int_force_true);
+  auto& pressure_true = X_blk.GetBlock(1);
+  A_blk->GetBlock(0, 1).Mult(pressure_true, contact_force_true);
+  mfem::Vector force_resid_true(int_force_true);
+  force_resid_true += contact_force_true;
+  for (int i{0}; i < ess_tdof_list.Size(); ++i)
+  {
+    force_resid_true[ess_tdof_list[i]] = 0.0;
+  }
+  auto force_resid_linf = force_resid_true.Normlinf();
+  MPI_Reduce(MPI_IN_PLACE, &force_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "|| force residual ||_(infty) = {0:e}", force_resid_linf
+  ));
+
+  // Verify the gap is closed by the displacements, i.e. B*u = gap.
+  // This should be true if the solver converges.
+  auto& gap_resid_true = B_blk.GetBlock(1);
+  mfem::Vector gap_from_disp_true(gap_resid_true.Size());
+  A_blk->GetBlock(1,0).Mult(displacement_true, gap_from_disp_true);
+  gap_resid_true -= gap_from_disp_true;
+  auto gap_resid_linf = gap_resid_true.Normlinf();
+  MPI_Reduce(MPI_IN_PLACE, &gap_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  SLIC_INFO_ROOT(axom::fmt::format(
+    "|| gap residual ||_(infty) = {0:e}", gap_resid_linf
   ));
 
   // Save the deformed configuration
