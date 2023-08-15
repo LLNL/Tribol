@@ -40,6 +40,8 @@ class Tribol(CachedCMakePackage, CudaPackage):
     # -----------------------------------------------------------------------
     # Variants
     # -----------------------------------------------------------------------
+    variant("redecomp", default=True,
+            description="Build redecomp domain redecompsition library")
     variant("debug", default=False,
             description="Enable runtime safety and debug checks")
     variant("fortran", default=False,
@@ -215,6 +217,15 @@ class Tribol(CachedCMakePackage, CudaPackage):
     def initconfig_package_entries(self):
         spec = self.spec
         entries = []
+
+        entries.append("#------------------{0}".format("-" * 60))
+        entries.append("# Options")
+        entries.append("#------------------{0}\n".format("-" * 60))
+
+        if "+redecomp" in spec:
+            entries.append(cmake_cache_option("BUILD_REDECOMP", True))
+        else:
+            entries.append(cmake_cache_option("BUILD_REDECOMP", False))
 
         # TPL locations
         entries.append("#------------------{0}".format("-" * 60))

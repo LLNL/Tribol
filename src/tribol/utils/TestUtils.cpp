@@ -1055,8 +1055,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
          allocRealArray( &this->pressures, this->numTotalNodes, 1. );
 
          // register nodal gaps and pressures
-         registerRealNodalField( this->nonmortarMeshId, MORTAR_GAPS, this->gaps );
-         registerRealNodalField( this->nonmortarMeshId, MORTAR_PRESSURES, this->pressures );
+         registerMortarGaps( this->nonmortarMeshId, this->gaps );
+         registerMortarPressures( this->nonmortarMeshId, this->pressures );
          break;
       }
       case MORTAR_WEIGHTS:
@@ -1064,7 +1064,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
          allocRealArray( &this->gaps, this->numTotalNodes, 0. );
          this->pressures = nullptr;
 
-         registerRealNodalField( this->nonmortarMeshId, MORTAR_GAPS, this->gaps );
+         registerMortarGaps( this->nonmortarMeshId, this->gaps );
          break;
       }
       default:
@@ -1992,3 +1992,113 @@ void TestMesh::testMeshToVtk( const std::string& dir, int cycle, double time )
 
 //------------------------------------------------------------------------------
 } // end of namespace "tribol"
+
+namespace mfem_ext
+{
+
+CentralDiffSolver::CentralDiffSolver(const mfem::Array<int>& bc_vdofs_)
+:  bc_vdofs { bc_vdofs_ },
+   first_step { true }
+{}
+
+void CentralDiffSolver::Step(mfem::Vector& x, mfem::Vector& dxdt, double& t, double& dt)
+{
+   // acceleration at t
+   f->SetTime(t);
+   if (first_step)
+   {
+      accel.SetSize(x.Size());
+      // update acceleration given displacement, velocity using linked
+      // SecondOrderTimeDependentOperator (set using Init() method)
+      f->Mult(x, dxdt, accel);
+      first_step = false;
+   }
+
+   // velocity at t + dt/2
+   dxdt.Add(0.5*dt, accel);
+
+   // set homogeneous velocity BC at t + dt/2
+   SetHomogeneousBC(dxdt);
+
+   // set displacement at t + dt
+   x.Add(dt, dxdt);
+
+   // acceleration at t + dt
+   f->SetTime(t + dt);
+   // update acceleration given displacement, velocity using linked
+   // SecondOrderTimeDependentOperator (set using Init() method)
+   f->Mult(x, dxdt, accel);
+
+   // velocity at t + dt
+   dxdt.Add(0.5*dt, accel);
+}
+
+void CentralDiffSolver::SetHomogeneousBC(mfem::Vector& dxdt) const
+{
+   for (auto bc_vdof : bc_vdofs)
+   {
+      dxdt[bc_vdof] = 0.0;
+   }
+}
+
+ExplicitMechanics::ExplicitMechanics(
+   mfem::ParFiniteElementSpace& fespace, 
+   mfem::Coefficient& rho,
+   mfem::Coefficient& lambda,
+   mfem::Coefficient& mu
+)
+:  f_ext { &fespace },
+   elasticity { &fespace },
+   inv_lumped_mass { fespace.GetVSize() }
+{
+   // create inverse lumped mass matrix; store as a vector
+   mfem::ParBilinearForm mass { &fespace };
+   mass.AddDomainIntegrator(new mfem::VectorMassIntegrator(rho));
+   mass.Assemble();
+   mfem::Vector ones {fespace.GetVSize()};
+   ones = 1.0;
+   mass.SpMat().Mult(ones, inv_lumped_mass);
+   mfem::Vector mass_true(fespace.GetTrueVSize());
+   const Operator& P = *fespace.GetProlongationMatrix();
+   P.MultTranspose(inv_lumped_mass, mass_true);
+   for (int i {0}; i < mass_true.Size(); ++i)
+   {
+      mass_true[i] = 1.0 / mass_true[i];
+   }
+   P.Mult(mass_true, inv_lumped_mass);
+
+   // create elasticity stiffness matrix
+   elasticity.AddDomainIntegrator(new mfem::ElasticityIntegrator(lambda, mu));
+   elasticity.Assemble();
+}
+
+void ExplicitMechanics::Mult(
+   const mfem::Vector& u,
+   const mfem::Vector& AXOM_UNUSED_PARAM(dudt),
+   mfem::Vector& a
+) const
+{
+   mfem::Vector f { u.Size() };
+   f = 0.0;
+
+   mfem::Vector f_int { f.Size() };
+   elasticity.Mult(u, f_int);
+   f.Add(-1.0, f_int);
+
+   // sum forces over ranks
+   auto& fespace = *elasticity.ParFESpace();
+   const Operator& P = *fespace.GetProlongationMatrix();
+   mfem::Vector f_true {fespace.GetTrueVSize()};
+   P.MultTranspose(f, f_true);
+   P.Mult(f_true, f);
+
+   // external force already summed over ranks
+   f.Add(1.0, f_ext);
+
+   for (int i {0}; i < inv_lumped_mass.Size(); ++i)
+   {
+      a[i] = inv_lumped_mass[i] * f[i];
+   }
+}
+
+} // end of namespace "mfem_ext"

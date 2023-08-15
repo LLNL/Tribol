@@ -184,7 +184,7 @@ public:
          gaps[i] = 0.;
       }
 
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, gaps );
+      tribol::registerMortarGaps( nonmortarMeshId, gaps );
 
       // instantiate SurfaceContactElem struct. Note, this object is instantiated
       // using face 1, face 2, and the set overlap polygon. Note, the mesh ids are set

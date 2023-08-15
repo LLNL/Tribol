@@ -318,15 +318,15 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
         // register nodal gaps and pressures. Note: for single sided mortar 
         // methods these fields are only registered for one mesh. By 
         // convention, this is the second mesh/block.
-        tribol::registerRealNodalField( block2_id, tribol::MORTAR_GAPS, mesh.gaps );
-        tribol::registerRealNodalField( block2_id, tribol::MORTAR_PRESSURES, mesh.pressures );
+        tribol::registerMortarGaps( block2_id, mesh.gaps );
+        tribol::registerMortarPressures( block2_id, mesh.pressures );
      }
      else if (method == tribol::MORTAR_WEIGHTS)
      {
         tribol::allocRealArray( &mesh.gaps, mesh.numTotalNodes, 0. );
         mesh.pressures = nullptr; // not needed
   
-        tribol::registerRealNodalField( block2_id, tribol::MORTAR_GAPS, mesh.gaps );
+        tribol::registerMortarGaps( block2_id, mesh.gaps );
      }
 
    } // end STEP 2 scope

@@ -7,7 +7,6 @@
 #define TRIBOL_HPP_
 
 #include "tribol/types.hpp"
-#include "tribol/common/Parameters.hpp"
 #include "tribol/geom/ContactPlaneManager.hpp"
 
 #include <string>
@@ -52,7 +51,8 @@ void setPenaltyOptions( int couplingSchemeIndex,
                         KinematicPenaltyCalculation kinematic_calc,
                         RatePenaltyCalculation rate_calc=NO_RATE_PENALTY );
 
-/* \brief Sets the constant kinematic penalty stiffness
+/*!
+ * \brief Sets the constant kinematic penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] k constant kinematic penalty stiffness
  */
@@ -71,13 +71,15 @@ void setKinematicElementPenalty( int meshId,
                                  const double *material_modulus, 
                                  const double *element_thickness );
 
-/* \brief Sets the constant rate penalty stiffness
+/*!
+ * \brief Sets the constant rate penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] r_k constant rate penalty stiffness
  */
 void setRateConstantPenalty( int meshId, double r_k );
 
-/* \brief Sets the percent rate penalty stiffness
+/*!
+ * \brief Sets the percent rate penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] r_p rate penalty as percent of kinematic penalty
  */
@@ -239,7 +241,7 @@ void registerNodalResponse( integer meshId,
                             real* rz=nullptr );
 
 /*!
- * \brief Get mfem sparse matrix for method specific matrix output 
+ * \brief Get mfem sparse matrix for method specific Jacobian matrix output 
  *
  * \param [in,out] sMat double pointer to mfem sparse matrix object
  * \param [in] csId Coupling scheme id
@@ -254,10 +256,10 @@ void registerNodalResponse( integer meshId,
  *       which assumes contiguous and unique node ids between mortar and 
  *       nonmortar meshes registered in a given coupling scheme.
  */
-int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
+int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
 
 /*!
- * \brief Gets CSR storage arrays for method specific matrix output
+ * \brief Gets CSR storage arrays for method specific Jacobian matrix output
  *
  * \param [out] I pointer to row offset integer array
  * \param [out] J pointer to column index array
@@ -277,7 +279,7 @@ int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
  * \return 0 success (if CSR data exists and pointed to), nonzero for failure
  *
  */
-int getCSRMatrix( int** I, int** J, real** vals, int csId,
+int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
                   int* n_offsets = nullptr, int* n_nonzero = nullptr );
 
 /*!
@@ -285,19 +287,19 @@ int getCSRMatrix( int** I, int** J, real** vals, int csId,
  *
  * The element Jacobians are stored in blocks associated with the mortar
  * surface, nonmortar surface, and Lagrange multipliers (if applicable).  The
- * mortar-mortar, nonmortar-nonmortar, mortar-nonmortar, and nonmortar-mortar blocks are
- * associated with the equilibrium contributions (derivative of the weak form
- * contact integral with respect to displacement degrees of freedom) and the
- * blocks involving the Lagrange multiplier field are associated with the
- * constraint block (with the exception of the Lagrange multiplier-Lagrange
+ * mortar-mortar, nonmortar-nonmortar, mortar-nonmortar, and nonmortar-mortar
+ * blocks are associated with the equilibrium contributions (derivative of the
+ * weak form contact integral with respect to displacement degrees of freedom)
+ * and the blocks involving the Lagrange multiplier field are associated with
+ * the constraint block (with the exception of the Lagrange multiplier-Lagrange
  * multiplier block, which is zero).
  *
  * The structure of the blocks is:
- *       M    S    LM
+ *       M    NM   LM
  *     ----------------  M  = BlockSpace::MORTAR
  *   M | 00 | 01 | 02 |
- *     |----|----|----|  S  = BlockSpace::NONMORTAR
- *   S | 10 | 11 | 12 |
+ *     |----|----|----|  NM = BlockSpace::NONMORTAR
+ *  NM | 10 | 11 | 12 |
  *     |----|----|----|  LM = BlockSpace::LAGRANGE_MULTIPLIER
  *  LM | 20 | 21 | 22 |
  *     ----------------
@@ -311,25 +313,49 @@ int getCSRMatrix( int** I, int** J, real** vals, int csId,
  * multiple mortar faces and vice-versa.
  *
  * \param [in]  csId Coupling scheme id
- * \param [in]  row_block Row Jacobian block (MORTAR, NONMORTAR, or LAGRANGE_MULTIPLIER)
- * \param [in]  col_block Column Jacobian block (MORTAR, NONMORTAR, or LAGRANGE_MULTIPLIER)
- * \param [out] row_elem_idx Reference to array of element indices for the row block
- * \param [out] col_elem_idx Reference to array of element indices for the column block
- * \param [out] jacobians Reference to array of Jacobian dense matrices
+ * \param [in]  row_block Row Jacobian block (MORTAR, NONMORTAR, or 
+ * LAGRANGE_MULTIPLIER)
+ * \param [in]  col_block Column Jacobian block (MORTAR, NONMORTAR, or 
+ * LAGRANGE_MULTIPLIER)
+ * \param [out] row_elem_idx Pointer to pointer to array of element indices for
+ * the row block
+ * \param [out] col_elem_idx Pointer to pointer to array of element indices for
+ * the column block
+ * \param [out] jacobians Pointer to pointer to array of Jacobian dense matrices
+ *
+ * @note The second pointer of the double pointer is updated by this function to 
+ * point to internally stored arrays of indices and Jacobian values.
  *
  * \return 0 success (if Jacobians exist), nonzero for failure
  */
 int getElementBlockJacobians( integer csId, 
                               BlockSpace row_block,
                               BlockSpace col_block,
-                              axom::Array<integer>& row_elem_idx,
-                              axom::Array<integer>& col_elem_idx,
-                              axom::Array<mfem::DenseMatrix>& jacobians );
+                              const axom::Array<integer>** row_elem_idx,
+                              const axom::Array<integer>** col_elem_idx,
+                              const axom::Array<mfem::DenseMatrix>** jacobians );
 
-/// register a real nodal field
-void registerRealNodalField( integer meshId,
-                             const RealNodalFields field,
-                             real * fieldVariable );
+/*!
+ * \brief Register gap field on a nonmortar surface mesh associated with the
+ * mortar method
+ *
+ * \param meshId Mesh id
+ * \param gaps Array of degree-of-freedom values on the nodes of the mesh
+ * representing the scalar gap field
+ */
+void registerMortarGaps( integer meshId,
+                         real * gaps );
+
+/*!
+ * \brief Register pressure field on a nonmortar surface mesh associated with
+ * the mortar method
+ *
+ * \param meshId Mesh id
+ * \param gaps Array of degree-of-freedom values on the nodes of the mesh
+ * representing the scalar pressure field
+ */
+void registerMortarPressures( integer meshId,
+                              const real * pressures );
 
 /// register an integer nodal field
 void registerIntNodalField( integer meshId,
@@ -403,7 +429,6 @@ void setInterfacePairs( integer couplingSchemeIndex,
                         IndexType const * pairIndex2 );
 
 
-
 /*!
  * \brief Computes the contact response at the given cycle.
  *
@@ -425,7 +450,7 @@ void finalize( );
 
 /// @}
 
-} /* end contact namespace */
+} /* namespace tribol */
 
 
 #endif /* TRIBOL_HPP_ */

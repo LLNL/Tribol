@@ -546,7 +546,7 @@ bool CouplingScheme::isValidMethod()
    MeshManager & meshManager = MeshManager::getInstance(); 
    MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
    MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
-   double dim = this->spatialDimension();
+   integer dim = this->spatialDimension();
 
    // check all methods for basic validity issues
    if ( this->m_contactMethod == ALIGNED_MORTAR ||
@@ -738,7 +738,10 @@ bool CouplingScheme::isValidEnforcement()
                   OPTIONS_NOT_SET;
                return false;
             }
-            else if ( this->m_enforcementOptions.lm_implicit_options.sparse_mode != SparseMode::MFEM_LINKED_LIST )
+            else if ( 
+               this->m_enforcementOptions.lm_implicit_options.sparse_mode != SparseMode::MFEM_LINKED_LIST && 
+               this->m_enforcementOptions.lm_implicit_options.sparse_mode !=
+               SparseMode::MFEM_ELEMENT_DENSE )
             {
                this->m_couplingSchemeErrors.cs_enforcement_error = 
                   NO_ENFORCEMENT_IMPLEMENTATION_FOR_REGISTERED_OPTION;

@@ -14,6 +14,7 @@
 #include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/MeshManager.hpp"
+#include "tribol/mesh/MfemData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 
 #include "tribol/geom/ContactPlane.hpp"
@@ -264,6 +265,29 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
 
    lm_options.eval_mode = evalMode;
    lm_options.sparse_mode = sparseMode;
+
+#ifdef BUILD_REDECOMP
+
+   if (couplingScheme->hasMfemData())
+   {
+      // MFEM_ELEMENT_DENSE is required to use the MFEM interface
+      lm_options.sparse_mode = SparseMode::MFEM_ELEMENT_DENSE;
+      if (
+         !couplingScheme->hasMfemJacobianData() && (
+            lm_options.eval_mode == ImplicitEvalMode::MORTAR_JACOBIAN ||
+            lm_options.eval_mode == ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
+         )
+      )
+      {
+         couplingScheme->setMfemJacobianData(std::make_unique<MfemJacobianData>(
+            *couplingScheme->getMfemMeshData(),
+            *couplingScheme->getMfemSubmeshData()
+         ));
+      }
+   }
+
+#endif /* BUILD_REDECOMP */
+
    lm_options.enforcement_option_set = true;
 
 } // end setLagrangeMultiplierOptions()
@@ -514,7 +538,7 @@ void registerNodalResponse( integer meshId,
 } // end registerNodalResponse()
 
 //------------------------------------------------------------------------------
-int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
+int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
 {
 
    if (*sMat != nullptr)
@@ -549,7 +573,7 @@ int getMfemSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
 } // end getMfemSparseMatrix()
 
 //------------------------------------------------------------------------------
-int getCSRMatrix( int** I, int** J, real** vals, int csId,
+int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
                   int* n_offsets, int* n_nonzero )
 {
    // check to make sure input pointers are null
@@ -600,9 +624,9 @@ int getCSRMatrix( int** I, int** J, real** vals, int csId,
 int getElementBlockJacobians( integer csId, 
                               BlockSpace row_block, 
                               BlockSpace col_block,
-                              axom::Array<integer>& row_elem_idx,
-                              axom::Array<integer>& col_elem_idx,
-                              axom::Array<mfem::DenseMatrix>& jacobians )
+                              const axom::Array<integer>** row_elem_idx,
+                              const axom::Array<integer>** col_elem_idx,
+                              const axom::Array<mfem::DenseMatrix>** jacobians )
 {
    SparseMode sparse_mode = CouplingSchemeManager::getInstance().
       getCoupling(csId)->getEnforcementOptions().lm_implicit_options.sparse_mode;
@@ -610,15 +634,15 @@ int getElementBlockJacobians( integer csId,
    {
       SLIC_WARNING("Jacobian is assembled and can be accessed by " 
          "getMfemSparseMatrix() or getCSRMatrix(). For (unassembled) element "
-         "Jacobian contributions, call setJacobianStorage(JacobianStorage::ELEMENT) "
-         "before calling update().");
+         "Jacobian contributions, call setLagrangeMultiplierOptions() with "
+         "SparseMode::MFEM_ELEMENT_DENSE before calling update().");
       return 1;
    }
    MethodData* method_data = 
       CouplingSchemeManager::getInstance().getCoupling( csId )->getMethodData();
-   row_elem_idx = method_data->getBlockJElementIds()[static_cast<int>(row_block)];
-   col_elem_idx = method_data->getBlockJElementIds()[static_cast<int>(col_block)];
-   jacobians = method_data->getBlockJ()(
+   *row_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(row_block)];
+   *col_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(col_block)];
+   *jacobians = &method_data->getBlockJ()(
       static_cast<int>(row_block),
       static_cast<int>(col_block)
    );
@@ -626,57 +650,54 @@ int getElementBlockJacobians( integer csId,
 }
 
 //------------------------------------------------------------------------------
-void registerRealNodalField( integer meshId,
-                             const RealNodalFields field,
-                             real * fieldVariable )
+void registerMortarGaps( integer meshId,
+                         real * gaps )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
-   SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerRealNodalField(): " << 
-                 "no mesh with id, " << meshId << "exists.");
+   SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerMortarGaps(): " << 
+                 "no mesh with id " << meshId << " exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
 
-   switch (field)
+   if (gaps == nullptr)
    {
-      case MORTAR_GAPS:
-      {
-         if (fieldVariable==nullptr)
-         {
-            SLIC_WARNING( "tribol::registerRealNodalField(): null pointer to data for " << 
-                          "'MORTAR_GAPS' on mesh, " << meshId << ".");
-            mesh.m_nodalFields.m_is_node_gap_set = false;
-         }
-         else
-         {
-            mesh.m_nodalFields.m_node_gap = fieldVariable;
-            mesh.m_nodalFields.m_is_node_gap_set = true;
-         }
-         break;
-      }
-      case MORTAR_PRESSURES:
-      {
-         if (fieldVariable==nullptr)
-         {
-            SLIC_WARNING( "tribol::registerRealNodalField(): null pointer to data for " << 
-                          "'MORTAR_PRESSURES' on mesh, " << meshId << ".");
-            mesh.m_nodalFields.m_is_node_pressure_set = false;
-         }
-         else
-         {
-            mesh.m_nodalFields.m_node_pressure = fieldVariable;
-            mesh.m_nodalFields.m_is_node_pressure_set = true;
-         }
-         break;
-      }
-      default:
-      {
-         SLIC_ERROR( "tribol::registerRealNodalField(): the field argument " << 
-                     "for mesh, " << meshId << ", is not an accepted tribol nodal field." );
-      }
-   } // end switch over field
+      SLIC_WARNING( "tribol::registerMortarGaps(): null pointer to data " << 
+                    "on mesh " << meshId << ".");
+      mesh.m_isValid = false;
+   }
+   else
+   {
+      mesh.m_nodalFields.m_node_gap = gaps;
+      mesh.m_nodalFields.m_is_node_gap_set = true;
+   }
+   
+}
 
-} // end registerRealNodalField()
+//------------------------------------------------------------------------------
+void registerMortarPressures( integer meshId,
+                              const real * pressures )
+{
+   MeshManager & meshManager = MeshManager::getInstance();
+
+   SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerMortarPressures(): " << 
+                 "no mesh with id " << meshId << " exists.");
+
+   MeshData & mesh = meshManager.GetMeshInstance( meshId );
+
+   if (pressures == nullptr)
+   {
+      SLIC_WARNING( "tribol::registerMortarPressures(): null pointer to data " << 
+                    "on mesh " << meshId << ".");
+      mesh.m_isValid = false;
+   }
+   else
+   {
+      mesh.m_nodalFields.m_node_pressure = pressures;
+      mesh.m_nodalFields.m_is_node_pressure_set = true;
+   }
+   
+}
 
 //------------------------------------------------------------------------------
 void registerIntNodalField( integer meshId,
@@ -686,7 +707,7 @@ void registerIntNodalField( integer meshId,
    MeshManager & meshManager = MeshManager::getInstance();
 
    SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerIntNodalField(): " << 
-                 "no mesh with id, " << meshId << "exists.");
+                 "no mesh with id " << meshId << " exists.");
 
    switch (field)
    {
@@ -705,7 +726,7 @@ void registerRealElementField( integer meshId,
    MeshManager & meshManager = MeshManager::getInstance();
 
    SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerRealElementField(): " << 
-               "no mesh with id, " << meshId << "exists.");
+               "no mesh with id " << meshId << " exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
 
@@ -716,7 +737,7 @@ void registerRealElementField( integer meshId,
          if (fieldVariable==nullptr)
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'KINEMATIC_CONSTANT_STIFFNESS' on mesh, " << meshId << ".");
+                          "'KINEMATIC_CONSTANT_STIFFNESS' on mesh " << meshId << ".");
             mesh.m_elemData.m_is_kinematic_constant_penalty_set = false;
          }
          else
@@ -731,7 +752,7 @@ void registerRealElementField( integer meshId,
          if (fieldVariable==nullptr)
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'RATE_CONSTANT_STIFFNESS' on mesh, " << meshId << ".");
+                          "'RATE_CONSTANT_STIFFNESS' on mesh " << meshId << ".");
             mesh.m_elemData.m_is_rate_constant_penalty_set = false;
          }
          else
@@ -746,7 +767,7 @@ void registerRealElementField( integer meshId,
          if (fieldVariable==nullptr)
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'RATE_PERCENT_STIFFNESS' on mesh, " << meshId << ".");
+                          "'RATE_PERCENT_STIFFNESS' on mesh " << meshId << ".");
             mesh.m_elemData.m_is_rate_percent_penalty_set = false;
          }
          else
@@ -761,7 +782,7 @@ void registerRealElementField( integer meshId,
          if (fieldVariable==nullptr)
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'BULK_MODULUS' on mesh, " << meshId << ".");
+                          "'BULK_MODULUS' on mesh " << meshId << ".");
             mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
          }
          else
@@ -780,7 +801,7 @@ void registerRealElementField( integer meshId,
          if (fieldVariable==nullptr)
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'YOUNGS_MODULUS' on mesh, " << meshId << ".");
+                          "'YOUNGS_MODULUS' on mesh " << meshId << ".");
             mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
          }
          else
@@ -799,7 +820,7 @@ void registerRealElementField( integer meshId,
          if (fieldVariable==nullptr)
          {
             SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'ELEMENT_THICKNESS' on mesh, " << meshId << ".");
+                          "'ELEMENT_THICKNESS' on mesh " << meshId << ".");
             mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
          }
          else
@@ -816,7 +837,7 @@ void registerRealElementField( integer meshId,
       default:
       {
          SLIC_WARNING( "tribol::registerRealElementField(): the field argument " << 
-                       "on mesh," << meshId << ", is not an accepted tribol real element field." );
+                       "on mesh " << meshId << " is not an accepted tribol real element field." );
       }
    } // end switch over field
 
@@ -830,7 +851,7 @@ void registerIntElementField( integer meshId,
    MeshManager & meshManager = MeshManager::getInstance();
 
    SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerIntElementField(): " << 
-                 "no mesh with id, " << meshId << "exists.");
+                 "no mesh with id " << meshId << " exists.");
 
    switch (field)
    {
@@ -938,7 +959,7 @@ integer update( integer cycle, real t, real &dt )
       }
 
       CouplingScheme* couplingScheme  = csManager.getCoupling(csIndex);
-      
+
       // initialize and check for valid coupling scheme
       if (!couplingScheme->init())
       {
@@ -958,8 +979,8 @@ integer update( integer cycle, real t, real &dt )
       couplingScheme->performBinning();
 
       // check to make sure binning returns non-null pairs
-      auto* pairs = couplingScheme->getInterfacePairs();
-      if(pairs == nullptr)
+      auto pairs = couplingScheme->getInterfacePairs();
+      if (pairs == nullptr)
       {
          continue;
       }
@@ -968,8 +989,8 @@ integer update( integer cycle, real t, real &dt )
 
       if ( err_cs != 0 )
       {
-         SLIC_WARNING("tribol::update(): coupling scheme, " << csIndex <<
-                      ", returned with an error.");
+         SLIC_WARNING("tribol::update(): coupling scheme " << csIndex <<
+                      " returned with an error.");
       }
 
    } // end of coupling scheme loop

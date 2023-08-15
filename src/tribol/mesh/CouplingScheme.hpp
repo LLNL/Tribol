@@ -8,7 +8,7 @@
 // Tribol includes
 #include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
-#include "tribol/mesh/MeshData.hpp"
+#include "tribol/mesh/MfemData.hpp"
 
 // Axom includes
 #include "axom/core.hpp"
@@ -333,6 +333,166 @@ public:
                              const integer cycle, 
                              const real t );
 
+#ifdef BUILD_REDECOMP
+
+  /**
+   * @brief Check if coupling scheme has MFEM mesh data
+   *
+   * MFEM mesh data includes the MFEM volume mesh, transfer operators to move
+   * mesh data from the MFEM volume mesh to the Tribol surface mesh, and mesh
+   * data such as displacement, velocity, and force (response).
+   *
+   * @return true: MFEM mesh data exists
+   * @return false: MFEM mesh data does not exist
+   */
+  bool hasMfemData() const { return m_mfemMeshData != nullptr; }
+
+  /**
+   * @brief Get the MFEM mesh data object
+   *
+   * MFEM mesh data includes the MFEM volume mesh, transfer operators to move
+   * mesh data from the MFEM volume mesh to the Tribol surface mesh, and mesh
+   * data such as displacement, velocity, and force (response).
+   *
+   * @return MfemMeshData* 
+   */
+  MfemMeshData* getMfemMeshData() { return m_mfemMeshData.get(); }
+  
+  /**
+   * @brief Get the MFEM mesh data object (const overload)
+   *
+   * MFEM mesh data includes the MFEM volume mesh, transfer operators to move mesh data
+   * from the MFEM volume mesh to the Tribol surface mesh, and mesh data such as
+   * displacement, velocity, and force (response).
+   * 
+   * @return const MfemMeshData* 
+   */
+  const MfemMeshData* getMfemMeshData() const
+  {
+    return m_mfemMeshData.get();
+  }
+
+  /**
+   * @brief Sets the MFEM mesh data object
+   *
+   * MFEM mesh data includes the MFEM volume mesh, transfer operators to move
+   * mesh data from the MFEM volume mesh to the Tribol surface mesh, and mesh
+   * data such as displacement, velocity, and force (response).
+   *
+   * @param mfemMeshData Unique pointer to MFEM mesh data
+   */
+  void setMfemMeshData(std::unique_ptr<MfemMeshData> mfemMeshData)
+  {
+    m_mfemMeshData = std::move(mfemMeshData);
+  }
+
+  /**
+   * @brief Check if coupling scheme has MFEM submesh field data
+   *
+   * MFEM submesh field data includes a parent-linked boundary mfem::ParSubMesh,
+   * transfer operators to move mesh data from the boundary submesh to the
+   * Tribol surface mesh, and submesh data such as gap and pressure.
+   *
+   * @return true: MFEM submesh field data exists
+   * @return false: MFEM submesh field data does not exist
+   */
+  bool hasMfemSubmeshData() const { return m_mfemSubmeshData != nullptr; }
+
+  /**
+   * @brief Get the MFEM submesh field data object
+   *
+   * MFEM submesh field data includes a parent-linked boundary mfem::ParSubMesh,
+   * transfer operators to move mesh data from the boundary submesh to the
+   * Tribol surface mesh, and submesh data such as gap and pressure.
+   * 
+   * @return MfemSubmeshData* 
+   */
+  MfemSubmeshData* getMfemSubmeshData() { return m_mfemSubmeshData.get(); }
+  
+  /**
+   * @brief Get the MFEM submesh field data object (const overload)
+   *
+   * MFEM submesh field data includes a parent-linked boundary mfem::ParSubMesh,
+   * transfer operators to move mesh data from the boundary submesh to the
+   * Tribol surface mesh, and submesh data such as gap and pressure.
+   * 
+   * @return const MfemSubmeshData* 
+   */
+  const MfemSubmeshData* getMfemSubmeshData() const 
+  {
+    return m_mfemSubmeshData.get();
+  }
+
+  /**
+   * @brief Sets the MFEM submesh field data object
+   *
+   * MFEM submesh field data includes a parent-linked boundary mfem::ParSubMesh,
+   * transfer operators to move mesh data from the boundary submesh to the
+   * Tribol surface mesh, and submesh data such as gap and pressure.
+   * 
+   * @param MfemSubmeshData Unique pointer to MFEM submesh field data
+   */
+  void setMfemSubmeshData(std::unique_ptr<MfemSubmeshData> mfemSubmeshData)
+  {
+    m_mfemSubmeshData = std::move(mfemSubmeshData);
+  }
+
+  /**
+   * @brief Check if coupling scheme has MFEM Jacobian data
+   *
+   * MFEM Jacobian data includes transfer operators to move Jacobian
+   * contributions from the Tribol surface mesh to the MFEM parent mesh and
+   * parent-linked boundary submesh.
+   *
+   * @return true: MFEM Jacobian data exists
+   * @return false: MFEM Jacobian data does not exist
+   */
+  bool hasMfemJacobianData() const { return m_mfemJacobianData != nullptr; }
+  
+  /**
+   * @brief Get the MFEM Jacobian data object
+   *
+   * MFEM Jacobian data includes transfer operators to move Jacobian
+   * contributions from the Tribol surface mesh to the MFEM parent mesh and
+   * parent-linked boundary submesh.
+   * 
+   * @return MfemJacobianData* 
+   */
+  MfemJacobianData* getMfemJacobianData()
+  {
+    return m_mfemJacobianData.get();
+  }
+  
+  /**
+   * @brief Get the MFEM jacobian data object (const overload)
+   *
+   * MFEM jacobian data includes transfer operators to move Jacobian
+   * contributions from the Tribol surface mesh to the MFEM parent mesh and
+   * parent-linked boundary submesh.
+   * 
+   * @return MfemJacobianData* 
+   */
+  const MfemJacobianData* getMfemJacobianData() const
+  {
+    return m_mfemJacobianData.get();
+  }
+
+  /**
+   * @brief Sets the MFEM jacobian data object
+   *
+   * MFEM jacobian data includes transfer operators to move Jacobian
+   * contributions from the Tribol surface mesh to the MFEM parent mesh and
+   * parent-linked boundary submesh.
+   * 
+   * @param mfemJacobianData Unique pointer to MFEM jacobian data
+   */
+  void setMfemJacobianData(std::unique_ptr<MfemJacobianData> mfemJacobianData)
+  {
+    m_mfemJacobianData = std::move(mfemJacobianData);
+  }
+
+#endif /* BUILD_REDECOMP */
+
 private:
 
   /*!
@@ -374,6 +534,14 @@ private:
   EnforcementOptions   m_enforcementOptions;   ///< struct with options underneath chosen enforcement
   CouplingSchemeErrors m_couplingSchemeErrors; ///< struct handling coupling scheme errors
   CouplingSchemeInfo   m_couplingSchemeInfo;   ///< struct handling info to be printed
+
+#ifdef BUILD_REDECOMP
+
+  std::unique_ptr<MfemMeshData> m_mfemMeshData;          ///< MFEM mesh data
+  std::unique_ptr<MfemSubmeshData> m_mfemSubmeshData;    ///< MFEM submesh field data
+  std::unique_ptr<MfemJacobianData> m_mfemJacobianData;  ///< MFEM jacobian data
+
+#endif /* BUILD_REDECOMP */
   
   DISABLE_COPY_AND_ASSIGNMENT( CouplingScheme );
   DISABLE_MOVE_AND_ASSIGNMENT( CouplingScheme );

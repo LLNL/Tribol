@@ -64,7 +64,7 @@ if(ENABLE_FORTRAN AND TRIBOL_USE_MPI)
 endif()
 
 ## Redecomp examples
-if ( TRIBOL_USE_MPI )
+if ( BUILD_REDECOMP )
 
   set( redecomp_examples
       domain_redecomp.cpp
@@ -74,6 +74,33 @@ if ( TRIBOL_USE_MPI )
 
   foreach( example ${redecomp_examples} )
 
+    get_filename_component( example_name ${example} NAME_WE )
+
+    blt_add_executable(
+        NAME       ${example_name}_ex
+        SOURCES    ${example}
+        OUTPUT_DIR ${EXAMPLE_OUTPUT_DIRECTORY}
+        DEPENDS_ON axom mfem mpi redecomp tribol
+        )
+
+    if (ENABLE_CUDA)
+      set_target_properties(${example_name}_ex PROPERTIES CUDA_SEPARABLE_COMPILATION On)
+    endif()
+
+  endforeach()
+  
+endif()
+
+## Tribol + redecomp examples
+if ( BUILD_REDECOMP )
+
+  set( examples
+      mfem_mortar_lm_patch.cpp
+      mfem_common_plane.cpp
+      )
+
+  foreach( example ${examples} )
+    
     get_filename_component( example_name ${example} NAME_WE )
 
     blt_add_executable(

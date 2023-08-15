@@ -31,8 +31,8 @@ struct MeshNodalData
    /////////////////////////
    // MORTAR NODAL FIELDS //
    /////////////////////////
-   real* m_node_gap;      ///< scalar nodal gap (used on nonmortar mesh) 
-   real* m_node_pressure; ///< scalar nodal pressure (used on nonmortar mesh) 
+   real * m_node_gap;            ///< scalar nodal gap (used on nonmortar mesh) 
+   const real * m_node_pressure; ///< scalar nodal pressure (used on nonmortar mesh) 
 
    bool m_isGapComputed        {false}; ///< true if the nodal gaps have been computed
    bool m_is_node_gap_set      {false}; ///< true if nodal gap field is set
@@ -279,9 +279,8 @@ public:
    */
   void deallocateArrays();
 
-
-   /// Prints information associated with this mesh to \a os
-   void print(std::ostream& os) const;
+  /// Prints information associated with this mesh to \a os
+  void print(std::ostream& os) const;
 };
 
 } // end namespace tribol
