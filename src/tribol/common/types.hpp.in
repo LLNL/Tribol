@@ -76,7 +76,7 @@ using containerArray = std::vector<T>;
   #define CONSTEXPRFUNC constexpr  
 #endif
 
-#if TRIBOL_DEBUG
+#ifdef TRIBOL_DEBUG
 #define TRIBOL_DEBUG_LOG( msg )                                                \
   do {                                                                         \
     std::ostringstream oss;                                                    \
