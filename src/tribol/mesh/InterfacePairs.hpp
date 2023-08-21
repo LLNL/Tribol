@@ -94,7 +94,7 @@ public:
         m_inContact[idx], idx };
   }
 
-  IndexType getNumPairs() const { return m_pairIndex1.size(); }
+  IndexType getNumPairs() const { return static_cast<IndexType>(m_pairIndex1.size()); }
 
 private:
 
