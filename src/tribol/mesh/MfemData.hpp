@@ -631,8 +631,8 @@ public:
     integer mesh_id_2,
     const mfem::ParMesh& parent_mesh,
     const mfem::ParGridFunction& current_coords,
-    const std::set<integer>& attributes_1,
-    const std::set<integer>& attributes_2
+    std::set<integer>&& attributes_1,
+    std::set<integer>&& attributes_2
   );
 
   /**

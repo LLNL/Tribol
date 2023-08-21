@@ -19,8 +19,8 @@ void registerMfemCouplingScheme( integer cs_id,
                                  integer mesh_id_2,
                                  const mfem::ParMesh& mesh,
                                  const mfem::ParGridFunction& current_coords,
-                                 const std::set<integer>& b_attributes_1,
-                                 const std::set<integer>& b_attributes_2,
+                                 std::set<integer> b_attributes_1,
+                                 std::set<integer> b_attributes_2,
                                  ContactMode contact_mode,
                                  ContactCase contact_case,
                                  ContactMethod contact_method,
@@ -34,8 +34,8 @@ void registerMfemCouplingScheme( integer cs_id,
       mesh_id_2,
       mesh,
       current_coords,
-      b_attributes_1,
-      b_attributes_2
+      std::move(b_attributes_1),
+      std::move(b_attributes_2)
    );
    // register empty meshes so the coupling scheme is valid
    registerMesh(
