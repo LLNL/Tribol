@@ -1051,12 +1051,12 @@ private:
   /**
    * @brief Mesh boundary attributes identifying first mesh
    */
-  std::set<integer> attributes_1_;
+  const std::set<integer> attributes_1_;
 
   /**
    * @brief Mesh boundary attributes identifying second mesh
    */
-  std::set<integer> attributes_2_;
+  const std::set<integer> attributes_2_;
 
   /**
    * @brief Submesh containing boundary elements of both contact surfaces
