@@ -631,8 +631,8 @@ public:
     integer mesh_id_2,
     const mfem::ParMesh& parent_mesh,
     const mfem::ParGridFunction& current_coords,
-    const std::set<integer>& attributes_1,
-    const std::set<integer>& attributes_2
+    std::set<integer>&& attributes_1,
+    std::set<integer>&& attributes_2
   );
 
   /**
@@ -1051,12 +1051,12 @@ private:
   /**
    * @brief Mesh boundary attributes identifying first mesh
    */
-  std::set<integer> attributes_1_;
+  const std::set<integer> attributes_1_;
 
   /**
    * @brief Mesh boundary attributes identifying second mesh
    */
-  std::set<integer> attributes_2_;
+  const std::set<integer> attributes_2_;
 
   /**
    * @brief Submesh containing boundary elements of both contact surfaces

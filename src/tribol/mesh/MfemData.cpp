@@ -320,14 +320,14 @@ MfemMeshData::MfemMeshData(
   integer mesh_id_2,
   const mfem::ParMesh& parent_mesh,
   const mfem::ParGridFunction& current_coords,
-  const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2
+  std::set<integer>&& attributes_1,
+  std::set<integer>&& attributes_2
 )
 : mesh_id_1_ { mesh_id_1 },
   mesh_id_2_ { mesh_id_2 },
   parent_mesh_ { parent_mesh },
-  attributes_1_ { attributes_1 },
-  attributes_2_ { attributes_2 },
+  attributes_1_ { std::move(attributes_1) },
+  attributes_2_ { std::move(attributes_2) },
   submesh_ { CreateSubmesh(parent_mesh_, attributes_1_, attributes_2_) },
   coords_ { current_coords },
   lor_factor_ { 0 }
