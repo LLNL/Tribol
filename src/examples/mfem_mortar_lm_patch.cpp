@@ -395,45 +395,36 @@ int main( int argc, char** argv )
   }
 
   // Create a single HypreParMatrix from blocks for the preconditioner
-  std::unique_ptr<mfem::HypreParMatrix> A_merged;
-  if (A_blk->GetBlock(1, 0).Height() != 0)
+  mfem::Array2D<mfem::HypreParMatrix*> hypre_blocks(2, 2);
+  for (int i{0}; i < 2; ++i)
   {
-    mfem::Array2D<mfem::HypreParMatrix*> hypre_blocks(2, 2);
-    for (int i{0}; i < 2; ++i)
+    for (int j{0}; j < 2; ++j)
     {
-      for (int j{0}; j < 2; ++j)
+      if (A_blk->GetBlock(i, j).Height() != 0 && A_blk->GetBlock(i, j).Width() != 0)
       {
         hypre_blocks(i, j) = dynamic_cast<mfem::HypreParMatrix*>(&A_blk->GetBlock(i, j));
       }
+      else
+      {
+        hypre_blocks(i, j) = nullptr;
+      }
     }
-
-    A_merged = std::unique_ptr<mfem::HypreParMatrix>(
-      mfem::HypreParMatrixFromBlocks(hypre_blocks)
-    );
   }
-  else
-  {
-    A_merged = std::unique_ptr<mfem::HypreParMatrix>(
-      dynamic_cast<mfem::HypreParMatrix*>(&A_blk->GetBlock(0, 0))
-    );
-    // release A_blk's ownership of its operators and delete other blocks
-    A_blk->owns_blocks = false;
-    delete &A_blk->GetBlock(1, 0);
-    delete &A_blk->GetBlock(0, 1);
-    delete &A_blk->GetBlock(1, 1);
-  }
+  auto A_merged = std::unique_ptr<mfem::HypreParMatrix>(
+    mfem::HypreParMatrixFromBlocks(hypre_blocks)
+  );
   // Use a linear solver to find the block displacement/pressure vector.
   mfem::MINRESSolver solver(MPI_COMM_WORLD);
   solver.SetRelTol(1.0e-8);
   solver.SetAbsTol(1.0e-12);
   solver.SetMaxIter(5000);
   solver.SetPrintLevel(1);
-  // auto preconditioner = std::make_unique<mfem::HypreBoomerAMG>(*A_merged);
-  // solver.SetPreconditioner(*preconditioner);
+  auto preconditioner = std::make_unique<mfem::HypreBoomerAMG>(*A_merged);
+  solver.SetPreconditioner(*preconditioner);
   solver.SetOperator(*A_merged);
   solver.Mult(B_blk, X_blk);
   // Prevents destruction after MPI_Finalize issue
-  // preconditioner.reset(nullptr);
+  preconditioner.reset(nullptr);
 
   // Move the block displacements to the displacement grid function.
   {
