@@ -419,12 +419,8 @@ int main( int argc, char** argv )
   solver.SetAbsTol(1.0e-12);
   solver.SetMaxIter(5000);
   solver.SetPrintLevel(3);
-  auto preconditioner = std::make_unique<mfem::HypreBoomerAMG>(*A_merged);
-  solver.SetPreconditioner(*preconditioner);
   solver.SetOperator(*A_merged);
   solver.Mult(B_blk, X_blk);
-  // Prevents destruction after MPI_Finalize issue
-  preconditioner.reset(nullptr);
 
   // Move the block displacements to the displacement grid function.
   {
