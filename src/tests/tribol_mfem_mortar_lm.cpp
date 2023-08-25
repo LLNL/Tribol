@@ -28,6 +28,12 @@
 #include "tribol/interface/tribol.hpp"
 #include "tribol/interface/mfem_tribol.hpp"
 
+void clearInactivePressureDofs(
+  mfem::BlockOperator& A,
+  int coupling_scheme_id,
+  const std::set<int>& nonmortar_attrs
+);
+
 /**
  * @brief This tests the Tribol MFEM interface running a contact patch test.
  *
@@ -179,6 +185,9 @@ protected:
 
     // retrieve block stiffness matrix
     auto A_blk = tribol::getMfemBlockJacobian(0);
+    // Surface mesh contains mortar and nonmortar surfaces.  Remove pressure DOFs
+    // on mortar surfaces.
+    clearInactivePressureDofs(*A_blk, coupling_scheme_id, nonmortar_attrs);
     A_blk->SetBlock(0, 0, A.release());
 
     // create block solution and RHS vectors
@@ -228,7 +237,7 @@ TEST_P(MfemCommonPlaneTest, mass_matrix_transfer)
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(1));
+INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(2));
 
 //------------------------------------------------------------------------------
 #include "axom/slic/core/SimpleLogger.hpp"
@@ -254,4 +263,85 @@ int main(int argc, char* argv[])
   MPI_Finalize();
 
   return result;
+}
+
+void clearInactivePressureDofs(
+  mfem::BlockOperator& A,
+  int coupling_scheme_id,
+  const std::set<int>& nonmortar_attrs
+)
+{
+  // Get submesh
+  auto& surf_fe_space = *tribol::getMfemPressure(coupling_scheme_id).ParFESpace();
+  auto& surf_mesh = *surf_fe_space.GetParMesh();
+  // Create marker of attributes for faster querying
+  mfem::Array<int> attr_marker(surf_mesh.attributes.Max());
+  attr_marker = 0;
+  for (auto nonmortar_attr : nonmortar_attrs)
+  {
+    attr_marker[nonmortar_attr - 1] = 1;
+  }
+  // Create marker of dofs only on mortar surface
+  mfem::Array<int> mortar_dof_marker(surf_fe_space.GetVSize());
+  mortar_dof_marker = 1;
+  for (int e{0}; e < surf_mesh.GetNE(); ++e)
+  {
+    if (attr_marker[surf_fe_space.GetAttribute(e) - 1])
+    {
+      mfem::Array<int> vdofs;
+      surf_fe_space.GetElementVDofs(e, vdofs);
+      for (int d{0}; d < vdofs.Size(); ++d)
+      {
+        int k = vdofs[d];
+        if (k < 0) { k = -1 - k; }
+        mortar_dof_marker[k] = 0;
+      }
+    }
+  }
+  // Convert marker of dofs to marker of tdofs
+  mfem::Array<int> mortar_tdof_marker(surf_fe_space.GetTrueVSize());
+  surf_fe_space.GetRestrictionMatrix()->BooleanMult(mortar_dof_marker, mortar_tdof_marker);
+  // Convert markers of tdofs only on mortar surface to a list
+  mfem::Array<int> mortar_tdofs;
+  mfem::FiniteElementSpace::MarkerToList(mortar_tdof_marker, mortar_tdofs);
+  // Eliminate mortar tdofs from off-diagonal A block
+  auto B = dynamic_cast<mfem::HypreParMatrix*>(&A.GetBlock(1, 0));
+  SLIC_ERROR_ROOT_IF(!B, "Off-diagonal must be a HypreParMatrix");
+  B->EliminateRows(mortar_tdofs);
+  // Do an explicit transpose for the other off diagonal so all matrices in the
+  // block operator are HypreParMatrices. This lets us create a single
+  // HypreParMatrix from blocks if needed.
+  A.SetBlock(0, 1, B->Transpose());
+  // Create ones on diagonal of eliminated mortar tdofs (CSR sparse matrix -> HypreParMatrix)
+  // I vector
+  mfem::Array<int> rows(surf_fe_space.GetTrueVSize() + 1);
+  rows = 0;
+  auto mortar_tdofs_ct = 0;
+  for (int i{0}; i < surf_fe_space.GetTrueVSize(); ++i)
+  {
+    if (mortar_tdofs_ct < mortar_tdofs.Size() && mortar_tdofs[mortar_tdofs_ct] == i)
+    {
+      ++mortar_tdofs_ct;
+    }
+    rows[i + 1] = mortar_tdofs_ct;
+  }
+  // J vector = mortar_tdofs
+  // data vector
+  mfem::Vector ones(mortar_tdofs_ct);
+  ones = 1.0;
+  mfem::SparseMatrix inactive_sm(
+    rows.GetData(), mortar_tdofs.GetData(), ones.GetData(),
+    surf_fe_space.GetTrueVSize(), surf_fe_space.GetTrueVSize(),
+    false, false, true
+  );
+  auto inactive_hpm = new mfem::HypreParMatrix(
+    B->GetComm(), B->GetGlobalNumRows(), B->GetRowStarts(), &inactive_sm
+  );
+  // Have the mfem::HypreParMatrix manage the data pointers
+  rows.GetMemory().SetHostPtrOwner(false);
+  mortar_tdofs.GetMemory().SetHostPtrOwner(false);
+  ones.GetMemory().SetHostPtrOwner(false);
+  inactive_sm.SetDataOwner(false);
+  inactive_hpm->SetOwnerFlags(3, 3, 1);
+  A.SetBlock(1, 1, inactive_hpm);
 }
