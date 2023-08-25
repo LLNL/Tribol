@@ -394,7 +394,7 @@ int main( int argc, char** argv )
     R_submesh.Mult(g, G);
   }
 
-  // Create a single HypreParMatrix from blocks for the preconditioner
+  // Create a single HypreParMatrix from blocks (useful for different solvers/preconditioners)
   mfem::Array2D<mfem::HypreParMatrix*> hypre_blocks(2, 2);
   for (int i{0}; i < 2; ++i)
   {
