@@ -418,7 +418,7 @@ int main( int argc, char** argv )
   solver.SetRelTol(1.0e-8);
   solver.SetAbsTol(1.0e-12);
   solver.SetMaxIter(5000);
-  solver.SetPrintLevel(1);
+  solver.SetPrintLevel(3);
   auto preconditioner = std::make_unique<mfem::HypreBoomerAMG>(*A_merged);
   solver.SetPreconditioner(*preconditioner);
   solver.SetOperator(*A_merged);
