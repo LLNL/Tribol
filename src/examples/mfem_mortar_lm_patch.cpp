@@ -43,6 +43,9 @@
  * Example output can be viewed in VisIt or ParaView.
  */
 
+#include <mfem/linalg/hypre.hpp>
+#include <mfem/linalg/solvers.hpp>
+#include <mfem/linalg/superlu.hpp>
 #include <set>
 
 #ifdef TRIBOL_USE_UMPIRE
@@ -65,6 +68,12 @@
 #include "tribol/config.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/interface/mfem_tribol.hpp"
+
+void clearInactivePressureDofs(
+  mfem::BlockOperator& A,
+  int coupling_scheme_id,
+  const std::set<int>& nonmortar_attrs
+);
 
 int main( int argc, char** argv )
 {
@@ -348,6 +357,9 @@ int main( int argc, char** argv )
   // HypreParMatrices holding the Jacobian from contact and stored in an MFEM
   // block operator are returned from this API call.
   auto A_blk = tribol::getMfemBlockJacobian(coupling_scheme_id);
+  // Surface mesh contains mortar and nonmortar surfaces.  Remove pressure DOFs
+  // on mortar surfaces.
+  clearInactivePressureDofs(*A_blk, coupling_scheme_id, nonmortar_attrs);
   // Add the Jacobian from the elasticity bilinear form to the top left block
   A_blk->SetBlock(0, 0, A.release());
   timer.stop();
@@ -369,24 +381,59 @@ int main( int argc, char** argv )
   mfem::Vector g;
   tribol::getMfemGap(coupling_scheme_id, g);
 
-  // Apply a transpose prologation operator on the submesh: maps dofs stored in
-  // dual field g to tdofs stored in G for parallel solution of the linear
-  // system.
+  // Apply a restriction operator on the submesh: maps dofs stored in g to tdofs
+  // stored in G for parallel solution of the linear system.
+  //
+  // NOTE: gap is a dual field, but we still apply R here because tribol stores
+  // this like a ParGridFunction: shared DOFs have the same (summed) value on
+  // all ranks
   {
     auto& G = B_blk.GetBlock(1);
     auto& R_submesh = *tribol::getMfemPressure(coupling_scheme_id)
-      .ParFESpace()->GetProlongationMatrix();
-    R_submesh.MultTranspose(g, G);
+      .ParFESpace()->GetRestrictionMatrix();
+    R_submesh.Mult(g, G);
   }
 
+  // Create a single HypreParMatrix from blocks for the preconditioner
+  std::unique_ptr<mfem::HypreParMatrix> A_merged;
+  if (A_blk->GetBlock(1, 0).Height() != 0)
+  {
+    mfem::Array2D<mfem::HypreParMatrix*> hypre_blocks(2, 2);
+    for (int i{0}; i < 2; ++i)
+    {
+      for (int j{0}; j < 2; ++j)
+      {
+        hypre_blocks(i, j) = dynamic_cast<mfem::HypreParMatrix*>(&A_blk->GetBlock(i, j));
+      }
+    }
+
+    A_merged = std::unique_ptr<mfem::HypreParMatrix>(
+      mfem::HypreParMatrixFromBlocks(hypre_blocks)
+    );
+  }
+  else
+  {
+    A_merged = std::unique_ptr<mfem::HypreParMatrix>(
+      dynamic_cast<mfem::HypreParMatrix*>(&A_blk->GetBlock(0, 0))
+    );
+    // release A_blk's ownership of its operators and delete other blocks
+    A_blk->owns_blocks = false;
+    delete &A_blk->GetBlock(1, 0);
+    delete &A_blk->GetBlock(0, 1);
+    delete &A_blk->GetBlock(1, 1);
+  }
   // Use a linear solver to find the block displacement/pressure vector.
   mfem::MINRESSolver solver(MPI_COMM_WORLD);
   solver.SetRelTol(1.0e-8);
   solver.SetAbsTol(1.0e-12);
   solver.SetMaxIter(5000);
-  solver.SetPrintLevel(3);
-  solver.SetOperator(*A_blk);
+  solver.SetPrintLevel(1);
+  // auto preconditioner = std::make_unique<mfem::HypreBoomerAMG>(*A_merged);
+  // solver.SetPreconditioner(*preconditioner);
+  solver.SetOperator(*A_merged);
   solver.Mult(B_blk, X_blk);
+  // Prevents destruction after MPI_Finalize issue
+  // preconditioner.reset(nullptr);
 
   // Move the block displacements to the displacement grid function.
   {
@@ -424,10 +471,17 @@ int main( int argc, char** argv )
     force_resid_true[ess_tdof_list[i]] = 0.0;
   }
   auto force_resid_linf = force_resid_true.Normlinf();
-  MPI_Reduce(MPI_IN_PLACE, &force_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  SLIC_INFO_ROOT(axom::fmt::format(
-    "|| force residual ||_(infty) = {0:e}", force_resid_linf
-  ));
+  if (rank == 0)
+  {
+    MPI_Reduce(MPI_IN_PLACE, &force_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    SLIC_INFO(axom::fmt::format(
+      "|| force residual ||_(infty) = {0:e}", force_resid_linf
+    ));
+  }
+  else
+  {
+    MPI_Reduce(&force_resid_linf, &force_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  }
 
   // Verify the gap is closed by the displacements, i.e. B*u = gap.
   // This should be true if the solver converges.
@@ -436,10 +490,17 @@ int main( int argc, char** argv )
   A_blk->GetBlock(1,0).Mult(displacement_true, gap_from_disp_true);
   gap_resid_true -= gap_from_disp_true;
   auto gap_resid_linf = gap_resid_true.Normlinf();
-  MPI_Reduce(MPI_IN_PLACE, &gap_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  SLIC_INFO_ROOT(axom::fmt::format(
-    "|| gap residual ||_(infty) = {0:e}", gap_resid_linf
-  ));
+  if (rank == 0)
+  {
+    MPI_Reduce(MPI_IN_PLACE, &gap_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    SLIC_INFO(axom::fmt::format(
+      "|| gap residual ||_(infty) = {0:e}", gap_resid_linf
+    ));
+  }
+  else
+  {
+    MPI_Reduce(&gap_resid_linf, &gap_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  }
 
   // Save the deformed configuration
   paraview_datacoll.Save();
@@ -450,4 +511,85 @@ int main( int argc, char** argv )
   MPI_Finalize();
 
   return 0;
+}
+
+void clearInactivePressureDofs(
+  mfem::BlockOperator& A,
+  int coupling_scheme_id,
+  const std::set<int>& nonmortar_attrs
+)
+{
+  // Get submesh
+  auto& surf_fe_space = *tribol::getMfemPressure(coupling_scheme_id).ParFESpace();
+  auto& surf_mesh = *surf_fe_space.GetParMesh();
+  // Create marker of attributes for faster querying
+  mfem::Array<int> attr_marker(surf_mesh.attributes.Max());
+  attr_marker = 0;
+  for (auto nonmortar_attr : nonmortar_attrs)
+  {
+    attr_marker[nonmortar_attr - 1] = 1;
+  }
+  // Create marker of dofs only on mortar surface
+  mfem::Array<int> mortar_dof_marker(surf_fe_space.GetVSize());
+  mortar_dof_marker = 1;
+  for (int e{0}; e < surf_mesh.GetNE(); ++e)
+  {
+    if (attr_marker[surf_fe_space.GetAttribute(e) - 1])
+    {
+      mfem::Array<int> vdofs;
+      surf_fe_space.GetElementVDofs(e, vdofs);
+      for (int d{0}; d < vdofs.Size(); ++d)
+      {
+        int k = vdofs[d];
+        if (k < 0) { k = -1 - k; }
+        mortar_dof_marker[k] = 0;
+      }
+    }
+  }
+  // Convert marker of dofs to marker of tdofs
+  mfem::Array<int> mortar_tdof_marker(surf_fe_space.GetTrueVSize());
+  surf_fe_space.GetRestrictionMatrix()->BooleanMult(mortar_dof_marker, mortar_tdof_marker);
+  // Convert markers of tdofs only on mortar surface to a list
+  mfem::Array<int> mortar_tdofs;
+  mfem::FiniteElementSpace::MarkerToList(mortar_tdof_marker, mortar_tdofs);
+  // Eliminate mortar tdofs from off-diagonal A block
+  auto B = dynamic_cast<mfem::HypreParMatrix*>(&A.GetBlock(1, 0));
+  SLIC_ERROR_ROOT_IF(!B, "Off-diagonal must be a HypreParMatrix");
+  B->EliminateRows(mortar_tdofs);
+  // Do an explicit transpose for the other off diagonal so all matrices in the
+  // block operator are HypreParMatrices. This lets us create a single
+  // HypreParMatrix from blocks if needed.
+  A.SetBlock(0, 1, B->Transpose());
+  // Create ones on diagonal of eliminated mortar tdofs (CSR sparse matrix -> HypreParMatrix)
+  // I vector
+  mfem::Array<int> rows(surf_fe_space.GetTrueVSize() + 1);
+  rows = 0;
+  auto mortar_tdofs_ct = 0;
+  for (int i{0}; i < surf_fe_space.GetTrueVSize(); ++i)
+  {
+    if (mortar_tdofs_ct < mortar_tdofs.Size() && mortar_tdofs[mortar_tdofs_ct] == i)
+    {
+      ++mortar_tdofs_ct;
+    }
+    rows[i + 1] = mortar_tdofs_ct;
+  }
+  // J vector = mortar_tdofs
+  // data vector
+  mfem::Vector ones(mortar_tdofs_ct);
+  ones = 1.0;
+  mfem::SparseMatrix inactive_sm(
+    rows.GetData(), mortar_tdofs.GetData(), ones.GetData(),
+    surf_fe_space.GetTrueVSize(), surf_fe_space.GetTrueVSize(),
+    false, false, true
+  );
+  auto inactive_hpm = new mfem::HypreParMatrix(
+    B->GetComm(), B->GetGlobalNumRows(), B->GetRowStarts(), &inactive_sm
+  );
+  // Have the mfem::HypreParMatrix manage the data pointers
+  rows.GetMemory().SetHostPtrOwner(false);
+  mortar_tdofs.GetMemory().SetHostPtrOwner(false);
+  ones.GetMemory().SetHostPtrOwner(false);
+  inactive_sm.SetDataOwner(false);
+  inactive_hpm->SetOwnerFlags(3, 3, 1);
+  A.SetBlock(1, 1, inactive_hpm);
 }
