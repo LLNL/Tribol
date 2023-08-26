@@ -99,7 +99,8 @@ void registerMfemCouplingScheme( integer cs_id,
          // parent/parent-linked boundary submesh
          coupling_scheme->setMfemJacobianData(std::make_unique<MfemJacobianData>(
             *mfem_data,
-            *coupling_scheme->getMfemSubmeshData()
+            *coupling_scheme->getMfemSubmeshData(),
+            contact_method
          ));
       }
    }
@@ -255,6 +256,8 @@ void updateMfemParallelDecomposition()
          {
             SLIC_ERROR_ROOT_IF(couplingScheme->getContactModel() != FRICTIONLESS,
               "Only frictionless contact is supported.");
+            SLIC_ERROR_ROOT_IF(couplingScheme->getContactMethod() != SINGLE_MORTAR,
+              "Only single mortar contact is supported.");
             auto submesh_data = couplingScheme->getMfemSubmeshData();
             // updates submesh-native grid functions and transfer operators on
             // the new redecomp mesh

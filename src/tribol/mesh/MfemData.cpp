@@ -642,7 +642,8 @@ const MfemSubmeshData::UpdateData& MfemSubmeshData::GetUpdateData() const
 
 MfemJacobianData::MfemJacobianData(
   const MfemMeshData& parent_data,
-  const MfemSubmeshData& submesh_data
+  const MfemSubmeshData& submesh_data,
+  ContactMethod contact_method
 )
 : parent_data_ { parent_data },
   submesh_data_ { submesh_data },
@@ -679,6 +680,45 @@ MfemJacobianData::MfemJacobianData(
   block_offsets_[0] = 0;
   block_offsets_[1] = disp_size;
   block_offsets_[2] = disp_size + lm_size;
+
+  // Rows/columns of pressure/gap DOFs only on the mortar surface need to be
+  // eliminated from the Jacobian when using single mortar. The code in this
+  // block creates a list of the true DOFs only on the mortar surface.
+  if (contact_method == SINGLE_MORTAR)
+  {
+    // Get submesh
+    auto& submesh_fe_space = submesh_data_.GetSubmeshFESpace();
+    auto& submesh = parent_data_.GetSubmesh();
+    // Create marker of attributes for faster querying
+    mfem::Array<int> attr_marker(submesh.attributes.Max());
+    attr_marker = 0;
+    for (auto nonmortar_attr : parent_data_.GetBoundaryAttribs2())
+    {
+      attr_marker[nonmortar_attr - 1] = 1;
+    }
+    // Create marker of dofs only on mortar surface
+    mfem::Array<int> mortar_dof_marker(submesh_fe_space.GetVSize());
+    mortar_dof_marker = 1;
+    for (int e{0}; e < submesh.GetNE(); ++e)
+    {
+      if (attr_marker[submesh_fe_space.GetAttribute(e) - 1])
+      {
+        mfem::Array<int> vdofs;
+        submesh_fe_space.GetElementVDofs(e, vdofs);
+        for (int d{0}; d < vdofs.Size(); ++d)
+        {
+          int k = vdofs[d];
+          if (k < 0) { k = -1 - k; }
+          mortar_dof_marker[k] = 0;
+        }
+      }
+    }
+    // Convert marker of dofs to marker of tdofs
+    mfem::Array<int> mortar_tdof_marker(submesh_fe_space.GetTrueVSize());
+    submesh_fe_space.GetRestrictionMatrix()->BooleanMult(mortar_dof_marker, mortar_tdof_marker);
+    // Convert markers of tdofs only on mortar surface to a list
+    mfem::FiniteElementSpace::MarkerToList(mortar_tdof_marker, mortar_tdof_list_);
+  }
 }
 
 void MfemJacobianData::UpdateJacobianXfer()
@@ -826,21 +866,56 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
 
   // fill block operator
   auto mpi_comm = parameters_t::getInstance().problem_comm;
-  auto parent_test_fes = submesh_data_.GetSubmeshPressure().ParFESpace();
-  auto parent_trial_fes = parent_data_.GetParentCoords().ParFESpace();
+  auto& submesh_fes = submesh_data_.GetSubmeshFESpace();
+  auto& parent_trial_fes = *parent_data_.GetParentCoords().ParFESpace();
   auto J_full = std::make_unique<mfem::HypreParMatrix>(
-    mpi_comm, parent_test_fes->GetVSize(), 
-    parent_test_fes->GlobalVSize(), parent_trial_fes->GlobalVSize(),
+    mpi_comm, submesh_fes.GetVSize(), 
+    submesh_fes.GlobalVSize(), parent_trial_fes.GlobalVSize(),
     submesh_J.GetI(), submesh_J.GetJ(), submesh_J.GetData(),
-    parent_test_fes->GetDofOffsets(), parent_trial_fes->GetDofOffsets()
+    submesh_fes.GetDofOffsets(), parent_trial_fes.GetDofOffsets()
   );
   auto J_true = std::unique_ptr<mfem::HypreParMatrix>(mfem::RAP(
-    parent_test_fes->Dof_TrueDof_Matrix(),
+    submesh_fes.Dof_TrueDof_Matrix(),
     J_full.get(),
-    parent_trial_fes->Dof_TrueDof_Matrix()
+    parent_trial_fes.Dof_TrueDof_Matrix()
   ));
-  block_J->SetBlock(0, 1, new mfem::TransposeOperator(J_true.get()));
+  
+  // Create ones on diagonal of eliminated mortar tdofs (CSR sparse matrix -> HypreParMatrix)
+  // I vector
+  mfem::Array<int> rows(submesh_fes.GetTrueVSize() + 1);
+  rows = 0;
+  auto mortar_tdofs_ct = 0;
+  for (int i{0}; i < submesh_fes.GetTrueVSize(); ++i)
+  {
+    if (mortar_tdofs_ct < mortar_tdof_list_.Size() && mortar_tdof_list_[mortar_tdofs_ct] == i)
+    {
+      ++mortar_tdofs_ct;
+    }
+    rows[i + 1] = mortar_tdofs_ct;
+  }
+  // J vector
+  mfem::Array<int> mortar_tdofs(mortar_tdof_list_);
+  // data vector
+  mfem::Vector ones(mortar_tdofs_ct);
+  ones = 1.0;
+  mfem::SparseMatrix inactive_sm(
+    rows.GetData(), mortar_tdofs.GetData(), ones.GetData(),
+    submesh_fes.GetTrueVSize(), submesh_fes.GetTrueVSize(),
+    false, false, true
+  );
+  auto inactive_hpm = std::make_unique<mfem::HypreParMatrix>(
+    J_true->GetComm(), J_true->GetGlobalNumRows(), J_true->GetRowStarts(), &inactive_sm
+  );
+  // Have the mfem::HypreParMatrix manage the data pointers
+  rows.GetMemory().SetHostPtrOwner(false);
+  mortar_tdofs.GetMemory().SetHostPtrOwner(false);
+  ones.GetMemory().SetHostPtrOwner(false);
+  inactive_sm.SetDataOwner(false);
+  inactive_hpm->SetOwnerFlags(3, 3, 1);
+
+  block_J->SetBlock(0, 1, J_true->Transpose());
   block_J->SetBlock(1, 0, J_true.release());
+  block_J->SetBlock(1, 1, inactive_hpm.release());
 
   return block_J;
 }
