@@ -699,7 +699,7 @@ void MfemJacobianData::UpdateJacobianXfer()
 }
 
 std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
-  const MethodData& method_data
+  const MethodData* method_data
 ) const
 {
   // 0 = displacement DOFs, 1 = lagrange multiplier DOFs
@@ -708,43 +708,53 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   // (0,1) and (1,0) are symmetric (for now using SINGLE_MORTAR with approximate tangent)
   const auto& elem_map_1 = parent_data_.GetElemMap1();
   const auto& elem_map_2 = parent_data_.GetElemMap2();
-  auto mortar_elems = method_data
-    .getBlockJElementIds()[static_cast<int>(BlockSpace::MORTAR)];
-  for (auto& mortar_elem : mortar_elems)
+  auto mortar_elems = axom::Array<integer>(0, 0);
+  auto nonmortar_elems = axom::Array<integer>(0, 0);
+  auto lm_elems = axom::Array<integer>(0, 0);
+  auto elem_J_1_ptr = std::make_unique<axom::Array<mfem::DenseMatrix>>(0, 0);
+  auto elem_J_2_ptr = std::make_unique<axom::Array<mfem::DenseMatrix>>(0, 0);
+  const axom::Array<mfem::DenseMatrix>* elem_J_1 = elem_J_1_ptr.get();
+  const axom::Array<mfem::DenseMatrix>* elem_J_2 = elem_J_2_ptr.get();
+  if (method_data != nullptr) // this means no meshes on the rank
   {
-    mortar_elem = elem_map_1[static_cast<size_t>(mortar_elem)];
+    mortar_elems = method_data
+      ->getBlockJElementIds()[static_cast<int>(BlockSpace::MORTAR)];
+    for (auto& mortar_elem : mortar_elems)
+    {
+      mortar_elem = elem_map_1[static_cast<size_t>(mortar_elem)];
+    }
+    nonmortar_elems = method_data
+      ->getBlockJElementIds()[static_cast<int>(BlockSpace::NONMORTAR)];
+    for (auto& nonmortar_elem : nonmortar_elems)
+    {
+      nonmortar_elem = elem_map_2[static_cast<size_t>(nonmortar_elem)];
+    }
+    lm_elems = method_data
+      ->getBlockJElementIds()[static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER)];
+    for (auto& lm_elem : lm_elems)
+    {
+      lm_elem = elem_map_2[static_cast<size_t>(lm_elem)];
+    }
+    // get (1,0) block
+    elem_J_1 = &method_data->getBlockJ()(
+      static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER),
+      static_cast<int>(BlockSpace::MORTAR)
+    );
+    elem_J_2 = &method_data->getBlockJ()(
+      static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER),
+      static_cast<int>(BlockSpace::NONMORTAR)
+    );
   }
-  auto nonmortar_elems = method_data
-    .getBlockJElementIds()[static_cast<int>(BlockSpace::NONMORTAR)];
-  for (auto& nonmortar_elem : nonmortar_elems)
-  {
-    nonmortar_elem = elem_map_2[static_cast<size_t>(nonmortar_elem)];
-  }
-  auto lm_elems = method_data
-    .getBlockJElementIds()[static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER)];
-  for (auto& lm_elem : lm_elems)
-  {
-    lm_elem = elem_map_2[static_cast<size_t>(lm_elem)];
-  }
-  // get (1,0) block
-  const auto& elem_J_1 = method_data.getBlockJ()(
-    static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER),
-    static_cast<int>(BlockSpace::MORTAR)
-  );
-  const auto& elem_J_2 = method_data.getBlockJ()(
-    static_cast<int>(BlockSpace::LAGRANGE_MULTIPLIER),
-    static_cast<int>(BlockSpace::NONMORTAR)
-  );
   // move to submesh level
   auto submesh_J = GetUpdateData().submesh_redecomp_xfer_->TransferToParallelSparse(
     lm_elems, 
     mortar_elems, 
-    elem_J_1
+    *elem_J_1
   );
   submesh_J += GetUpdateData().submesh_redecomp_xfer_->TransferToParallelSparse(
     lm_elems, 
     nonmortar_elems, 
-    elem_J_2
+    *elem_J_2
   );
   submesh_J.Finalize();
 
