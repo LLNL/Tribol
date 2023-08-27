@@ -203,9 +203,12 @@ void ParentField::UpdateField(ParentRedecompTransfer& parent_redecomp_xfer)
 std::vector<const real*> ParentField::GetRedecompFieldPtrs() const
 {
   auto data_ptrs = std::vector<const real*>(3, nullptr);
-  for (size_t i{}; i < static_cast<size_t>(GetRedecompGridFn().FESpace()->GetVDim()); ++i)
+  if (GetRedecompGridFn().FESpace()->GetNDofs() > 0)
   {
-    data_ptrs[i] = &GetRedecompGridFn()(GetRedecompGridFn().FESpace()->DofToVDof(0, i));
+    for (size_t i{}; i < static_cast<size_t>(GetRedecompGridFn().FESpace()->GetVDim()); ++i)
+    {
+      data_ptrs[i] = &GetRedecompGridFn()(GetRedecompGridFn().FESpace()->DofToVDof(0, i));
+    }
   }
   return data_ptrs;
 }
@@ -213,9 +216,12 @@ std::vector<const real*> ParentField::GetRedecompFieldPtrs() const
 std::vector<real*> ParentField::GetRedecompFieldPtrs(mfem::GridFunction& redecomp_gridfn)
 {
   auto data_ptrs = std::vector<real*>(3, nullptr);
-  for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
+  if (redecomp_gridfn.FESpace()->GetNDofs() > 0)
   {
-    data_ptrs[i] = &redecomp_gridfn(redecomp_gridfn.FESpace()->DofToVDof(0, i));
+    for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
+    {
+      data_ptrs[i] = &redecomp_gridfn(redecomp_gridfn.FESpace()->DofToVDof(0, i));
+    }
   }
   return data_ptrs;
 }
