@@ -5,6 +5,7 @@
 
 // Tribol includes
 #include "tribol/types.hpp"
+#include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/integ/Integration.hpp"
@@ -86,7 +87,7 @@ public:
       // instantiate SurfaceContactElem struct. Note, this object is instantiated 
       // using face 1 as face 2, but these faces are not used in this test so this 
       // is ok.
-      tribol::SurfaceContactElem elem ( this->dim, xy, xy, xy, 
+      tribol::SurfaceContactElem elem ( this->dim, tribol::LINEAR_QUAD, xy, xy, xy, 
                                         this->numNodes, this->numNodes, 
                                         0, 1, 0, 0);
 
@@ -108,9 +109,7 @@ public:
             // perform inverse isoparametric mapping of current configuration 
             // integration point to four node quad parent space
             real xp[3] = { integ.xy[dim*ip], integ.xy[dim*ip+1], integ.xy[dim*ip+2] };
-            real xi[2] = { 0., 0. };
-            tribol::InvIso( xp, x, y, z, this->numNodes, xi );
-            tribol::LinIsoQuadShapeFunc( xi[0], xi[1], a, phi );
+            tribol::EvalBasis(xy, xp[0], xp[1], xp[2], elem.elemType, tribol::PARENT, a, phi);
        
             areaTest += integ.wts[ip]*phi;
 

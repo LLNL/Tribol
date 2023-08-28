@@ -833,6 +833,21 @@ void MeshData::sortSurfaceNodeIds()
 } // end MeshData::sortSurfaceNodeIds()
 
 //------------------------------------------------------------------------------
+int MeshData::checkMeshElementType()
+{
+   if (this->m_elementType != LINEAR_EDGE &&
+       this->m_elementType != LINEAR_TRIANGLE &&
+       this->m_elementType != LINEAR_QUAD)
+   {
+      SLIC_WARNING("Mesh topology not supported for mesh id, " << 
+                   this->m_meshId << ".");
+      this->m_isValid = false;
+      return 1;
+   }
+   return 0;
+}
+
+//------------------------------------------------------------------------------
 int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
 {
    int err = 0;

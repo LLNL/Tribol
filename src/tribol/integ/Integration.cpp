@@ -86,9 +86,9 @@ void EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
    {
 
       EvalBasis( elem.faceCoords1, cxProj1[0], cxProj1[1], cxProj1[2],
-                 elem.numFaceVert, a, integ1[a] );
+                 elem.elemType, PHYSICAL, a, integ1[a] );
       EvalBasis( elem.faceCoords2, cxProj2[0], cxProj2[1], cxProj2[2],
-                 elem.numFaceVert, a, integ2[a] );
+                 elem.elemType, PHYSICAL, a, integ2[a] );
    }
 
    return;

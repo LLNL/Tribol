@@ -160,6 +160,11 @@ public:
   MeshElemData  m_elemData;    ///< method/enforcement specific element data 
 
 public:
+  /*!
+   * \brief Checks for valid element type
+   *
+   */
+   int checkMeshElementType();
 
   /*!
    * \brief Checks for valid penalty enforcement data 
@@ -168,9 +173,11 @@ public:
    */
    int checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options );
 
-  /// \brief Returns the number of cells in this Mesh instance
+  /*!
+   * \brief Returns the number of cells in this Mesh instance
+   *
+   */ 
   int getNumberOfCells() const { return m_numCells; }
-
 
   /*!
    * \brief Computes the face normals and centroids for all faces in the mesh.

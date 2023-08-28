@@ -252,19 +252,6 @@ enum class SparseMode
 };
 
 /*!
- * \brief Enumerates the order and type of the finite element face
- */
-enum FaceOrderType
-{
-   LINEAR,                ///! Linear Lagrange (default)
-   QUADRATIC_LAGRANGE,    ///! Quadratic 9-node Lagrange face
-   QUADRATIC_SERENDIPITY, ///! Quadratic 8-node serendipity face
-   CUBIC_LAGRANGE,        ///! Cubic Lagrange face
-   NUM_ORDERS_TYPES,
-   UNDEFINED_ORDER_TYPE = NUM_ORDERS_TYPES
-};
-
-/*!
  * \brief Enumerates physical or parent basis evaluation
  */
 enum BasisEvalType

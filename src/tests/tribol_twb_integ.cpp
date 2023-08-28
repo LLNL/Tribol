@@ -83,7 +83,7 @@ public:
       // instantiate SurfaceContactElem struct. Note, this object is instantiated 
       // using face 1 as face 2, but these faces are not used in this test so this 
       // is ok.
-      tribol::SurfaceContactElem elem (this->dim, xy, xy, xy, 
+      tribol::SurfaceContactElem elem (this->dim, tribol::LINEAR_QUAD, xy, xy, xy, 
                                        this->numNodes, this->numNodes, 
                                        0, 1, 0, 0);
 

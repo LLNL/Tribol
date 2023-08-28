@@ -115,7 +115,7 @@ real ComputeGapRatePressure( ContactPlaneManager& cpMgr,
    double cYf1 = cpMgr.m_cYf1[cpID];
    double cZf1 = (dim == 3) ? cpMgr.m_cZf1[cpID] : 0.;
    GalerkinEval( &x1[0], cXf1, cYf1, cZf1,
-                 LINEAR, PHYSICAL, dim, dim, 
+                 m1.m_elementType, PHYSICAL, dim, 
                  &v1[0], &vel_f1[0] );
 
    // interpolate nodal velocity at overlap centroid as projected 
@@ -124,7 +124,7 @@ real ComputeGapRatePressure( ContactPlaneManager& cpMgr,
    double cYf2 = cpMgr.m_cYf2[cpID];
    double cZf2 = (dim == 3) ? cpMgr.m_cZf2[cpID] : 0.;
    GalerkinEval( &x2[0], cXf2, cYf2, cZf2,
-                 LINEAR, PHYSICAL, dim, dim, 
+                 m2.m_elementType, PHYSICAL, dim, 
                  &v2[0], &vel_f2[0] );
 
    // compute velocity gap vector
@@ -340,7 +340,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       // configuration face coordinates (i.e. NOT on the contact plane) and overlap 
       // coordinates ON the contact plane. The surface contact element does not need 
       // to be used this way, but the developer should do the book-keeping.
-      SurfaceContactElem cntctElem( dim, &xf1[0], &xf2[0], &xVert[0],
+      SurfaceContactElem cntctElem( dim, mesh1.m_elementType, &xf1[0], &xf2[0], &xVert[0],
                                     numNodesPerFace, 
                                     cpManager.m_numPolyVert[cpID],
                                     meshId1, meshId2, index1, index2 );

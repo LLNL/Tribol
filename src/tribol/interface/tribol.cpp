@@ -10,6 +10,8 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/types.hpp"
 
+#include "tribol/integ/FE.hpp"
+
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
@@ -333,14 +335,8 @@ void registerMesh( integer meshId,
    MeshManager & meshManager = MeshManager::getInstance();
    MeshData & mesh = meshManager.CreateMesh( meshId );
 
-   // check supported element types
-   if (static_cast< InterfaceElementType >(elementType) != LINEAR_EDGE && 
-       static_cast< InterfaceElementType >(elementType) != LINEAR_TRIANGLE &&
-       static_cast< InterfaceElementType >(elementType) != LINEAR_QUAD)
-   {
-      SLIC_WARNING("Mesh topology not supported for mesh id, " << meshId << ".");
-      mesh.m_isValid = false;
-   }
+   mesh.m_elementType = static_cast< InterfaceElementType >( elementType );
+   mesh.checkMeshElementType();
 
    const int dim = (z == nullptr) ? 2 : 3;
 
@@ -373,7 +369,6 @@ void registerMesh( integer meshId,
    mesh.m_positionY = y;
    mesh.m_positionZ = z;
    mesh.m_connectivity = connectivity;
-   mesh.m_elementType = static_cast< InterfaceElementType >( elementType );
    mesh.m_lengthNodalData = lengthNodalData;
    mesh.m_numCells = numCells;
   
@@ -384,26 +379,7 @@ void registerMesh( integer meshId,
    mesh.m_nodalFields.m_numNodes = lengthNodalData;
 
    // set the number of nodes per cell on the mesh.
-   switch (mesh.m_elementType)
-   {
-      case tribol::LINEAR_EDGE:
-      {
-         mesh.m_numNodesPerCell = 2;
-         break;
-      }
-      case tribol::LINEAR_TRIANGLE:
-      {
-         mesh.m_numNodesPerCell = 3;
-         break;
-      } 
-      case tribol::LINEAR_QUAD:
-      { 
-         mesh.m_numNodesPerCell = 4;
-         break;
-      }
-      default:
-         SLIC_WARNING("Element type not supported.");
-   } // end switch over element type
+   mesh.m_numNodesPerCell = GetNumElemNodes( mesh.m_elementType );
 
    // compute the number of unique surface nodes from the connectivity
    // Note: this routine assigns mesh.m_numSurfaceNodes and allocates

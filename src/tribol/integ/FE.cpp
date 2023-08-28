@@ -16,27 +16,49 @@
 namespace tribol
 {
 
-int GetNumFaceNodes( int dim, FaceOrderType order_type )
+//------------------------------------------------------------------------------
+int GetNumElemNodes( InterfaceElementType elem_type )
 {
-   // SRW consider consolidating this to take a tribol topology and 
-   // order for consistency
    int numNodes = 0;
-   switch (order_type)
+   switch (elem_type)
    {
-      case LINEAR :
-         numNodes = (dim == 3) ? 4 : 2; // segments and quads
+      case LINEAR_EDGE:
+      {
+         numNodes = 2;
          break;
+      }
+      case LINEAR_TRIANGLE:
+      {
+         numNodes = 3;
+         break;
+      }
+      case LINEAR_QUAD:
+      {
+         numNodes = 4;
+         break;
+      }
+      case LINEAR_TET:
+      {
+         numNodes = 4;
+         break;
+      }
+      case LINEAR_HEX:
+      {
+         numNodes = 8;
+         break;
+      }
       default : 
-         SLIC_ERROR("GetNumFaceNodes(): order_type not supported.");
+         SLIC_ERROR("GetNumElemNodes(): elem_type not supported.");
          break;
    } 
    return numNodes;
 }
 
+//------------------------------------------------------------------------------
 void GalerkinEval( const real* const RESTRICT x, 
                    const real pX, const real pY, const real pZ, 
-                   FaceOrderType order_type, BasisEvalType basis_type, 
-                   int dim, int galerkinDim, real* nodeVals, real* galerkinVal )
+                   InterfaceElementType elem_type, BasisEvalType basis_type, 
+                   int galerkinDim, real* nodeVals, real* galerkinVal )
 {
    if (x == nullptr)
    {
@@ -58,14 +80,14 @@ void GalerkinEval( const real* const RESTRICT x,
       SLIC_ERROR( "GalerkinEval(): scalar approximations not yet supported." );
    }
 
-   int numNodes = GetNumFaceNodes( dim, order_type );
+   int numNodes = GetNumElemNodes( elem_type );
    switch (basis_type)
    {
       case PHYSICAL :
          for (int nd=0; nd<numNodes; ++nd)
          {
             real phi = 0.;
-            EvalBasis( x, pX, pY, pZ, numNodes, nd, phi );
+            EvalBasis( x, pX, pY, pZ, elem_type, basis_type, nd, phi );
             for (int i=0; i<galerkinDim; ++i)
             {
                galerkinVal[i] += nodeVals[i+nd*galerkinDim] * phi;
@@ -77,23 +99,98 @@ void GalerkinEval( const real* const RESTRICT x,
    }
 }
 
+//------------------------------------------------------------------------------
 void EvalBasis( const real* const RESTRICT x, 
                 const real pX, const real pY, const real pZ, 
-                const int numPoints, const int vertexId, 
-                real& phi )
+                const InterfaceElementType elem_type, 
+                const BasisEvalType basis_type, 
+                const int vertexId, real& phi )
 {
-   if (numPoints > 2)
+   int numPoints = GetNumElemNodes(elem_type);
+   int dim;
+   switch (elem_type)
    {
-      WachspressBasis( x, pX, pY, pZ, numPoints, vertexId, phi );
-   }
-   else if (numPoints == 2)
+      case LINEAR_EDGE:
+      {
+         if (basis_type == PHYSICAL)
+         {
+            SegmentBasis( x, pX, pY, numPoints, vertexId, phi );
+         }
+         else
+         {
+            SLIC_ERROR("EvalBasis(): parent space basis functions for 1D segment not " << 
+                       "implemented.");
+         }
+         break;
+      } 
+      case LINEAR_TRIANGLE:
+      {
+         if (basis_type == PHYSICAL)
+         { 
+            WachspressBasis( x, pX, pY, pZ, numPoints, vertexId, phi );
+         } 
+         else
+         {
+            dim = 3;
+            real xi[2] = {0., 0.};
+            // TODO implement InvIso for triangles
+            InvIso( dim, x, pX, pY, pZ, numPoints, xi );
+            LinIsoTriShapeFunc( xi[0], xi[1], vertexId, phi );
+         }
+         break;
+      } 
+      case LINEAR_QUAD:
+      {
+         dim = 3;
+         if (basis_type == PHYSICAL)
+         { 
+            WachspressBasis( x, pX, pY, pZ, numPoints, vertexId, phi );
+         } 
+         else
+         {
+            real xi[2] = {0., 0.};
+            InvIso( dim, x, pX, pY, pZ, numPoints, xi );
+            LinIsoQuadShapeFunc( xi[0], xi[1], vertexId, phi );
+         }
+         break;
+      } 
+      default:
+      {
+         SLIC_ERROR("EvalBasis(): basis functions for input element type " << 
+                    "not supported.");
+      }
+   } // end switch
+   return;
+}
+
+//------------------------------------------------------------------------------
+void EvalBasis( const real xi, const real eta, const InterfaceElementType elem_type,
+                const int vertexId, real& phi )
+{
+   switch (elem_type)
    {
-      SegmentBasis( x, pX, pY, numPoints, vertexId, phi );
-   }
-   else
-   {
-      TRIBOL_ERROR("EvalBasis: invalid numPoints argument.");
-   }
+      case LINEAR_EDGE:
+      {
+         SLIC_ERROR("EvalBasis(): parent space basis function for 1D segment " << 
+                    "not implemented.");
+         break;
+      }
+      case LINEAR_TRIANGLE:
+      {
+         LinIsoTriShapeFunc( xi, eta, vertexId, phi );
+         break;
+      } 
+      case LINEAR_QUAD:
+      {
+         LinIsoQuadShapeFunc( xi, eta, vertexId, phi );
+         break;
+      } 
+      default:
+      {
+         SLIC_ERROR("EvalBasis(): basis functions for input element type " << 
+                    "not supported.");
+      }
+   } // end switch
    return;
 }
 
@@ -231,7 +328,7 @@ void WachspressBasis( const real* const RESTRICT x,
    // debug error statement
    if (phi <= 0. || phi > 1.)
    {
-      TRIBOL_ERROR("Wachspress Basis: phi is not between 0 and 1.");
+      SLIC_ERROR("Wachspress Basis: phi is not between 0 and 1.");
    }
 
    return;
@@ -246,6 +343,7 @@ void InvIso( const real  x[3],
              real  xi[2] )
 {
 
+   // TODO generalize for linear triangles and linear quads? SRW
    if (numNodes != 4)
    {
       TRIBOL_ERROR("InvIso: routine only for 4 node quads.");
@@ -392,6 +490,29 @@ void InvIso( const real  x[3],
    return;
 }
 
+//------------------------------------------------------------------------------
+void InvIso( const int dim, const real* const RESTRICT x,
+             const real pX, const real pY, const real pZ, 
+             const int numNodes, real xi[2] )
+
+{
+   real px[3] = {pX, pY, pZ};
+   // copy nodeal coordinates from stacked array. If we don't want to perform 
+   // this copy we have rewrite the main InvIso() routine
+   real x_a[numNodes];
+   real y_a[numNodes];
+   real z_a[numNodes];
+   for (int i=0; i<numNodes; ++i)
+   {
+      x_a[i] = x[dim*i];
+      y_a[i] = x[dim*i+1];
+      if (dim == 3)
+      {
+         z_a[i] = x[dim*i+2];
+      }
+   }
+   InvIso( px, x_a, y_a, z_a, numNodes, xi );
+}
 //------------------------------------------------------------------------------
 void FwdMapLinQuad( const real xi[2],
                     real xa[4],

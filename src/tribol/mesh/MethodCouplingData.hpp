@@ -36,18 +36,20 @@ struct SurfaceContactElem
    SurfaceContactElem( );
 
    /// Overloaded Constructor
-   SurfaceContactElem( integer dimension, ///< [in] Dimension of the problem
-                       real * x1,         ///< [in] Vertex coordinates of first face
-                       real * x2,         ///< [in] Vertex coordinates of second face
-                       real * xOverlap,   ///< [in] Vertex coordinates of overlap
-                       integer nFV,       ///< [in] Number of face vertices
-                       integer nPV,       ///< [in] Number of overlap vertices
-                       integer mId1,      ///< [in] Id for mesh 1
-                       integer mId2,      ///< [in] Id for mesh 2
-                       integer fId1,      ///< [in] Id for face 1
-                       integer fId2       ///< [in] Id for face 2
+   SurfaceContactElem( integer dimension,              ///< [in] Dimension of the problem
+                       InterfaceElementType elem_type, ///< [in] contact element type
+                       real * x1,                      ///< [in] Vertex coordinates of first face
+                       real * x2,                      ///< [in] Vertex coordinates of second face
+                       real * xOverlap,                ///< [in] Vertex coordinates of overlap
+                       integer nFV,                    ///< [in] Number of face vertices
+                       integer nPV,                    ///< [in] Number of overlap vertices
+                       integer mId1,                   ///< [in] Id for mesh 1
+                       integer mId2,                   ///< [in] Id for mesh 2
+                       integer fId1,                   ///< [in] Id for face 1
+                       integer fId2                    ///< [in] Id for face 2
                      )
      : dim(dimension)
+     , elemType(elem_type)
      , meshId1(mId1)
      , meshId2(mId2)
      , faceId1(fId1)
@@ -73,20 +75,21 @@ struct SurfaceContactElem
       this->deallocateElem();
    }
 
-   integer dim;          ///< Problem dimension
-   integer meshId1;      ///< Mesh Id for face 1 (mortar)
-   integer meshId2;      ///< Mesh Id for face 2 (nonmortar)
-   integer faceId1;      ///< Face Id for face 1 (mortar)
-   integer faceId2;      ///< Face Id for face 2 (nonmortar)
-   real * faceCoords1;   ///< Coordinates of face 1 in 3D
-   real * faceCoords2;   ///< Coordinates of face 2 in 3D
-   real * faceNormal1;   ///< Components of face 1 normal
-   real * faceNormal2;   ///< Components of face 2 normal
-   real * overlapCoords; ///< Coordinates of overlap vertices in 3D
-   real * overlapNormal; ///< Components of overlap normal
-   integer numFaceVert;  ///< Number of face vertices/nodes
-   integer numPolyVert;  ///< Number of overlap vertices
-   real overlapArea;     ///< Area of polygonal overlap
+   integer dim;                   ///< Problem dimension
+   InterfaceElementType elemType; ///< Interface element type
+   integer meshId1;               ///< Mesh Id for face 1 (mortar)
+   integer meshId2;               ///< Mesh Id for face 2 (nonmortar)
+   integer faceId1;               ///< Face Id for face 1 (mortar)
+   integer faceId2;               ///< Face Id for face 2 (nonmortar)
+   real * faceCoords1;            ///< Coordinates of face 1 in 3D
+   real * faceCoords2;            ///< Coordinates of face 2 in 3D
+   real * faceNormal1;            ///< Components of face 1 normal
+   real * faceNormal2;            ///< Components of face 2 normal
+   real * overlapCoords;          ///< Coordinates of overlap vertices in 3D
+   real * overlapNormal;          ///< Components of overlap normal
+   integer numFaceVert;           ///< Number of face vertices/nodes
+   integer numPolyVert;           ///< Number of overlap vertices
+   real overlapArea;              ///< Area of polygonal overlap
 
    real * mortarWts;   ///< Stacked array of mortar wts for mortar methods
    int numWts;         ///< Number of mortar weights

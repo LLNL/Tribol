@@ -81,7 +81,7 @@ public:
       // instantiate SurfaceContactElem struct. Note, this object is instantiated 
       // using face 1 as face 2, but these faces are not used in this test so this 
       // is ok.
-      tribol::SurfaceContactElem elem ( this->dim, xy, xy, xy, 
+      tribol::SurfaceContactElem elem ( this->dim, tribol::LINEAR_QUAD, xy, xy, xy, 
                                         this->numNodes, this->numNodes, 
                                         0, 1, 0, 0);
 
@@ -108,7 +108,7 @@ public:
             xi[0] = integ.xy[integ.ipDim*ip];
             xi[1] = integ.xy[integ.ipDim*ip+1];
 
-            tribol::LinIsoQuadShapeFunc( xi[0], xi[1], a, phi );
+            tribol::EvalBasis( xi[0], xi[1], tribol::LINEAR_QUAD, a, phi );
        
             // compute determinant of the Jacobian of the transformation
             real dJ;

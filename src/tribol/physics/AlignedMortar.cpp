@@ -36,7 +36,8 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
    // instantiate integration object
    IntegPts integ;
 
-   // call Gauss quadrature integration rule on quads 
+   // call Gauss quadrature integration rule on quads. Note, this rule returns 
+   // quadrature points in (xi,eta) parent space
    GaussPolyIntQuad( elem, integ, 2 );
 
    // allocate mortar weights array on SurfaceContactElem object. This routine 
@@ -59,9 +60,9 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
             real xi[2]; 
             xi[0] = integ.xy[ integ.ipDim * ip ];
             xi[1] = integ.xy[ integ.ipDim * ip + 1 ];
-            LinIsoQuadShapeFunc( xi[0], xi[1], a, phiMortarA );
-            LinIsoQuadShapeFunc( xi[0], xi[1], a, phiNonmortarA );
-            LinIsoQuadShapeFunc( xi[0], xi[1], b, phiNonmortarB );
+            EvalBasis( xi[0], xi[1], elem.elemType, a, phiMortarA );
+            EvalBasis( xi[0], xi[1], elem.elemType, a, phiNonmortarA );
+            EvalBasis( xi[0], xi[1], elem.elemType, b, phiNonmortarB );
 
             // set nonmortar/nonmortar and nonmortar/mortar ids
             int nonmortarNonmortarId = elem.numFaceVert * a + b;
@@ -273,7 +274,7 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
       // configuration face coordinates. We need the current 
       // configuration face coordinates here in order to correctly 
       // compute the mortar gaps.
-      SurfaceContactElem elem_for_gap( dim, &mortarX[0], &nonmortarX[0], 
+      SurfaceContactElem elem_for_gap( dim, nonmortarMesh.m_elementType, &mortarX[0], &nonmortarX[0], 
                                        &overlapX[0],
                                        numNodesPerFace, 
                                        cpManager.m_numPolyVert[cpID],
@@ -456,7 +457,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
 
          // instantiate a new surface contact element with projected face 
          // coordinates
-         SurfaceContactElem elem_for_jac( dim, &mortarX[0], &nonmortarX[0], 
+         SurfaceContactElem elem_for_jac( dim, nonmortarMesh.m_elementType, &mortarX[0], &nonmortarX[0], 
                                           &overlapX[0],
                                           numNodesPerFace, 
                                           cpManager.m_numPolyVert[cpID],

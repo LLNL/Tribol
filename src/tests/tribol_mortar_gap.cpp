@@ -189,7 +189,7 @@ public:
       // instantiate SurfaceContactElem struct. Note, this object is instantiated
       // using face 1, face 2, and the set overlap polygon. Note, the mesh ids are set
       // equal to 0, and the face ids are 0 and 1, respectively.
-      tribol::SurfaceContactElem elem ( this->dim, xy1, xy2, xyOverlap,
+      tribol::SurfaceContactElem elem ( this->dim, tribol::LINEAR_QUAD, xy1, xy2, xyOverlap,
                                         this->numNodesPerFace, this->numOverlapNodes,
                                         mortarMeshId, nonmortarMeshId, 0, 0);
 

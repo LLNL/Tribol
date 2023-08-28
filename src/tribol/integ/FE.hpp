@@ -11,6 +11,12 @@
 
 namespace tribol
 {
+/*!
+ * \brief returns the number of elements for a facet or cell
+ *
+ * \param [in] elem_type the type of element (facet or cell)
+ */
+int GetNumElemNodes( InterfaceElementType elem_type );
 
 /*!
  *
@@ -21,9 +27,8 @@ namespace tribol
  * \param [in] pX x-coordinate of point at which to evaluate shape function
  * \param [in] pX y-coordinate of point at which to evaluate shape function
  * \param [in] pZ z-coordinate of point at which to evaluate shape function (3D only)
- * \param [in] order_type the order of the Lagrangian finite element
+ * \param [in] elem_type the type of finite element
  * \param [in] basis_type either current configuration physical or canonical reference basis
- * \param [in] dim the dimension of the overall contact problem
  * \param [in] galerkinDim the vector-dim of the Galerkin coefficients
  * \param [in] nodeVals the nodal values for the Galerkin approximation
  * \param [in,out] galerkinVal the Galerkin approximation
@@ -33,8 +38,8 @@ namespace tribol
  */
 void GalerkinEval( const real* const RESTRICT x, 
                    const real pX, const real pY, const real pZ, 
-                   FaceOrderType order_type, BasisEvalType basis_type, 
-                   int dim, int galerkinDim, real* nodeVals, real* galerkinVal );
+                   InterfaceElementType elem_type, BasisEvalType basis_type, 
+                   int galerkinDim, real* nodeVals, real* galerkinVal );
 
 /*!
  *
@@ -42,10 +47,11 @@ void GalerkinEval( const real* const RESTRICT x,
  *        surface element topologies
  *
  * \param [in] x pointer to array of stacked (xyz) coordinates for 2D or 3D surface face/edge vertices
- * \param [in] pX x-coordinate of point at which to evaluate shape function
- * \param [in] pX y-coordinate of point at which to evaluate shape function
- * \param [in] pZ z-coordinate of point at which to evaluate shape function (3D only)
- * \param [in] numPoints number of vertices in x,y,z arrays
+ * \param [in] pX x-coordinate of point in physical space at which to evaluate shape function
+ * \param [in] pX y-coordinate of point in physical space at which to evaluate shape function
+ * \param [in] pZ z-coordinate of point in physical space at which to evaluate shape function (3D only)
+ * \param [in] elem_type type of finite element 
+ * \param [in] basis_type either current configuration physical or canonical reference basis
  * \param [in] vertexId node id whose shape function is to be evaluated
  * \param [in,out] phi shape function evaluation
  *
@@ -54,8 +60,23 @@ void GalerkinEval( const real* const RESTRICT x,
  */
 void EvalBasis( const real* const RESTRICT x, 
                 const real pX, const real pY, const real pZ, 
-                const int numPoints, const int vertexId, 
-                real& phi );
+                const InterfaceElementType elem_type,
+                const BasisEvalType basis_type,
+                const int vertexId, real& phi );
+
+/*!
+ *
+ * \brief wrapper routine for evaluation of parent space basis functions
+ *
+ * \param [in] xi xi-coordinate for integration point in parent space
+ * \param [in] eta eta-coordinate for integration point in parent space
+ * \param [in] elem_type element type
+ * \param [in] vertexId node id whose shape function is to be evaluated
+ * \param [in,out] phi shape function evaluation
+ *
+ */
+void EvalBasis( const real xi, const real eta, const InterfaceElementType elem_type,
+                const int vertexId, real& phi );
 
 /*!
  *
@@ -121,6 +142,25 @@ void InvIso( const real  x[3],
              const real* zA,
              const int numNodes,
              real  xi[2] );
+
+/*!
+ *
+ * \brief overloaded function performs the inverse isoparametric mapping 
+ *        to obtain a (xi,eta) coordinate in parent space associated with 
+ *        a point in physical space
+ *
+ * \param [in] dim spatial dimension of facet
+ * \param [in] x pointer to array of nodal coordinates 
+ * \param [in] pX x-coordinate of point to be mapped 
+ * \param [in] pY y-coordinate of point to be mapped 
+ * \param [in] pZ z-coordinate of point to be mapped 
+ * \param [in] numNodes number of nodes for a given finite element
+ * \param [in,out] xi (xi,eta) coordinates in parent space 
+ *
+ */
+void InvIso( const int dim, const real* const RESTRICT x,
+             const real pX, const real pY, const real pZ, 
+             const int numNodes, real xi[2] );
 
 /*!
  *

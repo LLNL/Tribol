@@ -34,30 +34,13 @@ void ComputeMortarWeights( SurfaceContactElem & elem )
    // instantiate integration object
    IntegPts integ;
 
-   // Debug: leave code in for now to call Gauss quadrature on triangle rule
+   // get triangle parent space quadrature points as forward mapped to the 
+   // current (physical) configuration facet.
    GaussPolyIntTri( elem, integ, 3 );
 
    // call Taylor-Wingate-Bos integation rule. NOTE: this is not 
    // working. The correct gaps are not being computed.
 //   TWBPolyInt( elem, integ, 3 );
-
-   // get individual arrays of coordinates for each face
-   real x1[elem.numFaceVert];
-   real y1[elem.numFaceVert];
-   real z1[elem.numFaceVert];
-   real x2[elem.numFaceVert];
-   real y2[elem.numFaceVert];
-   real z2[elem.numFaceVert];
-
-   for (int i=0; i<elem.numFaceVert; ++i)
-   {
-      x1[i] = elem.faceCoords1[elem.dim*i];
-      y1[i] = elem.faceCoords1[elem.dim*i+1];
-      z1[i] = elem.faceCoords1[elem.dim*i+2];
-      x2[i] = elem.faceCoords2[elem.dim*i];
-      y2[i] = elem.faceCoords2[elem.dim*i+1];
-      z2[i] = elem.faceCoords2[elem.dim*i+2];
-   }
 
    // allocate mortar weights array on SurfaceContactElem object. This routine 
    // also initializes the array
@@ -85,15 +68,15 @@ void ComputeMortarWeights( SurfaceContactElem & elem )
             // integration point (as projected onto the current configuration 
             // face) to obtain a (xi,eta) coordinate pair in parent space 
             // for the evaluation of Lagrange shape functions
-            real xp[3] = { integ.xy[elem.dim*ip], integ.xy[elem.dim*ip+1], integ.xy[elem.dim*ip+2] };
-            real xi[2] = { 0., 0. };
-
-            InvIso( xp, x1, y1, z1, elem.numFaceVert, xi );
-            LinIsoQuadShapeFunc( xi[0], xi[1], a, phiMortarA );
-
-            InvIso( xp, x2, y2, z2, elem.numFaceVert, xi );
-            LinIsoQuadShapeFunc( xi[0], xi[1], a, phiNonmortarA );
-            LinIsoQuadShapeFunc( xi[0], xi[1], b, phiNonmortarB );
+            EvalBasis( elem.faceCoords1, 
+                       integ.xy[elem.dim*ip], integ.xy[elem.dim*ip+1], integ.xy[elem.dim*ip+2],
+                       elem.elemType, PARENT, a, phiMortarA );
+            EvalBasis( elem.faceCoords2, 
+                       integ.xy[elem.dim*ip], integ.xy[elem.dim*ip+1], integ.xy[elem.dim*ip+2],
+                       elem.elemType, PARENT, a, phiNonmortarA );
+            EvalBasis( elem.faceCoords2, 
+                       integ.xy[elem.dim*ip], integ.xy[elem.dim*ip+1], integ.xy[elem.dim*ip+2],
+                       elem.elemType, PARENT, b, phiNonmortarB );
 
             #ifdef TRIBOL_DEBUG_LOG
                if (nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts)
@@ -290,7 +273,7 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
 
       // instantiate contact surface element for purposes of computing 
       // mortar weights. Note, this uses projected face coords
-      SurfaceContactElem elem( dim, &mortarX_bar[0], &nonmortarX_bar[0], 
+      SurfaceContactElem elem( dim, nonmortarMesh.m_elementType, &mortarX_bar[0], &nonmortarX_bar[0], 
                                &overlapX[0],
                                numNodesPerFace, 
                                cpManager.m_numPolyVert[cpID],
@@ -445,7 +428,7 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
 
       // instantiate contact surface element for purposes of computing 
       // mortar weights. Note, this uses projected face coords
-      SurfaceContactElem elem( dim, &mortarX_bar[0], &nonmortarX_bar[0], 
+      SurfaceContactElem elem( dim, nonmortarMesh.m_elementType, &mortarX_bar[0], &nonmortarX_bar[0], 
                                &overlapX[0],
                                numNodesPerFace, 
                                cpManager.m_numPolyVert[cpID],
@@ -799,7 +782,7 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
 
       // instantiate contact surface element for purposes of computing 
       // mortar weights. Note, this uses projected face coords
-      SurfaceContactElem elem( dim, &mortarX_bar[0], &nonmortarX_bar[0], 
+      SurfaceContactElem elem( dim, mortarMesh.m_elementType, &mortarX_bar[0], &nonmortarX_bar[0], 
                                &overlapX[0],
                                numNodesPerFace, 
                                cpManager.m_numPolyVert[cpID],
