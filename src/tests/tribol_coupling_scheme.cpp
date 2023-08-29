@@ -73,9 +73,10 @@ protected:
                             bool set_response = true )
    {
       // Single element meshes are usesd in these tests out of 
-      // simplicity. 
+      // simplicity. This allows for null-meshes, but any number of cells >1 we 
+      // simply set the number of cells back to 1.
       m_numCells = (numCells >= 1) ? 1 : 0;
-      m_lengthNodalData = 4; // Quad 4 (does not need to account for tets)
+      m_lengthNodalData = 2; // a 1D edge contact element
       if (elem_type != tribol::LINEAR_EDGE)
       {
          return 1;
@@ -105,8 +106,8 @@ protected:
          {
             for (int i=0; i<m_lengthNodalData; ++i)
             {
-               m_fx[i] = 0;
-               m_fy[i] = 0;
+               m_fx[i] = 0.;
+               m_fy[i] = 0.;
             }
          }
       }
@@ -134,13 +135,13 @@ protected:
       {
         case tribol::LINEAR_TRIANGLE:
         {
-           m_lengthNodalData = 4; // tet
+           m_lengthNodalData = 3; // triangle contact facet
            m_elementType = (int)elem_type;
            break;
         } 
         case tribol::LINEAR_QUAD:
         {
-           m_lengthNodalData = 8; // Hex 8
+           m_lengthNodalData = 4; // quad contact facet
            m_elementType = (int)(elem_type);
            break;
         }
@@ -175,9 +176,9 @@ protected:
          {
             for (int i=0; i<m_lengthNodalData; ++i)
             {
-               m_fx[i] = 0;
-               m_fy[i] = 0;
-               m_fz[i] = 0;
+               m_fx[i] = 0.;
+               m_fy[i] = 0.;
+               m_fz[i] = 0.;
             }
          }
       }
