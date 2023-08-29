@@ -106,8 +106,16 @@ void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
  * @brief Sets the bulk modulus for the volume elements associated with the
  * contact surface mesh.
  *
+ * Material modulus data must be registered when KINEMATIC_ELEMENT is set when
+ * calling setPenaltyOptions(). KINEMATIC_ELEMENT also requires element
+ * thicknesses, but these are computed automatically when using the MFEM
+ * interface.
+ *
  * @note For attribute-based coefficients, the attributes are based on the
  * parent element's boundary attributes.
+ *
+ * @pre Coupling scheme cs_id must be registered using
+ * registerMfemCouplingScheme()
  *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  * @param modulus_coefficient Coefficient field projected onto the domain
