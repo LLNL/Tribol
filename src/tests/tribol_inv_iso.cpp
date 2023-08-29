@@ -25,7 +25,7 @@ class InvIsoTest : public ::testing::Test
 {
    
 public:
-   int numNodes;
+   int numNodes {4};
 
    real* getXCoords() 
    {
@@ -69,11 +69,12 @@ public:
 
    }
 
-protected:
-
-   void SetUp() override
+   int AllocateData()
    {
-      this->numNodes = 4;
+      if (this->numNodes < 3)
+      {
+         return 1;
+      }
       if (this->x == nullptr)
       {
          this->x = new real [this->numNodes];
@@ -103,6 +104,14 @@ protected:
          delete [] this->z;
          this->z = new real [this->numNodes];
       }
+      return 0;
+   }
+
+protected:
+
+   void SetUp() override
+   {
+      // no-op
    }
 
    void TearDown() override
@@ -135,6 +144,11 @@ protected:
 
 TEST_F( InvIsoTest, nonaffine_centroid )
 {
+   // quad face
+   this->numNodes = 4;
+   int err = AllocateData();
+   EXPECT_EQ(err, 0);
+
    real* x = this->getXCoords();
    real* y = this->getYCoords();
    real* z = this->getZCoords();
@@ -184,6 +198,11 @@ TEST_F( InvIsoTest, nonaffine_centroid )
 
 TEST_F( InvIsoTest, nonaffine_test_point )
 {
+   // quad face
+   this->numNodes = 4;
+   int err = AllocateData();
+   EXPECT_EQ(err, 0);
+
    real* x = this->getXCoords();
    real* y = this->getYCoords();
    real* z = this->getZCoords();
@@ -214,6 +233,11 @@ TEST_F( InvIsoTest, nonaffine_test_point )
 
 TEST_F( InvIsoTest, affine_test_point )
 {
+   // quad face
+   this->numNodes = 4;
+   int err = AllocateData();
+   EXPECT_EQ(err, 0);
+
    real* x = this->getXCoords();
    real* y = this->getYCoords();
    real* z = this->getZCoords();

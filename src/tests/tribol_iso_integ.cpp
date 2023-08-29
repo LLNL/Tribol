@@ -204,7 +204,7 @@ TEST_F( IsoIntegTest, square )
    this->dim = 3;
 
    int err = AllocateData();
-   EXPECT_EQ(err,0);
+   EXPECT_EQ(err, 0);
 
    real* x = this->getXCoords();
    real* y = this->getYCoords();
@@ -237,7 +237,7 @@ TEST_F( IsoIntegTest, rect )
    this->dim = 3;
 
    int err = AllocateData();
-   EXPECT_EQ(err,0);
+   EXPECT_EQ(err, 0);
 
    real* x = this->getXCoords();
    real* y = this->getYCoords();
@@ -270,7 +270,7 @@ TEST_F( IsoIntegTest, affine )
    this->dim = 3;
 
    int err = AllocateData();
-   EXPECT_EQ(err,0);
+   EXPECT_EQ(err, 0);
 
    real* x = this->getXCoords();
    real* y = this->getYCoords();
@@ -303,7 +303,7 @@ TEST_F( IsoIntegTest, nonaffine )
    this->dim = 3;
 
    int err = AllocateData();
-   EXPECT_EQ(err,0);
+   EXPECT_EQ(err, 0);
 
    real* x = this->getXCoords();
    real* y = this->getYCoords();
