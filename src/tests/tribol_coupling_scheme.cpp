@@ -69,13 +69,18 @@ protected:
       clear();
    }
 
-   void registerDummy2DMesh( int mesh_id, int numCells = 1, bool set_response = true )
+   int registerDummy2DMesh( int mesh_id, int numCells = 1, tribol::InterfaceElementType elem_type = tribol::LINEAR_EDGE, 
+                            bool set_response = true )
    {
       // Single element meshes are usesd in these tests out of 
       // simplicity. 
       m_numCells = (numCells >= 1) ? 1 : 0;
-      m_lengthNodalData = 4; // Quad 4
-      m_elementType = (int)(tribol::LINEAR_EDGE); // 1D edge for 2D mesh 
+      m_lengthNodalData = 4; // Quad 4 (does not need to account for tets)
+      if (elem_type != tribol::LINEAR_EDGE)
+      {
+         return 1;
+      }
+      m_elementType = (int)(elem_type);
 
       if (m_numCells > 0)
       {
@@ -115,15 +120,35 @@ protected:
 
       tribol::registerNodalResponse( mesh_id, m_fx, m_fy, m_fz );
 
+      return 0;
+
    }
 
-   void registerDummy3DMesh( int mesh_id, int numCells = 1, bool set_response = true )
+   int registerDummy3DMesh( int mesh_id, int numCells = 1, tribol::InterfaceElementType elem_type = tribol::LINEAR_QUAD, 
+                            bool set_response = true )
    {
       // Single element meshes are usesd in these tests out of 
       // simplicity. 
       m_numCells = (numCells >= 1) ? 1 : 0;
-      m_lengthNodalData = 8; // Hex 8
-      m_elementType = (int)(tribol::LINEAR_QUAD); // 2D face in 3D mesh
+      switch (elem_type)
+      {
+        case tribol::LINEAR_TRIANGLE:
+        {
+           m_lengthNodalData = 4; // tet
+           m_elementType = (int)elem_type;
+           break;
+        } 
+        case tribol::LINEAR_QUAD:
+        {
+           m_lengthNodalData = 8; // Hex 8
+           m_elementType = (int)(elem_type);
+           break;
+        }
+        default:
+        {
+           return 1;
+        }
+      }
 
       if (m_numCells > 0)
       {
@@ -165,6 +190,8 @@ protected:
                             m_x, m_y, m_z ); 
 
       tribol::registerNodalResponse( mesh_id, m_fx, m_fy, m_fz );
+
+      return 0;
 
    }
 
@@ -215,8 +242,10 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 2, problem_comm );
 
-   registerDummy2DMesh( 0 );
-   registerDummy2DMesh( 1 );
+   int err1 = registerDummy2DMesh( 0 );
+   int err2 = registerDummy2DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
@@ -249,8 +278,10 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 2, problem_comm );
 
-   registerDummy2DMesh( 0 );
-   registerDummy2DMesh( 1 );
+   int err1 = registerDummy2DMesh( 0 );
+   int err2 = registerDummy2DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
@@ -283,8 +314,10 @@ TEST_F( CouplingSchemeTest, mortar_weights_2D )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 2, problem_comm );
 
-   registerDummy2DMesh( 0 );
-   registerDummy2DMesh( 1 );
+   int err1 = registerDummy2DMesh( 0 );
+   int err2 = registerDummy2DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -309,8 +342,10 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 1 );
+   int err1 = registerDummy3DMesh( 0 );
+   int err2 = registerDummy3DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
@@ -343,8 +378,10 @@ TEST_F( CouplingSchemeTest, common_plane_lagrange_multiplier )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 1 );
+   int err1 = registerDummy3DMesh( 0 );
+   int err2 = registerDummy3DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -369,8 +406,10 @@ TEST_F( CouplingSchemeTest, mortar_no_nodal_gaps_or_pressures )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 1 );
+   int err1 = registerDummy3DMesh( 0 );
+   int err2 = registerDummy3DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -395,8 +434,10 @@ TEST_F( CouplingSchemeTest, mortar_tied )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 1 );
+   int err1 = registerDummy3DMesh( 0 );
+   int err2 = registerDummy3DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
@@ -429,8 +470,10 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 1 );
+   int err1 = registerDummy3DMesh( 0 );
+   int err2 = registerDummy3DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
@@ -463,8 +506,10 @@ TEST_F( CouplingSchemeTest, common_plane_tied )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 1 );
+   int err1 = registerDummy3DMesh( 0 );
+   int err2 = registerDummy3DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    real penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
@@ -493,8 +538,10 @@ TEST_F( CouplingSchemeTest, common_plane_coulomb )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 1 );
+   int err1 = registerDummy3DMesh( 0 );
+   int err2 = registerDummy3DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    real penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
@@ -667,7 +714,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
 
 TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
 {
-   // TODO finish this test
+   // TODO Update this when triangular facets are implemented
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
@@ -841,8 +888,10 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 1 );
+   int err1 = registerDummy3DMesh( 0 );
+   int err2 = registerDummy3DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    real penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
@@ -879,8 +928,10 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 1 );
+   int err1 = registerDummy3DMesh( 0 );
+   int err2 = registerDummy3DMesh( 1 );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    real penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
@@ -919,8 +970,10 @@ TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
 
    bool setResponse = false;
    int numCells = 1;
-   registerDummy3DMesh( 0, numCells, setResponse );
-   registerDummy3DMesh( 1, numCells, setResponse );
+   int err1 = registerDummy3DMesh( 0, numCells, tribol::LINEAR_QUAD, setResponse );
+   int err2 = registerDummy3DMesh( 1, numCells, tribol::LINEAR_QUAD, setResponse );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -947,8 +1000,10 @@ TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
 
    bool setResponse = false;
    int numCells = 1;
-   registerDummy3DMesh( 0, numCells, setResponse );
-   registerDummy3DMesh( 1, numCells, setResponse );
+   int err1 = registerDummy3DMesh( 0, numCells, tribol::LINEAR_QUAD, setResponse );
+   int err2 = registerDummy3DMesh( 1, numCells, tribol::LINEAR_QUAD, setResponse );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
@@ -975,8 +1030,10 @@ TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
 
    int numCells = 1;
    bool setResponse = false;
-   registerDummy3DMesh( 0, numCells, setResponse );
-   registerDummy3DMesh( 1, numCells, setResponse );
+   int err1 = registerDummy3DMesh( 0, numCells, tribol::LINEAR_QUAD, setResponse );
+   int err2 = registerDummy3DMesh( 1, numCells, tribol::LINEAR_QUAD, setResponse );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    real penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
@@ -1007,8 +1064,10 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
 
    int numCells = 0;
    bool setResponse = false;
-   registerDummy3DMesh( 0, numCells, setResponse );
-   registerDummy3DMesh( 1, numCells, setResponse );
+   int err1 = registerDummy3DMesh( 0, numCells, tribol::LINEAR_QUAD, setResponse );
+   int err2 = registerDummy3DMesh( 1, numCells, tribol::LINEAR_QUAD, setResponse );
+   EXPECT_EQ(err1, 0);
+   EXPECT_EQ(err2, 0);
 
    real penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
