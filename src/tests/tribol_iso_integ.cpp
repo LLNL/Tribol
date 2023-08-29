@@ -37,8 +37,8 @@ class IsoIntegTest : public ::testing::Test
 {
    
 public:
-   int numNodes;
-   int dim;
+   int numNodes {4};
+   int dim {3};
 
    real* getXCoords() 
    {
@@ -124,13 +124,12 @@ public:
 
    }
 
-protected:
-
-   void SetUp() override
+   int AllocateData()
    {
-      this->numNodes = 4;
-      this->dim = 3;
-
+      if (this->numNodes < 3)
+      {
+         return 1;
+      }
       if (this->x == nullptr)
       {
          this->x = new real [this->numNodes];
@@ -160,6 +159,14 @@ protected:
          delete [] this->z;
          this->z = new real [this->numNodes];
       }
+      return 0;
+   }
+
+protected:
+
+   void SetUp() override
+   {
+      // no-op
    }
 
    void TearDown() override
@@ -192,6 +199,12 @@ protected:
 
 TEST_F( IsoIntegTest, square )
 {
+   // quad facet
+   this->numNodes = 4;
+   this->dim = 3;
+
+   int err = AllocateData();
+   EXPECT_EQ(err,0);
 
    real* x = this->getXCoords();
    real* y = this->getYCoords();
@@ -219,6 +232,12 @@ TEST_F( IsoIntegTest, square )
 
 TEST_F( IsoIntegTest, rect )
 {
+   // quad facet
+   this->numNodes = 4;
+   this->dim = 3;
+
+   int err = AllocateData();
+   EXPECT_EQ(err,0);
 
    real* x = this->getXCoords();
    real* y = this->getYCoords();
@@ -246,6 +265,13 @@ TEST_F( IsoIntegTest, rect )
 
 TEST_F( IsoIntegTest, affine )
 {
+   // quad facet
+   this->numNodes = 4;
+   this->dim = 3;
+
+   int err = AllocateData();
+   EXPECT_EQ(err,0);
+
    real* x = this->getXCoords();
    real* y = this->getYCoords();
    real* z = this->getZCoords();
@@ -272,6 +298,13 @@ TEST_F( IsoIntegTest, affine )
 
 TEST_F( IsoIntegTest, nonaffine )
 {
+   // quad facet
+   this->numNodes = 4;
+   this->dim = 3;
+
+   int err = AllocateData();
+   EXPECT_EQ(err,0);
+
    real* x = this->getXCoords();
    real* y = this->getYCoords();
    real* z = this->getZCoords();
