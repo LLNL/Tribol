@@ -443,21 +443,21 @@ void MfemMeshData::UpdateMfemMeshData()
     *redecomp_elem_thickness_ = 0.0;
     redecomp_xfer.TransferToSerial(*elem_thickness_, *redecomp_elem_thickness_);
     // set element thickness on tribol mesh
-    tribol_elem_thickness1_ = std::make_unique<axom::Array<double>>(
+    tribol_elem_thickness_1_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap1().size());
     for (auto redecomp_e : GetElemMap1())
     {
       mfem::Vector quad_val;
       redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
-      tribol_elem_thickness1_->push_back(quad_val[0]);
+      tribol_elem_thickness_1_->push_back(quad_val[0]);
     }
-    tribol_elem_thickness2_ = std::make_unique<axom::Array<double>>(
+    tribol_elem_thickness_2_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
       mfem::Vector quad_val;
       redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
-      tribol_elem_thickness2_->push_back(quad_val[0]);
+      tribol_elem_thickness_2_->push_back(quad_val[0]);
     }
     // set material modulus on redecomp mesh
     redecomp_material_modulus_ = std::make_unique<mfem::QuadratureFunction>(
@@ -467,21 +467,21 @@ void MfemMeshData::UpdateMfemMeshData()
     *redecomp_material_modulus_ = 0.0;
     redecomp_xfer.TransferToSerial(*material_modulus_, *redecomp_material_modulus_);
     // set material modulus on tribol mesh
-    tribol_material_modulus1_ = std::make_unique<axom::Array<double>>(
+    tribol_material_modulus_1_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap1().size());
     for (auto redecomp_e : GetElemMap1())
     {
       mfem::Vector quad_val;
       redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
-      tribol_material_modulus1_->push_back(quad_val[0]);
+      tribol_material_modulus_1_->push_back(quad_val[0]);
     }
-    tribol_material_modulus2_ = std::make_unique<axom::Array<double>>(
+    tribol_material_modulus_2_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
       mfem::Vector quad_val;
       redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
-      tribol_material_modulus2_->push_back(quad_val[0]);
+      tribol_material_modulus_2_->push_back(quad_val[0]);
     }
   }
 }

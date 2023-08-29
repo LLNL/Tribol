@@ -811,6 +811,34 @@ public:
   }
 
   /**
+   * @brief Sets the penalty parameter for the first registered Tribol mesh
+   * 
+   * @param penalty Penalty value for the first registered Tribol mesh
+   */
+  void SetMesh1Penalty(real penalty) { penalty_1_ = std::make_unique<double>(penalty); }
+
+  /**
+   * @brief Sets the penalty parameter for the second registered Tribol mesh
+   * 
+   * @param penalty Penalty value for the second registered Tribol mesh
+   */
+  void SetMesh2Penalty(real penalty) { penalty_2_ = std::make_unique<double>(penalty); }
+
+  /**
+   * @brief Get the penalty parameter for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1Penalty() const { return penalty_1_.get(); }
+
+  /**
+   * @brief Get the penalty parameter for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2Penalty() const { return penalty_2_.get(); }
+
+  /**
    * @brief Get a pointer to the element thickness array for the first Tribol
    * registered mesh
    *
@@ -818,9 +846,9 @@ public:
    */
   const real* GetRedecompElemThickness1() const
   {
-    if (tribol_elem_thickness1_)
+    if (tribol_elem_thickness_1_)
     {
-      return &(*tribol_elem_thickness1_)[0];
+      return &(*tribol_elem_thickness_1_)[0];
     }
     else
     {
@@ -836,9 +864,9 @@ public:
    */
   const real* GetRedecompElemThickness2() const
   {
-    if (tribol_elem_thickness2_)
+    if (tribol_elem_thickness_2_)
     {
-      return &(*tribol_elem_thickness2_)[0];
+      return &(*tribol_elem_thickness_2_)[0];
     }
     else
     {
@@ -854,9 +882,9 @@ public:
    */
   const real* GetRedecompMaterialModulus1() const
   {
-    if (tribol_material_modulus1_)
+    if (tribol_material_modulus_1_)
     {
-      return &(*tribol_material_modulus1_)[0];
+      return &(*tribol_material_modulus_1_)[0];
     }
     else
     {
@@ -872,9 +900,9 @@ public:
    */
   const real* GetRedecompMaterialModulus2() const
   {
-    if (tribol_material_modulus2_)
+    if (tribol_material_modulus_2_)
     {
-      return &(*tribol_material_modulus2_)[0];
+      return &(*tribol_material_modulus_2_)[0];
     }
     else
     {
@@ -1188,6 +1216,16 @@ private:
   std::unique_ptr<ParentField> velocity_;
 
   /**
+   * @brief Contact penalty for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> penalty_1_;
+
+  /**
+   * @brief Contact penalty for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> penalty_2_;
+
+  /**
    * @brief Stores element thicknesses for element-based penalty calculations on
    * the submesh or the LOR mesh (if it exists); nullptr otherwise
    */
@@ -1201,12 +1239,12 @@ private:
   /**
    * @brief Element thicknesses for the first Tribol registered mesh
    */
-  std::unique_ptr<axom::Array<real>> tribol_elem_thickness1_;
+  std::unique_ptr<axom::Array<real>> tribol_elem_thickness_1_;
 
   /**
    * @brief Element thicknesses for the second Tribol registered mesh
    */
-  std::unique_ptr<axom::Array<real>> tribol_elem_thickness2_;
+  std::unique_ptr<axom::Array<real>> tribol_elem_thickness_2_;
 
   /**
    * @brief Stores material moduli for element-based penalty calculations on
@@ -1222,12 +1260,12 @@ private:
   /**
    * @brief Material moduli for the first Tribol registered mesh
    */
-  std::unique_ptr<axom::Array<real>> tribol_material_modulus1_;
+  std::unique_ptr<axom::Array<real>> tribol_material_modulus_1_;
 
   /**
    * @brief Material moduli for the second Tribol registered mesh
    */
-  std::unique_ptr<axom::Array<real>> tribol_material_modulus2_;
+  std::unique_ptr<axom::Array<real>> tribol_material_modulus_2_;
 
   /**
    * @brief UpdateData object created upon call to UpdateMeshData()

@@ -205,6 +205,7 @@ protected:
       tribol::KINEMATIC_CONSTANT,
       tribol::NO_RATE_PENALTY
     );
+    tribol::setMfemConstantPenalty(coupling_scheme_id, p_kine, p_kine);
 
     int cycle {0};
     for (double t {0.0}; t < t_end; t+=dt)
@@ -212,8 +213,6 @@ protected:
       // build new parallel decomposed redecomp mesh and update grid functions
       // on each mesh
       tribol::updateMfemParallelDecomposition();
-      tribol::setKinematicConstantPenalty(0, p_kine);
-      tribol::setKinematicConstantPenalty(1, p_kine);
       tribol::update(cycle, t, dt);
       op.f_ext = 0.0;
       tribol::getMfemResponse(0, op.f_ext);

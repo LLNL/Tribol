@@ -352,6 +352,8 @@ int main( int argc, char** argv )
     tribol::KINEMATIC_CONSTANT,
     tribol::NO_RATE_PENALTY
   );
+  // This set the penalty parameters on the contact meshes.
+  tribol::setMfemConstantPenalty(coupling_scheme_id, p_kine, p_kine);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to set up Tribol: {0:f}ms", timer.elapsedTimeInMilliSec()
@@ -380,10 +382,6 @@ int main( int argc, char** argv )
     // the latest coordinates. It also constructs new Tribol meshes as
     // subdomains of the redecomposed mesh.
     tribol::updateMfemParallelDecomposition();
-    // The next two API calls set the penalty data on the newly constructed
-    // Tribol meshes.
-    tribol::setKinematicConstantPenalty(mesh1_id, p_kine);
-    tribol::setKinematicConstantPenalty(mesh2_id, p_kine);
     // This API call computes the contact response given the current mesh
     // configuration.
     tribol::update(cycle, t, dt);

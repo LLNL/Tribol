@@ -119,6 +119,40 @@ void setMfemLORFactor( integer cs_id,
    coupling_scheme->getMfemMeshData()->SetLORFactor(lor_factor);
 }
 
+void setMfemConstantPenalty(integer cs_id, real mesh1_penalty, real mesh2_penalty)
+{
+   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
+   SLIC_ERROR_ROOT_IF(
+      !coupling_scheme->hasMfemData(),
+      "Coupling scheme does not contain MFEM data. "
+      "Create the coupling scheme using registerMfemCouplingScheme() to set the penalty."
+   );
+   coupling_scheme->getMfemMeshData()->SetMesh1Penalty(mesh1_penalty);
+   coupling_scheme->getMfemMeshData()->SetMesh2Penalty(mesh2_penalty);
+}
+
+void setMfemElemThickness(integer cs_id)
+{
+   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
+   SLIC_ERROR_ROOT_IF(
+      !coupling_scheme->hasMfemData(),
+      "Coupling scheme does not contain MFEM data. "
+      "Create the coupling scheme using registerMfemCouplingScheme() to set the penalty."
+   );
+   coupling_scheme->getMfemMeshData()->ComputeElementThicknesses();
+}
+
+void registerMfemMaterialModulus(integer cs_id, mfem::Coefficient& modulus_coefficient)
+{
+   auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
+   SLIC_ERROR_ROOT_IF(
+      !coupling_scheme->hasMfemData(),
+      "Coupling scheme does not contain MFEM data. "
+      "Create the coupling scheme using registerMfemCouplingScheme() to set the penalty."
+   );
+   coupling_scheme->getMfemMeshData()->SetMaterialModulus(modulus_coefficient);
+}
+
 void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
@@ -270,19 +304,38 @@ void updateMfemParallelDecomposition()
             }
          }
          auto& penalty_opts = couplingScheme->getEnforcementOptions().penalty_options;
-         if (
-            penalty_opts.kinematic_calc_set && 
-            penalty_opts.kinematic_calculation == KINEMATIC_ELEMENT
-         )
+         if (penalty_opts.kinematic_calc_set) 
          {
-            setKinematicElementPenalty(
-               mesh_ids[0], 
-               mfem_data->GetRedecompMaterialModulus1(),
-               mfem_data->GetRedecompElemThickness1());
-            setKinematicElementPenalty(
-               mesh_ids[1], 
-               mfem_data->GetRedecompMaterialModulus2(),
-               mfem_data->GetRedecompElemThickness2());
+            if (penalty_opts.kinematic_calculation == KINEMATIC_ELEMENT)
+            {
+               SLIC_ERROR_ROOT_IF(
+                  !mfem_data->GetRedecompElemThickness1() || !mfem_data->GetRedecompElemThickness2(),
+                  "No element thickness data available.  Call setMfemElemThickness()."
+               );
+               SLIC_ERROR_ROOT_IF(
+                  !mfem_data->GetRedecompMaterialModulus1() || !mfem_data->GetRedecompMaterialModulus2(),
+                  "Material modulus data has not been registered.  Call registerMfemMaterialModulus()."
+               );
+               setKinematicElementPenalty(
+                  mesh_ids[0], 
+                  mfem_data->GetRedecompMaterialModulus1(),
+                  mfem_data->GetRedecompElemThickness1()
+               );
+               setKinematicElementPenalty(
+                  mesh_ids[1], 
+                  mfem_data->GetRedecompMaterialModulus2(),
+                  mfem_data->GetRedecompElemThickness2()
+               );
+            }
+            else if (penalty_opts.kinematic_calculation == KINEMATIC_CONSTANT)
+            {
+               SLIC_ERROR_ROOT_IF(
+                  !mfem_data->GetMesh1Penalty() || !mfem_data->GetMesh2Penalty(),
+                  "Penalty parameters have not been set.  Call setMfemConstantPenalty()."
+               );
+               setKinematicConstantPenalty(mesh_ids[0], *mfem_data->GetMesh1Penalty());
+               setKinematicConstantPenalty(mesh_ids[1], *mfem_data->GetMesh2Penalty());
+            }
          }
       }
 
