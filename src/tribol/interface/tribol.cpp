@@ -140,6 +140,15 @@ void setPenaltyOptions( int couplingSchemeIndex, PenaltyConstraintType pen_enfrc
       penalty_options.rate_calc_set = true;
    }
 
+#ifdef BUILD_REDECOMP
+
+   if (kinematic_calc == KINEMATIC_ELEMENT && couplingScheme->hasMfemData())
+   {
+      couplingScheme->getMfemMeshData()->ComputeElementThicknesses();
+   }
+
+#endif /* BUILD_REDECOMP */
+
 } // end setPenaltyOptions()
 
 //------------------------------------------------------------------------------

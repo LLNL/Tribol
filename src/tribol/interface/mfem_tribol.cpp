@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: (MIT)
 
 #include "mfem_tribol.hpp"
+#include "tribol/common/Parameters.hpp"
 
 #ifdef BUILD_REDECOMP
 
@@ -268,6 +269,21 @@ void updateMfemParallelDecomposition()
                // updates Jacobian transfer operator for new redecomp mesh
                couplingScheme->getMfemJacobianData()->UpdateJacobianXfer();
             }
+         }
+         auto& penalty_opts = couplingScheme->getEnforcementOptions().penalty_options;
+         if (
+            penalty_opts.kinematic_calc_set && 
+            penalty_opts.kinematic_calculation == KINEMATIC_ELEMENT
+         )
+         {
+            setKinematicElementPenalty(
+               mesh_ids[0], 
+               mfem_data->GetRedecompMaterialModulus1(),
+               mfem_data->GetRedecompElemThickness1());
+            setKinematicElementPenalty(
+               mesh_ids[1], 
+               mfem_data->GetRedecompMaterialModulus2(),
+               mfem_data->GetRedecompElemThickness2());
          }
       }
 

@@ -103,6 +103,18 @@ void setMfemLORFactor( integer cs_id, integer lor_factor );
 void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
 
 /**
+ * @brief Sets the bulk modulus for the volume elements associated with the
+ * contact surface mesh.
+ *
+ * @note For attribute-based coefficients, the attributes are based on the
+ * parent element's boundary attributes.
+ *
+ * @param cs_id The ID of the coupling scheme with the MFEM mesh
+ * @param modulus_coefficient Coefficient field projected onto the domain
+ */
+void registerMfemMaterialModulus( integer cs_id, mfem::Coefficient& modulus_coefficient );
+
+/**
  * @brief Returns the response (RHS) vector to a given mfem::Vector
  *
  * @pre Coupling scheme cs_id must be registered using

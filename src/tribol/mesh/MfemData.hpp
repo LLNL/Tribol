@@ -811,6 +811,78 @@ public:
   }
 
   /**
+   * @brief Get a pointer to the element thickness array for the first Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompElemThickness1() const
+  {
+    if (tribol_elem_thickness1_)
+    {
+      return &(*tribol_elem_thickness1_)[0];
+    }
+    else
+    {
+      return nullptr;
+    }
+  }
+
+  /**
+   * @brief Get a pointer to the element thickness array for the second Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompElemThickness2() const
+  {
+    if (tribol_elem_thickness2_)
+    {
+      return &(*tribol_elem_thickness2_)[0];
+    }
+    else
+    {
+      return nullptr;
+    }
+  }
+
+  /**
+   * @brief Get a pointer to the material modulus array for the first Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompMaterialModulus1() const
+  {
+    if (tribol_material_modulus1_)
+    {
+      return &(*tribol_material_modulus1_)[0];
+    }
+    else
+    {
+      return nullptr;
+    }
+  }
+
+  /**
+   * @brief Get a pointer to the material modulus array for the second Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompMaterialModulus2() const
+  {
+    if (tribol_material_modulus2_)
+    {
+      return &(*tribol_material_modulus2_)[0];
+    }
+    else
+    {
+      return nullptr;
+    }
+  }
+
+  /**
    * @brief Get the map from Tribol registered mesh 1 element indices to
    * redecomp mesh element indices
    *
@@ -904,6 +976,15 @@ public:
    * @param lor_factor Number of element subdivisions per dimension
    */
   void SetLORFactor(integer lor_factor);
+
+  /**
+   * @brief Computes element thicknesses for volume elements attached to the
+   * contact surface
+   */
+  void ComputeElementThicknesses();
+
+  void SetMaterialModulus(mfem::Coefficient& modulus_field);
+
 private:
   /**
    * @brief Creates and stores data that changes when the RedecompMesh is
@@ -1105,6 +1186,48 @@ private:
    * nullptr otherwise
    */
   std::unique_ptr<ParentField> velocity_;
+
+  /**
+   * @brief Stores element thicknesses for element-based penalty calculations on
+   * the submesh or the LOR mesh (if it exists); nullptr otherwise
+   */
+  std::unique_ptr<mfem::QuadratureFunction> elem_thickness_;
+
+  /**
+   * @brief Element thickness stored on the redecomp mesh
+   */
+  std::unique_ptr<mfem::QuadratureFunction> redecomp_elem_thickness_;
+
+  /**
+   * @brief Element thicknesses for the first Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_elem_thickness1_;
+
+  /**
+   * @brief Element thicknesses for the second Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_elem_thickness2_;
+
+  /**
+   * @brief Stores material moduli for element-based penalty calculations on
+   * the submesh or the LOR mesh (if it exists); nullptr otherwise
+   */
+  std::unique_ptr<mfem::QuadratureFunction> material_modulus_;
+
+  /**
+   * @brief Material modulus stored on the redecomp mesh
+   */
+  std::unique_ptr<mfem::QuadratureFunction> redecomp_material_modulus_;
+
+  /**
+   * @brief Material moduli for the first Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_material_modulus1_;
+
+  /**
+   * @brief Material moduli for the second Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_material_modulus2_;
 
   /**
    * @brief UpdateData object created upon call to UpdateMeshData()
