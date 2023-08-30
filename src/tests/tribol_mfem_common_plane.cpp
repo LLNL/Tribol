@@ -205,7 +205,7 @@ protected:
       tribol::KINEMATIC_CONSTANT,
       tribol::NO_RATE_PENALTY
     );
-    tribol::setMfemConstantPenalty(coupling_scheme_id, p_kine, p_kine);
+    tribol::setMfemKinematicConstantPenalty(coupling_scheme_id, p_kine, p_kine);
 
     int cycle {0};
     for (double t {0.0}; t < t_end; t+=dt)

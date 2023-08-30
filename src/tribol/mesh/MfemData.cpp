@@ -504,6 +504,31 @@ void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
   }
 }
 
+void MfemMeshData::ClearAllPenaltyData()
+{
+  ClearRatePenaltyData();
+  penalty_1_.reset(nullptr);
+  penalty_2_.reset(nullptr);
+  scale_1_.reset(nullptr);
+  scale_2_.reset(nullptr);
+  elem_thickness_.reset(nullptr);
+  redecomp_elem_thickness_.reset(nullptr);
+  tribol_elem_thickness_1_.reset(nullptr);
+  tribol_elem_thickness_2_.reset(nullptr);
+  material_modulus_.reset(nullptr);
+  redecomp_material_modulus_.reset(nullptr);
+  tribol_material_modulus_1_.reset(nullptr);
+  tribol_material_modulus_2_.reset(nullptr);
+}
+
+void MfemMeshData::ClearRatePenaltyData()
+{
+  rate_penalty_1_.reset(nullptr);
+  rate_penalty_2_.reset(nullptr);
+  rate_scale_1_.reset(nullptr);
+  rate_scale_2_.reset(nullptr);
+}
+
 void MfemMeshData::SetLORFactor(integer lor_factor)
 {
   if (lor_factor <= 1)

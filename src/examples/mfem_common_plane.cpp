@@ -353,7 +353,7 @@ int main( int argc, char** argv )
     tribol::NO_RATE_PENALTY
   );
   // This set the penalty parameters on the contact meshes.
-  tribol::setMfemConstantPenalty(coupling_scheme_id, p_kine, p_kine);
+  tribol::setMfemKinematicConstantPenalty(coupling_scheme_id, p_kine, p_kine);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to set up Tribol: {0:f}ms", timer.elapsedTimeInMilliSec()

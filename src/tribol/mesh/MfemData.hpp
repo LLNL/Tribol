@@ -811,6 +811,16 @@ public:
   }
 
   /**
+   * @brief Clears all kinematic and rate penalty data
+   */
+  void ClearAllPenaltyData();
+
+  /**
+   * @brief Clears rate penalty data
+   */
+  void ClearRatePenaltyData();
+
+  /**
    * @brief Sets the penalty parameter for the first registered Tribol mesh
    * 
    * @param penalty Penalty value for the first registered Tribol mesh
@@ -837,6 +847,90 @@ public:
    * @return const real* 
    */
   const real* GetMesh2Penalty() const { return penalty_2_.get(); }
+
+  /**
+   * @brief Sets the penalty scale for the first registered Tribol mesh
+   * 
+   * @param scale Penalty scale value for the first registered Tribol mesh
+   */
+  void SetMesh1PenaltyScale(real scale) { scale_1_ = std::make_unique<double>(scale); }
+
+  /**
+   * @brief Sets the penalty scale for the second registered Tribol mesh
+   * 
+   * @param scale Penalty scale value for the second registered Tribol mesh
+   */
+  void SetMesh2PenaltyScale(real scale) { scale_2_ = std::make_unique<double>(scale); }
+
+  /**
+   * @brief Get the penalty scale for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1PenaltyScale() const { return scale_1_.get(); }
+
+  /**
+   * @brief Get the penalty scale for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2PenaltyScale() const { return scale_2_.get(); }
+
+  /**
+   * @brief Sets the rate penalty for the first registered Tribol mesh
+   * 
+   * @param penalty Rate penalty value for the first registered Tribol mesh
+   */
+  void SetMesh1RatePenalty(real penalty) { rate_penalty_1_ = std::make_unique<double>(penalty); }
+
+  /**
+   * @brief Sets the rate penalty for the second registered Tribol mesh
+   * 
+   * @param penalty Rate penalty value for the second registered Tribol mesh
+   */
+  void SetMesh2RatePenalty(real penalty) { rate_penalty_2_ = std::make_unique<double>(penalty); }
+
+  /**
+   * @brief Get the rate penalty for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1RatePenalty() const { return rate_penalty_1_.get(); }
+
+  /**
+   * @brief Get the rate penalty for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2RatePenalty() const { return rate_penalty_2_.get(); }
+
+  /**
+   * @brief Sets the rate penalty scale for the first registered Tribol mesh
+   * 
+   * @param scale Rate penalty scale value for the first registered Tribol mesh
+   */
+  void SetMesh1RateScale(real scale) { rate_scale_1_ = std::make_unique<double>(scale); }
+
+  /**
+   * @brief Sets the rate penalty scale for the second registered Tribol mesh
+   * 
+   * @param scale Rate penalty scale value for the second registered Tribol mesh
+   */
+  void SetMesh2RateScale(real scale) { rate_scale_2_ = std::make_unique<double>(scale); }
+
+  /**
+   * @brief Get the rate penalty scale for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1RateScale() const { return rate_scale_1_.get(); }
+
+  /**
+   * @brief Get the rate penalty scale for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2RateScale() const { return rate_scale_2_.get(); }
 
   /**
    * @brief Get a pointer to the element thickness array for the first Tribol
@@ -1224,6 +1318,36 @@ private:
    * @brief Contact penalty for the second Tribol registered mesh
    */
   std::unique_ptr<real> penalty_2_;
+
+  /**
+   * @brief Contact penalty scale for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> scale_1_;
+
+  /**
+   * @brief Contact penalty scale for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> scale_2_;
+
+  /**
+   * @brief Contact rate penalty for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_penalty_1_;
+
+  /**
+   * @brief Contact rate penalty for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_penalty_2_;
+
+  /**
+   * @brief Contact rate penalty scale for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_scale_1_;
+
+  /**
+   * @brief Contact rate penalty scale for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_scale_2_;
 
   /**
    * @brief Stores element thicknesses for element-based penalty calculations on

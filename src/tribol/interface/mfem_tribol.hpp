@@ -105,7 +105,20 @@ void setMfemLORFactor( integer cs_id, integer lor_factor );
  * @param mesh1_penalty Penalty parameter for the first contact surface mesh
  * @param mesh2_penalty Penalty parameter for the second contact surface mesh
  */
-void setMfemConstantPenalty( integer cs_id, real mesh1_penalty, real mesh2_penalty );
+void setMfemKinematicConstantPenalty( integer cs_id,
+                                      real mesh1_penalty,
+                                      real mesh2_penalty );
+
+void setMfemKinematicElementPenalty( integer cs_id,
+                                     mfem::Coefficient& modulus_coefficient );
+
+void setMfemRateConstantPenalty( integer cs_id,
+                                 real mesh1_penalty,
+                                 real mesh2_penalty );
+
+void setMfemRatePercentPenalty( integer cs_id, real mesh1_scale, real mesh2_scale );
+
+void setMfemPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale );
 
 /**
  * @brief Computes element thickness for the volume elements associated with the
@@ -120,7 +133,7 @@ void setMfemConstantPenalty( integer cs_id, real mesh1_penalty, real mesh2_penal
  *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  */
-void setMfemElemThickness( integer cs_id );
+void updateMfemElemThickness( integer cs_id );
 
 /**
  * @brief Sets the bulk modulus for the volume elements associated with the
@@ -139,7 +152,7 @@ void setMfemElemThickness( integer cs_id );
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  * @param modulus_coefficient Coefficient field projected onto the domain
  */
-void registerMfemMaterialModulus( integer cs_id, mfem::Coefficient& modulus_coefficient );
+void updateMfemMaterialModulus( integer cs_id, mfem::Coefficient& modulus_coefficient );
 
 /**
  * @brief Registers a velocity field on a MFEM mesh-defined coupling scheme
