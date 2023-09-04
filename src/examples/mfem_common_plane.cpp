@@ -357,6 +357,8 @@ int main( int argc, char** argv )
   }
   else
   {
+    // Any MFEM scalar coefficient can be used to set material moduli, but this example uses a constant bulk modulus for
+    // each boundary attribute of the volume mesh.
     mfem::Vector bulk_moduli_by_bdry_attrib(pmesh->bdr_attributes.Max());
     bulk_moduli_by_bdry_attrib = lambda + 2.0 / 3.0 * mu;
     mfem::PWConstCoefficient mat_coeff(bulk_moduli_by_bdry_attrib);
