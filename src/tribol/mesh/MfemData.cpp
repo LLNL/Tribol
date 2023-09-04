@@ -882,6 +882,8 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   // (0,1) and (1,0) are symmetric (for now using SINGLE_MORTAR with approximate tangent)
   const auto& elem_map_1 = parent_data_.GetElemMap1();
   const auto& elem_map_2 = parent_data_.GetElemMap2();
+  // empty data structures are needed even when no meshes are on rank since TransferToParallelSparse() needs to be
+  // called on all ranks (even those without data)
   auto mortar_elems = axom::Array<integer>(0, 0);
   auto nonmortar_elems = axom::Array<integer>(0, 0);
   auto lm_elems = axom::Array<integer>(0, 0);
