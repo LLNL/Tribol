@@ -161,15 +161,14 @@ void setMfemRatePercentPenalty( integer cs_id, real mesh1_scale, real mesh2_scal
 void setMfemPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale );
 
 /**
- * @brief Computes element thickness for the volume elements associated with the
- * contact surface mesh.
+ * @brief Computes element thickness for the volume elements associated with the contact surface mesh.
  *
- * Element thickness data must be computed when KINEMATIC_ELEMENT is set when
- * calling setPenaltyOptions(). KINEMATIC_ELEMENT also requires material moduli,
- * which are set via registerMfemMaterialModulus().
+ * Element thickness is calculated at the origin of the isoparametric volume element in the direction given by the
+ * normal at the center of the associated isoparametric surface element.
  *
- * @pre Coupling scheme cs_id must be registered using
- * registerMfemCouplingScheme()
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
+ * @pre Kinematic penalty must be initialized through setMfemKinematicConstantPenalty() or
+ * setMfemKinematicElementPenalty()
  *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  */
