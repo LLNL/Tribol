@@ -78,8 +78,8 @@ int main( int argc, char** argv )
   double dt = 0.001;
   // end time of the simulation
   double t_end = 2.0;
-  // kinematic penalty parameter
-  double p_kine = 10000.0;
+  // use const penalty (true) or element penalty (false)
+  bool use_const_penalty = false;
   // number of cycles to skip before next output
   int output_cycles = 20;
   // material density
@@ -88,6 +88,8 @@ int main( int argc, char** argv )
   double lambda = 100000.0;
   // Lame parameter mu (shear modulus)
   double mu = 100000.0;
+  // kinematic penalty parameter (only for constant penalty)
+  double p_kine = (lambda + 2.0 / 3.0 * mu) * std::pow(2.0, ref_levels - 1);
 
   // parse command line options
   axom::CLI::App app { "mfem_common_plane" };
@@ -106,9 +108,12 @@ int main( int argc, char** argv )
   app.add_option("-e,--endtime", t_end, 
     "End time of the simulation.")
     ->capture_default_str();
-  app.add_option("-p,--kinematicpenalty", p_kine, 
-    "Kinematic penalty parameter.")
+  app.add_flag("-C,--use-constant-penalty", use_const_penalty, 
+    "Use a constant penalty parameter (element thickness-based penalty otherwise)")
     ->capture_default_str();
+  app.add_option("-p,--kinematicpenalty", p_kine, 
+    "Kinematic penalty parameter (if --use-element-penalty is false).")
+    ->capture_default_str()->needs("-C");
   app.add_option("-c,--outputcycles", output_cycles, 
     "Number of cycles to skip before next output.")
     ->capture_default_str();
@@ -344,16 +349,19 @@ int main( int argc, char** argv )
   // for computing the maximum common plane timestep and, if activated, gap rate
   // penalty.
   tribol::registerMfemVelocity(coupling_scheme_id, velocity);
-  // The type of penalty enforcement is set here (i.e. rate vs. kinematic and
-  // the method of setting the penalty value).
-  tribol::setPenaltyOptions(
-    coupling_scheme_id,
-    tribol::KINEMATIC,
-    tribol::KINEMATIC_CONSTANT,
-    tribol::NO_RATE_PENALTY
-  );
-  // This set the penalty parameters on the contact meshes.
-  tribol::setMfemKinematicConstantPenalty(coupling_scheme_id, p_kine, p_kine);
+  // The type of penalty enforcement and the penalty parameters are set here (i.e. rate vs. kinematic and the method of
+  // setting the penalty value).
+  if (use_const_penalty)
+  {
+    tribol::setMfemKinematicConstantPenalty(coupling_scheme_id, p_kine, p_kine);
+  }
+  else
+  {
+    mfem::Vector bulk_moduli_by_bdry_attrib(pmesh->bdr_attributes.Max());
+    bulk_moduli_by_bdry_attrib = lambda + 2.0 / 3.0 * mu;
+    mfem::PWConstCoefficient mat_coeff(bulk_moduli_by_bdry_attrib);
+    tribol::setMfemKinematicElementPenalty(coupling_scheme_id, mat_coeff);
+  }
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to set up Tribol: {0:f}ms", timer.elapsedTimeInMilliSec()
