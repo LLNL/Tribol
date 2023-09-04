@@ -222,6 +222,11 @@ void updateMfemElemThickness(integer cs_id)
       "Coupling scheme does not contain MFEM data. "
       "Create the coupling scheme using registerMfemCouplingScheme() to set the penalty."
    );
+   auto penalty_opts = coupling_scheme->getEnforcementOptions().penalty_options;
+   SLIC_ERROR_ROOT_IF(
+      !penalty_opts.kinematic_calc_set && penalty_opts.kinematic_calculation != KINEMATIC_ELEMENT,
+      "Thickness can only be updated when kinematic penalty has been set using setMfemKinematicElementPenalty()."
+   );
    coupling_scheme->getMfemMeshData()->ComputeElementThicknesses();
 }
 
@@ -232,6 +237,11 @@ void updateMfemMaterialModulus(integer cs_id, mfem::Coefficient& modulus_coeffic
       !coupling_scheme->hasMfemData(),
       "Coupling scheme does not contain MFEM data. "
       "Create the coupling scheme using registerMfemCouplingScheme() to set the penalty."
+   );
+   auto penalty_opts = coupling_scheme->getEnforcementOptions().penalty_options;
+   SLIC_ERROR_ROOT_IF(
+      !penalty_opts.kinematic_calc_set && penalty_opts.kinematic_calculation != KINEMATIC_ELEMENT,
+      "Material modulus can only be updated when kinematic penalty has been set using setMfemKinematicElementPenalty()."
    );
    coupling_scheme->getMfemMeshData()->SetMaterialModulus(modulus_coefficient);
 }

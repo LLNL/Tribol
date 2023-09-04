@@ -92,14 +92,9 @@ void registerMfemCouplingScheme( integer cs_id,
 void setMfemLORFactor( integer cs_id, integer lor_factor );
 
 /**
- * @brief Computes element thickness for the volume elements associated with the
- * contact surface mesh.
+ * @brief Clears existing penalty data and sets kinematic constant penalty
  *
- * Penalty parameters must be set when KINEMATIC_CONSTANT is set when calling
- * setPenaltyOptions().
- *
- * @pre Coupling scheme cs_id must be registered using
- * registerMfemCouplingScheme()
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
  *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  * @param mesh1_penalty Penalty parameter for the first contact surface mesh
@@ -109,15 +104,60 @@ void setMfemKinematicConstantPenalty( integer cs_id,
                                       real mesh1_penalty,
                                       real mesh2_penalty );
 
+/**
+ * @brief Clears existing penalty data and sets kinematic element penalty
+ *
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
+ *
+ * @note modulus_coefficient attributes correspond to the boundary attributes of the parent mesh
+ *
+ * @note modulus_coefficient is only evaluated on the parent-linked boundary submesh
+ * 
+ * @param cs_id The ID of the coupling scheme with the MFEM mesh
+ * @param modulus_coefficient MFEM coefficient defining bulk modulus over the parent-linked boundary submesh
+ */
 void setMfemKinematicElementPenalty( integer cs_id,
                                      mfem::Coefficient& modulus_coefficient );
 
+/**
+ * @brief Adds constant gap rate penalty to the existing kinematic penalty
+ *
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
+ * @pre Kinematic penalty must be initialized through setMfemKinematicConstantPenalty() or
+ * setMfemKinematicElementPenalty()
+ * 
+ * @param cs_id The ID of the coupling scheme with the MFEM mesh
+ * @param mesh1_penalty Penalty parameter for the first contact surface mesh
+ * @param mesh2_penalty Penalty parameter for the second contact surface mesh
+ */
 void setMfemRateConstantPenalty( integer cs_id,
                                  real mesh1_penalty,
                                  real mesh2_penalty );
 
+/**
+ * @brief Adds gap rate penalty as a scaling of the existing kinematic penalty
+ *
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
+ * @pre Kinematic penalty must be initialized through setMfemKinematicConstantPenalty() or
+ * setMfemKinematicElementPenalty()
+ * 
+ * @param cs_id The ID of the coupling scheme with the MFEM mesh
+ * @param mesh1_scale Scaling coefficient of the kinematic penalty for the first contact surface mesh
+ * @param mesh2_scale Scaling coefficient of the kinematic penalty for the second contact surface mesh
+ */
 void setMfemRatePercentPenalty( integer cs_id, real mesh1_scale, real mesh2_scale );
 
+/**
+ * @brief Adds a scale to the computed kinematic penalty
+ * 
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
+ * @pre Kinematic penalty must be initialized through setMfemKinematicConstantPenalty() or
+ * setMfemKinematicElementPenalty()
+ *
+ * @param cs_id The ID of the coupling scheme with the MFEM mesh
+ * @param mesh1_scale Scaling coefficient of the kinematic penalty for the first contact surface mesh
+ * @param mesh2_scale Scaling coefficient of the kinematic penalty for the second contact surface mesh
+ */
 void setMfemPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale );
 
 /**
