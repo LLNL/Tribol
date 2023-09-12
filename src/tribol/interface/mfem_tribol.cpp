@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: (MIT)
 
 #include "mfem_tribol.hpp"
+#include "tribol/common/Parameters.hpp"
 
 #ifdef BUILD_REDECOMP
 
@@ -130,8 +131,8 @@ void setMfemKinematicConstantPenalty( integer cs_id,
    );
    setPenaltyOptions(cs_id, KINEMATIC, KINEMATIC_CONSTANT);
    coupling_scheme->getMfemMeshData()->ClearAllPenaltyData();
-   coupling_scheme->getMfemMeshData()->SetMesh1Penalty(mesh1_penalty);
-   coupling_scheme->getMfemMeshData()->SetMesh2Penalty(mesh2_penalty);
+   coupling_scheme->getMfemMeshData()->SetMesh1KinematicConstantPenalty(mesh1_penalty);
+   coupling_scheme->getMfemMeshData()->SetMesh2KinematicConstantPenalty(mesh2_penalty);
 }
 
 void setMfemKinematicElementPenalty( integer cs_id, 
@@ -166,15 +167,15 @@ void setMfemRateConstantPenalty( integer cs_id,
       "setMfemKinematicElementPenalty() first."
    );
    setPenaltyOptions(
-      cs_id, penalty_opts.constraint_type, penalty_opts.kinematic_calculation, RATE_CONSTANT);
+      cs_id, KINEMATIC_AND_RATE, penalty_opts.kinematic_calculation, RATE_CONSTANT);
    coupling_scheme->getMfemMeshData()->ClearRatePenaltyData();
-   coupling_scheme->getMfemMeshData()->SetMesh1RatePenalty(mesh1_penalty);
-   coupling_scheme->getMfemMeshData()->SetMesh2RatePenalty(mesh2_penalty);
+   coupling_scheme->getMfemMeshData()->SetMesh1RateConstantPenalty(mesh1_penalty);
+   coupling_scheme->getMfemMeshData()->SetMesh2RateConstantPenalty(mesh2_penalty);
 }
 
 void setMfemRatePercentPenalty( integer cs_id, 
-                                 real mesh1_scale, 
-                                 real mesh2_scale )
+                                 real mesh1_ratio, 
+                                 real mesh2_ratio )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -189,13 +190,13 @@ void setMfemRatePercentPenalty( integer cs_id,
       "setMfemKinematicElementPenalty() first."
    );
    setPenaltyOptions(
-      cs_id, penalty_opts.constraint_type, penalty_opts.kinematic_calculation, RATE_PERCENT);
+      cs_id, KINEMATIC_AND_RATE, penalty_opts.kinematic_calculation, RATE_PERCENT);
    coupling_scheme->getMfemMeshData()->ClearRatePenaltyData();
-   coupling_scheme->getMfemMeshData()->SetMesh1RateScale(mesh1_scale);
-   coupling_scheme->getMfemMeshData()->SetMesh2RateScale(mesh2_scale);
+   coupling_scheme->getMfemMeshData()->SetMesh1RatePercentPenalty(mesh1_ratio);
+   coupling_scheme->getMfemMeshData()->SetMesh2RatePercentPenalty(mesh2_ratio);
 }
 
-void setMfemPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale )
+void setMfemKinematicPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -209,8 +210,8 @@ void setMfemPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale )
       "No kinematic enforcement method set. Call setMfemKinematicConstantPenalty() or "
       "setMfemKinematicElementPenalty() first."
    );
-   coupling_scheme->getMfemMeshData()->SetMesh1PenaltyScale(mesh1_scale);
-   coupling_scheme->getMfemMeshData()->SetMesh2PenaltyScale(mesh2_scale);
+   coupling_scheme->getMfemMeshData()->SetMesh1KinematicPenaltyScale(mesh1_scale);
+   coupling_scheme->getMfemMeshData()->SetMesh2KinematicPenaltyScale(mesh2_scale);
 }
 
 void updateMfemElemThickness(integer cs_id)
@@ -422,19 +423,19 @@ void updateMfemParallelDecomposition()
             else if (penalty_opts.kinematic_calculation == KINEMATIC_CONSTANT)
             {
                SLIC_ERROR_ROOT_IF(
-                  !mfem_data->GetMesh1Penalty() || !mfem_data->GetMesh2Penalty(),
+                  !mfem_data->GetMesh1KinematicConstantPenalty() || !mfem_data->GetMesh2KinematicConstantPenalty(),
                   "Penalty parameters have not been set.  Call setMfemKinematicConstantPenalty()."
                );
-               setKinematicConstantPenalty(mesh_ids[0], *mfem_data->GetMesh1Penalty());
-               setKinematicConstantPenalty(mesh_ids[1], *mfem_data->GetMesh2Penalty());
+               setKinematicConstantPenalty(mesh_ids[0], *mfem_data->GetMesh1KinematicConstantPenalty());
+               setKinematicConstantPenalty(mesh_ids[1], *mfem_data->GetMesh2KinematicConstantPenalty());
             }
-            if (mfem_data->GetMesh1PenaltyScale())
+            if (mfem_data->GetMesh1KinematicPenaltyScale())
             {
-               setPenaltyScale(mesh_ids[0], *mfem_data->GetMesh1PenaltyScale());
+               setPenaltyScale(mesh_ids[0], *mfem_data->GetMesh1KinematicPenaltyScale());
             }
-            if (mfem_data->GetMesh2PenaltyScale())
+            if (mfem_data->GetMesh2KinematicPenaltyScale())
             {
-               setPenaltyScale(mesh_ids[1], *mfem_data->GetMesh2PenaltyScale());
+               setPenaltyScale(mesh_ids[1], *mfem_data->GetMesh2KinematicPenaltyScale());
             }
          }
          if (penalty_opts.rate_calc_set) 
@@ -442,20 +443,20 @@ void updateMfemParallelDecomposition()
             if (penalty_opts.rate_calculation == RATE_CONSTANT)
             {
                SLIC_ERROR_ROOT_IF(
-                  !mfem_data->GetMesh1RatePenalty() || !mfem_data->GetMesh2RatePenalty(),
+                  !mfem_data->GetMesh1RateConstantPenalty() || !mfem_data->GetMesh2RateConstantPenalty(),
                   "Rate penalty values have not been set.  Call setMfemRateConstantPenalty()."
                );
-               setRateConstantPenalty(mesh_ids[0], *mfem_data->GetMesh1RatePenalty());
-               setRateConstantPenalty(mesh_ids[1], *mfem_data->GetMesh2RatePenalty());
+               setRateConstantPenalty(mesh_ids[0], *mfem_data->GetMesh1RateConstantPenalty());
+               setRateConstantPenalty(mesh_ids[1], *mfem_data->GetMesh2RateConstantPenalty());
             }
             else if (penalty_opts.rate_calculation == RATE_PERCENT)
             {
                SLIC_ERROR_ROOT_IF(
-                  !mfem_data->GetMesh1Penalty() || !mfem_data->GetMesh2Penalty(),
-                  "Penalty parameters have not been set.  Call setMfemConstantPenalty()."
+                  !mfem_data->GetMesh1RatePercentPenalty() || !mfem_data->GetMesh2RatePercentPenalty(),
+                  "Rate penalty values have not been set.  Call setMfemRatePercentPenalty()."
                );
-               setRatePercentPenalty(mesh_ids[0], *mfem_data->GetMesh1RateScale());
-               setRatePercentPenalty(mesh_ids[0], *mfem_data->GetMesh2RateScale());
+               setRatePercentPenalty(mesh_ids[0], *mfem_data->GetMesh1RatePercentPenalty());
+               setRatePercentPenalty(mesh_ids[1], *mfem_data->GetMesh2RatePercentPenalty());
             }
          }
       }

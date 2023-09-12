@@ -100,9 +100,7 @@ void setMfemLORFactor( integer cs_id, integer lor_factor );
  * @param mesh1_penalty Penalty parameter for the first contact surface mesh
  * @param mesh2_penalty Penalty parameter for the second contact surface mesh
  */
-void setMfemKinematicConstantPenalty( integer cs_id,
-                                      real mesh1_penalty,
-                                      real mesh2_penalty );
+void setMfemKinematicConstantPenalty( integer cs_id, real mesh1_penalty, real mesh2_penalty );
 
 /**
  * @brief Clears existing penalty data and sets kinematic element penalty
@@ -112,12 +110,11 @@ void setMfemKinematicConstantPenalty( integer cs_id,
  * @note modulus_coefficient attributes correspond to the boundary attributes of the parent mesh
  *
  * @note modulus_coefficient is only evaluated on the parent-linked boundary submesh
- * 
+ *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  * @param modulus_coefficient MFEM coefficient defining bulk modulus over the parent-linked boundary submesh
  */
-void setMfemKinematicElementPenalty( integer cs_id,
-                                     mfem::Coefficient& modulus_coefficient );
+void setMfemKinematicElementPenalty( integer cs_id, mfem::Coefficient& modulus_coefficient );
 
 /**
  * @brief Adds constant gap rate penalty to the existing kinematic penalty
@@ -125,14 +122,12 @@ void setMfemKinematicElementPenalty( integer cs_id,
  * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
  * @pre Kinematic penalty must be initialized through setMfemKinematicConstantPenalty() or
  * setMfemKinematicElementPenalty()
- * 
+ *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  * @param mesh1_penalty Penalty parameter for the first contact surface mesh
  * @param mesh2_penalty Penalty parameter for the second contact surface mesh
  */
-void setMfemRateConstantPenalty( integer cs_id,
-                                 real mesh1_penalty,
-                                 real mesh2_penalty );
+void setMfemRateConstantPenalty( integer cs_id, real mesh1_penalty, real mesh2_penalty );
 
 /**
  * @brief Adds gap rate penalty as a scaling of the existing kinematic penalty
@@ -140,25 +135,27 @@ void setMfemRateConstantPenalty( integer cs_id,
  * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
  * @pre Kinematic penalty must be initialized through setMfemKinematicConstantPenalty() or
  * setMfemKinematicElementPenalty()
- * 
+ *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
- * @param mesh1_scale Scaling coefficient of the kinematic penalty for the first contact surface mesh
- * @param mesh2_scale Scaling coefficient of the kinematic penalty for the second contact surface mesh
+ * @param mesh1_ratio Scaling coefficient of the kinematic penalty for the first contact surface mesh
+ * @param mesh2_ratio Scaling coefficient of the kinematic penalty for the second contact surface mesh
  */
-void setMfemRatePercentPenalty( integer cs_id, real mesh1_scale, real mesh2_scale );
+void setMfemRatePercentPenalty( integer cs_id, real mesh1_ratio, real mesh2_ratio );
 
 /**
  * @brief Adds a scale to the computed kinematic penalty
- * 
+ *
  * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
  * @pre Kinematic penalty must be initialized through setMfemKinematicConstantPenalty() or
  * setMfemKinematicElementPenalty()
+ *
+ * @note The scaling is applied to the kinematic penalty used in rate percent penalty enforcement.
  *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  * @param mesh1_scale Scaling coefficient of the kinematic penalty for the first contact surface mesh
  * @param mesh2_scale Scaling coefficient of the kinematic penalty for the second contact surface mesh
  */
-void setMfemPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale );
+void setMfemKinematicPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale );
 
 /**
  * @brief Computes element thickness for the volume elements associated with the contact surface mesh.
@@ -167,29 +164,28 @@ void setMfemPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale );
  * normal at the center of the associated isoparametric surface element.
  *
  * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
- * @pre Kinematic penalty must be initialized through setMfemKinematicConstantPenalty() or
- * setMfemKinematicElementPenalty()
+ * @pre Kinematic element penalty must be initialized through setMfemKinematicElementPenalty()
+ *
+ * @note Element thickness is automatically set when setMfemKinematicElementPenalty() is called. Call this method to
+ * update element thicknesses.
  *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  */
 void updateMfemElemThickness( integer cs_id );
 
 /**
- * @brief Sets the bulk modulus for the volume elements associated with the
- * contact surface mesh.
+ * @brief Sets the bulk modulus for the volume elements associated with the contact surface mesh.
  *
- * Material modulus data must be registered when KINEMATIC_ELEMENT is set when
- * calling setPenaltyOptions(). KINEMATIC_ELEMENT also requires element
- * thicknesses, which are set through setMfemElemThickness().
+ * @note For attribute-based coefficients, the attributes are based on the parent element's boundary attributes.
  *
- * @note For attribute-based coefficients, the attributes are based on the
- * parent element's boundary attributes.
- *
- * @pre Coupling scheme cs_id must be registered using
- * registerMfemCouplingScheme()
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
+ * @pre Kinematic element penalty must be initialized through setMfemKinematicElementPenalty()
  *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  * @param modulus_coefficient Coefficient field projected onto the domain
+ *
+ * @note Material modulus is autoamtically set when setMfemKinematicElementPenalty() is called. Call this method to
+ * update material bulk moduli.
  */
 void updateMfemMaterialModulus( integer cs_id, mfem::Coefficient& modulus_coefficient );
 

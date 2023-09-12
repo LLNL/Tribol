@@ -89,6 +89,7 @@ int main( int argc, char** argv )
   // Lame parameter mu (shear modulus)
   double mu = 100000.0;
   // kinematic penalty parameter (only for constant penalty)
+  // the kinematic constant penalty is chosen here to match the kinematic element penalty
   double p_kine = (lambda + 2.0 / 3.0 * mu) * std::pow(2.0, ref_levels - 1);
 
   // parse command line options

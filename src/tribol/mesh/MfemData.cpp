@@ -444,7 +444,7 @@ void MfemMeshData::UpdateMfemMeshData()
     redecomp_xfer.TransferToSerial(*elem_thickness_, *redecomp_elem_thickness_);
     // set element thickness on tribol mesh
     tribol_elem_thickness_1_ = std::make_unique<axom::Array<double>>(
-      0, GetElemMap1().size());
+      0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
     for (auto redecomp_e : GetElemMap1())
     {
       mfem::Vector quad_val;
@@ -452,7 +452,7 @@ void MfemMeshData::UpdateMfemMeshData()
       tribol_elem_thickness_1_->push_back(quad_val[0]);
     }
     tribol_elem_thickness_2_ = std::make_unique<axom::Array<double>>(
-      0, GetElemMap2().size());
+      0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
       mfem::Vector quad_val;
@@ -468,7 +468,7 @@ void MfemMeshData::UpdateMfemMeshData()
     redecomp_xfer.TransferToSerial(*material_modulus_, *redecomp_material_modulus_);
     // set material modulus on tribol mesh
     tribol_material_modulus_1_ = std::make_unique<axom::Array<double>>(
-      0, GetElemMap1().size());
+      0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
     for (auto redecomp_e : GetElemMap1())
     {
       mfem::Vector quad_val;
@@ -476,7 +476,7 @@ void MfemMeshData::UpdateMfemMeshData()
       tribol_material_modulus_1_->push_back(quad_val[0]);
     }
     tribol_material_modulus_2_ = std::make_unique<axom::Array<double>>(
-      0, GetElemMap2().size());
+      0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
       mfem::Vector quad_val;
@@ -507,10 +507,10 @@ void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
 void MfemMeshData::ClearAllPenaltyData()
 {
   ClearRatePenaltyData();
-  penalty_1_.reset(nullptr);
-  penalty_2_.reset(nullptr);
-  scale_1_.reset(nullptr);
-  scale_2_.reset(nullptr);
+  kinematic_constant_penalty_1_.reset(nullptr);
+  kinematic_constant_penalty_2_.reset(nullptr);
+  kinematic_penalty_scale_1_.reset(nullptr);
+  kinematic_penalty_scale_2_.reset(nullptr);
   elem_thickness_.reset(nullptr);
   redecomp_elem_thickness_.reset(nullptr);
   tribol_elem_thickness_1_.reset(nullptr);
@@ -523,10 +523,10 @@ void MfemMeshData::ClearAllPenaltyData()
 
 void MfemMeshData::ClearRatePenaltyData()
 {
-  rate_penalty_1_.reset(nullptr);
-  rate_penalty_2_.reset(nullptr);
-  rate_scale_1_.reset(nullptr);
-  rate_scale_2_.reset(nullptr);
+  rate_constant_penalty_1_.reset(nullptr);
+  rate_constant_penalty_2_.reset(nullptr);
+  rate_percent_ratio_1_.reset(nullptr);
+  rate_percent_ratio_2_.reset(nullptr);
 }
 
 void MfemMeshData::SetLORFactor(integer lor_factor)
@@ -579,9 +579,8 @@ void MfemMeshData::ComputeElementThicknesses()
       face_el_tr.Elem1No :
       face_el_tr.Elem2No;
     
-    // Step 2
-    // norm = (dx/dxi x dx/deta) / || dx/dxi x dx/deta || on boundary element
-    // centroid
+    // Step 2 
+    // normal = (dx/dxi x dx/deta) / || dx/dxi x dx/deta || on parent volume boundary element centroid
     auto& parent_fes = *coords_.GetParentGridFn().ParFESpace();
     mfem::Array<int> be_dofs;
     parent_fes.GetBdrElementDofs(parent_bdr_e, be_dofs);
@@ -595,9 +594,11 @@ void MfemMeshData::ComputeElementThicknesses()
       elem_coords.SetRow(d, elemvect);
     }
     auto& be = *parent_fes.GetBE(parent_bdr_e);
+    // create an integration point at the element centroid
     mfem::IntegrationPoint ip;
     ip.Init(0);
     mfem::DenseMatrix dshape(be_dofs.Size(), submesh_.Dimension());
+    // calculate shape function derivatives at the surface element centroid
     be.CalcDShape(ip, dshape);
     mfem::DenseMatrix dxdxi_mat(parent_mesh_.Dimension(), submesh_.Dimension());
     mfem::Mult(elem_coords, dshape, dxdxi_mat);
