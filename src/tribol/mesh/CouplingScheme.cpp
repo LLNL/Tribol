@@ -253,22 +253,22 @@ void CouplingSchemeInfo::printCaseInfo()
    {
       case SPECIFYING_NO_SLIDING_WITH_REGISTERED_MODE:
       {
-         SLIC_INFO("Overriding with ContactCase=NO_SLIDING with registered ContactMode."); 
+         SLIC_DEBUG("Overriding with ContactCase=NO_SLIDING with registered ContactMode."); 
          break;
       }
       case SPECIFYING_NO_SLIDING_WITH_REGISTERED_METHOD:
       {
-         SLIC_INFO("Overriding with ContactCase=NO_SLIDING with registered ContactMethod."); 
+         SLIC_DEBUG("Overriding with ContactCase=NO_SLIDING with registered ContactMethod."); 
          break;
       }
       case SPECIFYING_NONE_WITH_REGISTERED_METHOD:
       {
-         SLIC_INFO("Overriding with ContactCase=NO_CASE with registered ContactMethod."); 
+         SLIC_DEBUG("Overriding with ContactCase=NO_CASE with registered ContactMethod."); 
          break;
       }
       case SPECIFYING_NONE_WITH_TWO_REGISTERED_MESHES:
       {
-         SLIC_INFO("ContactCase=AUTO not supported with two different meshes; overriding with ContactCase=NO_CASE.");
+         SLIC_DEBUG("ContactCase=AUTO not supported with two different meshes; overriding with ContactCase=NO_CASE.");
          break;
       }
       case NO_CASE_INFO:
@@ -287,7 +287,7 @@ void CouplingSchemeInfo::printEnforcementInfo()
    {
       case SPECIFYING_NULL_ENFORCEMENT_WITH_REGISTERED_METHOD:
       {
-         SLIC_INFO("Overriding with EnforcementMethod=NULL_ENFORCEMENT with registered ContactMethod.");
+         SLIC_DEBUG("Overriding with EnforcementMethod=NULL_ENFORCEMENT with registered ContactMethod.");
          break;
       }
       case NO_ENFORCEMENT_INFO:
@@ -404,7 +404,7 @@ bool CouplingScheme::isValidCouplingScheme()
    // return early for coupling schemes with one or both null meshes. These are no-op coupling schemes
    if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
-      SLIC_INFO("Coupling scheme, " << this->m_id << ", has null-mesh(es).");
+      SLIC_DEBUG("Coupling scheme, " << this->m_id << ", has null-mesh(es).");
       this->m_nullMeshes = true;
       return false; 
    }
@@ -888,7 +888,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
   // loop over number of interface pairs
   IndexType numPairs = m_interfacePairs->getNumPairs();
 
-  SLIC_INFO("Coupling scheme " << m_id << " has " << numPairs << " pairs.");
+  SLIC_DEBUG("Coupling scheme " << m_id << " has " << numPairs << " pairs.");
 
   // loop over all pairs and perform geometry checks to see if they 
   // are interacting
@@ -922,6 +922,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
 
    this->m_numActivePairs = numActivePairs;
 
+   // aggregate across ranks for this coupling scheme? SRW
    SLIC_INFO("Number of active interface pairs: " << numActivePairs);
 
    // wrapper around contact method, case, and 
@@ -940,6 +941,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    // compute Tribol timestep vote on the coupling scheme
    computeTimeStep(dt);
 
+   // output on root, SRW
    if (dt > 0.)
    {
       SLIC_INFO( "The Tribol timestep vote is: " << dt );
@@ -1430,6 +1432,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       } // end case 2
    } // end loop over interface pairs
 
+   // Can we output this message on root? SRW
    if (tiny_vel_msg)
    {
       SLIC_INFO( "tribol::computeCommonPlaneTimeStep(): initial mesh overlap is too large " <<
@@ -1461,6 +1464,7 @@ void CouplingScheme::writeInterfaceOutput( const std::string& dir,
                                         dim, cycle, t ); 
             break;
          default :
+            // Can this be called on root? SRW
             SLIC_INFO( "CouplingScheme::writeInterfaceOutput(): " <<
                        "output routine not yet written for interface method. " );
             break;

@@ -98,6 +98,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
             overlaps = true;
             break;
          default :
+            // Can this be output on root? SRW
             overlaps = true; // set default for now; refactoring
             SLIC_INFO( "WriteInterfaceMeshToVtk: visualization type not supported." <<
                        " Printing overlaps only." );

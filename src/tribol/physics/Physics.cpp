@@ -109,17 +109,17 @@ int ApplyInterfacePhysics( CouplingScheme const * cs,
 
    if ( err_nrml != 0 )
    {
-      SLIC_INFO("ApplyInterfacePhysics: error in application of " <<
-                "'normal' physics method for " <<
-                "coupling scheme, " << cs->getId() << ".");
+      SLIC_WARNING("ApplyInterfacePhysics: error in application of " <<
+                   "'normal' physics method for " <<
+                   "coupling scheme, " << cs->getId() << ".");
 
       return err_nrml;
    }
    else if ( err_tang != 0 )
    {
-      SLIC_INFO("ApplyInterfacePhysics: error in application of " <<
-                "'tangential' physics method for " <<
-                "coupling scheme, " << cs->getId() << ".");
+      SLIC_WARNING("ApplyInterfacePhysics: error in application of " <<
+                   "'tangential' physics method for " <<
+                   "coupling scheme, " << cs->getId() << ".");
 
       return err_tang;
    }

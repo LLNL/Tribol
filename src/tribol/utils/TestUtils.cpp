@@ -833,8 +833,8 @@ void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real 
                   "not a valid mesh id." );
    }
 
-   SLIC_INFO_IF( deleteVels, "TestMesh::allocateAndSetVelocities(): " << 
-                 "a velocity array has been deleted and reallocated." );
+   SLIC_DEBUG_IF( deleteVels, "TestMesh::allocateAndSetVelocities(): " << 
+                       "a velocity array has been deleted and reallocated." );
 
 } // end TestMesh::allocateAndSetVelocities()
 
@@ -876,8 +876,8 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
                   "not a valid mesh id." );
    }
 
-   SLIC_INFO_IF( deleteData, "TestMesh::allocateAndSetBulkModulus(): " << 
-                 "a bulk modulus array has been deleted and reallocated." );
+   SLIC_DEBUG_IF( deleteData, "TestMesh::allocateAndSetBulkModulus(): " << 
+                  "a bulk modulus array has been deleted and reallocated." );
 
 } // end TestMesh::allocateAndSetBulkModulus()
 
@@ -912,8 +912,8 @@ void TestMesh::allocateAndSetElementThickness( int meshId, real t )
                   "not a valid mesh id." );
    }
 
-   SLIC_INFO_IF( deleteData, "TestMesh::allocateAndSetElementThickness(): " << 
-                 "an element thickness array has been deleted and reallocated." );
+   SLIC_DEBUG_IF( deleteData, "TestMesh::allocateAndSetElementThickness(): " << 
+                  "an element thickness array has been deleted and reallocated." );
 
 } // end TestMesh::allocateAndSetElementThickness()
 
@@ -1085,8 +1085,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
       {
          if (this->mortar_bulk_mod == nullptr)
          {
-            SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "mortar_bulk_mod not set; registering default value." );
+            SLIC_DEBUG_ROOT( "TestMesh::tribolSetupAndUpdate(): " <<
+                             "mortar_bulk_mod not set; registering default value." );
             this->mortar_bulk_mod = new real[ this->numMortarFaces ];
             for (int i=0; i<this->numMortarFaces; ++i)
             {
@@ -1095,8 +1095,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
          }
          if (this->mortar_element_thickness == nullptr)
          {
-            SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "mortar_element_thickness not set; registering default value." );
+            SLIC_DEBUG_ROOT( "TestMesh::tribolSetupAndUpdate(): " <<
+                             "mortar_element_thickness not set; registering default value." );
             this->mortar_element_thickness = new real[ this->numMortarFaces ];
             for (int i=0; i<this->numMortarFaces; ++i)
             {
@@ -1106,8 +1106,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 
          if (this->nonmortar_bulk_mod == nullptr)
          { 
-            SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "nonmortar_bulk_mod not set; registering default value." );
+            SLIC_DEBUG_ROOT( "TestMesh::tribolSetupAndUpdate(): " <<
+                             "nonmortar_bulk_mod not set; registering default value." );
             this->nonmortar_bulk_mod = new real[ this->numNonmortarFaces ];
             for (int i=0; i<this->numNonmortarFaces; ++i)
             {
@@ -1116,8 +1116,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
          }
          if (this->nonmortar_element_thickness == nullptr)
          {  
-            SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "nonmortar_element_thickness not set; registering default value." );
+            SLIC_DEBUG_ROOT( "TestMesh::tribolSetupAndUpdate(): " <<
+                             "nonmortar_element_thickness not set; registering default value." );
             this->nonmortar_element_thickness = new real[ this->numNonmortarFaces ];
             for (int i=0; i<this->numNonmortarFaces; ++i)
             {
@@ -1469,8 +1469,6 @@ void TestMesh::setupMfemMesh( bool fix_orientation )
    SLIC_ERROR_IF( this->dim != 3, "TestMesh::setupMfemMesh(): Mfem meshes of dimension, " << 
                   this->dim << ", are not supported at this time." );
 
-   SLIC_INFO( "Setting up 3D linear mfem mesh." );
-
    // construct new mfem mesh
    if (this->mfem_mesh != nullptr)
    {
@@ -1481,8 +1479,6 @@ void TestMesh::setupMfemMesh( bool fix_orientation )
    this->mfem_mesh = new mfem::Mesh( this->dim,
                                      this->numTotalNodes,
                                      this->numTotalElements );
-
-   SLIC_INFO("After calling mfem mesh constructor.");
 
    // add mortar elements and vertices. Not sure if order of adding 
    // elements matters, but adding vertices should probably correspond 
@@ -1585,8 +1581,6 @@ void TestMesh::setupMfemMesh( bool fix_orientation )
          break;
       }
    } // end switch on surface cell type
-
-   SLIC_INFO( "3D linear mfem mesh finalized." );
 
 } // end setupMfemMesh()
 

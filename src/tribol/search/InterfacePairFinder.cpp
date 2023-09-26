@@ -364,10 +364,10 @@ public:
          m_grid.insert(m_meshBBoxes1[i], i);
       }
 
-      // OUtput some info for debugging
+      // Output some info for debugging
       if(true)
       {
-         SLIC_INFO("Implicit Grid info: "
+         SLIC_DEBUG("Implicit Grid info: "
              << "\n Mesh 1 bounding box (inflated): " << m_gridBBox
              << "\n Avg range: " << ranges
              << "\n Computed resolution: " << resolution );
@@ -378,7 +378,7 @@ public:
             bbox2.addBox( m_meshWrapper2.elementBoundingBox(i) );
          }
 
-         SLIC_INFO( "Mesh 2 bounding box is: " << bbox2 );
+         SLIC_DEBUG( "Mesh 2 bounding box is: " << bbox2 );
       }
 
    } // end generateSpatialIndex()
@@ -522,7 +522,7 @@ private:
        }
     }
 
-    SLIC_INFO("Coupling scheme has " << contactPairs->getNumPairs()
+    SLIC_DEBUG("Coupling scheme has " << contactPairs->getNumPairs()
           << " pairs." << " Expected " << numPairs
           << " = " << mesh1NumElems << " * " << mesh2NumElems << ".");
 

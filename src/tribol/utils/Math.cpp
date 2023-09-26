@@ -86,7 +86,7 @@ int binary_search( const int * const array,
 {
    if (n == 0)
    {
-      SLIC_INFO("binary_search: n = 0 return infeasible index.");
+      SLIC_DEBUG("binary_search: n = 0 return infeasible index.");
       return -1;
    }
    else if (n == 1 && val == array[0])
@@ -95,7 +95,7 @@ int binary_search( const int * const array,
    }
    else if (n == 1 && val != array[0])
    {
-      SLIC_INFO("binary_search: val is not equal to array[0] for n = 1.");
+      SLIC_DEBUG("binary_search: val is not equal to array[0] for n = 1.");
       return -1;
    }
 
@@ -118,7 +118,7 @@ int binary_search( const int * const array,
       }
    }
 
-   SLIC_INFO("binary_search: could not locate value in provided array.");
+   SLIC_DEBUG("binary_search: could not locate value in provided array.");
    return -1;
 }
 

@@ -312,7 +312,7 @@ void setOutputDirectory( const std::string& dir)
    // Create path if it doesn't already exist
    if(! axom::utilities::filesystem::pathExists(dir) )
    {
-     SLIC_INFO("Creating output path '" << dir << "'");
+     SLIC_INFO_ROOT("Creating output path '" << dir << "'");
      axom::utilities::filesystem::makeDirsForPath(dir);
    }
 
