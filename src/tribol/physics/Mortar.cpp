@@ -95,12 +95,10 @@ void ComputeMortarWeights( SurfaceContactElem & elem )
             LinIsoQuadShapeFunc( xi[0], xi[1], a, phiNonmortarA );
             LinIsoQuadShapeFunc( xi[0], xi[1], b, phiNonmortarB );
 
-            #ifdef TRIBOL_DEBUG_LOG
-               if (nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts)
-               {
-                  TRIBOL_ERROR("ComputeMortarWts: integer ids for weights exceed elem.numWts");
-               }
-            #endif /* TRIBOL_DEBUG_LOG */
+            if (nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts)
+            {
+               SLIC_ERROR("ComputeMortarWts: integer ids for weights exceed elem.numWts");
+            }
 
             // compute nonmortar/nonmortar mortar weight
             elem.mortarWts[ nonmortarNonmortarId ]  += integ.wts[ip] * phiNonmortarA * phiNonmortarB;
@@ -123,12 +121,10 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 {
    // check to make sure mortar weights have been computed locally 
    // for the SurfaceContactElem object
-   #ifdef TRIBOL_DEBUG_LOG
-      if (elem.mortarWts == nullptr)
-      {
-         TRIBOL_ERROR("ComputeNodalGap< SINGLE_MORTAR >: compute local weights on input struct first.");
-      }
-   #endif /* TRIBOL_DEBUG_LOG */
+   if (elem.mortarWts == nullptr)
+   {
+      SLIC_ERROR("ComputeNodalGap< SINGLE_MORTAR >: compute local weights on input struct first.");
+   }
 
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();

@@ -519,8 +519,6 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    // FaceInterCheck computation, then use the full projection.
    if (all)
    {
-      TRIBOL_DEBUG_LOG( "switching from interpenOverlap to fullOverlap.\n" );
-
       fullOverlap = true;
       interpenOverlap = false;
       cp.m_interpenOverlap = interpenOverlap;
@@ -583,9 +581,6 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    // compute the overlap area tolerance
    cp.computeAreaTol();
 
-   TRIBOL_DEBUG_LOG( "full area from checkPolyOverlap: " << cp.m_area << ".\n" );
-   TRIBOL_DEBUG_LOG( "minimum area: " << cp.m_areaMin << ".\n" );
-
    if (cp.m_area == 0. || cp.m_area < cp.m_areaMin)
    {
       cp.m_inContact = false;
@@ -633,11 +628,8 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
                              &cp.m_polyLocY, cp.m_numPolyVert, 
                              cp.m_area ); 
 
-      TRIBOL_DEBUG_LOG( "full area from Intersection2DPolygon: " << cp.m_area << ".\n" );
-
       if (cp.m_area < cp.m_areaMin)
       {
-         TRIBOL_DEBUG_LOG( "full area of overlap less than min after full-overlap calc.\n" );
          cp.m_inContact = false;
          return cp; 
       }
@@ -666,7 +658,6 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
       // check new area to area tol
       if (cp.m_interpenArea == 0 || cp.m_interpenArea < cp.m_areaMin) 
       { 
-         TRIBOL_DEBUG_LOG( "interpen. area less than min after interpen. overlap calc.\n" );
          cp.m_inContact = false;
          return cp;
       }
@@ -674,8 +665,6 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
       // reassign area based on possible modification to the actual 
       // intersection polygon.
       cp.m_area = cp.m_interpenArea;
-
-      TRIBOL_DEBUG_LOG( "interpen. area: " << cp.m_interpenArea << ".\n" );
 
       // compute the local vertex averaged centroid of overlapping polygon
       real z;
@@ -692,16 +681,13 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
       SLIC_WARNING("cp.m_polyLocX or cp.m_polyLocY not allocated");
    }
 
-   TRIBOL_DEBUG_LOG( "number of intersection polygon vertices: " << cp.m_numPolyVert << ".\n" );
-
    // handle the case where the actual polygon with connectivity 
    // and computed vertex coordinates becomes degenerate due to 
    // either position tolerances (segment-segment intersections) 
    // or length tolerances (intersecting polygon segment lengths)
    if (cp.m_numPolyVert < 3) 
    {
-//      SLIC_INFO("CheckFacePair: pair id, " << pair.pairId << ", has number of overlap vertices less than 3.");
-      TRIBOL_DEBUG_LOG( "degenerate polygon intersection detected.\n" );
+      SLIC_DEBUG( "degenerate polygon intersection detected.\n" );
       SLIC_ASSERT(cp.m_numPolyVert < 3);
       cp.m_inContact = false;
       return cp;
@@ -782,8 +768,6 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
       axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                             mesh2.m_faceRadius[ faceId2 ] ));
 
-   TRIBOL_DEBUG_LOG( "contact plane gap: " << cp.m_gap << ".\n" );
-
    // The gap tolerance allows separation up to 50% the largest face-radius.
    // This is conservative and allows for possible over-inclusion. This is done 
    // for the mortar method per testing.
@@ -792,8 +776,6 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
                                        mesh2.m_faceRadius[ faceId2 ] );
    if (cp.m_gap > cp.m_gapTol)
    {
-//      SLIC_INFO("CheckFacePair: pair id, " << pair.pairId << ", has gap, " << cp.m_gap << ", less than gap tol.");
-      TRIBOL_DEBUG_LOG( "gap larger than gapTol.\n" );
       cp.m_inContact = false;
       return cp;
    }

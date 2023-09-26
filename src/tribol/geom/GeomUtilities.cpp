@@ -628,13 +628,9 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       }
    }
 
-   TRIBOL_DEBUG_LOG( "\nnumber of vertices of A in B: " << numVAI << ".\n" );
-
    // check to see if ALL of A is in B; then A is the overlapping polygon.
    if (numVAI == numVertexA)
    {
-      TRIBOL_DEBUG_LOG( "all of A is in B. \n" );
-
       *polyX = new real[ numVertexA ];
       *polyY = new real[ numVertexA ];
       numPolyVert = numVertexA;
@@ -660,13 +656,9 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       }
    }
 
-   TRIBOL_DEBUG_LOG( "\nnumber of vertices of B in A: " << numVBI << ".\n" );
-
    // check to see if ALL of B is in A; then B is the overlapping polygon.
    if (numVBI == numVertexB)
    {
-      TRIBOL_DEBUG_LOG( "all of B is in A.\n" );
-
       *polyX = new real[ numVertexB ];
       *polyY = new real[ numVertexB ];
       numPolyVert = numVertexB;
@@ -790,8 +782,6 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       return;
    }
 
-   TRIBOL_DEBUG_LOG( "Intersection2DPolygon: number of segment intersections = " << numSegInter << ".\n" );
-
    // allocate temp intersection polygon vertex coordinate arrays to consist 
    // of segment-segment intersections and number of interior points in A and B
    numPolyVert = numSegInter + numVAI + numVBI;
@@ -850,12 +840,8 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
    // This is where polyX and polyY get allocated.
    int numFinalVert = 0; 
 
-   TRIBOL_DEBUG_LOG( "number of polygonal vertices (prior to CheckPolySegs call): " << numPolyVert << ".\n" );
-
    CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
                   lenTol, polyX, polyY, numFinalVert );
-
-   TRIBOL_DEBUG_LOG( "number of final polygonal vertices (after call to CheckPolySegs): " << numFinalVert << ".\n" );
 
    numPolyVert = numFinalVert;
 
@@ -1203,8 +1189,6 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
    {
       if (interior == nullptr || interior[idMin])
       {
-         TRIBOL_DEBUG_LOG( "segment intersection duplicate vertex due to min distance.\n" );
- 
          x = xMinVert;
          y = yMinVert;
          duplicate = true;
@@ -1246,8 +1230,6 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
       // check segment length against tolerance
       if (lambdaMag < tol)
       {
-         TRIBOL_DEBUG_LOG( "collapsing seg in CheckPolySegs with length: " << lambdaMag << ".\n" );
-
          // collapse second vertex to the first vertex of the current segment
          newIDs[ib] = i;
       }
