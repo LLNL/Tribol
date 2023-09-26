@@ -1472,7 +1472,6 @@ void TestMesh::setupMfemMesh( bool fix_orientation )
    // construct new mfem mesh
    if (this->mfem_mesh != nullptr)
    {
-      SLIC_WARNING( "TestMesh::setupMfemMesh(): deleting previously constructed mesh." );
       this->mfem_mesh->Clear();
    }
 

@@ -677,7 +677,7 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    // have been set
    if (cp.m_polyLocX == nullptr || cp.m_polyLocY == nullptr)
    {
-      SLIC_WARNING("cp.m_polyLocX or cp.m_polyLocY not allocated");
+      SLIC_ERROR("cp.m_polyLocX or cp.m_polyLocY not allocated");
    }
 
    // handle the case where the actual polygon with connectivity 

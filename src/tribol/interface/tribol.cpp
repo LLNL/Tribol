@@ -110,7 +110,7 @@ void setPenaltyOptions( int couplingSchemeIndex, PenaltyConstraintType pen_enfrc
    // check that penalty enforcement option is valid
    if ( !in_range(pen_enfrc_option, NUM_PENALTY_OPTIONS) )
    {
-      SLIC_WARNING( "tribol::setPenaltyOptions(): penalty enforcement option not available." );
+      SLIC_WARNING_ROOT( "tribol::setPenaltyOptions(): penalty enforcement option not available." );
    }
    else
    {
@@ -121,7 +121,7 @@ void setPenaltyOptions( int couplingSchemeIndex, PenaltyConstraintType pen_enfrc
    // check that kinematic penalty calculation is valid
    if ( !in_range(kinematic_calc, NUM_KINEMATIC_PENALTY_CALCULATION) )
    {
-      SLIC_WARNING( "tribol::setPenaltyOptions(): kinematic penalty calculation not available." ); 
+      SLIC_WARNING_ROOT( "tribol::setPenaltyOptions(): kinematic penalty calculation not available." ); 
    }
    else
    {
@@ -132,7 +132,7 @@ void setPenaltyOptions( int couplingSchemeIndex, PenaltyConstraintType pen_enfrc
    // check that the rate penalty calculation is valid
    if ( !in_range(rate_calc, NUM_RATE_PENALTY_CALCULATION) )
    {
-      SLIC_WARNING( "tribol::setPenaltyOptions(): rate penalty calculation not available." );
+      SLIC_WARNING_ROOT( "tribol::setPenaltyOptions(): rate penalty calculation not available." );
    }
    else
    {
@@ -239,9 +239,9 @@ void setPenaltyScale( int meshId, double scale )
       // still set small penalty to allow for zeroing out kinematic penalty 
       // enforcement allowing for rate only enforcement
       mesh.m_elemData.m_penalty_scale = scale;
-      SLIC_WARNING("tribol::setPenaltyScale(): input scale factor is " << 
-                   "close to zero or negative; kinematic contact may " << 
-                   "not be properly enforced.");
+      SLIC_WARNING_ROOT("tribol::setPenaltyScale(): input scale factor is " << 
+                        "close to zero or negative; kinematic contact may " << 
+                        "not be properly enforced.");
    }
 
 } // end setPenaltyScale()
@@ -338,13 +338,13 @@ void registerMesh( integer meshId,
        static_cast< InterfaceElementType >(elementType) != LINEAR_TRIANGLE &&
        static_cast< InterfaceElementType >(elementType) != LINEAR_QUAD)
    {
-      SLIC_WARNING("Mesh topology not supported for mesh id, " << meshId << ".");
+      SLIC_WARNING_ROOT("Mesh topology not supported for mesh id, " << meshId << ".");
       mesh.m_isValid = false;
    }
 
    const int dim = (z == nullptr) ? 2 : 3;
 
-   // check for null pointers for non-null meshes
+   // check for null pointers on ranks with non-null meshes
    if (numCells > 0)
    {
       if (x == nullptr || y == nullptr)
@@ -402,7 +402,7 @@ void registerMesh( integer meshId,
          break;
       }
       default:
-         SLIC_WARNING("Element type not supported.");
+         SLIC_WARNING_ROOT("Element type not supported.");
    } // end switch over element type
 
    // compute the number of unique surface nodes from the connectivity
@@ -960,9 +960,11 @@ integer update( integer cycle, real t, real &dt )
 
       CouplingScheme* couplingScheme  = csManager.getCoupling(csIndex);
 
+      // TODO verify that all validity logging is called by all ranks
       // initialize and check for valid coupling scheme
       if (!couplingScheme->init())
       {
+         // TODO figure out if we want to call couplingScheme->apply() for null meshes
          if (couplingScheme->nullMeshes())
          {
             continue;

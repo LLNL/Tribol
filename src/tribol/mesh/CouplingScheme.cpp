@@ -339,11 +339,6 @@ CouplingScheme::CouplingScheme( integer couplingSchemeId,
   SLIC_ERROR_IF( !in_range( binning_method, NUM_BINNING_METHODS ),
                  "invalid binning_method=" << binning_method );
 
-  // warning sanity checks
-  SLIC_WARNING_IF( !in_range( contact_case, NUM_CONTACT_CASES ),
-                   "invalid contact_case=" << contact_case << "; " << 
-                   "Tribol will use 'AUTO'." );
-
   m_contactMode = static_cast<ContactMode>( contact_mode );
   m_contactCase = static_cast<ContactCase>( contact_case );
   m_contactMethod = static_cast<ContactMethod>( contact_method );
@@ -395,13 +390,14 @@ bool CouplingScheme::isValidCouplingScheme()
       mesh2.m_isValid = false;
    }
 
+   // check for invalid meshes. A mesh could be deemed invalid when registered.
    if (!mesh1.m_isValid || !mesh2.m_isValid)
    {
-      SLIC_WARNING("Coupling scheme, " << this->m_id << ", does not have valid meshes.");
       return false;
    }
    
-   // return early for coupling schemes with one or both null meshes. These are no-op coupling schemes
+   // Have to return early for coupling schemes with one or both null-meshes. The enforcement check may 
+   // see invalid pointers/data since there are no elements on rank
    if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
       SLIC_DEBUG("Coupling scheme, " << this->m_id << ", has null-mesh(es).");
@@ -876,6 +872,8 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
 {
   SLIC_ASSERT( m_interfacePairs != nullptr );
 
+  // TODO check to see if we want to call this routine with null-meshes
+
   // set dimension on the contact plane manager
   parameters_t& params = parameters_t::getInstance();
   ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
@@ -923,7 +921,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    this->m_numActivePairs = numActivePairs;
 
    // aggregate across ranks for this coupling scheme? SRW
-   SLIC_INFO("Number of active interface pairs: " << numActivePairs);
+   SLIC_DEBUG("Number of active interface pairs: " << numActivePairs);
 
    // wrapper around contact method, case, and 
    // enforcement to apply the interface physics in both 
@@ -932,11 +930,8 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    // appropriate physics in the normal and tangential directions.
    int err = ApplyInterfacePhysics( this, cycle, t );
 
-   if (err)
-   {
-      SLIC_WARNING("CouplingScheme::apply(): error in ApplyInterfacePhysics for " <<
+   SLIC_WARNING_IF(err, "CouplingScheme::apply(): error in ApplyInterfacePhysics for " <<
                    "coupling scheme, " << this->m_id << ".");
-   }
 
    // compute Tribol timestep vote on the coupling scheme
    computeTimeStep(dt);
