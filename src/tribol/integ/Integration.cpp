@@ -102,7 +102,7 @@ void TWBPolyInt( SurfaceContactElem const & elem,
    // check that the order, k, is either 2 or 3
    if (k != 2 && k !=3)
    {
-      TRIBOL_ERROR("TWBPolyInt: input argument, k, must be 2 or 3.");
+      SLIC_ERROR("TWBPolyInt: input argument, k, must be 2 or 3.");
       return;
    }
 
@@ -317,7 +317,7 @@ int NumTWBPointsPerTri( integer order )
       case 3:
          return 6;
       default:
-         TRIBOL_ERROR("NumTWBPoints: integration rule order not supported.");
+         SLIC_ERROR("NumTWBPoints: integration rule order not supported.");
          break;
    }
 
@@ -345,7 +345,7 @@ void GaussPolyIntTri( SurfaceContactElem const & elem,
          numTotalPoints = numTriPoints * elem.numPolyVert;
          break;
       default:
-         TRIBOL_ERROR("GaussPolyIntTri: only Gauss integration of order 2-4 is implemented.");
+         SLIC_ERROR("GaussPolyIntTri: only Gauss integration of order 2-4 is implemented.");
          return;
    }
 
@@ -481,7 +481,7 @@ void GaussPolyIntQuad( SurfaceContactElem const & TRIBOL_UNUSED_PARAM(elem),
          numQuadPoints = 25;
          break;
       default:
-         TRIBOL_ERROR("GaussPolyIntQuad: only Gauss integration of order 2-5 is implemented.");
+         SLIC_ERROR("GaussPolyIntQuad: only Gauss integration of order 2-5 is implemented.");
          return;
    }
 

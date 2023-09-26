@@ -92,7 +92,7 @@ void EvalBasis( const real* const RESTRICT x,
    }
    else
    {
-      TRIBOL_ERROR("EvalBasis: invalid numPoints argument.");
+      SLIC_ERROR("EvalBasis: invalid numPoints argument.");
    }
    return;
 }
@@ -105,15 +105,15 @@ void SegmentBasis( const real* const RESTRICT x,
 {
    if (numPoints != 2)
    {
-      TRIBOL_ERROR("SegmentBasis: numPoints is " << numPoints 
+      SLIC_ERROR("SegmentBasis: numPoints is " << numPoints 
                     << " but should be 2.");
    }
 
    // note, vertexId is the index, 0 or 1.
    if (vertexId > numPoints-1)
    {
-      TRIBOL_ERROR("SegmentBasis: vertexId is " << vertexId
-                    << " but should be 0 or 1.");
+      SLIC_ERROR("SegmentBasis: vertexId is " << vertexId
+                  << " but should be 0 or 1.");
    }
 
    // compute length of segment
@@ -132,8 +132,7 @@ void SegmentBasis( const real* const RESTRICT x,
    // debug 
    if (phi > 1.0 || phi < 0.0)
    {
-      TRIBOL_ERROR("SegmentBasis: phi is " << phi 
-                   << " but needs to be between 0. and 1." );
+      SLIC_ERROR("SegmentBasis: phi is " << phi << " not between 0. and 1." );
    }
 
    return;
@@ -146,7 +145,7 @@ void WachspressBasis( const real* const RESTRICT x,
 {
    if (numPoints < 3)
    {
-      TRIBOL_ERROR("WachspressBasis: numPoints < 3.");
+      SLIC_ERROR("WachspressBasis: numPoints < 3.");
    }
 
    // first compute the areas of all the triangles formed by the i-1,i,i+1 vertices.
@@ -228,10 +227,9 @@ void WachspressBasis( const real* const RESTRICT x,
 
    phi = myWeight / weightSum;
 
-   // debug error statement
    if (phi <= 0. || phi > 1.)
    {
-      TRIBOL_ERROR("Wachspress Basis: phi is not between 0 and 1.");
+      SLIC_ERROR("Wachspress Basis: phi is not between 0 and 1.");
    }
 
    return;
@@ -248,7 +246,7 @@ void InvIso( const real  x[3],
 
    if (numNodes != 4)
    {
-      TRIBOL_ERROR("InvIso: routine only for 4 node quads.");
+      SLIC_ERROR("InvIso: routine only for 4 node quads.");
    }
 
    bool convrg = false;
@@ -378,7 +376,6 @@ void InvIso( const real  x[3],
                        "inside isoparametric quad.");
          }
 
-//       SLIC_INFO("InvIso(): total iteration count, " << k );
          return; 
       }
 
@@ -386,7 +383,7 @@ void InvIso( const real  x[3],
 
    if (!convrg)
    {
-      TRIBOL_ERROR("InvIso: Newtons method did not converge.");
+      SLIC_ERROR("InvIso: Newtons method did not converge.");
    }
 
    return;
@@ -461,7 +458,7 @@ void LinIsoTriShapeFunc( const real xi,
          phi = eta;
          break;
       default:
-         TRIBOL_ERROR("LinIsoTriShapeFunc: node id is not between 0 and 2.");
+         SLIC_ERROR("LinIsoTriShapeFunc: node id is not between 0 and 2.");
          break;
    }
 
@@ -494,7 +491,7 @@ void LinIsoQuadShapeFunc( const real xi,
          eta_node = -1.;
          break;
       default:
-         TRIBOL_ERROR("LinIsoQuadShapeFunc: node id is not between 0 and 3.");
+         SLIC_ERROR("LinIsoQuadShapeFunc: node id is not between 0 and 3.");
          return;
    }
 

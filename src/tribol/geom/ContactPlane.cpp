@@ -510,7 +510,6 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    bool all = false;
    bool ls = FaceInterCheck( mesh1, mesh2, faceId1, faceId2, separationTol, all );
    if (!ls) {
-//      SLIC_INFO("CheckFacePair: pair id, " << pair.pairId << " fails FaceInterCheck; not in contact.");
       cp.m_inContact = false;
       return cp;
    }

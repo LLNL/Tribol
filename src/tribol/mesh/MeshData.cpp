@@ -633,7 +633,7 @@ void MeshData::computeNodalNormals( int const dim )
    if (this->m_nX == nullptr || 
        this->m_nY == nullptr)
    {
-      TRIBOL_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
+      SLIC_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
    }
 
    // allocate space for nodal normal array
