@@ -55,12 +55,12 @@ void CouplingSchemeErrors::printModeErrors()
    {
       case INVALID_MODE:
       {
-         SLIC_WARNING("The specified ContactMode is invalid.");
+         SLIC_WARNING_ROOT("The specified ContactMode is invalid.");
          break;
       }
       case NO_MODE_IMPLEMENTATION:
       {
-         SLIC_WARNING("The specified ContactMode has no implementation.");
+         SLIC_WARNING_ROOT("The specified ContactMode has no implementation.");
          break;
       }
       case NO_MODE_ERROR:
@@ -79,12 +79,12 @@ void CouplingSchemeErrors::printCaseErrors()
    {
       case  INVALID_CASE:
       {
-         SLIC_WARNING("The specified ContactCase is invalid.");
+         SLIC_WARNING_ROOT("The specified ContactCase is invalid.");
          break;
       }
       case NO_CASE_IMPLEMENTATION:
       {
-         SLIC_WARNING("The specified ContactCase has no implementation.");
+         SLIC_WARNING_ROOT("The specified ContactCase has no implementation.");
          break;
       }
       case NO_CASE_ERROR:
@@ -103,38 +103,38 @@ void CouplingSchemeErrors::printMethodErrors()
    {
       case INVALID_METHOD:
       {
-         SLIC_WARNING("The specified ContactMethod is invalid.");
+         SLIC_WARNING_ROOT("The specified ContactMethod is invalid.");
          break;
       }
       case NO_METHOD_IMPLEMENTATION:
       {
-         SLIC_WARNING("The specified ContactMethod has no implementation.");
+         SLIC_WARNING_ROOT("The specified ContactMethod has no implementation.");
          break;
       }
       case DIFFERENT_FACE_TYPES:
       {
-         SLIC_WARNING("The specified ContactMethod does not support different face types.");
+         SLIC_WARNING_ROOT("The specified ContactMethod does not support different face types.");
          break;
       }
       case SAME_MESH_IDS:
       {
-         SLIC_WARNING("The specified ContactMethod cannot be used in coupling schemes with identical mesh IDs.");
+         SLIC_WARNING_ROOT("The specified ContactMethod cannot be used in coupling schemes with identical mesh IDs.");
          break;
       }
       case SAME_MESH_IDS_INVALID_DIM:
       {
-         SLIC_WARNING("The specified ContactMethod is not implemented for the problem dimension and " << 
+         SLIC_WARNING_ROOT("The specified ContactMethod is not implemented for the problem dimension and " << 
                       "cannot be used in coupling schemes with identical mesh IDs.");
          break;
       }
       case INVALID_DIM:
       {
-         SLIC_WARNING("The specified ContactMethod is not implemented for the problem dimension.");
+         SLIC_WARNING_ROOT("The specified ContactMethod is not implemented for the problem dimension.");
          break;
       }
       case NULL_NODAL_RESPONSE:
       {
-         SLIC_WARNING("User must call tribol::registerNodalResponse() for each mesh to use this ContactMethod.");
+         SLIC_WARNING_ROOT("User must call tribol::registerNodalResponse() for each mesh to use this ContactMethod.");
          break;
       }
       case NO_METHOD_ERROR:
@@ -153,17 +153,17 @@ void CouplingSchemeErrors::printModelErrors()
    {
       case INVALID_MODEL:
       {
-         SLIC_WARNING("The specified ContactModel is invalid.");
+         SLIC_WARNING_ROOT("The specified ContactModel is invalid.");
          break;
       }
       case NO_MODEL_IMPLEMENTATION:
       {
-         SLIC_WARNING("The specified ContactModel has no implementation.");
+         SLIC_WARNING_ROOT("The specified ContactModel has no implementation.");
          break;
       }
       case NO_MODEL_IMPLEMENTATION_FOR_REGISTERED_METHOD:
       {
-         SLIC_WARNING("The specified ContactModel has no implementation for the registered ContactMethod.");
+         SLIC_WARNING_ROOT("The specified ContactModel has no implementation for the registered ContactMethod.");
          break;
       }
       case NO_MODEL_ERROR:
@@ -182,38 +182,38 @@ void CouplingSchemeErrors::printEnforcementErrors()
    {
       case INVALID_ENFORCEMENT:
       {
-         SLIC_WARNING("The specified EnforcementMethod is invalid.");
+         SLIC_WARNING_ROOT("The specified EnforcementMethod is invalid.");
          break;
       }
       case INVALID_ENFORCEMENT_FOR_REGISTERED_METHOD:
       {
-         SLIC_WARNING("The specified EnforcementMethod is invalid for the registered METHOD.");
+         SLIC_WARNING_ROOT("The specified EnforcementMethod is invalid for the registered METHOD.");
          break;
       }
       case INVALID_ENFORCEMENT_OPTION:
       {
-         SLIC_WARNING("The specified enforcement option is invalid.");
+         SLIC_WARNING_ROOT("The specified enforcement option is invalid.");
          break;
       }
       case OPTIONS_NOT_SET:
       {
-         SLIC_WARNING("User must call 'tribol::set<EnforcementMethod>Options(..)' to set options for " << 
+         SLIC_WARNING_ROOT("User must call 'tribol::set<EnforcementMethod>Options(..)' to set options for " << 
                       "registered EnforcementMethod.");
          break;
       }
       case NO_ENFORCEMENT_IMPLEMENTATION:
       {
-         SLIC_WARNING("The specified enforcement option has no implementation.");
+         SLIC_WARNING_ROOT("The specified enforcement option has no implementation.");
          break;
       }
       case NO_ENFORCEMENT_IMPLEMENTATION_FOR_REGISTERED_METHOD:
       {
-         SLIC_WARNING("The specified enforcement option has no implementation for the registered ContactMethod.");
+         SLIC_WARNING_ROOT("The specified enforcement option has no implementation for the registered ContactMethod.");
          break;
       }
       case NO_ENFORCEMENT_IMPLEMENTATION_FOR_REGISTERED_OPTION:
       {
-         SLIC_WARNING("The specified enforcement option has no implementation for the specified EnforcementMethod.");
+         SLIC_WARNING_ROOT("The specified enforcement option has no implementation for the specified EnforcementMethod.");
          break;
       }
       case NO_ENFORCEMENT_ERROR:
@@ -232,7 +232,7 @@ void CouplingSchemeErrors::printEnforcementDataErrors()
    {
       case ERROR_IN_REGISTERED_ENFORCEMENT_DATA:
       {
-         SLIC_WARNING("Error in registered enforcement data; see warnings.");
+         SLIC_WARNING_ROOT("Error in registered enforcement data; see warnings.");
          break;
       }
       case NO_ENFORCEMENT_DATA_ERROR:
@@ -374,7 +374,7 @@ bool CouplingScheme::isValidCouplingScheme()
    MeshManager & meshManager = MeshManager::getInstance(); 
    if (!meshManager.hasMesh(this->m_meshId1) || !meshManager.hasMesh(this->m_meshId2))
    {
-      SLIC_WARNING("Please register meshes for coupling scheme, " << this->m_id << ".");
+      SLIC_WARNING_ROOT("Please register meshes for coupling scheme, " << this->m_id << ".");
       return false;
    }
 
@@ -384,8 +384,8 @@ bool CouplingScheme::isValidCouplingScheme()
    // check for invalid mesh topology matches in a coupling scheme
    if (mesh1.m_elementType != mesh2.m_elementType)
    {
-      SLIC_WARNING("Coupling scheme, " << this->m_id << ", does not support meshes with " << 
-                   "different surface element types.");
+      SLIC_WARNING_ROOT("Coupling scheme, " << this->m_id << ", does not support meshes with " << 
+                        "different surface element types.");
       mesh1.m_isValid = false;
       mesh2.m_isValid = false;
    }
@@ -396,13 +396,12 @@ bool CouplingScheme::isValidCouplingScheme()
       return false;
    }
    
-   // Have to return early for coupling schemes with one or both null-meshes. The enforcement check may 
-   // see invalid pointers/data since there are no elements on rank
+   // set boolean for null meshes
    if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
       SLIC_DEBUG("Coupling scheme, " << this->m_id << ", has null-mesh(es).");
       this->m_nullMeshes = true;
-      return false; 
+      valid = false;
    }
 
    // check valid contact mode. Not all modes have an implementation
@@ -425,23 +424,27 @@ bool CouplingScheme::isValidCouplingScheme()
 
    if (!this->isValidMethod())
    {
+      SLIC_INFO("Before printMethodErrors()");
       this->m_couplingSchemeErrors.printMethodErrors();
       valid = false;
    }
 
    if (!this->isValidModel())
    {
+      SLIC_INFO("Before printModelErrors()");
       this->m_couplingSchemeErrors.printModelErrors();
       valid = false;
    }
 
    if (!this->isValidEnforcement())
    {
+      SLIC_INFO("Before printEnforcementErrors()");
       this->m_couplingSchemeErrors.printEnforcementErrors();
       valid = false;
    }
    else if (this->checkEnforcementData() != 0)
    {
+      SLIC_INFO("Before printEnforcementDataErrors()");
       this->m_couplingSchemeErrors.printEnforcementDataErrors();
       valid = false;
    }
@@ -544,66 +547,69 @@ bool CouplingScheme::isValidMethod()
    MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
    integer dim = this->spatialDimension();
 
-   // check all methods for basic validity issues
-   if ( this->m_contactMethod == ALIGNED_MORTAR ||
-        this->m_contactMethod == MORTAR_WEIGHTS ||
-        this->m_contactMethod == SINGLE_MORTAR )
+   // check all methods for basic validity issues for non-null meshes
+   if (!this->m_nullMeshes)
    {
-      if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
+      if ( this->m_contactMethod == ALIGNED_MORTAR ||
+           this->m_contactMethod == MORTAR_WEIGHTS ||
+           this->m_contactMethod == SINGLE_MORTAR )
       {
-         this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
-         return false;
-      }
-      if( this->m_meshId1 == this->m_meshId2 )
-      {
-         this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS;
+         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
+         {
+            this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
+            return false;
+         }
+         if( this->m_meshId1 == this->m_meshId2 )
+         {
+            this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS;
+            if (dim != 3)
+            {
+               this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS_INVALID_DIM;
+            }
+            return false;
+         }
+
          if (dim != 3)
          {
-            this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS_INVALID_DIM;
+            this->m_couplingSchemeErrors.cs_method_error = INVALID_DIM;
+            return false;
+         } 
+      }
+      else if ( this->m_contactMethod == COMMON_PLANE )
+      {
+         // check for different face types. This is not yet supported
+         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
+         {
+            this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
+            return false;
          }
+      } // end switch on contact method
+      else
+      {
+         // if we are here there may be a method with no implementation. 
+         // See note at top of routine.
+         this->m_couplingSchemeErrors.cs_method_error = NO_METHOD_IMPLEMENTATION;
          return false;
       }
 
-      if (dim != 3)
+      if ( this->m_contactMethod == ALIGNED_MORTAR ||
+           this->m_contactMethod == SINGLE_MORTAR  ||
+           this->m_contactMethod == COMMON_PLANE )
       {
-         this->m_couplingSchemeErrors.cs_method_error = INVALID_DIM;
-         return false;
-      } 
-   }
-   else if ( this->m_contactMethod == COMMON_PLANE )
-   {
-      // check for different face types. This is not yet supported
-      if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
-      {
-         this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
-         return false;
-      }
-   } // end switch on contact method
-   else
-   {
-      // if we are here there may be a method with no implementation. 
-      // See note at top of routine.
-      this->m_couplingSchemeErrors.cs_method_error = NO_METHOD_IMPLEMENTATION;
-      return false;
-   }
-
-   if ( this->m_contactMethod == ALIGNED_MORTAR ||
-        this->m_contactMethod == SINGLE_MORTAR  ||
-        this->m_contactMethod == COMMON_PLANE )
-   {
-      if ( mesh1.m_numCells > 0 && !mesh1.m_nodalFields.m_is_nodal_response_set )
-      {
-         this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
-         return false; 
-      }
+         if ( mesh1.m_numCells > 0 && !mesh1.m_nodalFields.m_is_nodal_response_set )
+         {
+            this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
+            return false; 
+         }
  
-      if ( mesh2.m_numCells > 0 && !mesh2.m_nodalFields.m_is_nodal_response_set )
-      {
-         this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
-         return false; 
+         if ( mesh2.m_numCells > 0 && !mesh2.m_nodalFields.m_is_nodal_response_set )
+         {
+            this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
+            return false; 
+         }
+      
       }
-   
-   }
+   } // end if-check on non-null meshes
 
    // TODO check for nodal displacements for methods that require this data 
 
@@ -794,52 +800,56 @@ int CouplingScheme::checkEnforcementData()
    this->m_couplingSchemeErrors.cs_enforcement_data_error 
       = NO_ENFORCEMENT_DATA_ERROR; 
 
+   // perform check for non-null meshes
    int err = 0;
-   switch (this->m_contactMethod)
+   if (!this->m_nullMeshes)
    {
-      case MORTAR_WEIGHTS:
-         // no-op for now
-         break;
-      case ALIGNED_MORTAR:
-         // don't break
-      case SINGLE_MORTAR:
+      switch (this->m_contactMethod)
       {
-         if (!mesh2.m_nodalFields.m_is_node_gap_set) // nonmortar side only
+         case MORTAR_WEIGHTS:
+            // no-op for now
+            break;
+         case ALIGNED_MORTAR:
+            // don't break
+         case SINGLE_MORTAR:
          {
-            this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
-            err = 1;
-         }
-         
-         if (!mesh2.m_nodalFields.m_is_node_pressure_set) // nonmortar side only
-         {
-            this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
-            err = 1;
-         }
-         break;
-      } 
-      case COMMON_PLANE:
-      {
-         switch (this->m_enforcementMethod)
-         {
-            case PENALTY:
+            if (!mesh2.m_nodalFields.m_is_node_gap_set) // nonmortar side only
             {
-               PenaltyEnforcementOptions& pen_enfrc_options = this->m_enforcementOptions.penalty_options;
-               if (mesh1.checkPenaltyData( pen_enfrc_options ) != 0 ||
-                   mesh2.checkPenaltyData( pen_enfrc_options ) != 0)
+               this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
+               err = 1;
+            }
+            
+            if (!mesh2.m_nodalFields.m_is_node_pressure_set) // nonmortar side only
+            {
+               this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
+               err = 1;
+            }
+            break;
+         } 
+         case COMMON_PLANE:
+         {
+            switch (this->m_enforcementMethod)
+            {
+               case PENALTY:
                {
-                  this->m_couplingSchemeErrors.cs_enforcement_data_error 
-                     = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
-                  err = 1;
-               }
-               break;
-            } // end case PENALTY
-            default:
-               break;
-         }  // end switch over enforcement method
-      } // end case COMMON_PLANE
-      default:
-         break;
-   } // end switch on method
+                  PenaltyEnforcementOptions& pen_enfrc_options = this->m_enforcementOptions.penalty_options;
+                  if (mesh1.checkPenaltyData( pen_enfrc_options ) != 0 ||
+                      mesh2.checkPenaltyData( pen_enfrc_options ) != 0)
+                  {
+                     this->m_couplingSchemeErrors.cs_enforcement_data_error 
+                        = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
+                     err = 1;
+                  }
+                  break;
+               } // end case PENALTY
+               default:
+                  break;
+            }  // end switch over enforcement method
+         } // end case COMMON_PLANE
+         default:
+            break;
+      } // end switch on method
+   } // end if-check on non-null meshes
 
    return err;
 

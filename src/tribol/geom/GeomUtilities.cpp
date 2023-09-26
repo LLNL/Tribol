@@ -585,9 +585,13 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
    bool orientA = CheckPolyOrientation( xA, yA, numVertexA );
    bool orientB = CheckPolyOrientation( xB, yB, numVertexB );
 
-   if (!orientA || !orientB)
+   if (!orientA)
    {
-     SLIC_ERROR("Intersection2DPolygon: polygon vertices not ordered counter-clockwise");
+      SLIC_ERROR("polygonal A vertices not CCW");
+   }
+   if (!orientB)
+   {
+      SLIC_ERROR("polygonal B vertices not CCW");
    }
 
    // determine minimum number of vertices (for use later)

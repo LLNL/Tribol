@@ -89,13 +89,6 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
 template< >
 void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 {
-   // check to make sure mortar weights have been computed locally 
-   // for the SurfaceContactElem object
-   if (elem.mortarWts == nullptr)
-   {
-      SLIC_ERROR("ComputeNodalGap< ALIGNED_MORTAR >: compute local weights on input struct first.");
-   }
-
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
    MeshData& nonmortarMesh = meshManager.GetMeshInstance( elem.meshId2 );
