@@ -598,17 +598,11 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
       real* X1 = &projeX1[0];
       real* Y1 = &projeY1[0];
 
-      // TODO check to see if this is required. The call to Intersection2DPolygon may 
-      // require that each face has consistent node orientation/ordering. So, if we assume
-      // that the face connectivity HAS TO BE passed in consistent with an outward unit normal,
-      // then we can reorder face1 node ordering to be consistent with face2 ordering, or vice-versa.
-      // Here we choose to reorder face 2 nodes. To ensure this maybe we should call 
-      // PolyReorderWithNormal and pass in face2 nodes and face1 normal to make them consistent?? SRW
-      //
-      // reorder the second face's vertices to be in CCW ordering
       real* X2 = &projeX2[0];
       real* Y2 = &projeY2[0];
 
+      // reorder each projected face's nodes such that they are consistent (and CCW)
+      // with one another
       PolyReorder( X1, Y1, mesh1.m_numNodesPerCell );
       PolyReorder( X2, Y2, mesh2.m_numNodesPerCell );
 
