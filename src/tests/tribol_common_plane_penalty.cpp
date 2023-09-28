@@ -292,9 +292,6 @@ TEST_F( CommonPlaneTest, penetration_gap_check )
    parameters.penalty_ratio = false;
    parameters.const_penalty = 1.0;
 
-   std::cout << "penetration gap check before slic test before tribolSetupAndUpdate()" << std::endl;
-   SLIC_INFO("slic test in penetration gap check before tribolSetupAndUpdate()");
-
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY,
                                          tribol::FRICTIONLESS, false, parameters );

@@ -963,6 +963,8 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
 //------------------------------------------------------------------------------
 bool CouplingScheme::init()
 {
+   this->setSlicLoggingLevel();
+
    // check for valid coupling scheme only for non-null-meshes
    bool valid = false;
    valid = this->isValidCouplingScheme();
@@ -975,6 +977,38 @@ bool CouplingScheme::init()
    {
       return false;
    }
+}
+//------------------------------------------------------------------------------
+void CouplingScheme::setSlicLoggingLevel()
+{
+   switch (this->m_loggingLevel)
+   {
+      case DEBUG:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
+         break;
+      } 
+      case INFO:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
+         break;
+      } 
+      case WARNING:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
+         break;
+      } 
+      case ERROR:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
+         break;
+      } 
+      default:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
+         break;
+      }
+   } // end switch
 }
 //------------------------------------------------------------------------------
 void CouplingScheme::allocateMethodData()

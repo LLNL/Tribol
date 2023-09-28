@@ -146,9 +146,10 @@ void setOutputDirectory( const std::string& dir );
 
 /*!
  * \brief Sets the logging level
+ * \param [in] csId coupling scheme id
  * \param [in] log_level the desired logging level 
  */
-void setLoggingLevel( const LogLevel log_level );
+void setLoggingLevel( const int csId, const LoggingLevel log_level );
 
 /// @}
 

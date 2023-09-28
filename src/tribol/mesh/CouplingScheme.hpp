@@ -333,6 +333,12 @@ public:
                              const integer cycle, 
                              const real t );
 
+  void setLoggingLevel( const LoggingLevel log_level ) { m_loggingLevel = log_level; }
+
+  void setSlicLoggingLevel();
+
+  LoggingLevel getLoggingLevel() const { return m_loggingLevel; }
+
 #ifdef BUILD_REDECOMP
 
   /**
@@ -520,6 +526,8 @@ private:
   ContactModel m_contactModel;           ///< Contact model
   EnforcementMethod m_enforcementMethod; ///< Contact enforcement method
   BinningMethod m_binningMethod;         ///< Contact binning method
+
+  LoggingLevel m_loggingLevel;
 
   bool m_fixedBinning; ///< True if using fixed binning for all cycles
   bool m_isBinned; ///< True if binning has occured 

@@ -86,6 +86,9 @@ void initialize( integer dimension, CommType comm )
    parameters.problem_comm = comm;
 
    internal::set_defaults( );
+
+   // set default logging level
+   axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
 }
 
 //------------------------------------------------------------------------------
@@ -321,32 +324,16 @@ void setOutputDirectory( const std::string& dir)
 }
 
 //------------------------------------------------------------------------------
-void setLoggingLevel( const LogLevel log_level )
+void setLoggingLevel( const int csId, const LoggingLevel log_level )
 {
-   switch (log_level)
+   if ( !in_range(log_level, NUM_LOGGING_LEVELS) )
    {
-      case DEBUG:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
-         break;
-      }
-      case WARNING:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
-         break;
-      }
-      case ERROR:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
-         break;
-      }
-      default:
-      {
-         SLIC_WARNING_ROOT("tribol::setLoggingLevel(): invalid logging level; setting to Error.");
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
-         break;
-      }
-   } // end switch 
+      SLIC_WARNING_ROOT("tribol::setLoggingLevel(): Logging level not an option; " << 
+                        "using error level.");
+   }
+   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
+   CouplingScheme* couplingScheme  = csManager.getCoupling( csId );
+   couplingScheme->setLoggingLevel( log_level );
 }
 //------------------------------------------------------------------------------
 void registerMesh( integer meshId,
