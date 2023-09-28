@@ -31,6 +31,17 @@ inline bool in_range( integer target, integer N )
 constexpr integer ANY_MESH = -1;
 
 /*!
+ * \brief Enumerates the logging level options
+ */
+enum LogLevel
+{
+   DEBUG,
+   WARNING,
+   ERROR,
+   NUM_LOG_LEVELS = ERROR
+};
+
+/*!
  * \brief Enumerates the interface element types  
  */
 enum InterfaceElementType

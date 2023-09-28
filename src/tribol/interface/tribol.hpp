@@ -144,6 +144,12 @@ void setPlotOptions( enum VisType v_type );
  */
 void setOutputDirectory( const std::string& dir );
 
+/*!
+ * \brief Sets the logging level
+ * \param [in] log_level the desired logging level 
+ */
+void setLoggingLevel( const LogLevel log_level );
+
 /// @}
 
 /// \name Contact Surface Registration Methods

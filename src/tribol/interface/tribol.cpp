@@ -321,6 +321,34 @@ void setOutputDirectory( const std::string& dir)
 }
 
 //------------------------------------------------------------------------------
+void setLoggingLevel( const LogLevel log_level )
+{
+   switch (log_level)
+   {
+      case DEBUG:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
+         break;
+      }
+      case WARNING:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
+         break;
+      }
+      case ERROR:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
+         break;
+      }
+      default:
+      {
+         SLIC_WARNING_ROOT("tribol::setLoggingLevel(): invalid logging level; setting to Error.");
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
+         break;
+      }
+   } // end switch 
+}
+//------------------------------------------------------------------------------
 void registerMesh( integer meshId,
                    integer numCells,
                    integer lengthNodalData,
