@@ -38,25 +38,10 @@ void GalerkinEval( const real* const RESTRICT x,
                    FaceOrderType order_type, BasisEvalType basis_type, 
                    int dim, int galerkinDim, real* nodeVals, real* galerkinVal )
 {
-   if (x == nullptr)
-   {
-      SLIC_ERROR("GalerkinEval(): input pointer, x, is NULL.");
-   }
-
-   if (nodeVals == nullptr)
-   {
-      SLIC_ERROR("GalerkinEval(): input pointer, nodeVals, is NULL.");
-   }
-
-   if (galerkinVal == nullptr)
-   {
-      SLIC_ERROR("GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
-   }
-
-   if (galerkinDim < 1)
-   {
-      SLIC_ERROR( "GalerkinEval(): scalar approximations not yet supported." );
-   }
+   SLIC_ERROR_IF(x==nullptr, "GalerkinEval(): input pointer, x, is NULL.");
+   SLIC_ERROR_IF(nodeVals==nullptr, "GalerkinEval(): input pointer, nodeVals, is NULL.");
+   SLIC_ERROR_IF(galerkinVal==nullptr, "GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
+   SLIC_ERROR_IF(galerkinDim<1, "GalerkinEval(): scalar approximations not yet supported." );
 
    int numNodes = GetNumFaceNodes( dim, order_type );
    switch (basis_type)
@@ -129,7 +114,6 @@ void SegmentBasis( const real* const RESTRICT x,
 
    phi = 1.0 / lambda * (lambda - magW);
 
-   // debug 
    if (phi > 1.0 || phi < 0.0)
    {
       SLIC_ERROR("SegmentBasis: phi is " << phi << " not between 0. and 1." );
@@ -143,10 +127,7 @@ void WachspressBasis( const real* const RESTRICT x,
                       const real pX, const real pY, const real pZ, 
                       const int numPoints, const int vertexId, real& phi )
 {
-   if (numPoints < 3)
-   {
-      SLIC_ERROR("WachspressBasis: numPoints < 3.");
-   }
+   SLIC_ERROR_IF(numPoints<3, "WachspressBasis: numPoints < 3.");
 
    // first compute the areas of all the triangles formed by the i-1,i,i+1 vertices.
    // These consist of all the numerators in the Wachspress formulation
@@ -244,10 +225,7 @@ void InvIso( const real  x[3],
              real  xi[2] )
 {
 
-   if (numNodes != 4)
-   {
-      SLIC_ERROR("InvIso: routine only for 4 node quads.");
-   }
+   SLIC_ERROR_IF(numNodes!=4, "InvIso: routine only for 4 node quads.");
 
    bool convrg = false;
    int kmax = 15;
@@ -370,21 +348,15 @@ void InvIso( const real  x[3],
            }
          }
 
-         if (!in_quad)
-         {
-            SLIC_ERROR("InvIso(): (xi,eta) coordinate does not lie " << 
+         SLIC_ERROR_IF(!in_quad, "InvIso(): (xi,eta) coordinate does not lie " << 
                        "inside isoparametric quad.");
-         }
 
          return; 
       }
 
    }
 
-   if (!convrg)
-   {
-      SLIC_ERROR("InvIso: Newtons method did not converge.");
-   }
+   SLIC_ERROR_IF(!convrg, "InvIso: Newtons method did not converge.");
 
    return;
 }
