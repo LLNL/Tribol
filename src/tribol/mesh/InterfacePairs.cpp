@@ -46,6 +46,16 @@ void InterfacePairs::updateInterfacePair( InterfacePair const& pair,
    m_inContact[ idx ] = pair.inContact;
 }
 
+InterfacePair InterfacePairs::getInterfacePair(IndexType idx) const
+{
+   SLIC_ERROR_IF(idx >= getNumPairs(), "Index out of range.");
+
+   return InterfacePair {
+      m_meshId1, m_pairType1, m_pairIndex1[idx],
+      m_meshId2, m_pairType2, m_pairIndex2[idx], 
+      m_inContact[idx], idx };
+}
+
 } // namespace tribol
 
 

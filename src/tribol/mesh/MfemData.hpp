@@ -1395,7 +1395,7 @@ public:
    * @return std::unique_ptr<mfem::BlockOperator> 
    */
   std::unique_ptr<mfem::BlockOperator> GetMfemBlockJacobian(
-    const MethodData& method_data
+    const MethodData* method_data
   ) const;
 
 private:
