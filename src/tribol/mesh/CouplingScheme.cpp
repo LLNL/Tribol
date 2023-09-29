@@ -324,20 +324,20 @@ CouplingScheme::CouplingScheme( integer couplingSchemeId,
    , m_methodData           ( nullptr )
 {
   // error sanity checks
-  SLIC_ERROR_IF( meshId1==ANY_MESH, "meshId1 cannot be set to ANY_MESH" );
-  SLIC_ERROR_IF( !validMeshID( m_meshId1 ), "invalid meshId1=" << meshId1 );
-  SLIC_ERROR_IF( !validMeshID( m_meshId2 ), "invalid meshId2=" << meshId2 );
+  SLIC_ERROR_ROOT_IF( meshId1==ANY_MESH, "meshId1 cannot be set to ANY_MESH" );
+  SLIC_ERROR_ROOT_IF( !validMeshID( m_meshId1 ), "invalid meshId1=" << meshId1 );
+  SLIC_ERROR_ROOT_IF( !validMeshID( m_meshId2 ), "invalid meshId2=" << meshId2 );
 
-  SLIC_ERROR_IF( !in_range( contact_mode, NUM_CONTACT_MODES ),
-                "invalid contact_mode=" << contact_mode );
-  SLIC_ERROR_IF( !in_range( contact_method, NUM_CONTACT_METHODS ),
-                  "invalid contact_method=" << contact_method );
-  SLIC_ERROR_IF( !in_range( contact_model, NUM_CONTACT_MODELS ),
-                 "invalid contact_model=" << contact_model );
-  SLIC_ERROR_IF( !in_range( enforcement_method, NUM_ENFORCEMENT_METHODS ),
-                 "invalid enforcement_method=" << enforcement_method );
-  SLIC_ERROR_IF( !in_range( binning_method, NUM_BINNING_METHODS ),
-                 "invalid binning_method=" << binning_method );
+  SLIC_ERROR_ROOT_IF( !in_range( contact_mode, NUM_CONTACT_MODES ),
+                      "invalid contact_mode=" << contact_mode );
+  SLIC_ERROR_ROOT_IF( !in_range( contact_method, NUM_CONTACT_METHODS ),
+                      "invalid contact_method=" << contact_method );
+  SLIC_ERROR_ROOT_IF( !in_range( contact_model, NUM_CONTACT_MODELS ),
+                      "invalid contact_model=" << contact_model );
+  SLIC_ERROR_ROOT_IF( !in_range( enforcement_method, NUM_ENFORCEMENT_METHODS ),
+                      "invalid enforcement_method=" << enforcement_method );
+  SLIC_ERROR_ROOT_IF( !in_range( binning_method, NUM_BINNING_METHODS ),
+                      "invalid binning_method=" << binning_method );
 
   m_contactMode = static_cast<ContactMode>( contact_mode );
   m_contactCase = static_cast<ContactCase>( contact_case );
@@ -424,27 +424,23 @@ bool CouplingScheme::isValidCouplingScheme()
 
    if (!this->isValidMethod())
    {
-      SLIC_INFO("Before printMethodErrors()");
       this->m_couplingSchemeErrors.printMethodErrors();
       valid = false;
    }
 
    if (!this->isValidModel())
    {
-      SLIC_INFO("Before printModelErrors()");
       this->m_couplingSchemeErrors.printModelErrors();
       valid = false;
    }
 
    if (!this->isValidEnforcement())
    {
-      SLIC_INFO("Before printEnforcementErrors()");
       this->m_couplingSchemeErrors.printEnforcementErrors();
       valid = false;
    }
    else if (this->checkEnforcementData() != 0)
    {
-      SLIC_INFO("Before printEnforcementDataErrors()");
       this->m_couplingSchemeErrors.printEnforcementDataErrors();
       valid = false;
    }
@@ -882,8 +878,6 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
 {
   SLIC_ASSERT( m_interfacePairs != nullptr );
 
-  // TODO check to see if we want to call this routine with null-meshes
-
   // set dimension on the contact plane manager
   parameters_t& params = parameters_t::getInstance();
   ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
@@ -940,13 +934,18 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    // appropriate physics in the normal and tangential directions.
    int err = ApplyInterfacePhysics( this, cycle, t );
 
-   SLIC_WARNING_IF(err, "CouplingScheme::apply(): error in ApplyInterfacePhysics for " <<
+   SLIC_WARNING_IF(err!=0, "CouplingScheme::apply(): error in ApplyInterfacePhysics for " <<
                    "coupling scheme, " << this->m_id << ".");
 
    // compute Tribol timestep vote on the coupling scheme
-   computeTimeStep(dt);
+   if (err==0 && numActivePairs>0)
+   {
+      computeTimeStep(dt);
+   }
 
-   // output on root, SRW
+   // TODO address this, SRW
+   // can't output on root because not all ranks may get here 
+   // consider allowing all ranks to get here and do a reduction to get min dt.
    if (dt > 0.)
    {
       SLIC_INFO( "The Tribol timestep vote is: " << dt );
@@ -1396,8 +1395,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
             dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
             dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
 
-            SLIC_ERROR_IF( dt1<0, "Common plane timestep vote for gap-check of face 1 is negative.");
-            SLIC_ERROR_IF( dt2<0, "Common plane timestep vote for gap-check of face 2 is negative.");
+            SLIC_ERROR_IF( dt1<0., "Common plane timestep vote for gap-check of face 1 is negative.");
+            SLIC_ERROR_IF( dt2<0., "Common plane timestep vote for gap-check of face 2 is negative.");
 
             dt_temp1 = axom::utilities::min(dt_temp1, 
                        axom::utilities::min(dt1, dt2));

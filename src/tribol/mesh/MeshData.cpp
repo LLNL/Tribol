@@ -845,7 +845,6 @@ int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
       {
          if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
          {
-            SLIC_WARNING("Invalid Kinematic penalty data.");
             err = 1;
          }
          break;
@@ -855,12 +854,10 @@ int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
       {
          if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
          {
-            SLIC_WARNING("Invalid Kinematic penalty data.");
             err = 1;
          }
          if (!this->m_elemData.isValidRatePenalty( p_enfrc_options ))
          {
-            SLIC_WARNING("Invalid Rate penalty data.");
             err = 1;
          }
          if (!this->m_nodalFields.m_is_velocity_set)
