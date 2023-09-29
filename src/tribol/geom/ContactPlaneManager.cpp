@@ -45,7 +45,7 @@ void ContactPlaneManager::resize( IndexType const newSize )
   case 2: resize2D(); break;
   case 3: resize3D(); break;
   default:
-     SLIC_ERROR("ContactPlaneManager::resize incorrect problem dimension: " << m_spaceDim );
+     SLIC_ERROR("ContactPlaneManager::resize(): incorrect problem dimension, " << m_spaceDim );
      break;
   }
 
@@ -206,7 +206,7 @@ void ContactPlaneManager::reserve( IndexType const newSize )
   }
   else
   {
-     SLIC_ERROR("ContactPlaneManager::reserve, must set problem dimension.");
+     SLIC_ERROR("ContactPlaneManager::reserve(): must set problem dimension.");
   }
 
   return;
@@ -743,7 +743,8 @@ void ContactPlaneManager::getContactPlaneOverlapVerts( int const id,
 {
    if (numVerts != m_numPolyVert[id])
    {
-      SLIC_ERROR("getContactPlaneOverlapVerts: input arg. numVerts != m_numPolyVert[id]");
+      SLIC_ERROR("ContactPlaneManager::getContactPlaneOverlapVerts(): " << 
+                  "input arg. numVerts != m_numPolyVert[id]");
    }
 
    // point to the appropriate overlap vertex coordinate

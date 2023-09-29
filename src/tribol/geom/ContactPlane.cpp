@@ -701,7 +701,6 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
                                 cp.m_polyZ[i] );
    }
 
-   // TODO verify this is correct
    // check polygonal vertex ordering with common plane normal
    PolyReorderWithNormal( cp.m_polyX, cp.m_polyY, cp.m_polyZ, cp.m_numPolyVert,
                           cp.m_nX, cp.m_nY, cp.m_nZ );
@@ -1102,7 +1101,7 @@ void ContactPlane3D::computeAreaTol()
    parameters_t & parameters = parameters_t::getInstance();
 
    if (m_areaFrac < parameters.overlap_area_frac ) {
-      SLIC_ERROR ( "ContactPlane3D::computeAreaTol the overlap area fraction too small or negative" );
+      SLIC_ERROR ( "ContactPlane3D::computeAreaTol() the overlap area fraction too small or negative" );
    }
 
    MeshData& mesh1 = getCpMeshData( m_pair.meshId1 );
@@ -1412,7 +1411,7 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
 
          if (k > 2)
          {
-            SLIC_ERROR ("ContactPlane3D::computeInterpenOverlap : too many segment-plane intersections.");
+            SLIC_ERROR ("ContactPlane3D::computeInterpenOverlap(): too many segment-plane intersections.");
          }
 
          // call segment-to-plane intersection routine
@@ -2122,7 +2121,7 @@ void ContactPlane2D::computeAreaTol()
    // Note: this code is the same as for ContactPlane3D, but maintain separate 
    // routine for 2D treatment.
    if (m_areaFrac < 1.E-12) {
-      SLIC_ERROR ( "ContactPlane2D::computeAreaTol the overlap area fraction too small or negative" );
+      SLIC_ERROR ( "ContactPlane2D::computeAreaTol() the overlap area fraction too small or negative" );
    }
 
    MeshData& mesh1 = getCpMeshData( m_pair.meshId1 );
@@ -2185,8 +2184,6 @@ bool ContactPlane2D::computeLocalInterpenOverlap()
    // is marked true, but the SegmentIntersection2D returns false
    if (!edgeIntersect && !duplicatePoint)
    {
-      SLIC_DEBUG("CheckEdgePair: non-intersecting edges found in interpen "
-        << "overlap calculation. inter: {"<< xInter <<", " << yInter << "}");
       m_interpenArea = 0.0;
       return false;
       
@@ -2248,7 +2245,7 @@ bool ContactPlane2D::computeLocalInterpenOverlap()
    // Debug check the number of interpenetrating vertices
    if (k > 2)
    {
-      SLIC_ERROR("ContactPlane2D::computeLocalInterpenOverlap more than 2 interpenetrating vertices detected.");
+      SLIC_ERROR("ContactPlane2D::computeLocalInterpenOverlap() more than 2 interpenetrating vertices detected.");
    }
 
    // now that we have marked the interpenetrating vertex of each edge, 

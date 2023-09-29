@@ -1109,8 +1109,7 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
       return false;
    }
 
-   #ifdef AXOM_DEBUG
-
+   {
      // debug check to make sure the intersection coordinates derived from 
      // each segment equation (scaled with tA and tB) are the same to some 
      // tolerance
@@ -1127,10 +1126,9 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
      yDiff = (yDiff < 0.) ? -1.0 * yDiff : yDiff;
 
      real diffTol = 1.0E-3;
-     SLIC_ERROR_IF( xDiff > diffTol || yDiff > diffTol, 
+     SLIC_DEBUG_IF( xDiff > diffTol || yDiff > diffTol, 
                    "SegmentIntersection2D(): Intersection coordinates are not equally derived." );
-
-   #endif
+   }
 
    // if we get here then it means we have an intersection point.
    // Find the minimum distance of the intersection point to any of the segment 
