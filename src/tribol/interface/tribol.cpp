@@ -88,6 +88,8 @@ void initialize( integer dimension, CommType comm )
    internal::set_defaults( );
 
    // set default logging level
+   axom::slic::finalize(); // TODO do we need to finalize here
+   axom::slic::initialize(); // TODO input arguments?
    axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
 }
 
@@ -1025,6 +1027,7 @@ void finalize( )
    {
       csManager.clearAllCouplings();
    }
+   axom::slic::finalize();
 }
 
 //------------------------------------------------------------------------------
