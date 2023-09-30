@@ -906,17 +906,16 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      if (!interact)
      {
         pair.inContact = false;
-        continue;
      }
      else
      {
         pair.inContact = true;
         ++numActivePairs;
-
-        // update the InterfacePairs container on the coupling scheme 
-        // to reflect the change to "in-contact"
-        m_interfacePairs->updateInterfacePair( pair, kp ); 
      }
+     
+      // update the InterfacePairs container on the coupling scheme 
+      // to reflect the change to "in-contact"
+      m_interfacePairs->updateInterfacePair( pair, kp ); 
 
    } // end loop over pairs
 
