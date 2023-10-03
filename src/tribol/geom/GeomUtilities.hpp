@@ -301,7 +301,8 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
                             real posTol, real lenTol, 
                             real* RESTRICT * RESTRICT polyX, 
                             real* RESTRICT * RESTRICT polyY, 
-                            int& numPolyVert, real& area );
+                            int& numPolyVert, real& area,
+                            bool orientCheck=true );
                            
 /*!
  *

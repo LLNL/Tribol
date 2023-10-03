@@ -616,7 +616,7 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
                              X2, Y2, mesh2.m_numNodesPerCell,
                              pos_tol, len_tol, &cp.m_polyLocX, 
                              &cp.m_polyLocY, cp.m_numPolyVert, 
-                             cp.m_area ); 
+                             cp.m_area, false ); 
 
       if (cp.m_area < cp.m_areaMin)
       {
@@ -1563,7 +1563,7 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
                           m_cX, m_cY, m_cZ,
                           cfx2_loc, cfy2_loc, numV[1] );
 
-   // reorder polygon local vertices in CCW orientation
+   // reorder potentially unordered set of vertices
    PolyReorder( cfx1_loc, cfy1_loc, numV[0] );
    PolyReorder( cfx2_loc, cfy2_loc, numV[1] ); 
 
@@ -1580,7 +1580,7 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
                           cfx2_loc, cfy2_loc, numV[1],
                           pos_tol, len_tol, &m_polyLocX,
                           &m_polyLocY, m_numPolyVert,
-                          m_interpenArea );
+                          m_interpenArea, true );
 
    // store the local intersection polygons on the contact plane object, 
    // primarily for visualization
