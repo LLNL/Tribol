@@ -332,8 +332,8 @@ void setLoggingLevel( const int csId, const LoggingLevel log_level )
    CouplingScheme* couplingScheme  = csManager.getCoupling( csId );
    if ( !in_range(log_level, NUM_LOGGING_LEVELS) )
    {
-      SLIC_WARNING_ROOT("tribol::setLoggingLevel(): Logging level not an option; " << 
-                        "using 'error' level.");
+      SLIC_INFO_ROOT("tribol::setLoggingLevel(): Logging level not an option; " << 
+                     "using 'error' level.");
       couplingScheme->setLoggingLevel( tribol::ERROR );
    }
    else
