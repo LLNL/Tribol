@@ -391,7 +391,8 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    }
    else
    {
-      SLIC_ERROR("Unsupported Jacobian storage method.");
+      SLIC_WARNING("Unsupported Jacobian storage method.");
+      return 1;
    }
 
    ////////////////////////////////////////////////////////////////
@@ -520,7 +521,8 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
          }
          else
          {
-            SLIC_ERROR("Unsupported Jacobian storage method.");
+            SLIC_WARNING("Unsupported Jacobian storage method.");
+            return 1;
          }
          
       }
@@ -813,9 +815,12 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
       // Note: active nonmortar nodes (i.e. active gaps) are checked in this routine.
       const EnforcementOptions& enforcement_options = const_cast<EnforcementOptions&>(cs->getEnforcementOptions());
       const SparseMode sparse_mode = enforcement_options.lm_implicit_options.sparse_mode;
-      SLIC_ERROR_IF(sparse_mode == SparseMode::MFEM_ELEMENT_DENSE, 
-         "GetMethodData<MORTAR_WEIGHTS>() MFEM_ELEMENT_DENSE " << 
-         "Unassembled element dense matrix output not implemented.");
+      if (sparse_mode == SparseMode::MFEM_ELEMENT_DENSE)
+      {
+        SLIC_WARNING( "GetMethodData<MORTAR_WEIGHTS>() MFEM_ELEMENT_DENSE " << 
+                      "Unassembled element dense matrix output not implemented." );
+        return 1;
+      }
       static_cast<MortarData*>( cs->getMethodData() )->assembleMortarWts( elem, sparse_mode );
 
       ++cpID;

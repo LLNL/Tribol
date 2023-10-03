@@ -31,6 +31,7 @@ int ApplyInterfacePhysics( CouplingScheme const * cs,
 
    int err_nrml = false;
    int err_tang = false;
+   int err_data = false;
 
    // switch over numerical method
    switch ( cs->getContactMethod() )
@@ -97,7 +98,7 @@ int ApplyInterfacePhysics( CouplingScheme const * cs,
 
    case MORTAR_WEIGHTS:
       // no enforcement for this method and no need to call visualization.
-      GetMethodData< MORTAR_WEIGHTS >( cs );
+      err_data = GetMethodData< MORTAR_WEIGHTS >( cs );
       break;
 
    default:
@@ -107,8 +108,10 @@ int ApplyInterfacePhysics( CouplingScheme const * cs,
 
    } // end switch (method)
 
+   // error checking
    if ( err_nrml != 0 )
    {
+      // note, not all ranks will get here if a rank has null-meshes
       SLIC_WARNING("ApplyInterfacePhysics: error in application of " <<
                    "'normal' physics method for " <<
                    "coupling scheme, " << cs->getId() << ".");
@@ -117,11 +120,19 @@ int ApplyInterfacePhysics( CouplingScheme const * cs,
    }
    else if ( err_tang != 0 )
    {
+      // note, not all ranks will get here if a rank has null-meshes
       SLIC_WARNING("ApplyInterfacePhysics: error in application of " <<
                    "'tangential' physics method for " <<
                    "coupling scheme, " << cs->getId() << ".");
 
       return err_tang;
+   }
+   else if ( err_data != 0 )
+   {
+      // note, not all ranks will get here if a rank has null-meshes
+      SLIC_WARNING("ApplyInterfacePhysics: error in call to  " <<
+                   "GetMethodData for coupling scheme, " << cs->getId() << ".");
+      return err_data;
    }
    else
    {
