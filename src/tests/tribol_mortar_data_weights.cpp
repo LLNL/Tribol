@@ -69,15 +69,12 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
 
    EXPECT_EQ( csr_err, 0 );
 
-   if (I == nullptr)
-   {
-      SLIC_ERROR("Mortar wts test, I is null.");
-   }
+   SLIC_ERROR_IF(I==nullptr, "Mortar wts test, I is null.");
 
    // get mortar node id offset to distinguish mortar from nonmortar column contributions
    if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
    {
-      SLIC_INFO("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
+      SLIC_DEBUG("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
       mortarMesh.sortSurfaceNodeIds();
    }
    int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
@@ -93,11 +90,11 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
           
          if ( J[b] < nodeOffset ) // nonmortar/mortar  weight
          {
-//            SLIC_INFO("nonmortar/mortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
+//            SLIC_DEBUG("nonmortar/mortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
          }
          else // nonmortar/nonmortar weight
          {
-//            SLIC_INFO("nonmortar/nonmortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
+//            SLIC_DEBUG("nonmortar/nonmortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
          } // end if-block
 
       } // end loop over nonzero columns, I[a]
@@ -105,7 +102,7 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
 
    area /= 2.;
 
-   SLIC_INFO("area: " << area << ".");
+   SLIC_DEBUG("area: " << area << ".");
 
    double diff = std::abs( area - exact_area );
    EXPECT_LE( diff, tol );
@@ -205,7 +202,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
    i_ys.close();
    i_zs.close();
 
-   SLIC_INFO("After loading mesh data and constructing mfem vectors.");
+   SLIC_DEBUG("After loading mesh data and constructing mfem vectors.");
 
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
@@ -319,7 +316,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
    i_ys.close();
    i_zs.close();
 
-   SLIC_INFO("After loading mesh data and constructing mfem vectors.");
+   SLIC_DEBUG("After loading mesh data and constructing mfem vectors.");
 
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
@@ -433,7 +430,7 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
    i_ys.close();
    i_zs.close();
 
-   SLIC_INFO("After loading mesh data and constructing mfem vectors.");
+   SLIC_DEBUG("After loading mesh data and constructing mfem vectors.");
 
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
