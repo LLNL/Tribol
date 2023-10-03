@@ -30,7 +30,7 @@ namespace tribol
  * \pre dimension==2 || dimensions==3
  * \pre comm != MPI_COMM_NULL
  */
-void initialize( integer dimension, CommType comm );
+void initialize( integer dimension, CommType comm, LoggingLevel log_level=WARNING );
 
 /// @}
 

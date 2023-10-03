@@ -997,9 +997,7 @@ void CouplingScheme::setSlicLoggingLevel()
       } 
       case WARNING:
       {
-         std::cout << "before axom::slic::setLoggingMsgLevel(warning)." << std::endl;
          axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
-         std::cout << "after axom::slic::setLoggingMsgLevel(warning)." << std::endl;
          break;
       } 
       case ERROR:
@@ -1009,7 +1007,7 @@ void CouplingScheme::setSlicLoggingLevel()
       } 
       default:
       {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
          break;
       }
    } // end switch

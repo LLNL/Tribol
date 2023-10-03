@@ -75,7 +75,7 @@ void set_defaults()
 } /* end namepsace internal */
 
 //------------------------------------------------------------------------------
-void initialize( integer dimension, CommType comm )
+void initialize( integer dimension, CommType comm, LoggingLevel log_level )
 {
    // sanity checks
    SLIC_ASSERT( (dimension==2) || (dimension==3) );
@@ -91,7 +91,34 @@ void initialize( integer dimension, CommType comm )
    axom::slic::finalize(); // TODO do we need to finalize here
    axom::slic::initialize(); // TODO input arguments?
    std::string format = "[<LEVEL>]: <MESSAGE> \n";
-   axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
+   switch (log_level)
+   {
+      case DEBUG:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
+         break;
+      } 
+      case INFO:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
+         break;
+      } 
+      case WARNING:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
+         break;
+      } 
+      case ERROR:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
+         break;
+      } 
+      default:
+      {
+         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
+         break;
+      }
+   } // end switch
    //axom::slic::addStreamToAllMsgLevels(
    //   new axom::slic::GenericOutputStream( &std::cout,format) );
 }
