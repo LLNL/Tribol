@@ -626,7 +626,7 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
                                            mesh2.m_faceRadius[ faceId2 ] );
       real len_tol = pos_tol;
       Intersection2DPolygon( X1, Y1, mesh1.m_numNodesPerCell,
-                             X2, Y2, mesh2.m_numNodesPerCell,
+                             &X2[0], &Y2[0], mesh2.m_numNodesPerCell,
                              pos_tol, len_tol, &cp.m_polyLocX, 
                              &cp.m_polyLocY, cp.m_numPolyVert, 
                              cp.m_area ); 
