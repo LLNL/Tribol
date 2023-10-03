@@ -581,9 +581,17 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       return;
    }
 
-   // check right hand rule ordering of polygon vertices
-   bool orientA = CheckPolyOrientation( xA, yA, numVertexA );
-   bool orientB = CheckPolyOrientation( xB, yB, numVertexB );
+   // check right hand rule ordering of polygon vertices. 
+   // Note 1: This check is consistent with the ordering that comes from PolyReorder() 
+   // of two faces with unordered vertices. 
+   // Note 2: Intersection2DPolygon doesn't require consistent face vertex orientation
+   // between faces, as long as they are order CW or CCW.
+   bool orientA, orientB;
+   if (orientCheck)
+   {
+      orientA = CheckPolyOrientation( xA, yA, numVertexA );
+      orientB = CheckPolyOrientation( xB, yB, numVertexB );
+   }
 
    if (!orientA && orientCheck)
    {
