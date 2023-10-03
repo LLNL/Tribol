@@ -1458,6 +1458,26 @@ void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numP
 } // end PolyReorder()
 
 //------------------------------------------------------------------------------
+void PolyReverse( real* const RESTRICT x, real* const RESTRICT y, const int numPoints )
+{
+   real xtemp[ numPoints ];
+   real ytemp[ numPoints ];
+   for (int i=0; i<numPoints; ++i)
+   {
+      xtemp[i] = x[i];
+      ytemp[i] = y[i];
+   }
+
+   int k=1;
+   for (int i=(numPoints-1); i>0; --i)
+   {
+      x[k] = xtemp[i];
+      y[k] = ytemp[i];
+      ++k;
+   }
+}
+
+//------------------------------------------------------------------------------
 void PolyReorderWithNormal( real* const RESTRICT x,
                             real* const RESTRICT y,
                             real* const RESTRICT z,

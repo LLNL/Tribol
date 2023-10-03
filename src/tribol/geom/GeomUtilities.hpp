@@ -468,7 +468,7 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
 
 /*!
  *
- * \brief reorders a set of vertices associated with a star convex polygon in 
+ * \brief reorders a set of unordered vertices associated with a star convex polygon in 
  *        counter clockwise orientation
  *
  * \param [in,out] x array of local x vertex coordinates
@@ -481,6 +481,19 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
  *  polygon and orders the vertices in counter-clockwise orientation.
  */
 void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numPoints );
+
+/*!
+ *
+ * \brief reverses ordering of polygon vertices
+ *
+ * \param [in,out] x array of local x vertex coordinates
+ * \param [in,out] y array of local y vertex coordinates
+ * \param [in] numPoints number of vertices
+ *
+ * \pre length(x), length(y) >= numPoints
+ *
+ */
+void PolyReverse( real* const RESTRICT x, real* const RESTRICT y, const int numPoints );
 
 /*!
  *

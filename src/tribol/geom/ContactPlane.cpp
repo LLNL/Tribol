@@ -600,23 +600,10 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
       real* X2 = &projeX2[0];
       real* Y2 = &projeY2[0];
  
-      //real X2[ mesh2.m_numNodesPerCell ];
-      //real Y2[ mesh2.m_numNodesPerCell ];
-      //X2[0] = projeX2[0];
-      //Y2[0] = projeY2[0];
-
-      //int k=1;
-      //for (int i=(mesh2.m_numNodesPerCell-1); i>0; --i)
-      //{
-      //   X2[k] = projeX2[i];
-      //   Y2[k] = projeY2[i];
-      //   ++k;
-      //}
-
-      // reorder each projected face's nodes such that they are consistent (and CCW)
-      // with one another
-      //PolyReorder( X1, Y1, mesh1.m_numNodesPerCell );
-      PolyReorder( X2, Y2, mesh2.m_numNodesPerCell );
+      // assuming each face's vertices are ordered WRT that face's outward unit normal,
+      // reorder face 2 vertices to be consistent with face 1. DO NOT CALL POLYREORDER() 
+      // to do this.
+      PolyReverse( X2, Y2, mesh2.m_numNodesPerCell );
 
       // compute intersection polygon and area. Note, the polygon centroid 
       // is stored from the previous intersection calc that just computes 
