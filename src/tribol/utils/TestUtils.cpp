@@ -773,9 +773,9 @@ void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real 
    // Check that mesh ids are not the same. The TestMesh class was built around 
    // testing the mortar method with Lagrange multiplier enforcement, which does not 
    // support auto contact.
-   SLIC_WARNING_IF( this->mortarMeshId == this->nonmortarMeshId, 
-                    "TestMesh::allocateAndSetVelocities(): please set unique " << 
-                    "mortarMeshId and nonmortarMeshId prior to calling this routine.");
+   SLIC_ERROR_IF( this->mortarMeshId == this->nonmortarMeshId, 
+                  "TestMesh::allocateAndSetVelocities(): please set unique " << 
+                  "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
    // check to see if pointers have been set
    bool deleteVels = false;
@@ -844,9 +844,9 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
    // Check that mesh ids are the same. The TestMesh class was built around 
    // testing the mortar method with Lagrange multiplier enforcement, which does 
    // not support auto contact.
-   SLIC_WARNING_IF( this->mortarMeshId == this->nonmortarMeshId, 
-                    "TestMesh::allocateAndSetVelocities(): please set unique " << 
-                    "mortarMeshId and nonmortarMeshId prior to calling this routine.");
+   SLIC_ERROR_IF( this->mortarMeshId == this->nonmortarMeshId, 
+                  "TestMesh::allocateAndSetVelocities(): please set unique " << 
+                  "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
    // check to see if pointers have been set
    bool deleteData = false;

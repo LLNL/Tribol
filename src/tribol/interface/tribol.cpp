@@ -333,7 +333,7 @@ void setLoggingLevel( const int csId, const LoggingLevel log_level )
    if ( !in_range(log_level, NUM_LOGGING_LEVELS) )
    {
       SLIC_WARNING_ROOT("tribol::setLoggingLevel(): Logging level not an option; " << 
-                        "using error level.");
+                        "using 'error' level.");
       couplingScheme->setLoggingLevel( tribol::ERROR );
    }
    else
@@ -359,7 +359,8 @@ void registerMesh( integer meshId,
        static_cast< InterfaceElementType >(elementType) != LINEAR_TRIANGLE &&
        static_cast< InterfaceElementType >(elementType) != LINEAR_QUAD)
    {
-      SLIC_WARNING_ROOT("Mesh topology not supported for mesh id, " << meshId << ".");
+      SLIC_WARNING_ROOT("tribol::registerMesh(): mesh topology not supported " << 
+                        "for mesh id, " << meshId << ".");
       mesh.m_isValid = false;
    }
 
@@ -370,7 +371,8 @@ void registerMesh( integer meshId,
    {
       if (x == nullptr || y == nullptr)
       {
-         SLIC_WARNING("Pointer to x or y-component mesh coordinate arrays are null pointers " <<
+         SLIC_WARNING("tribol::registerMesh(): pointer to x or y-component " << 
+                      "mesh coordinate arrays are null pointers " <<
                       " for mesh id, " << meshId << ".");
          mesh.m_isValid = false;
       }
@@ -379,8 +381,8 @@ void registerMesh( integer meshId,
       {
          if (z == nullptr)
          {
-            SLIC_WARNING("Pointer to z-component mesh coordinates is null for " << 
-                         "mesh id, " << meshId << ".");
+            SLIC_WARNING("tribol::registerMesh(): pointer to z-component " << 
+                         "mesh coordinates is null for mesh id, " << meshId << ".");
             mesh.m_isValid = false;
          }
       }
@@ -597,12 +599,13 @@ int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
    // check to make sure input pointers are null
    if ( *I != nullptr || *J != nullptr || *vals != nullptr )
    {
-      SLIC_ERROR("tribol::getCSRMatrix: input pointers not null, nullifying now.");
+      SLIC_WARNING("tribol::getJacobianCSRMatrix(): input pointers must be null.");
+      return 1;
    }
 
    CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
 
-   SLIC_ERROR_IF(!csManager.hasCoupling(csId), "tribol::getCSRMatrix(): invalid " << 
+   SLIC_ERROR_IF(!csManager.hasCoupling(csId), "tribol::getJacobianCSRMatrix(): invalid " << 
                  "CouplingScheme id.");
 
    CouplingScheme* couplingScheme  = csManager.getCoupling( csId );
@@ -611,7 +614,7 @@ int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
    {
       case ALIGNED_MORTAR:
       {
-         SLIC_WARNING("tribol::getCSRMatrix(): CSR format not currently implemented with " <<
+         SLIC_WARNING("tribol::getJacobianCSRMatrix(): CSR format not currently implemented with " <<
                       "ALIGNED_MORTAR. Use MFEM sparse matrix registration.");
          return 1;
       }
@@ -622,13 +625,13 @@ int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
       }
       case SINGLE_MORTAR:
       {
-         SLIC_WARNING("tribol::getCSRMatrix(): CSR format not currently implemented with "
+         SLIC_WARNING("tribol::getJacobianCSRMatrix(): CSR format not currently implemented with "
                       "SINGLE_MORTAR. Use MFEM sparse matrix registration.");
          return 1;
       }
       default:
       {
-         SLIC_WARNING("tribol::registerCSRMatrix(): method does not return matrix data; " <<
+         SLIC_WARNING("tribol::getJacobianCSRMatrix(): method does not return matrix data; " <<
                        "invalid call.");
          return 1;
       }
@@ -851,8 +854,8 @@ void registerRealElementField( integer meshId,
       }
       default:
       {
-         SLIC_ERROR_ROOT( "tribol::registerRealElementField(): the field argument " << 
-                          "on mesh " << meshId << " is not an accepted tribol real element field." );
+         SLIC_ERROR( "tribol::registerRealElementField(): the field argument " << 
+                     "on mesh " << meshId << " is not an accepted tribol real element field." );
       }
    } // end switch over field
 
@@ -986,8 +989,8 @@ integer update( integer cycle, real t, real &dt )
          }
          else
          {
-            SLIC_WARNING("Skipping invalid CouplingScheme " << couplingScheme->getId() << ". " << 
-                         "Please see warnings.");
+            SLIC_INFO("tribol::update(): skipping invalid CouplingScheme " << 
+                      couplingScheme->getId() << "Please see warnings.");
             continue;
          }
       }
