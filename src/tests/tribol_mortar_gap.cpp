@@ -163,6 +163,9 @@ public:
          }
       }
 
+      tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+      tribol::initialize( 3, problem_comm );
+
       const int mortarMeshId = 0;
       const int nonmortarMeshId = 1;
 

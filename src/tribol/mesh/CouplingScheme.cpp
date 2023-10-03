@@ -978,6 +978,11 @@ bool CouplingScheme::init()
 //------------------------------------------------------------------------------
 void CouplingScheme::setSlicLoggingLevel()
 {
+   axom::slic::finalize(); // TODO do we need to finalize here
+   axom::slic::initialize(); // TODO input arguments?
+   std::string format = "[<LEVEL>]: <MESSAGE> \n";
+   //axom::slic::addStreamToAllMsgLevels(
+   //   new axom::slic::GenericOutputStream( &std::cout,format) );
    switch (this->m_loggingLevel)
    {
       case DEBUG:

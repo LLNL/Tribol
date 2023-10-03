@@ -231,7 +231,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
    }
 
    // initialize
-   int err = Initialize( 3, true );
+   int err = Initialize( 3 );
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
@@ -345,7 +345,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
    }
 
    // initialize
-   int err = Initialize( 3, true );
+   int err = Initialize( 3 );
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
@@ -459,7 +459,7 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
    }
 
    // initialize
-   int err = Initialize( 3, true );
+   int err = Initialize( 3 );
 
    // setup simple coupling
    SimpleCouplingSetup( 3,

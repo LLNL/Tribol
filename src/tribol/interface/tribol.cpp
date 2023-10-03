@@ -90,7 +90,10 @@ void initialize( integer dimension, CommType comm )
    // set default logging level
    axom::slic::finalize(); // TODO do we need to finalize here
    axom::slic::initialize(); // TODO input arguments?
+   std::string format = "[<LEVEL>]: <MESSAGE> \n";
    axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
+   //axom::slic::addStreamToAllMsgLevels(
+   //   new axom::slic::GenericOutputStream( &std::cout,format) );
 }
 
 //------------------------------------------------------------------------------
