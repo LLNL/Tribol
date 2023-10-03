@@ -962,8 +962,6 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
 //------------------------------------------------------------------------------
 bool CouplingScheme::init()
 {
-   this->setSlicLoggingLevel();
-
    // check for valid coupling scheme only for non-null-meshes
    bool valid = false;
    valid = this->isValidCouplingScheme();
@@ -994,7 +992,9 @@ void CouplingScheme::setSlicLoggingLevel()
       } 
       case WARNING:
       {
+         std::cout << "before axom::slic::setLoggingMsgLevel(warning)." << std::endl;
          axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
+         std::cout << "after axom::slic::setLoggingMsgLevel(warning)." << std::endl;
          break;
       } 
       case ERROR:
