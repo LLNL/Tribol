@@ -895,7 +895,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
   // loop over all pairs and perform geometry checks to see if they 
   // are interacting
   int numActivePairs = 0;
-  bool pair_err = 0;
+  int pair_err = 0;
   for (IndexType kp = 0; kp < numPairs; ++kp)
   {
      InterfacePair pair = m_interfacePairs->getInterfacePair(kp);
@@ -904,13 +904,15 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      // geometry checks to determine whether to include a pair 
      // in the active set
      bool interact = false;
-     int interact_err = CheckInterfacePair( pair, m_contactMethod, 
-                                           m_contactCase, interact );
+     FaceGeomError interact_err = CheckInterfacePair( pair, m_contactMethod, 
+                                                      m_contactCase, interact );
 
-     if (interact_err != 0)
+
+     if (interact_err != NO_FACE_GEOM_ERROR)
      {
         pair_err = 1;
         pair.inContact = false;
+        SLIC_DEBUG("Face geometry error, " << static_cast<int>(interact_err) << "for pair, " << kp << ".");
         continue;
      }
      else if (!interact)

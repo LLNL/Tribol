@@ -550,16 +550,16 @@ void PolyCentroid( const real* const RESTRICT x,
 } // end PolyCentroid()
 
 //------------------------------------------------------------------------------
-int Intersection2DPolygon( const real* const RESTRICT xA, 
-                           const real* const RESTRICT yA, 
-                           const int numVertexA, 
-                           const real* const RESTRICT xB, 
-                           const real* const RESTRICT yB, 
-                           const int numVertexB,
-                           real posTol, real lenTol, 
-                           real* RESTRICT * RESTRICT polyX, 
-                           real* RESTRICT * RESTRICT polyY, 
-                           int& numPolyVert, real& area, bool orientCheck )
+FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA, 
+                                     const real* const RESTRICT yA, 
+                                     const int numVertexA, 
+                                     const real* const RESTRICT xB, 
+                                     const real* const RESTRICT yB, 
+                                     const int numVertexB,
+                                     real posTol, real lenTol, 
+                                     real* RESTRICT * RESTRICT polyX, 
+                                     real* RESTRICT * RESTRICT polyY, 
+                                     int& numPolyVert, real& area, bool orientCheck )
 {
    // for tribol, if you have called this routine it is because a positive area of 
    // overlap between two polygons (faces) exists. This routine does not perform a 
@@ -577,7 +577,7 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
    {
       SLIC_DEBUG( "Intersection2DPolygon(): one or more degenerate faces with < 3 vertices." );
       area = 0.0;
-      return 1; 
+      return INVALID_INPUT; 
    }
 
    // check right hand rule ordering of polygon vertices. 
@@ -585,22 +585,16 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
    // of two faces with unordered vertices. 
    // Note 2: Intersection2DPolygon doesn't require consistent face vertex orientation
    // between faces, as long as each are 'ordered' (CW or CCW).
-   bool orientA, orientB;
    if (orientCheck)
    {
-      orientA = CheckPolyOrientation( xA, yA, numVertexA );
-      orientB = CheckPolyOrientation( xB, yB, numVertexB );
-   }
+      bool orientA = CheckPolyOrientation( xA, yA, numVertexA );
+      bool orientB = CheckPolyOrientation( xB, yB, numVertexB );
 
-   if (!orientA && orientCheck)
-   {
-      SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face A." );
-      return 1;
-   }
-   if (!orientB && orientCheck)
-   {
-      SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face B." );
-      return 1;
+      if (!orientA || !orientB)
+      {
+         SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face A." );
+         return FACE_ORIENTATION;
+      }
    }
 
    // determine minimum number of vertices (for use later)
@@ -655,7 +649,7 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
       real* xVert = *polyX;
       real* yVert = *polyY;
       area = Area2DPolygon( xVert, yVert, numVertexA );
-      return 0;
+      return NO_FACE_GEOM_ERROR;
    }
 
    // check B in A
@@ -683,7 +677,7 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
       real* xVert = *polyX;
       real* yVert = *polyY;
       area = Area2DPolygon( xVert, yVert, numVertexB );
-      return 0;
+      return NO_FACE_GEOM_ERROR;
    }
 
    // check for coincident interior vertices. That is, a vertex on A interior to 
@@ -765,10 +759,10 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
          // if both segments are not defined by nodes interior to the other polygon
          if (checkA && checkB) 
          {
-            // debug
             if (interId >= maxSegInter) 
             {
-               SLIC_ERROR ("Intersection2DPolygon: number of segment intersections exceeds precomputed maximum.");
+               SLIC_INFO("Intersection2DPolygon: number of segment intersections exceeds precomputed maximum.");
+               return DEGENERATE_OVERLAP;
             }
 
             intersect[interId] = SegmentIntersection2D( xA[vAID1], yA[vAID1], xA[vAID2], yA[vAID2],
@@ -792,7 +786,7 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
    if (numSegInter == 0 && numVBI == 0 && numVAI == 0)
    {
       area = 0.0;
-      return 0;
+      return NO_FACE_GEOM_ERROR;
    }
 
    // allocate temp intersection polygon vertex coordinate arrays to consist 
@@ -821,7 +815,7 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
          // debug
          if (k > (numPolyVert))
          {
-            SLIC_DEBUG("Intersection2DPolygon: iterator k greater than numPolyVert (1)");
+            SLIC_DEBUG("Intersection2DPolygon(): iterator k greater than numPolyVert (1)");
          }
 
          polyXTemp[k] = xA[i];
@@ -837,7 +831,7 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
          // debug
          if (k > (numPolyVert))
          {
-            SLIC_DEBUG("Intersection2DPolygon: iterator k greater than numPolyVert (2)");
+            SLIC_DEBUG("Intersection2DPolygon(): iterator k greater than numPolyVert (2)");
          }
 
          polyXTemp[k] = xB[i];
@@ -862,7 +856,7 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
    if (numPolyVert < 3)
    {
       area = 0.0;
-      return 0; // don't return error here. We should tolerate degenerate (zero area) overlaps
+      return NO_FACE_GEOM_ERROR; // don't return error here. We should tolerate 'collapsed' (zero area) overlaps
    }
 
    // compute the area of the polygon
@@ -871,7 +865,7 @@ int Intersection2DPolygon( const real* const RESTRICT xA,
    area = 0.0;
    area = Area2DPolygon( xVert, yVert, numPolyVert );
 
-   return 0;
+   return NO_FACE_GEOM_ERROR;
 
 } // end Intersection2DPolygon()
 

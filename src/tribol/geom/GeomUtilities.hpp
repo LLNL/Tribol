@@ -7,6 +7,7 @@
 #define SRC_GEOM_GEOMUTILITIES_HPP_
 
 #include "tribol/types.hpp"
+#include "tribol/common/Parameters.hpp"
 
 namespace tribol
 {
@@ -284,7 +285,7 @@ void PolyCentroid( const real* const RESTRICT x,
  * \param [in,out] numPolyVert number of vertices in intersection polygon
  * \param [in,out] area intersection polygon area
  *
- * \return 0 if no orientation error, 1 otherwise
+ * \return 0 if no , >0 a face geom error
  *
  * \pre length(xA), length(yA) >= numVertexA
  * \pre length(xB), length(yB) >= numVertexB
@@ -294,17 +295,17 @@ void PolyCentroid( const real* const RESTRICT x,
  *  this memory when necessary.
  *
  */
-int Intersection2DPolygon( const real* const RESTRICT xA, 
-                           const real* const RESTRICT yA, 
-                           const int numVertexA, 
-                           const real* const RESTRICT xB, 
-                           const real* const RESTRICT yB, 
-                           const int numVertexB,
-                           real posTol, real lenTol, 
-                           real* RESTRICT * RESTRICT polyX, 
-                           real* RESTRICT * RESTRICT polyY, 
-                           int& numPolyVert, real& area,
-                           bool orientCheck=true );
+FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA, 
+                                     const real* const RESTRICT yA, 
+                                     const int numVertexA, 
+                                     const real* const RESTRICT xB, 
+                                     const real* const RESTRICT yB, 
+                                     const int numVertexB,
+                                     real posTol, real lenTol, 
+                                     real* RESTRICT * RESTRICT polyX, 
+                                     real* RESTRICT * RESTRICT polyY, 
+                                     int& numPolyVert, real& area,
+                                     bool orientCheck=true );
                            
 /*!
  *

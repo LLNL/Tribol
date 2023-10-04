@@ -289,6 +289,18 @@ enum BasisEvalType
 };
 
 /*!
+ * \brief Enumerates face-pair computational geometry errors
+ */
+enum FaceGeomError
+{
+   NO_FACE_GEOM_ERROR,
+   FACE_ORIENTATION,
+   INVALID_INPUT,
+   DEGENERATE_OVERLAP,
+   NUM_FACE_GEOM_ERRORS
+};
+
+/*!
  * \brief Enumerates ContactMode errors
  */
 enum ModeError
