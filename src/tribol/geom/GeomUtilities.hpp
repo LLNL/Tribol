@@ -284,6 +284,8 @@ void PolyCentroid( const real* const RESTRICT x,
  * \param [in,out] numPolyVert number of vertices in intersection polygon
  * \param [in,out] area intersection polygon area
  *
+ * \return 0 if no orientation error, 1 otherwise
+ *
  * \pre length(xA), length(yA) >= numVertexA
  * \pre length(xB), length(yB) >= numVertexB
  *
@@ -292,17 +294,17 @@ void PolyCentroid( const real* const RESTRICT x,
  *  this memory when necessary.
  *
  */
-void Intersection2DPolygon( const real* const RESTRICT xA, 
-                            const real* const RESTRICT yA, 
-                            const int numVertexA, 
-                            const real* const RESTRICT xB, 
-                            const real* const RESTRICT yB, 
-                            const int numVertexB,
-                            real posTol, real lenTol, 
-                            real* RESTRICT * RESTRICT polyX, 
-                            real* RESTRICT * RESTRICT polyY, 
-                            int& numPolyVert, real& area,
-                            bool orientCheck=true );
+int Intersection2DPolygon( const real* const RESTRICT xA, 
+                           const real* const RESTRICT yA, 
+                           const int numVertexA, 
+                           const real* const RESTRICT xB, 
+                           const real* const RESTRICT yB, 
+                           const int numVertexB,
+                           real posTol, real lenTol, 
+                           real* RESTRICT * RESTRICT polyX, 
+                           real* RESTRICT * RESTRICT polyY, 
+                           int& numPolyVert, real& area,
+                           bool orientCheck=true );
                            
 /*!
  *

@@ -688,15 +688,15 @@ public:
  * \brief Checks if face-pair (3D) candidate is actual local contact interaction.
  *
  * \param [in] pair interface pair containing pair related indices
- * \param [in] method contact method
  * \param [in] fullOverlap True if full overlap calculation is used, false if interpenetration calculation is used
+ * \param [in,out] cp contact plane object to be populated
  *
- * \return 3D contact plane object with boolean indicating if face-pair form a local contact interaction
+ * \return 0 if no error, 1 if error
  * 
  */
-ContactPlane3D CheckFacePair( InterfacePair& pair, 
-                              ContactMethod const method,
-                              bool fullOverlap );
+int CheckFacePair( InterfacePair& pair, 
+                   bool fullOverlap,
+                   ContactPlane3D& cp );
 
 /*!
  * \brief Checks if face-pair (3D) candidate is aligned and actual local contact interaction.
@@ -712,15 +712,15 @@ ContactPlane3D CheckAlignedFacePair( InterfacePair& pair );
  * \brief Checks if 2D edge-pair candidate is actual local contact interaction.
  *
  * \param [in] pair interface pair containing pair related indices
- * \param [in] method contact method
  * \param [in] fullOverlap True if full overlap calculation is used, false if interpenetration calculation is used
+ * \param [in,out] cp contact plane object to be populated
  *
- * \return 2D contact plane object with boolean indicating if edge-pair form a local contact interaction
+ * \return 0 if no error, 1 if error
  * 
  */
-ContactPlane2D CheckEdgePair( InterfacePair& pair, 
-                              ContactMethod const method,
-                              bool fullOverlap );
+int CheckEdgePair( InterfacePair& pair, 
+                   bool fullOverlap,
+                   ContactPlane2D& cp );
 
 
 }

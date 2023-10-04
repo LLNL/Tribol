@@ -46,13 +46,20 @@ bool CheckInterfacePair( InterfacePair& pair,
          // get instance of contact plane manager to store all contact plane data per cycle
          ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
 
+         // set whether full overlap is to be used or not. Note: SINGLE_MORTAR and 
+         // MORTAR_WEIGHTS drop into this 'case', so the method still needs to be checked
          bool full = (cMethod == COMMON_PLANE) ? false : true;
+         bool interpenOverlap = (full) ? false : true;
+         bool intermediatePlane = (cMethod == COMMON_PLANE) ? true : false;
+         real lenFrac = params.overlap_area_frac;
+         real areaFrac = lenFrac;
 
          // Perform contact plane specific computations (2D and 3D)
          if (params.dimension == 3)
          {
 
-           ContactPlane3D cpTemp = CheckFacePair( pair, cMethod, full );
+           ContactPlane3D cpTemp( pair, areaFrac, interpenOverlap, intermediatePlane, 3 );
+           int face_err = CheckFacePair( pair, full, cpTemp );
 
            if (cpTemp.m_inContact)
            {
@@ -62,7 +69,8 @@ bool CheckInterfacePair( InterfacePair& pair,
          }
          else 
          {
-           ContactPlane2D cpTemp = CheckEdgePair( pair, cMethod, full );
+           ContactPlane2D cpTemp( pair, lenFrac, interpenOverlap, intermediatePlane, 2 );
+           int edge_err = CheckEdgePair( pair, full, cpTemp );
 
            if (cpTemp.m_inContact)
            {
@@ -459,9 +467,9 @@ ContactPlane3D::ContactPlane3D()
 } // end ContactPlane3D::ContactPlane3D()
 
 //------------------------------------------------------------------------------
-ContactPlane3D CheckFacePair( InterfacePair& pair, 
-                              ContactMethod const method,
-                              bool fullOverlap )
+int CheckFacePair( InterfacePair& pair, 
+                   bool fullOverlap,
+                   ContactPlane3D& cp )
 {
    // Note: Checks #1-#4 are done in the binning
 
@@ -486,17 +494,6 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
 
    // set overlap booleans based on input arguments and contact method
    bool interpenOverlap = (!fullOverlap) ? true : false;
-   bool intermediatePlane = (method == COMMON_PLANE) ? true : false;
-
-   // check to make sure that mortar uses full overlap. This should not be needed
-//   if ( method == SINGLE_MORTAR || method == ALIGNED_MORTAR || method == MORTAR_WEIGHTS )
-//   {
-//      fullOverlap = true;
-//      interpenOverlap = false;
-//   }
-
-   // instantiate temporary contact plane to be returned by this routine
-   ContactPlane3D cp( pair, areaFrac, interpenOverlap, intermediatePlane, 3 );
 
    // CHECK #5: check if the nodes of face2 interpenetrate the 
    // plane defined by face1 AND vice-versa. For proximate faces 
@@ -511,7 +508,7 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    bool ls = FaceInterCheck( mesh1, mesh2, faceId1, faceId2, separationTol, all );
    if (!ls) {
       cp.m_inContact = false;
-      return cp;
+      return 0;
    }
 
    // if all vertices of one face lie on the other side of the other face, per 
@@ -583,7 +580,7 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    if (cp.m_area == 0. || cp.m_area < cp.m_areaMin)
    {
       cp.m_inContact = false;
-      return cp;
+      return 0;
    }
 
    // CHECK #7: compute the required intersection with overlap polygon vertices 
@@ -612,16 +609,16 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
                      axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                                            mesh2.m_faceRadius[ faceId2 ] );
       real len_tol = pos_tol;
-      Intersection2DPolygon( X1, Y1, mesh1.m_numNodesPerCell,
-                             X2, Y2, mesh2.m_numNodesPerCell,
-                             pos_tol, len_tol, &cp.m_polyLocX, 
-                             &cp.m_polyLocY, cp.m_numPolyVert, 
-                             cp.m_area, false ); 
+      int inter_err = Intersection2DPolygon( X1, Y1, mesh1.m_numNodesPerCell,
+                                             X2, Y2, mesh2.m_numNodesPerCell,
+                                             pos_tol, len_tol, &cp.m_polyLocX, 
+                                             &cp.m_polyLocY, cp.m_numPolyVert, 
+                                             cp.m_area, false ); 
 
       if (cp.m_area < cp.m_areaMin)
       {
          cp.m_inContact = false;
-         return cp; 
+         return 0; 
       }
 
    } // end if (fullOverlap)
@@ -642,14 +639,14 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
       if (!interpen) 
       {
          cp.m_inContact = false;
-         return cp;
+         return 0;
       }
 
       // check new area to area tol
       if (cp.m_interpenArea == 0 || cp.m_interpenArea < cp.m_areaMin) 
       { 
          cp.m_inContact = false;
-         return cp;
+         return 0;
       }
 
       // reassign area based on possible modification to the actual 
@@ -678,9 +675,8 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    if (cp.m_numPolyVert < 3) 
    {
       SLIC_DEBUG( "degenerate polygon intersection detected.\n" );
-      SLIC_ASSERT(cp.m_numPolyVert < 3);
       cp.m_inContact = false;
-      return cp;
+      return 1;
    }
 
    // Tranform local vertex coordinates to global coordinates for the 
@@ -766,7 +762,7 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    if (cp.m_gap > cp.m_gapTol)
    {
       cp.m_inContact = false;
-      return cp;
+      return 0;
    }
    
    // if fullOverlap is used, REPROJECT the overlapping polygon 
@@ -783,7 +779,7 @@ ContactPlane3D CheckFacePair( InterfacePair& pair,
    }
 
    cp.m_inContact = true;
-   return cp;
+   return 0;
 
 } // end CheckFacePair()
 
@@ -1576,11 +1572,11 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
                   axom::utilities::max( mesh1.m_faceRadius[ m_pair.pairIndex1 ], 
                                         mesh2.m_faceRadius[ m_pair.pairIndex2 ] );
    real len_tol = pos_tol;
-   Intersection2DPolygon( cfx1_loc, cfy1_loc, numV[0],
-                          cfx2_loc, cfy2_loc, numV[1],
-                          pos_tol, len_tol, &m_polyLocX,
-                          &m_polyLocY, m_numPolyVert,
-                          m_interpenArea, true );
+   int inter_err = Intersection2DPolygon( cfx1_loc, cfy1_loc, numV[0],
+                                          cfx2_loc, cfy2_loc, numV[1],
+                                          pos_tol, len_tol, &m_polyLocX,
+                                          &m_polyLocY, m_numPolyVert,
+                                          m_interpenArea, true );
 
    // store the local intersection polygons on the contact plane object, 
    // primarily for visualization
@@ -1877,16 +1873,14 @@ ContactPlane2D::ContactPlane2D()
 } // end ContactPlane2D::ContactPlane2D()
 
 //------------------------------------------------------------------------------
-ContactPlane2D CheckEdgePair( InterfacePair& pair, 
-                              ContactMethod const method,
-                              bool fullOverlap )
+int CheckEdgePair( InterfacePair& pair, 
+                   bool fullOverlap,
+                   ContactPlane2D& cp )
 {
    // Note: Checks #1-#4 are done in the binning
 
    // get instance of global parameters
    parameters_t& params = parameters_t::getInstance();
-
-   real lenFrac = params.overlap_area_frac;
 
    // alias variables off the InterfacePair
    IndexType& meshId1 = pair.meshId1;
@@ -1903,8 +1897,6 @@ ContactPlane2D CheckEdgePair( InterfacePair& pair,
 
    // instantiate temporary contact plane to be returned by this routine
    bool interpenOverlap = (!fullOverlap) ? true : false;
-   bool intermediatePlane = (method == COMMON_PLANE) ? true : false;
-   ContactPlane2D cp( pair, lenFrac, interpenOverlap, intermediatePlane, 2 );
 
    // CHECK #5: check if edge2 vertices have passed through edge1, and 
    // vice-versa. If both vertices have done so for either edge, we trigger 
@@ -1921,7 +1913,7 @@ ContactPlane2D CheckEdgePair( InterfacePair& pair,
    if (!ls) 
    {
       cp.m_inContact = false;
-      return cp;
+      return 0;
    }
 
    // if all the vertices lie on the other side of edge1, then use full 
@@ -1969,7 +1961,7 @@ ContactPlane2D CheckEdgePair( InterfacePair& pair,
    if (cp.m_area < cp.m_areaMin)
    {
       cp.m_inContact = false;
-      return cp;
+      return 0;
    }
 
    if (interpenOverlap)
@@ -1982,7 +1974,7 @@ ContactPlane2D CheckEdgePair( InterfacePair& pair,
       if (!interpen) 
       {
          cp.m_inContact = false;
-         return cp;
+         return 0;
       }
    }
 
@@ -2005,7 +1997,7 @@ ContactPlane2D CheckEdgePair( InterfacePair& pair,
    if (cp.m_gap > cp.m_gapTol)
    {
       cp.m_inContact = false;
-      return cp;
+      return 0;
    }
 
    // for the full overlap case we need to project the overlap segment
@@ -2045,7 +2037,7 @@ ContactPlane2D CheckEdgePair( InterfacePair& pair,
 
    cp.m_inContact = true;
 
-   return cp;
+   return 0;
 
 } // end CheckEdgePair()
 

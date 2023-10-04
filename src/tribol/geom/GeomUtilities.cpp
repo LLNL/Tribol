@@ -550,18 +550,17 @@ void PolyCentroid( const real* const RESTRICT x,
 } // end PolyCentroid()
 
 //------------------------------------------------------------------------------
-void Intersection2DPolygon( const real* const RESTRICT xA, 
-                            const real* const RESTRICT yA, 
-                            const int numVertexA, 
-                            const real* const RESTRICT xB, 
-                            const real* const RESTRICT yB, 
-                            const int numVertexB,
-                            real posTol, real lenTol, 
-                            real* RESTRICT * RESTRICT polyX, 
-                            real* RESTRICT * RESTRICT polyY, 
-                            int& numPolyVert, real& area, bool orientCheck )
+int Intersection2DPolygon( const real* const RESTRICT xA, 
+                           const real* const RESTRICT yA, 
+                           const int numVertexA, 
+                           const real* const RESTRICT xB, 
+                           const real* const RESTRICT yB, 
+                           const int numVertexB,
+                           real posTol, real lenTol, 
+                           real* RESTRICT * RESTRICT polyX, 
+                           real* RESTRICT * RESTRICT polyY, 
+                           int& numPolyVert, real& area, bool orientCheck )
 {
-
    // for tribol, if you have called this routine it is because a positive area of 
    // overlap between two polygons (faces) exists. This routine does not perform a 
    // "proximity" check to determine if the faces are "close enough" to proceed with 
@@ -576,16 +575,16 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
    // check numVertexA and numVertexB to make sure they are 3 (triangle) or more
    if (numVertexA < 3 || numVertexB < 3) 
    {
-      SLIC_ASSERT( numVertexA < 3 || numVertexB < 3 );
+      SLIC_DEBUG( "Intersection2DPolygon(): one or more degenerate faces with < 3 vertices." );
       area = 0.0;
-      return;
+      return 1; 
    }
 
    // check right hand rule ordering of polygon vertices. 
    // Note 1: This check is consistent with the ordering that comes from PolyReorder() 
    // of two faces with unordered vertices. 
    // Note 2: Intersection2DPolygon doesn't require consistent face vertex orientation
-   // between faces, as long as they are order CW or CCW.
+   // between faces, as long as each are 'ordered' (CW or CCW).
    bool orientA, orientB;
    if (orientCheck)
    {
@@ -595,11 +594,13 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
 
    if (!orientA && orientCheck)
    {
-      SLIC_ERROR("polygonal A vertices not CCW");
+      SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face A." );
+      return 1;
    }
    if (!orientB && orientCheck)
    {
-      SLIC_ERROR("polygonal B vertices not CCW");
+      SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face B." );
+      return 1;
    }
 
    // determine minimum number of vertices (for use later)
@@ -654,7 +655,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       real* xVert = *polyX;
       real* yVert = *polyY;
       area = Area2DPolygon( xVert, yVert, numVertexA );
-      return;
+      return 0;
    }
 
    // check B in A
@@ -682,7 +683,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       real* xVert = *polyX;
       real* yVert = *polyY;
       area = Area2DPolygon( xVert, yVert, numVertexB );
-      return;
+      return 0;
    }
 
    // check for coincident interior vertices. That is, a vertex on A interior to 
@@ -791,7 +792,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
    if (numSegInter == 0 && numVBI == 0 && numVAI == 0)
    {
       area = 0.0;
-      return;
+      return 0;
    }
 
    // allocate temp intersection polygon vertex coordinate arrays to consist 
@@ -845,7 +846,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       }
    }
 
-   // reorder the vertices in counter clockwise fashion
+   // order the unordered vertices (in counter clockwise fashion)
    PolyReorder( polyXTemp, polyYTemp, numPolyVert );
 
    // check length of segs against tolerance and collapse short segments if necessary
@@ -861,7 +862,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
    if (numPolyVert < 3)
    {
       area = 0.0;
-      return;
+      return 0; // don't return error here. We should tolerate degenerate (zero area) overlaps
    }
 
    // compute the area of the polygon
@@ -870,7 +871,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
    area = 0.0;
    area = Area2DPolygon( xVert, yVert, numPolyVert );
 
-   return;
+   return 0;
 
 } // end Intersection2DPolygon()
 
