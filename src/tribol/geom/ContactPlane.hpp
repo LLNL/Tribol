@@ -220,8 +220,10 @@ public:
 
    /*!
     * \brief Compute the contact plane integral gap expression
+    *
+    * \param [in] interpen true if the two faces interpenetrate
     */
-   virtual bool computeLocalInterpenOverlap() = 0 ;
+   virtual int computeLocalInterpenOverlap(bool interpen=false) = 0 ;
    
    /*!
     * \brief Copy the contact plane object
@@ -558,8 +560,10 @@ public:
     * \brief Computes the polygonal overlap between the portion of two  
     *        faces lying on the contact plane that are interpenetrating the contact 
     *        plane.
+    *
+    * \param [in] interpen true if the two faces interpenetrate
     */
-   virtual bool computeLocalInterpenOverlap();
+   virtual int computeLocalInterpenOverlap(bool interpen=false);
    
    /*!
     * \brief Copies one contact plane object's data to another
@@ -659,8 +663,10 @@ public:
     * \brief Computes the polygonal overlap between the portion of two  
     *        faces lying on the contact plane that are interpenetrating the contact 
     *        plane.
+    *
+    * \param [in] interpen true if the two faces interpenetrate
     */
-   virtual bool computeLocalInterpenOverlap();
+   virtual int computeLocalInterpenOverlap(bool interpen=false);
    
    /*!
     * \brief Copies one contact plane object's data to another

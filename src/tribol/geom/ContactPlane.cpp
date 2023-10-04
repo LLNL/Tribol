@@ -476,9 +476,6 @@ int CheckFacePair( InterfacePair& pair,
    // get instance of global parameters
    parameters_t& params = parameters_t::getInstance();
 
-   // get fraction of largest face we keep for overlap area
-   real areaFrac = params.overlap_area_frac;
-
    // alias variables off the InterfacePair. 
    IndexType& meshId1 = pair.meshId1;
    IndexType& meshId2 = pair.meshId2;
@@ -615,6 +612,12 @@ int CheckFacePair( InterfacePair& pair,
                                              &cp.m_polyLocY, cp.m_numPolyVert, 
                                              cp.m_area, false ); 
 
+      if (inter_err !=0)
+      {
+         cp.m_inContact = false;
+         return 1;
+      }
+
       if (cp.m_area < cp.m_areaMin)
       {
          cp.m_inContact = false;
@@ -634,9 +637,14 @@ int CheckFacePair( InterfacePair& pair,
          axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                                mesh2.m_faceRadius[ faceId2 ] ));
 
-      bool interpen = cp.computeLocalInterpenOverlap(); // same for mortar
-
-      if (!interpen) 
+      bool interpen = false;
+      int interpen_err = cp.computeLocalInterpenOverlap(interpen); // same for mortar
+      if (interpen_err != 0)
+      {
+         cp.m_inContact = false;
+         return 1;
+      }
+      else if (!interpen) 
       {
          cp.m_inContact = false;
          return 0;
@@ -1328,7 +1336,7 @@ void ContactPlane3D::centroidGap( real scale )
 } // end ContactPlane3D::centroidGap()
 
 //------------------------------------------------------------------------------
-bool ContactPlane3D::computeLocalInterpenOverlap()
+int ContactPlane3D::computeLocalInterpenOverlap(bool interpen)
 {
    // for each face, loop over current configuration segments and 
    // determine the two (there should be at most two, or in the odd 
@@ -1406,7 +1414,9 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
 
          if (k > 2)
          {
-            SLIC_ERROR ("ContactPlane3D::computeInterpenOverlap(): too many segment-plane intersections.");
+            SLIC_INFO("ContactPlane3D::computeInterpenOverlap(): too many segment-plane intersections.");
+            interpen = false;
+            return 1;
          }
 
          // call segment-to-plane intersection routine
@@ -1442,8 +1452,12 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
       // if we haven't found intersection points, the planes are either separated or coplanar.
       // return
 
-      if (k < 2) return false;
-
+      if (k < 2) 
+      {
+         interpen = false;
+         return 0;
+      }
+  
       // count the number of vertices for the clipped portion of the i^th face that 
       // interpenetrates the contact plane.
       numV[i] = k;
@@ -1564,10 +1578,6 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
    PolyReorder( cfx2_loc, cfy2_loc, numV[1] ); 
 
    // call intersection routine to get intersecting polygon
-
-   // first have to reorder the second face's projected local coordinates 
-   // into CCW ordering.
-
    real pos_tol = parameters.len_collapse_ratio * 
                   axom::utilities::max( mesh1.m_faceRadius[ m_pair.pairIndex1 ], 
                                         mesh2.m_faceRadius[ m_pair.pairIndex2 ] );
@@ -1577,6 +1587,12 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
                                           pos_tol, len_tol, &m_polyLocX,
                                           &m_polyLocY, m_numPolyVert,
                                           m_interpenArea, true );
+
+   if (inter_err != 0)
+   {
+      interpen = false;
+      return 1;
+   }
 
    // store the local intersection polygons on the contact plane object, 
    // primarily for visualization
@@ -1600,7 +1616,8 @@ bool ContactPlane3D::computeLocalInterpenOverlap()
       m_interpenPoly2Y[i] = cfy2_loc[i];
    }
 
-   return true;
+   interpen = true;
+   return 0;
  
 } // end ContactPlane3D::computeLocalInterpenOverlap()
 
@@ -1970,8 +1987,14 @@ int CheckEdgePair( InterfacePair& pair,
       cp.planePointAndCentroidGap( 2. * 
          axom::utilities::max( mesh1.m_faceRadius[ edgeId1 ], 
                                mesh2.m_faceRadius[ edgeId2 ] )); 
-      bool interpen = cp.computeLocalInterpenOverlap();
-      if (!interpen) 
+      bool interpen = false;
+      int interpen_err = cp.computeLocalInterpenOverlap(interpen);
+      if (interpen_err != 0)
+      {
+         cp.m_inContact = false;
+         return 1;
+      }
+      else if (!interpen) 
       {
          cp.m_inContact = false;
          return 0;
@@ -2126,7 +2149,7 @@ void ContactPlane2D::computeAreaTol()
 } // ContactPlane2D::computeAreaTol()
 
 //------------------------------------------------------------------------------
-bool ContactPlane2D::computeLocalInterpenOverlap()
+int ContactPlane2D::computeLocalInterpenOverlap(bool interpen)
 {
    //
    // Note: the contact plane has to be properly located prior to calling 
@@ -2176,8 +2199,8 @@ bool ContactPlane2D::computeLocalInterpenOverlap()
    if (!edgeIntersect && !duplicatePoint)
    {
       m_interpenArea = 0.0;
-      return false;
-      
+      interpen = false;
+      return 0;
    }
 
    // check if a duplicate point (i.e. vertex) was registered. 
@@ -2186,7 +2209,8 @@ bool ContactPlane2D::computeLocalInterpenOverlap()
    if (duplicatePoint)
    {
       m_interpenArea = 0.0;
-      return false;
+      interpen = false;
+      return 0;
    }
    
    // project unique intersection point to the contact plane. 
@@ -2236,7 +2260,9 @@ bool ContactPlane2D::computeLocalInterpenOverlap()
    // Debug check the number of interpenetrating vertices
    if (k > 2)
    {
-      SLIC_ERROR("ContactPlane2D::computeLocalInterpenOverlap() more than 2 interpenetrating vertices detected.");
+      SLIC_INFO("ContactPlane2D::computeLocalInterpenOverlap() more than 2 interpenetrating vertices detected.");
+      interpen = false;
+      return 1;
    }
 
    // now that we have marked the interpenetrating vertex of each edge, 
@@ -2304,7 +2330,8 @@ bool ContactPlane2D::computeLocalInterpenOverlap()
       m_cX = 0.5 * (m_segX[0] + m_segX[1]);
       m_cY = 0.5 * (m_segY[0] + m_segY[1]);
 
-      return true;
+      interpen = true;
+      return 0;
    }
  
    m_interpenG1X = nullptr;
@@ -2314,7 +2341,8 @@ bool ContactPlane2D::computeLocalInterpenOverlap()
    m_interpenG1Z = nullptr;
    m_interpenG2Z = nullptr;
 
-   return false;
+   interpen = false;
+   return 0;
 
 } // end ContactPlane2D::computeLocalInterpenOverlap()
 
