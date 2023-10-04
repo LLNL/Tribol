@@ -26,10 +26,12 @@ namespace tribol
 //------------------------------------------------------------------------------
 // free functions
 //------------------------------------------------------------------------------
-bool CheckInterfacePair( InterfacePair& pair,
-                         ContactMethod const cMethod,
-                         ContactCase const TRIBOL_UNUSED_PARAM(cCase) )
+int CheckInterfacePair( InterfacePair& pair,
+                        ContactMethod const cMethod,
+                        ContactCase const TRIBOL_UNUSED_PARAM(cCase),
+                        bool& inContact )
 {
+   inContact = false;
 
    // note: will likely need the ContactCase for specialized 
    // geometry check(s)/routine(s)
@@ -61,10 +63,16 @@ bool CheckInterfacePair( InterfacePair& pair,
            ContactPlane3D cpTemp( pair, areaFrac, interpenOverlap, intermediatePlane, 3 );
            int face_err = CheckFacePair( pair, full, cpTemp );
 
-           if (cpTemp.m_inContact)
+           if (face_err != 0)
+           {
+              inContact = false;
+              return 1;
+           }
+           else if (cpTemp.m_inContact)
            {
               cpMgr.addContactPlane( cpTemp ); 
-              return true;
+              inContact = true;
+              return 0;
            }
          }
          else 
@@ -72,10 +80,16 @@ bool CheckInterfacePair( InterfacePair& pair,
            ContactPlane2D cpTemp( pair, lenFrac, interpenOverlap, intermediatePlane, 2 );
            int edge_err = CheckEdgePair( pair, full, cpTemp );
 
-           if (cpTemp.m_inContact)
+           if (edge_err != 0)
+           {
+              inContact = false;
+              return 1;
+           }
+           else if (cpTemp.m_inContact)
            {
               cpMgr.addContactPlane( cpTemp ); 
-              return true;
+              inContact = true;
+              return 0;
            }
          }
          break;
@@ -91,12 +105,14 @@ bool CheckInterfacePair( InterfacePair& pair,
 
          if (params.dimension == 3)
          {
+            // TODO refactor to make consistent with CheckFacePair, SRW
             ContactPlane3D cpTemp = CheckAlignedFacePair( pair );
 
             if (cpTemp.m_inContact)
             {
                cpMgr.addContactPlane( cpTemp );
-               return true;
+               inContact = true;
+               return 0;
             }
          }
          else
@@ -113,7 +129,8 @@ bool CheckInterfacePair( InterfacePair& pair,
       }
    }
 
-   return false;
+   inContact = false;
+   return 0;
 
 } // end CheckInterfacePair()
 
@@ -1336,7 +1353,7 @@ void ContactPlane3D::centroidGap( real scale )
 } // end ContactPlane3D::centroidGap()
 
 //------------------------------------------------------------------------------
-int ContactPlane3D::computeLocalInterpenOverlap(bool interpen)
+int ContactPlane3D::computeLocalInterpenOverlap(bool& interpen)
 {
    // for each face, loop over current configuration segments and 
    // determine the two (there should be at most two, or in the odd 
@@ -1346,6 +1363,7 @@ int ContactPlane3D::computeLocalInterpenOverlap(bool interpen)
    // contact plane define the two new polygons whose intersection we 
    // seek.
 
+   interpen = false;
    parameters_t & parameters = parameters_t::getInstance();
 
    real xInter[4];
@@ -2149,13 +2167,14 @@ void ContactPlane2D::computeAreaTol()
 } // ContactPlane2D::computeAreaTol()
 
 //------------------------------------------------------------------------------
-int ContactPlane2D::computeLocalInterpenOverlap(bool interpen)
+int ContactPlane2D::computeLocalInterpenOverlap(bool& interpen)
 {
    //
    // Note: the contact plane has to be properly located prior to calling 
    // this routine. 
    //
 
+   interpen = false;
    parameters_t & parameters = parameters_t::getInstance();
 
    // all edge-edge interactions suitable for an interpenetration overlap 

@@ -30,15 +30,17 @@ class ContactPlaneManager;
  * \param [in] pair interface pair containing pair related indices
  * \param [in] cMethod the Tribol contact method
  * \param [in] cCase the Tribol contact Case
+ * \param [in] inContact true if pair are in contact per CG routines
  *
- * \return true if face-pair are interacting
+ * \return 0 if no error, 1 if error
  *
  * \note will need the contact case for specialized geometry checks
  *
  */
-bool CheckInterfacePair( InterfacePair& pair,
-                         ContactMethod const cMethod,
-                         ContactCase const cCase );
+int CheckInterfacePair( InterfacePair& pair,
+                        ContactMethod const cMethod,
+                        ContactCase const cCase,
+                        bool& inContact );
 
 /*!
  *
@@ -223,7 +225,7 @@ public:
     *
     * \param [in] interpen true if the two faces interpenetrate
     */
-   virtual int computeLocalInterpenOverlap(bool interpen=false) = 0 ;
+   virtual int computeLocalInterpenOverlap(bool& interpen) = 0 ;
    
    /*!
     * \brief Copy the contact plane object
@@ -563,7 +565,7 @@ public:
     *
     * \param [in] interpen true if the two faces interpenetrate
     */
-   virtual int computeLocalInterpenOverlap(bool interpen=false);
+   virtual int computeLocalInterpenOverlap(bool& interpen);
    
    /*!
     * \brief Copies one contact plane object's data to another
@@ -666,7 +668,7 @@ public:
     *
     * \param [in] interpen true if the two faces interpenetrate
     */
-   virtual int computeLocalInterpenOverlap(bool interpen=false);
+   virtual int computeLocalInterpenOverlap(bool& interpen);
    
    /*!
     * \brief Copies one contact plane object's data to another

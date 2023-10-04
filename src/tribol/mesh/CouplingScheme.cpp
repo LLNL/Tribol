@@ -895,6 +895,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
   // loop over all pairs and perform geometry checks to see if they 
   // are interacting
   int numActivePairs = 0;
+  bool pair_err = 0;
   for (IndexType kp = 0; kp < numPairs; ++kp)
   {
      InterfacePair pair = m_interfacePairs->getInterfacePair(kp);
@@ -902,10 +903,17 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      // call wrapper around the contact method/case specific 
      // geometry checks to determine whether to include a pair 
      // in the active set
-     bool interact = CheckInterfacePair( pair, m_contactMethod, 
-                                         m_contactCase );
+     bool interact = false;
+     int interact_err = CheckInterfacePair( pair, m_contactMethod, 
+                                           m_contactCase, interact );
 
-     if (!interact)
+     if (interact_err != 0)
+     {
+        pair_err = 1;
+        pair.inContact = false;
+        continue;
+     }
+     else if (!interact)
      {
         pair.inContact = false;
         continue;
@@ -921,6 +929,9 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      }
 
    } // end loop over pairs
+
+   SLIC_WARNING_IF(pair_err!=0, "CouplingScheme::apply(): error with orientation, input, " << 
+                   "or invalid overlaps in CheckInterfacePair().");
 
    this->m_numActivePairs = numActivePairs;
 
@@ -955,8 +966,16 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    writeInterfaceOutput( params.output_directory,
                          params.vis_type, 
                          cycle, t );
+
+   if (err != 0 || pair_err != 0)
+   {
+      return 1;
+   }
+   else
+   {
+      return 0;
+   }
   
-   return err;
 } // end CouplingScheme::apply()
 
 //------------------------------------------------------------------------------
