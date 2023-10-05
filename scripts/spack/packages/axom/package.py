@@ -40,7 +40,7 @@ class Axom(CachedCMakePackage, CudaPackage, ROCmPackage):
     tags     = ['radiuss']
 
     # TRIBOL EDIT START
-    version('0.7.0.1', commit='47a73d80f35b8c1574c8583d31c5e3fd1ee184d5', submodules="True")
+    version('0.8.1.1', commit='0da8a5b1be596887158ac2fcd321524ba5259e15', submodules="True")
     # TRIBOL EDIT END
 
     version('main', branch='main', submodules=True)
