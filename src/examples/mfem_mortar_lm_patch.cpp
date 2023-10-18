@@ -43,6 +43,9 @@
  * Example output can be viewed in VisIt or ParaView.
  */
 
+#include <mfem/linalg/hypre.hpp>
+#include <mfem/linalg/solvers.hpp>
+#include <mfem/linalg/superlu.hpp>
 #include <set>
 
 #ifdef TRIBOL_USE_UMPIRE
@@ -347,6 +350,11 @@ int main( int argc, char** argv )
 
   // HypreParMatrices holding the Jacobian from contact and stored in an MFEM
   // block operator are returned from this API call.
+  //
+  // NOTE: The submesh contains both the mortar and nonmortar surfaces, but
+  // pressure DOFs are only present on the nonmortar surface. The pressure DOFs
+  // on the mortar surface are eliminated in the returned matrix with ones on
+  // the diagonal.
   auto A_blk = tribol::getMfemBlockJacobian(coupling_scheme_id);
   // Add the Jacobian from the elasticity bilinear form to the top left block
   A_blk->SetBlock(0, 0, A.release());
@@ -369,23 +377,49 @@ int main( int argc, char** argv )
   mfem::Vector g;
   tribol::getMfemGap(coupling_scheme_id, g);
 
-  // Apply a transpose prologation operator on the submesh: maps dofs stored in
-  // dual field g to tdofs stored in G for parallel solution of the linear
-  // system.
+  // Apply a restriction operator on the submesh: maps dofs stored in g to tdofs
+  // stored in G for parallel solution of the linear system.
+  //
+  // NOTE: gap is a dual field, but we still apply R here because tribol stores
+  // this like a ParGridFunction: shared DOFs have the same (summed) value on
+  // all ranks
   {
     auto& G = B_blk.GetBlock(1);
     auto& R_submesh = *tribol::getMfemPressure(coupling_scheme_id)
-      .ParFESpace()->GetProlongationMatrix();
-    R_submesh.MultTranspose(g, G);
+      .ParFESpace()->GetRestrictionMatrix();
+    R_submesh.Mult(g, G);
   }
 
+  // Create a single HypreParMatrix from blocks (useful for different
+  // solvers/preconditioners). This process requires two steps: (1) store
+  // pointer to the BlockOperator HypreParMatrixs in a 2D array and (2) call
+  // mfem::HypreParMatrixFromBlocks() to create the merged, single
+  // HypreParMatrix (without blocks).
+  mfem::Array2D<mfem::HypreParMatrix*> hypre_blocks(2, 2);
+  for (int i{0}; i < 2; ++i)
+  {
+    for (int j{0}; j < 2; ++j)
+    {
+      if (A_blk->GetBlock(i, j).Height() != 0 && A_blk->GetBlock(i, j).Width() != 0)
+      {
+        hypre_blocks(i, j) = dynamic_cast<mfem::HypreParMatrix*>(&A_blk->GetBlock(i, j));
+      }
+      else
+      {
+        hypre_blocks(i, j) = nullptr;
+      }
+    }
+  }
+  auto A_merged = std::unique_ptr<mfem::HypreParMatrix>(
+    mfem::HypreParMatrixFromBlocks(hypre_blocks)
+  );
   // Use a linear solver to find the block displacement/pressure vector.
   mfem::MINRESSolver solver(MPI_COMM_WORLD);
   solver.SetRelTol(1.0e-8);
   solver.SetAbsTol(1.0e-12);
   solver.SetMaxIter(5000);
   solver.SetPrintLevel(3);
-  solver.SetOperator(*A_blk);
+  solver.SetOperator(*A_merged);
   solver.Mult(B_blk, X_blk);
 
   // Move the block displacements to the displacement grid function.
@@ -424,10 +458,17 @@ int main( int argc, char** argv )
     force_resid_true[ess_tdof_list[i]] = 0.0;
   }
   auto force_resid_linf = force_resid_true.Normlinf();
-  MPI_Reduce(MPI_IN_PLACE, &force_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  SLIC_INFO_ROOT(axom::fmt::format(
-    "|| force residual ||_(infty) = {0:e}", force_resid_linf
-  ));
+  if (rank == 0)
+  {
+    MPI_Reduce(MPI_IN_PLACE, &force_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    SLIC_INFO(axom::fmt::format(
+      "|| force residual ||_(infty) = {0:e}", force_resid_linf
+    ));
+  }
+  else
+  {
+    MPI_Reduce(&force_resid_linf, &force_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  }
 
   // Verify the gap is closed by the displacements, i.e. B*u = gap.
   // This should be true if the solver converges.
@@ -436,10 +477,17 @@ int main( int argc, char** argv )
   A_blk->GetBlock(1,0).Mult(displacement_true, gap_from_disp_true);
   gap_resid_true -= gap_from_disp_true;
   auto gap_resid_linf = gap_resid_true.Normlinf();
-  MPI_Reduce(MPI_IN_PLACE, &gap_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  SLIC_INFO_ROOT(axom::fmt::format(
-    "|| gap residual ||_(infty) = {0:e}", gap_resid_linf
-  ));
+  if (rank == 0)
+  {
+    MPI_Reduce(MPI_IN_PLACE, &gap_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    SLIC_INFO(axom::fmt::format(
+      "|| gap residual ||_(infty) = {0:e}", gap_resid_linf
+    ));
+  }
+  else
+  {
+    MPI_Reduce(&gap_resid_linf, &gap_resid_linf, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  }
 
   // Save the deformed configuration
   paraview_datacoll.Save();

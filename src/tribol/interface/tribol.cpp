@@ -316,7 +316,8 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
       {
          couplingScheme->setMfemJacobianData(std::make_unique<MfemJacobianData>(
             *couplingScheme->getMfemMeshData(),
-            *couplingScheme->getMfemSubmeshData()
+            *couplingScheme->getMfemSubmeshData(),
+            couplingScheme->getContactMethod()
          ));
       }
    }

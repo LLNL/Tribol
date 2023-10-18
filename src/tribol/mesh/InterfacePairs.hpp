@@ -84,15 +84,7 @@ public:
      if (side == 2) m_pairType2 = type;
   }
 
-  InterfacePair getInterfacePair(IndexType idx) const
-  {
-     SLIC_ERROR_IF(idx >= getNumPairs(), "Index out of range.");
-
-     return InterfacePair {
-        m_meshId1, m_pairType1, m_pairIndex1[idx],
-        m_meshId2, m_pairType2, m_pairIndex2[idx], 
-        m_inContact[idx], idx };
-  }
+  InterfacePair getInterfacePair(IndexType idx) const;
 
   IndexType getNumPairs() const { return static_cast<IndexType>(m_pairIndex1.size()); }
 

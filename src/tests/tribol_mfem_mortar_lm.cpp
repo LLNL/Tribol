@@ -228,7 +228,7 @@ TEST_P(MfemCommonPlaneTest, mass_matrix_transfer)
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(1));
+INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(2));
 
 //------------------------------------------------------------------------------
 #include "axom/slic/core/SimpleLogger.hpp"

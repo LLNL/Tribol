@@ -857,6 +857,8 @@ void CouplingScheme::performBinning()
    // binning if setInterfacePairs has been called.
    if( !this->hasFixedBinning() ) 
    {
+      m_interfacePairs->clear();
+
       InterfacePairFinder finder(this);
       finder.initialize();
       finder.findInterfacePairs();
@@ -918,17 +920,16 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      else if (!interact)
      {
         pair.inContact = false;
-        continue;
      }
      else
      {
         pair.inContact = true;
         ++numActivePairs;
-
-        // update the InterfacePairs container on the coupling scheme 
-        // to reflect the change to "in-contact"
-        m_interfacePairs->updateInterfacePair( pair, kp ); 
      }
+     
+     // update the InterfacePairs container on the coupling scheme 
+     // to reflect the change to "in-contact"
+     m_interfacePairs->updateInterfacePair( pair, kp ); 
 
    } // end loop over pairs
 

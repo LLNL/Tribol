@@ -50,7 +50,7 @@ class Mfem(Package, CudaPackage, ROCmPackage):
     version('develop', branch='master')
 
     # TRIBOL EDIT BEGIN
-    version('4.5.0.1', commit='37b61aab9dc85fbd9dce9a56a1a5f6d96e6b08f0', submodules="True")
+    version('4.5.3.1', commit='c9e63c62922c391d05965f4654ec5060ce94de04', submodules="True")
     # TRIBOL EDIT END
 
     version('4.4.0',

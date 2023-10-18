@@ -875,6 +875,22 @@ public:
   {
     return GetUpdateData().redecomp_mesh_;
   }
+  
+  /**
+   * @brief Get the set of boundary attributes on the parent mesh corresponding
+   * to surface elements contained in the first Tribol registered mesh
+   *
+   * @return Set of boundary attributes
+   */
+  const std::set<int>& GetBoundaryAttribs1() const { return attributes_1_; }
+
+  /**
+   * @brief Get the set of boundary attributes on the parent mesh corresponding
+   * to surface elements contained in the second Tribol registered mesh
+   *
+   * @return Set of boundary attributes
+   */
+  const std::set<int>& GetBoundaryAttribs2() const { return attributes_2_; }
 
   /**
    * @brief Get the finite element space on the parent-linked boundary submesh
@@ -1363,7 +1379,8 @@ public:
    */
   MfemJacobianData(
     const MfemMeshData& parent_data,
-    const MfemSubmeshData& submesh_data
+    const MfemSubmeshData& submesh_data,
+    ContactMethod contact_method
   );
 
   /**
@@ -1439,6 +1456,11 @@ private:
    * @brief List giving global parent vdof given the submesh vdof
    */
   mfem::Array<int> submesh2parent_vdof_list_;
+
+  /**
+   * @brief List of submesh true dofs that only exist on the mortar surface
+   */
+  mfem::Array<int> mortar_tdof_list_;
 
   /**
    * @brief UpdateData object created upon calling UpdateMatrixXfer()
