@@ -82,6 +82,18 @@ public:
   ) const;
 
   /**
+   * @brief Transfer grid function on parent-linked boundary submesh to grid
+   * function on LOR mesh
+   *
+   * @param [in] submesh_src Grid function on parent-linked boundary submesh
+   * @param [out] lor_dst Zero-valued grid function on LOR mesh
+   */
+  void SubmeshToLOR(
+    const mfem::ParGridFunction& submesh_src,
+    mfem::ParGridFunction& lor_dst
+  );
+
+  /**
    * @brief Access the local low-order grid function on the LOR mesh
    * 
    * @return mfem::ParGridFunction& 
