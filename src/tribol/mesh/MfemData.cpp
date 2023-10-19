@@ -779,7 +779,8 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   auto elem_J_2_ptr = std::make_unique<axom::Array<mfem::DenseMatrix>>(0, 0);
   const axom::Array<mfem::DenseMatrix>* elem_J_1 = elem_J_1_ptr.get();
   const axom::Array<mfem::DenseMatrix>* elem_J_2 = elem_J_2_ptr.get();
-  if (method_data != nullptr) // this means no meshes on the rank
+  // this means at least one of the meshes is empty (no pairs)
+  if (method_data != nullptr || elem_map_1.empty() || elem_map_2.empty())
   {
     mortar_elems = method_data
       ->getBlockJElementIds()[static_cast<int>(BlockSpace::MORTAR)];
