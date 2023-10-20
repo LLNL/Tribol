@@ -173,6 +173,8 @@ mfem::ParGridFunction& getMfemPressure( integer cs_id );
  */
 void updateMfemParallelDecomposition();
 
+void saveRedecompMesh( integer output_id );
+
 } /* namespace tribol */
 
 #endif /* BUILD_REDECOMP */
