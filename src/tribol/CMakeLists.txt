@@ -101,7 +101,7 @@ if (ENABLE_FORTRAN)
 endif()
 
 ## setup the dependency list for tribol
-set(tribol_depends axom mfem)
+set(tribol_depends axom::slic mfem)
 blt_list_append(TO tribol_depends ELEMENTS mpi IF TRIBOL_USE_MPI )
 blt_list_append(TO tribol_depends ELEMENTS redecomp IF BUILD_REDECOMP )
 blt_list_append(TO tribol_depends ELEMENTS cuda IF ENABLE_CUDA )
@@ -117,6 +117,9 @@ blt_add_library(
     DEPENDS_ON ${tribol_depends}
     FOLDER tribol
     )
+
+# Don't propagate internal dependencies
+target_link_libraries(tribol PRIVATE axom::quest)
 
 target_include_directories(tribol PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
