@@ -59,11 +59,11 @@ set(ENABLE_OPENMP ON CACHE BOOL "")
 
 set(TPL_ROOT "/home/serac/serac_tpls/gcc-11.1.0" CACHE PATH "")
 
-set(AXOM_DIR "${TPL_ROOT}/axom-0.7.0.4-33xg6frnn45dotxii4dp4yrf4biwszj6" CACHE PATH "")
+set(AXOM_DIR "${TPL_ROOT}/axom-0.8.1.0-3jpnrqhyzdlyoif3ule5e2mwmnhity3a" CACHE PATH "")
 
-set(MFEM_DIR "${TPL_ROOT}/mfem-4.5.3.1-skfy5vyem23ypequsahwxcnp4oot6ik7" CACHE PATH "")
+set(MFEM_DIR "${TPL_ROOT}/mfem-4.5.3.2-hfxy63gysonhbmjk6hxkccm53pb5seoi" CACHE PATH "")
 
-set(UMPIRE_DIR "${TPL_ROOT}/umpire-2022.03.1-ag7belgtp5n3dqka6njiq2xjhydu3h6a" CACHE PATH "")
+set(UMPIRE_DIR "${TPL_ROOT}/umpire-2022.10.0-epwggxb4tgwrfhzjpwpkxdcyg4y6cf7v" CACHE PATH "")
 
 #------------------------------------------------------------------------------
 # Devtools
