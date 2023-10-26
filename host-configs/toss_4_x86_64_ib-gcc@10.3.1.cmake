@@ -27,6 +27,9 @@ else()
 
 endif()
 
+# Turned on for inherited TPL reasons. This isn't required by Tribol itself but because TPLs are built with strumpack for Serac.
+set(ENABLE_FORTRAN ON CACHE BOOL "")
+
 #------------------------------------------------------------------------------
 # MPI
 #------------------------------------------------------------------------------
