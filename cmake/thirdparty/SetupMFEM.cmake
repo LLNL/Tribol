@@ -116,18 +116,21 @@ else()
         list(APPEND MFEM_LIBRARIES ${CUDA_cusolver_LIBRARY})
     endif()
 
-    # Tribol edit
-    if(TRIBOL_USE_MPI)
-        list(APPEND MFEM_LIBRARIES mpi)
-    endif()
-    # End Tribol edit
-
     blt_import_library(
         NAME          mfem
         INCLUDES      ${MFEM_INCLUDE_DIRS}
         LIBRARIES     ${MFEM_LIBRARIES}
         TREAT_INCLUDES_AS_SYSTEM ON
         EXPORTABLE    ON)
+
+    # Tribol edit
+    if(TRIBOL_USE_MPI)
+        # Note: -lmpifort is being added to MFEM's link line w/o a -L<mpi lib dir>
+        get_filename_component(_mpi_lib_dir ${MPI_mpi_LIBRARY} DIRECTORY)
+        target_link_directories(mfem INTERFACE ${_mpi_lib_dir})
+        target_link_libraries(mfem INTERFACE mpi)
+    endif()
+    # End Tribol edit
 
 endif()
 
