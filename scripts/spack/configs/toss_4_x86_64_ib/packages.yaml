@@ -235,13 +235,13 @@ packages:
       prefix: /usr/tce/packages/python/python-3.9.12
 
   # Globally lock version of third party libraries
-  camp:
-    require: "@2022.10.1"
-  conduit:
-    require: "@0.8.8~shared~test~examples~utilities"
-  hdf5:
-    variants: ~shared~mpi
-  raja:
-    require: "@2022.10.5~shared~examples~exercises"
-  umpire:
-    require: "@2022.10.0~shared~examples"
+  # camp:
+  #   require: "@2022.10.1"
+  # conduit:
+  #   require: "@0.8.8~shared~test~examples~utilities"
+  # hdf5:
+  #   variants: ~shared~mpi
+  # raja:
+  #   require: "@2022.10.5~shared~examples~exercises"
+  # umpire:
+  #   require: "@2022.10.0~shared~examples"
