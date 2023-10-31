@@ -88,8 +88,6 @@ void initialize( integer dimension, CommType comm, LoggingLevel log_level )
    internal::set_defaults( );
 
    // set default logging level
-//   axom::slic::finalize(); // TODO do we need to finalize here
-//   axom::slic::initialize(); // TODO input arguments?
 //   std::string format = "[<LEVEL>]: <MESSAGE> \n";
    switch (log_level)
    {
@@ -1065,7 +1063,6 @@ void finalize( )
    {
       csManager.clearAllCouplings();
    }
-   axom::slic::finalize();
 }
 
 //------------------------------------------------------------------------------
