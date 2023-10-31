@@ -31,7 +31,7 @@ void SubmeshLORTransfer::TransferToLORGridFn(
   const mfem::ParGridFunction& submesh_src
 )
 {
-  lor_xfer_.ForwardOperator().Mult(submesh_src, lor_gridfn_);
+  SubmeshToLOR(submesh_src, lor_gridfn_);
 }
 
 void SubmeshLORTransfer::TransferFromLORGridFn(
@@ -39,6 +39,14 @@ void SubmeshLORTransfer::TransferFromLORGridFn(
 ) const
 {
   lor_xfer_.ForwardOperator().MultTranspose(lor_gridfn_, submesh_dst);
+}
+
+void SubmeshLORTransfer::SubmeshToLOR(
+  const mfem::ParGridFunction& submesh_src,
+  mfem::ParGridFunction& lor_dst
+)
+{
+  lor_xfer_.ForwardOperator().Mult(submesh_src, lor_dst);
 }
 
 mfem::ParGridFunction SubmeshLORTransfer::CreateLORGridFunction(
@@ -344,6 +352,9 @@ MfemMeshData::MfemMeshData(
   coords_ { current_coords },
   lor_factor_ { 0 }
 {
+  // make sure a grid function exists on the submesh
+  submesh_.EnsureNodes();
+
   // create submesh grid function
   std::unique_ptr<mfem::FiniteElementCollection> submesh_fec {
     current_coords.ParFESpace()->FEColl()->Clone(
@@ -410,6 +421,16 @@ void MfemMeshData::SetParentCoords(const mfem::ParGridFunction& current_coords)
 
 void MfemMeshData::UpdateMfemMeshData()
 {
+  // update coordinates of submesh and LOR mesh
+  auto submesh_nodes = dynamic_cast<mfem::ParGridFunction*>(submesh_.GetNodes());
+  SLIC_ERROR_ROOT_IF(!submesh_nodes, "submesh_ Nodes is not a ParGridFunction.");
+  submesh_.Transfer(coords_.GetParentGridFn(), *submesh_nodes);
+  if (lor_mesh_.get())
+  {
+    auto lor_nodes = dynamic_cast<mfem::ParGridFunction*>(lor_mesh_->GetNodes());
+    SLIC_ERROR_ROOT_IF(!lor_nodes, "lor_mesh_ Nodes is not a ParGridFunction.");
+    submesh_lor_xfer_->SubmeshToLOR(*submesh_nodes, *lor_nodes);
+  }
   update_data_ = std::make_unique<UpdateData>(
     submesh_,
     lor_mesh_.get(),
@@ -465,6 +486,7 @@ void MfemMeshData::SetLORFactor(integer lor_factor)
   lor_mesh_ = std::make_unique<mfem::ParMesh>(mfem::ParMesh::MakeRefined(
     submesh_, lor_factor, mfem::BasisType::ClosedUniform
   ));
+  lor_mesh_->EnsureNodes();
   submesh_lor_xfer_ = std::make_unique<SubmeshLORTransfer>(
     *submesh_xfer_gridfn_.ParFESpace(),
     *lor_mesh_
@@ -757,7 +779,8 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   auto elem_J_2_ptr = std::make_unique<axom::Array<mfem::DenseMatrix>>(0, 0);
   const axom::Array<mfem::DenseMatrix>* elem_J_1 = elem_J_1_ptr.get();
   const axom::Array<mfem::DenseMatrix>* elem_J_2 = elem_J_2_ptr.get();
-  if (method_data != nullptr) // this means no meshes on the rank
+  // this means both of the meshes exist
+  if (method_data != nullptr && !elem_map_1.empty() && !elem_map_2.empty())
   {
     mortar_elems = method_data
       ->getBlockJElementIds()[static_cast<int>(BlockSpace::MORTAR)];
