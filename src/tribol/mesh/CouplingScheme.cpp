@@ -910,6 +910,8 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
                                                       m_contactCase, interact );
 
 
+     // TODO refine how these errors are handled. Here we skip over face-paris with errors. That is, 
+     // they are not registered for contact, but we don't error out.
      if (interact_err != NO_FACE_GEOM_ERROR)
      {
         pair_err = 1;
@@ -933,6 +935,10 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
 
    } // end loop over pairs
 
+   // TODO refine how this logging is handled. This just detects an issue with a face-pair geometry
+   // (which has been skipped over for contact eligibility) and reports this warning. Do we want to 
+   // error out, or let a user detect bad contact behavior, but with a contact interaction that still
+   // runs?
    SLIC_WARNING_IF(pair_err!=0, "CouplingScheme::apply(): error with orientation, input, " << 
                    "or invalid overlaps in CheckInterfacePair().");
 
