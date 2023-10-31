@@ -173,6 +173,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    parameters_t& parameters = parameters_t::getInstance();
    integer const dim = parameters.dimension;
 
+   LoggingLevel logLevel = cs->getLoggingLevel(); 
+
    ////////////////////////////////
    // Grab pointers to mesh data //
    ////////////////////////////////
@@ -395,8 +397,11 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
         IndexType node0 = nodalConnectivity1[ index1*numNodesPerFace + a ];
         IndexType node1 = nodalConnectivity2[ index2*numNodesPerFace + a ];
 
-        phi_sum_1 += phi1[a];
-        phi_sum_2 += phi2[a];
+        if (logLevel == DEBUG)
+        {
+           phi_sum_1 += phi1[a];
+           phi_sum_2 += phi2[a];
+        }
  
         const real nodal_force_x1 = force_x * phi1[a];
         const real nodal_force_y1 = force_y * phi1[a];
@@ -406,12 +411,15 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
         const real nodal_force_y2 = force_y * phi2[a];
         const real nodal_force_z2 = force_z * phi2[a];
 
-        dbg_sum_force1 += magnitude( nodal_force_x1, 
-                                     nodal_force_y1, 
-                                     nodal_force_z1 );
-        dbg_sum_force2 += magnitude( nodal_force_x2,
-                                     nodal_force_y2,
-                                     nodal_force_z2 );
+        if (logLevel == DEBUG)
+        {
+           dbg_sum_force1 += magnitude( nodal_force_x1, 
+                                        nodal_force_y1, 
+                                        nodal_force_z1 );
+           dbg_sum_force2 += magnitude( nodal_force_x2,
+                                        nodal_force_y2,
+                                        nodal_force_z2 );
+        }
 
         // accumulate contributions in host code's registered nodal force arrays
         fx1[ node0 ] -= nodal_force_x1;
@@ -430,10 +438,10 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 
       // comment out debug logs; too much output during tests. Keep for easy 
       // debugging if needed
-//         SLIC_DEBUG("force sum, side 1, pair " << kp << ": " << -dbg_sum_force1 );
-//         SLIC_DEBUG("force sum, side 2, pair " << kp << ": " << dbg_sum_force2 );
-//         SLIC_DEBUG("phi 1 sum: " << phi_sum_1 );
-//         SLIC_DEBUG("phi 2 sum: " << phi_sum_2 );
+      //SLIC_DEBUG("force sum, side 1, pair " << kp << ": " << -dbg_sum_force1 );
+      //SLIC_DEBUG("force sum, side 2, pair " << kp << ": " << dbg_sum_force2 );
+      //SLIC_DEBUG("phi 1 sum: " << phi_sum_1 );
+      //SLIC_DEBUG("phi 2 sum: " << phi_sum_2 );
     
       // increment contact plane id 
       ++cpID;
