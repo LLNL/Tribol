@@ -253,22 +253,22 @@ void CouplingSchemeInfo::printCaseInfo()
    {
       case SPECIFYING_NO_SLIDING_WITH_REGISTERED_MODE:
       {
-         SLIC_DEBUG("Overriding with ContactCase=NO_SLIDING with registered ContactMode."); 
+         SLIC_DEBUG_ROOT("Overriding with ContactCase=NO_SLIDING with registered ContactMode."); 
          break;
       }
       case SPECIFYING_NO_SLIDING_WITH_REGISTERED_METHOD:
       {
-         SLIC_DEBUG("Overriding with ContactCase=NO_SLIDING with registered ContactMethod."); 
+         SLIC_DEBUG_ROOT("Overriding with ContactCase=NO_SLIDING with registered ContactMethod."); 
          break;
       }
       case SPECIFYING_NONE_WITH_REGISTERED_METHOD:
       {
-         SLIC_DEBUG("Overriding with ContactCase=NO_CASE with registered ContactMethod."); 
+         SLIC_DEBUG_ROOT("Overriding with ContactCase=NO_CASE with registered ContactMethod."); 
          break;
       }
       case SPECIFYING_NONE_WITH_TWO_REGISTERED_MESHES:
       {
-         SLIC_DEBUG("ContactCase=AUTO not supported with two different meshes; overriding with ContactCase=NO_CASE.");
+         SLIC_DEBUG_ROOT("ContactCase=AUTO not supported with two different meshes; overriding with ContactCase=NO_CASE.");
          break;
       }
       case NO_CASE_INFO:
@@ -287,7 +287,7 @@ void CouplingSchemeInfo::printEnforcementInfo()
    {
       case SPECIFYING_NULL_ENFORCEMENT_WITH_REGISTERED_METHOD:
       {
-         SLIC_DEBUG("Overriding with EnforcementMethod=NULL_ENFORCEMENT with registered ContactMethod.");
+         SLIC_DEBUG_ROOT("Overriding with EnforcementMethod=NULL_ENFORCEMENT with registered ContactMethod.");
          break;
       }
       case NO_ENFORCEMENT_INFO:
