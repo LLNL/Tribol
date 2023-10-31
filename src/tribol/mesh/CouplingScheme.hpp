@@ -333,11 +333,7 @@ public:
                              const integer cycle, 
                              const real t );
 
-  void setLoggingLevel( const LoggingLevel log_level ) 
-  { 
-     m_loggingLevel = log_level;
-     setSlicLoggingLevel();
-  }
+  void setLoggingLevel( const LoggingLevel log_level ) { m_loggingLevel = log_level; }
 
   void setSlicLoggingLevel();
 

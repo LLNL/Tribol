@@ -99,6 +99,7 @@ void initialize( integer dimension, CommType comm, LoggingLevel log_level )
       axom::slic::setIsRoot(true);
    }
 
+   // set logging level for all of Tribol coupling schemes
    switch (log_level)
    {
       case DEBUG:

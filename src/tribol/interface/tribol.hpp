@@ -145,9 +145,11 @@ void setPlotOptions( enum VisType v_type );
 void setOutputDirectory( const std::string& dir );
 
 /*!
- * \brief Sets the logging level
+ * \brief Optionally sets the logging level per coupling scheme
  * \param [in] csId coupling scheme id
  * \param [in] log_level the desired logging level 
+ *
+ * \note this overrides the logging level set in initialize().
  */
 void setLoggingLevel( const int csId, const LoggingLevel log_level );
 

@@ -355,6 +355,8 @@ CouplingScheme::CouplingScheme( integer couplingSchemeId,
   m_couplingSchemeInfo.cs_case_info        = NO_CASE_INFO;
   m_couplingSchemeInfo.cs_enforcement_info = NO_ENFORCEMENT_INFO;
 
+  m_loggingLevel = UNDEFINED;
+
   // STEP 0: create contact-pairs object associated with this coupling scheme
   m_interfacePairs = new InterfacePairs( );
 
@@ -995,6 +997,8 @@ bool CouplingScheme::init()
    valid = this->isValidCouplingScheme();
    if (valid)
    {
+      // set individual coupling scheme logging level
+      this->setSlicLoggingLevel();
       this->allocateMethodData();
       return true;
    }
@@ -1006,34 +1010,38 @@ bool CouplingScheme::init()
 //------------------------------------------------------------------------------
 void CouplingScheme::setSlicLoggingLevel()
 {
-   switch (this->m_loggingLevel)
+   // set slic logging level for coupling schemes that have API modified logging levels
+   if (this->m_loggingLevel != UNDEFINED)
    {
-      case DEBUG:
+      switch (this->m_loggingLevel)
       {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
-         break;
-      } 
-      case INFO:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
-         break;
-      } 
-      case WARNING:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
-         break;
-      } 
-      case ERROR:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
-         break;
-      } 
-      default:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
-         break;
-      }
-   } // end switch
+         case DEBUG:
+         {
+            axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
+            break;
+         } 
+         case INFO:
+         {
+            axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
+            break;
+         } 
+         case WARNING:
+         {
+            axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
+            break;
+         } 
+         case ERROR:
+         {
+            axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
+            break;
+         } 
+         default:
+         {
+            axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
+            break;
+         }
+      } // end switch
+   } // end if
 }
 //------------------------------------------------------------------------------
 void CouplingScheme::allocateMethodData()
