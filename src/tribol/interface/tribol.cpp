@@ -252,6 +252,12 @@ void setContactPenFrac( double frac )
 void setContactAreaFrac( double frac )
 {
    parameters_t & parameters = parameters_t::getInstance();
+   if (frac < 1.e-12)
+   {
+      SLIC_DEBUG("tribol::setContactAreaFrac(): area fraction too small or negative; " << 
+                 "setting to default 1.e-8.");
+      frac = 1.e-8;
+   }
    parameters.overlap_area_frac = frac;
 }
 

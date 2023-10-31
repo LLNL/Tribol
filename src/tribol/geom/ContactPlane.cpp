@@ -1127,7 +1127,9 @@ void ContactPlane3D::computeAreaTol()
    parameters_t & parameters = parameters_t::getInstance();
 
    if (m_areaFrac < parameters.overlap_area_frac ) {
-      SLIC_ERROR ( "ContactPlane3D::computeAreaTol() the overlap area fraction too small or negative" );
+      SLIC_DEBUG( "ContactPlane3D::computeAreaTol() the overlap area fraction too small or negative; " << 
+                  "setting to overlap_area_frac parameter." );
+      m_areaFrac = parameters.overlap_area_frac;
    }
 
    MeshData& mesh1 = getCpMeshData( m_pair.meshId1 );
@@ -2155,8 +2157,11 @@ void ContactPlane2D::computeAreaTol()
 {
    // Note: this code is the same as for ContactPlane3D, but maintain separate 
    // routine for 2D treatment.
-   if (m_areaFrac < 1.E-12) {
-      SLIC_ERROR ( "ContactPlane2D::computeAreaTol() the overlap area fraction too small or negative" );
+   parameters_t & parameters = parameters_t::getInstance();
+
+   if (m_areaFrac < parameters.overlap_area_frac ) {
+      SLIC_DEBUG( "ContactPlane2D::computeAreaTol() the overlap area fraction too small or negative; " << 
+                  "setting to overlap_area_frac parameter." );
    }
 
    MeshData& mesh1 = getCpMeshData( m_pair.meshId1 );

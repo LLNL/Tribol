@@ -330,7 +330,7 @@ void GlobalTo2DLocalCoords( const real* const RESTRICT pX,
                             real* const RESTRICT pLY, int size )
 {
 
-   if (pLX == nullptr || pLY == nullptr)
+   if (size > 0 && (pLX == nullptr || pLY == nullptr))
    {
       SLIC_ERROR ("GlobalTo2DLocalCoords: local coordinate pointers are null");
    }
@@ -921,12 +921,12 @@ bool Point2DInFace( const real xPoint, const real yPoint,
 {
    if (numPolyVert < 3)
    {
-      SLIC_ERROR ("Point2DInFace: number of face vertices is less than 3");
+      SLIC_ERROR("Point2DInFace: number of face vertices is less than 3");
    }
 
    if (xPoly == nullptr || yPoly == nullptr)
    {
-      SLIC_ERROR ("Point2DInFace: input pointer not set");
+      SLIC_ERROR("Point2DInFace: input pointer not set");
    }
 
    // if face is triangle (numPolyVert), call Point2DInTri once
@@ -1653,6 +1653,12 @@ void Vertex2DOrderToCCW( const real* const RESTRICT x, const real* const RESTRIC
                          real* RESTRICT xTemp, real* RESTRICT yTemp,
                          const int numVert )
 {
+   if (numVert <= 0)
+   {
+      SLIC_DEBUG("Vertex2DOrderToCCW: numVert <= 0; returning.");
+      return;
+   }
+
    if (x == nullptr || y == nullptr || xTemp == nullptr || yTemp == nullptr)
    {
       SLIC_ERROR("Vertex2DOrderToCCW: must set pointers prior to call to routine.");
