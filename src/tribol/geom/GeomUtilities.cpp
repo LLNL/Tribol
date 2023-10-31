@@ -813,9 +813,11 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
       if (interiorVAId[i] != -1)
       {
          // debug
-         if (k > (numPolyVert))
+         if (k > numPolyVert)
          {
-            SLIC_DEBUG("Intersection2DPolygon(): iterator k greater than numPolyVert (1)");
+            SLIC_DEBUG("Intersection2DPolygon(): number of A vertices interior to B " << 
+                       "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+            return FACE_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
          polyXTemp[k] = xA[i];
@@ -829,9 +831,11 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
       if (interiorVBId[i] != -1)
       {
          // debug
-         if (k > (numPolyVert))
+         if (k > numPolyVert)
          {
-            SLIC_DEBUG("Intersection2DPolygon(): iterator k greater than numPolyVert (2)");
+            SLIC_DEBUG("Intersection2DPolygon(): number of B vertices interior to A " << 
+                       "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+            return FACE_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
          polyXTemp[k] = xB[i];
@@ -847,8 +851,13 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
    // This is where polyX and polyY get allocated.
    int numFinalVert = 0; 
 
-   CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
-                  lenTol, polyX, polyY, numFinalVert );
+   FaceGeomError segErr = CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
+                                         lenTol, polyX, polyY, numFinalVert );
+
+   if (segErr != 0)
+   {
+      return segErr;
+   }
 
    numPolyVert = numFinalVert;
 
@@ -1208,10 +1217,10 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
 } // end SegmentIntersection2D()
 
 //------------------------------------------------------------------------------
-void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y, 
-                    const int numPoints, const real tol, 
-                    real* RESTRICT * RESTRICT xnew, real* RESTRICT * RESTRICT ynew, 
-                    int& numNewPoints )
+FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y, 
+                             const int numPoints, const real tol, 
+                             real* RESTRICT * RESTRICT xnew, real* RESTRICT * RESTRICT ynew, 
+                             int& numNewPoints )
 {
    real newIDs[ numPoints ];
 
@@ -1264,7 +1273,8 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
       {
          if (k > numNewPoints)
          {
-            SLIC_ERROR("checkPolySegs: index into polyX/polyY exceeds allocated space");
+            SLIC_DEBUG("checkPolySegs(): index into polyX/polyY exceeds allocated space");
+            return FACE_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
          (*xnew)[k] = x[i];
@@ -1273,7 +1283,7 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
       }
    }
 
-   return;
+   return NO_FACE_GEOM_ERROR;
 
 } // end CheckPolySegs()
 

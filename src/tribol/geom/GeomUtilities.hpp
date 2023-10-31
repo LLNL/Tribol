@@ -285,7 +285,7 @@ void PolyCentroid( const real* const RESTRICT x,
  * \param [in,out] numPolyVert number of vertices in intersection polygon
  * \param [in,out] area intersection polygon area
  *
- * \return 0 if no , >0 a face geom error
+ * \return 0 if no error, >0 a face geom error
  *
  * \pre length(xA), length(yA) >= numVertexA
  * \pre length(xB), length(yB) >= numVertexB
@@ -455,6 +455,8 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
  * \param [in,out] ynew array of new y coordinates
  * \param [in,out] numNewPoints number of new points
  *
+ * \return 0 if no error, >0 a face geom error
+ *
  * \pre length(x), length(y) >= numPoints
  *
  * /note this routine checks the overlapping polygon segments. We may have two adjacent 
@@ -465,10 +467,10 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
  *  xnew and ynew values are set to x and y, respectively, and numNewPoints 
  *  equals numPoints.
  */
-void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y, 
-                    const int numPoints, const real tol, 
-                    real* RESTRICT * RESTRICT xnew, real* RESTRICT * RESTRICT ynew, 
-                    int& numNewPoints );
+FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y, 
+                             const int numPoints, const real tol, 
+                             real* RESTRICT * RESTRICT xnew, real* RESTRICT * RESTRICT ynew, 
+                             int& numNewPoints );
 
 /*!
  *
