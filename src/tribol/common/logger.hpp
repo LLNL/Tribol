@@ -10,4 +10,6 @@
 #include "axom/slic.hpp"  // for logging
 #endif
 
+// TODO keep file for now to allow finer grained logging in the future
+
 #endif /* COMMON_LOGGER_HPP_ */

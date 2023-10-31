@@ -89,6 +89,16 @@ void initialize( integer dimension, CommType comm, LoggingLevel log_level )
 
    // set default logging level
 //   std::string format = "[<LEVEL>]: <MESSAGE> \n";
+
+   int myRank = 0;
+   #ifdef TRIBOL_USE_MPI
+   MPI_Comm_rank(comm, &myRank);
+   #endif
+   if (myRank == 0)
+   {
+      axom::slic::setIsRoot(true);
+   }
+
    switch (log_level)
    {
       case DEBUG:
