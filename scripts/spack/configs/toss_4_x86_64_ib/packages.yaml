@@ -209,25 +209,6 @@ packages:
     externals:
     - spec: cmake@3.23.1
       prefix: /usr/tce
-  doxygen:
-    version: [1.9.6]
-    buildable: false
-    externals:
-    - spec: doxygen@1.9.6
-      prefix: /usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/doxygen-1.9.6
-  # TODO: make installed clang 14.0.6 work
-  llvm:
-    version: [10.0.0]
-    buildable: false
-    externals:
-    - spec: llvm+clang@10.0.0
-      prefix: /usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/python-3.10.10
-  py-sphinx:
-    version: [7.0.0]
-    buildable: false
-    externals:
-    - spec: py-sphinx@7.0.0
-      prefix: /usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/python-3.10.10
   python:
     buildable: false
     externals:
