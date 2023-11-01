@@ -50,9 +50,9 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
 
          // set whether full overlap is to be used or not. Note: SINGLE_MORTAR and 
          // MORTAR_WEIGHTS drop into this 'case', so the method still needs to be checked
-         bool full = (cMethod == COMMON_PLANE) ? false : true;
-         bool interpenOverlap = (full) ? false : true;
-         bool intermediatePlane = (cMethod == COMMON_PLANE) ? true : false;
+         const bool full = (cMethod == COMMON_PLANE) ? false : true;
+         const bool interpenOverlap = (full) ? false : true;
+         const bool intermediatePlane = (cMethod == COMMON_PLANE) ? true : false;
          real lenFrac = params.overlap_area_frac;
          real areaFrac = lenFrac;
 
@@ -1438,9 +1438,12 @@ FaceGeomError ContactPlane3D::computeLocalInterpenOverlap(bool& interpen)
          const real& y2 = mesh.m_positionY[fNodeIdB];
          const real& z2 = mesh.m_positionZ[fNodeIdB]; 
 
+         meshId = m_pair.meshId1; 
+         fId =    m_pair.pairIndex1;
          if (k > 2)
          {
-            SLIC_INFO("ContactPlane3D::computeInterpenOverlap(): too many segment-plane intersections.");
+            SLIC_DEBUG("ContactPlane3D::computeInterpenOverlap(): too many segment-plane intersections; " << 
+                       "check for degenerate face " << fId << "on mesh " << meshId << ".");
             interpen = false;
             return DEGENERATE_OVERLAP;
          }
@@ -2159,9 +2162,11 @@ void ContactPlane2D::computeAreaTol()
    // routine for 2D treatment.
    parameters_t & parameters = parameters_t::getInstance();
 
-   if (m_areaFrac < parameters.overlap_area_frac ) {
+   if (m_areaFrac < parameters.overlap_area_frac)
+   {
       SLIC_DEBUG( "ContactPlane2D::computeAreaTol() the overlap area fraction too small or negative; " << 
                   "setting to overlap_area_frac parameter." );
+      m_areaFrac = parameters.overlap_area_frac;
    }
 
    MeshData& mesh1 = getCpMeshData( m_pair.meshId1 );
@@ -2287,7 +2292,9 @@ FaceGeomError ContactPlane2D::computeLocalInterpenOverlap(bool& interpen)
    // Debug check the number of interpenetrating vertices
    if (k > 2)
    {
-      SLIC_INFO("ContactPlane2D::computeLocalInterpenOverlap() more than 2 interpenetrating vertices detected.");
+      SLIC_DEBUG("ContactPlane2D::computeLocalInterpenOverlap() more than 2 interpenetrating vertices detected; " << 
+                 "check for degenerate geometry for edges (" << edgeId1 << ", " << edgeId2 << ") on meshes (" << 
+                 mesh1.m_meshId << ", " << mesh2.m_meshId << ").");
       interpen = false;
       return DEGENERATE_OVERLAP;
    }
