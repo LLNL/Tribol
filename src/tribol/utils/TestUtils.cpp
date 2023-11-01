@@ -1174,9 +1174,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                            enforcement,
                            BINNING_GRID );
 
-   std::cout << "Before tribol::setLoggingLevel()." << std::endl;
    setLoggingLevel(csIndex, WARNING);
-   std::cout << "After tribol::setLoggingLevel()." << std::endl;
 
    if (method == COMMON_PLANE && enforcement == PENALTY)
    {
