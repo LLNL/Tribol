@@ -31,11 +31,20 @@ namespace numerics = axom::numerics;
 // free functions for simple API usage
 //------------------------------------------------------------------------------
 
-int Initialize(const int dim, bool TRIBOL_UNUSED_PARAM(init_slic))
+int Initialize(const int dim, bool init_slic)
 {
-   // Note, slic initialization moved into tribol::initialize(). 
-   // Function prototype not modified due to shroud layer
-   
+   // initialize slic
+   if (init_slic)
+   {
+      axom::slic::finalize();
+      axom::slic::initialize();
+      std::string format = "[<LEVEL>]: <MESSAGE> \n";
+      axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
+     
+      axom::slic::addStreamToAllMsgLevels(
+         new axom::slic::GenericOutputStream( &std::cout,format ) );
+   }
+
    // Initialize tribol
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( dim, problem_comm );
