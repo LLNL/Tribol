@@ -75,7 +75,7 @@ void set_defaults()
 } /* end namepsace internal */
 
 //------------------------------------------------------------------------------
-void initialize( integer dimension, CommType comm, LoggingLevel log_level )
+void initialize( integer dimension, CommType comm )
 {
    // sanity checks
    SLIC_ASSERT( (dimension==2) || (dimension==3) );
@@ -86,50 +86,6 @@ void initialize( integer dimension, CommType comm, LoggingLevel log_level )
    parameters.problem_comm = comm;
 
    internal::set_defaults( );
-
-   // set default logging level
-//   std::string format = "[<LEVEL>]: <MESSAGE> \n";
-
-   int myRank = 0;
-   #ifdef TRIBOL_USE_MPI
-   MPI_Comm_rank(comm, &myRank);
-   #endif
-   if (myRank == 0)
-   {
-      axom::slic::setIsRoot(true);
-   }
-
-   // set logging level for all of Tribol coupling schemes
-   switch (log_level)
-   {
-      case DEBUG:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
-         break;
-      } 
-      case INFO:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
-         break;
-      } 
-      case WARNING:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
-         break;
-      } 
-      case ERROR:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
-         break;
-      } 
-      default:
-      {
-         axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
-         break;
-      }
-   } // end switch
-   //axom::slic::addStreamToAllMsgLevels(
-   //   new axom::slic::GenericOutputStream( &std::cout,format) );
 }
 
 //------------------------------------------------------------------------------
@@ -376,6 +332,7 @@ void setLoggingLevel( const int csId, const LoggingLevel log_level )
 {
    CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
    CouplingScheme* couplingScheme  = csManager.getCoupling( csId );
+
    if ( !in_range(log_level, NUM_LOGGING_LEVELS) )
    {
       SLIC_INFO_ROOT("tribol::setLoggingLevel(): Logging level not an option; " << 
