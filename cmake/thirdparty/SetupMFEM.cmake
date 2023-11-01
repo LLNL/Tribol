@@ -126,7 +126,8 @@ else()
     # Tribol edit
     if(TRIBOL_USE_MPI)
         # Note: -lmpifort is being added to MFEM's link line w/o a -L<mpi lib dir>
-        get_filename_component(_mpi_lib_dir ${MPI_C_LIBRARIES} DIRECTORY)
+        list(GET MPI_C_LIBRARIES 0 _first_mpi_lib)
+        get_filename_component(_mpi_lib_dir ${_first_mpi_lib} DIRECTORY)
         target_link_directories(mfem INTERFACE ${_mpi_lib_dir})
         target_link_libraries(mfem INTERFACE mpi)
     endif()
