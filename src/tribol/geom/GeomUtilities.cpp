@@ -330,10 +330,8 @@ void GlobalTo2DLocalCoords( const real* const RESTRICT pX,
                             real* const RESTRICT pLY, int size )
 {
 
-   if (size > 0 && (pLX == nullptr || pLY == nullptr))
-   {
-      SLIC_ERROR ("GlobalTo2DLocalCoords: local coordinate pointers are null");
-   }
+   SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
+                 "GlobalTo2DLocalCoords: local coordinate pointers are null");
 
    // loop over projected nodes
    for (int i=0; i<size; ++i) {
@@ -382,10 +380,7 @@ void VertexAvgCentroid( const real* const RESTRICT x,
                         const int numVert,
                         real& cX, real& cY, real& cZ )
 {
-   if (numVert == 0)
-   {
-     SLIC_ERROR ("VertexAvgCentroid: numVert = 0.");
-   }
+   SLIC_ERROR_IF (numVert==0, "VertexAvgCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -418,10 +413,7 @@ void VertexAvgCentroid( const real* const RESTRICT x,
                         const int numVert,
                         real& cX, real& cY, real& cZ )
 {
-   if (numVert == 0)
-   {
-     SLIC_ERROR ("VertexAvgCentroid: numVert = 0.");
-   }
+   SLIC_ERROR_IF(numVert==0, "VertexAvgCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -454,10 +446,7 @@ void PolyAreaCentroid( const real* const RESTRICT x,
                        const int numVert,
                        real& cX, real& cY, real& cZ )
 {
-   if (numVert == 0)
-   {
-     SLIC_ERROR ("PolyAreaCentroid: numVert = 0.");
-   }
+   SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -522,10 +511,7 @@ void PolyCentroid( const real* const RESTRICT x,
                    const int numVert,
                    real& cX, real& cY )
 {
-   if (numVert == 0)
-   {
-     SLIC_ERROR ("PolyAreaCentroid: numVert = 0.");
-   }
+   SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -567,10 +553,8 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
    // the full calculation. This can and probably should be added.
 
    // check to make sure the intersection polygon vertex pointers are null
-   if (*polyX != nullptr || *polyY != nullptr)
-   {
-     SLIC_ERROR("Intersection2DPolygon: expecting nullptr input arguments polyX, polyY");
-   }
+   SLIC_ERROR_IF(*polyX != nullptr || *polyY != nullptr, 
+                 "Intersection2DPolygon: expecting nullptr input arguments polyX, polyY.");
 
    // check numVertexA and numVertexB to make sure they are 3 (triangle) or more
    if (numVertexA < 3 || numVertexB < 3) 
@@ -928,15 +912,9 @@ bool Point2DInFace( const real xPoint, const real yPoint,
                     const real xC, const real yC, 
                     const int numPolyVert )
 {
-   if (numPolyVert < 3)
-   {
-      SLIC_ERROR("Point2DInFace: number of face vertices is less than 3");
-   }
+   SLIC_ERROR_IF(numPolyVert<3, "Point2DInFace: number of face vertices is less than 3");
 
-   if (xPoly == nullptr || yPoly == nullptr)
-   {
-      SLIC_ERROR("Point2DInFace: input pointer not set");
-   }
+   SLIC_ERROR_IF(xPoly == nullptr || yPoly == nullptr, "Point2DInFace: input pointer not set");
 
    // if face is triangle (numPolyVert), call Point2DInTri once
    if (numPolyVert == 3)
@@ -1291,10 +1269,7 @@ FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RES
 void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numPoints )
 {
 
-   if (numPoints < 3)
-   {
-      SLIC_ERROR ("PolyReorder: numPoints < 3.");
-   }
+   SLIC_ERROR_IF(numPoints<3, "PolyReorder: numPoints < 3.");
 
    real xC, yC, zC;
    real * z = nullptr;
@@ -1419,10 +1394,7 @@ void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numP
       refy = y[newIDs[i+1]] - y[newIDs[i]];
       refMag = magnitude( refx, refy );
 
-//      if (refMag < 1.E-12)
-//      {
-//         SLIC_ERROR("PolyReorder: reference segment for link vector check is nearly zero length");
-//      }
+//      SLIC_ERROR_IF(refMag < 1.E-12, "PolyReorder: reference segment for link vector check is nearly zero length");
 
       // loop over link vectors of unassigned vertices
       int nextVertexID = 2+i;
@@ -1669,10 +1641,8 @@ void Vertex2DOrderToCCW( const real* const RESTRICT x, const real* const RESTRIC
       return;
    }
 
-   if (x == nullptr || y == nullptr || xTemp == nullptr || yTemp == nullptr)
-   {
-      SLIC_ERROR("Vertex2DOrderToCCW: must set pointers prior to call to routine.");
-   }
+   SLIC_ERROR_IF(x == nullptr || y == nullptr || xTemp == nullptr || yTemp == nullptr,
+                 "Vertex2DOrderToCCW: must set pointers prior to call to routine.");
 
    xTemp[0] = x[0];
    yTemp[0] = y[0];
