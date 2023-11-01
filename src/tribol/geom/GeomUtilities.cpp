@@ -745,7 +745,8 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
          {
             if (interId >= maxSegInter) 
             {
-               SLIC_INFO("Intersection2DPolygon: number of segment intersections exceeds precomputed maximum.");
+               SLIC_DEBUG("Intersection2DPolygon: number of segment/segment intersections exceeds precomputed maximum; " << 
+                          "check for degenerate overlap.");
                return DEGENERATE_OVERLAP;
             }
 

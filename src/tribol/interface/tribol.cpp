@@ -994,8 +994,8 @@ integer update( integer cycle, real t, real &dt )
          }
          else
          {
-            SLIC_INFO("tribol::update(): skipping invalid CouplingScheme " << 
-                      couplingScheme->getId() << "Please see warnings.");
+            SLIC_WARNING_ROOT("tribol::update(): skipping invalid CouplingScheme " << 
+                              couplingScheme->getId() << "Please see warnings.");
             continue;
          }
       }
