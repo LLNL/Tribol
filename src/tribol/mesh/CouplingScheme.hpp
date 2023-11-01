@@ -527,7 +527,7 @@ private:
   EnforcementMethod m_enforcementMethod; ///< Contact enforcement method
   BinningMethod m_binningMethod;         ///< Contact binning method
 
-  LoggingLevel m_loggingLevel;
+  LoggingLevel m_loggingLevel; ///< logging level enum for coupling scheme
 
   bool m_fixedBinning; ///< True if using fixed binning for all cycles
   bool m_isBinned; ///< True if binning has occured 
