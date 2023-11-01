@@ -331,6 +331,8 @@ void setOutputDirectory( const std::string& dir)
 void setLoggingLevel( const int csId, const LoggingLevel log_level )
 {
    CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
+   SLIC_ERROR_IF(!csManager.hasCoupling(csId), "tribol::setLoggingLevel(): " << 
+                 "invalid CouplingScheme id.");
    CouplingScheme* couplingScheme  = csManager.getCoupling( csId );
 
    if ( !in_range(log_level, NUM_LOGGING_LEVELS) )
