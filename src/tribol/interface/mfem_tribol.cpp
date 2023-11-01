@@ -278,6 +278,35 @@ void updateMfemParallelDecomposition()
 
 }
 
+void saveRedecompMesh( integer output_id )
+{
+   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
+   int numCouplings = csManager.getNumberOfCouplings();
+
+   for(int csIndex =0; csIndex < numCouplings; ++csIndex)
+   {
+      if(!csManager.hasCoupling(csIndex))
+      {
+         continue;
+      }
+   
+      CouplingScheme* couplingScheme  = csManager.getCoupling(csIndex);
+
+      if (couplingScheme->hasMfemData())
+      {
+         auto mfem_data = couplingScheme->getMfemMeshData();
+         auto& redecomp_mesh = mfem_data->GetRedecompMesh();
+         std::string dc_name("redecomp_cs" + std::to_string(csIndex) + "_id" 
+           + std::to_string(output_id) + "_rank" 
+           + std::to_string(redecomp_mesh.getMPIUtility().MyRank()));
+         mfem::VisItDataCollection visit_datacoll(dc_name, &redecomp_mesh);
+         visit_datacoll.RegisterField("pos", redecomp_mesh.GetNodes());
+         visit_datacoll.Save();
+      }
+   }
+
+}
+
 } // end tribol namespace
 
 #endif /* BUILD_REDECOMP */
