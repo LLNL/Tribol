@@ -53,6 +53,9 @@ protected:
    // Setup boiler plate data and register mesh, nodal response, and coupling scheme
    void SetupTest( tribol::TestMesh* mesh )
    {
+      tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+      tribol::initialize( 3, problem_comm );
+
       ////////////////////////////////////////////////
       // setup simple non-null contacting test mesh //
       ////////////////////////////////////////////////
@@ -161,9 +164,6 @@ protected:
 // Coupling schemes with errors
 TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_error )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -184,14 +184,13 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_error )
 
    EXPECT_EQ( isInit, false );
 
+   tribol::finalize();
+
    delete mesh;
 }
 
 TEST_F( EnforcementOptionsTest, penalty_kinematic_element_error )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -221,6 +220,8 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_error )
 
    EXPECT_EQ( isInit, false );
 
+   tribol::finalize();
+
    delete bulk_modulus_1;
    delete bulk_modulus_2;
    delete element_thickness_1;
@@ -230,9 +231,6 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_error )
 
 TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_error )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -258,14 +256,13 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_error )
 
    EXPECT_EQ( isInit, false );
 
+   tribol::finalize();
+
    delete mesh;
 }
 
 TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_1 )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -291,14 +288,13 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_1 
 
    EXPECT_EQ( isInit, false );
 
+   tribol::finalize();
+
    delete mesh;
 }
 
 TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_2 )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -324,6 +320,8 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_2 
 
    EXPECT_EQ( isInit, false );
 
+   tribol::finalize();
+
    delete mesh;
 }
 
@@ -331,9 +329,6 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_2 
 // Coupling schemes with no errors
 TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_pass )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -353,14 +348,13 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_pass )
 
    EXPECT_EQ( isInit, true );
 
+   tribol::finalize();
+
    delete mesh;
 }
 
 TEST_F( EnforcementOptionsTest, penalty_kinematic_element_pass )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -389,6 +383,8 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_pass )
 
    EXPECT_EQ( isInit, true );
 
+   tribol::finalize();
+
    delete bulk_modulus_1;
    delete bulk_modulus_2;
    delete element_thickness_1;
@@ -398,9 +394,6 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_pass )
 
 TEST_F( EnforcementOptionsTest, penalty_kinematic_element_invalid_element_input )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -429,6 +422,8 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_invalid_element_input 
 
    EXPECT_EQ( isInit, false );
 
+   tribol::finalize();
+
    delete bulk_modulus_1;
    delete bulk_modulus_2;
    delete element_thickness_1;
@@ -438,9 +433,6 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_invalid_element_input 
 
 TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_pass )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -465,14 +457,13 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_pass )
 
    EXPECT_EQ( isInit, true );
 
+   tribol::finalize();
+
    delete mesh;
 }
 
 TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_pass )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    // Setup boiler plate test data etc.
    tribol::TestMesh* mesh = new tribol::TestMesh();
    SetupTest(mesh);
@@ -496,6 +487,8 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_pass )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
+
+   tribol::finalize();
 
    delete mesh;
 }

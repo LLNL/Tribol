@@ -250,6 +250,8 @@ TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
 
+   tribol::finalize();
+
    delete [] gaps;
 }
 
@@ -315,6 +317,8 @@ TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
    computeGapsFromSparseWts( couplingScheme, gaps );
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
+
+   tribol::finalize();
 
    delete [] gaps;
 }
@@ -383,6 +387,8 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_mortar_fine )
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
 
+   tribol::finalize();
+
    delete [] gaps;
 }
 
@@ -449,6 +455,8 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_nonmortar_fine )
    computeGapsFromSparseWts( couplingScheme, gaps );
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
+
+   tribol::finalize();
 
    delete [] gaps;
 }

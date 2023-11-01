@@ -122,6 +122,8 @@ TEST_F( CompGeomTest, common_plane_check )
       couplingSchemeManager.getCoupling( 0 );
 
    EXPECT_EQ( userSpecifiedNumOverlaps, couplingScheme->getNumActivePairs() );
+
+   tribol::finalize();
 }
 
 TEST_F( CompGeomTest, single_mortar_check )
@@ -178,6 +180,7 @@ TEST_F( CompGeomTest, single_mortar_check )
 
    EXPECT_EQ( userSpecifiedNumOverlaps, couplingScheme->getNumActivePairs() );
 
+   tribol::finalize();
 }
 
 TEST_F( CompGeomTest, poly_area_centroid_1 )

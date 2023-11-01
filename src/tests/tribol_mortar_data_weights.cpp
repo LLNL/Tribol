@@ -77,6 +77,7 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
       SLIC_DEBUG("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
       mortarMesh.sortSurfaceNodeIds();
    }
+
    int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
 
    double area = 0.;
@@ -88,14 +89,10 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
       {
          area += wts[b];
           
-         if ( J[b] < nodeOffset ) // nonmortar/mortar  weight
-         {
-//            SLIC_DEBUG("nonmortar/mortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
-         }
-         else // nonmortar/nonmortar weight
-         {
-//            SLIC_DEBUG("nonmortar/nonmortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
-         } // end if-block
+         // nonmortar/mortar weight
+         //SLIC_DEBUG_IF(J[b] < nodeOffset, "nonmortar/mortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
+         //nonmortar/nonmortar weight
+         //SLIC_DEBUG_IF(J[b] >= nodeOffset, "nonmortar/nonmortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
 
       } // end loop over nonzero columns, I[a]
    } // end loop over matrix rows

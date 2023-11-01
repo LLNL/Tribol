@@ -187,7 +187,7 @@ public:
       int tribol_update_err = tribol::update( 1, 1., dt );
 
       EXPECT_EQ( tribol_update_err, 0 );
-
+ 
    }
 
 protected:
@@ -348,6 +348,8 @@ TEST_F( MortarJacTest, jac_input_test )
       delete [] nonmortarMesh.m_nodalFields.m_node_pressure; 
       nonmortarMesh.m_nodalFields.m_node_pressure = nullptr;
    }
+
+   tribol::finalize();
 
    // delete the jacobian matrix
    delete jac;

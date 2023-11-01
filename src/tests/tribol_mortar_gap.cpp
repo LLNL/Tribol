@@ -229,6 +229,8 @@ public:
          SLIC_ERROR("Unsupported contact method");
          break;
       }
+
+      tribol::finalize();
    }
 
 protected:

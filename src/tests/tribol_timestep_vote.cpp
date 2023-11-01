@@ -140,6 +140,8 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
    EXPECT_EQ( parameters.dt, dt );
+
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, zero_velocity_large_gap )
@@ -224,6 +226,8 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
    // very large. This is a case where the initial gap is just too large. 
    // Tribol will print a message to screen if this is the case.
    EXPECT_EQ( parameters.dt, dt );
+
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, large_velocity_small_gap )
@@ -310,6 +314,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, large_velocity_large_gap )
@@ -396,6 +401,7 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, separation_velocity_small_gap )
@@ -478,6 +484,8 @@ TEST_F( CommonPlaneTest, separation_velocity_small_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
    EXPECT_EQ( parameters.dt, dt );
+
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, large_velocity_separation )
@@ -562,6 +570,8 @@ TEST_F( CommonPlaneTest, large_velocity_separation )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
    EXPECT_EQ( parameters.dt, dt );
+
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, large_velocity_small_separation )
@@ -649,6 +659,8 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
    real dt_diff = std::abs(parameters.dt - 0.0007499999);
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
+
+   tribol::finalize();
 }
 
 int main(int argc, char* argv[])
