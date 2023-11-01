@@ -67,10 +67,8 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
             int mortarNonmortarId = elem.numFaceVert * elem.numFaceVert + 
                                 elem.numFaceVert * a + b;
  
-            if (nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts)
-            {
-               SLIC_ERROR("ComputeAlignedMortarWeights: integer ids for weights exceed elem.numWts");
-            }
+            SLIC_ERROR_IF(nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts,
+                          "ComputeAlignedMortarWeights: integer ids for weights exceed elem.numWts");
 
             // compute nonmortar/nonmortar mortar weight
             elem.mortarWts[ nonmortarNonmortarId ]  += integ.wts[ip] * phiNonmortarA * phiNonmortarB;

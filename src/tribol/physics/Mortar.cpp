@@ -94,10 +94,8 @@ void ComputeMortarWeights( SurfaceContactElem & elem )
             LinIsoQuadShapeFunc( xi[0], xi[1], a, phiNonmortarA );
             LinIsoQuadShapeFunc( xi[0], xi[1], b, phiNonmortarB );
 
-            if (nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts)
-            {
-               SLIC_ERROR("ComputeMortarWts: integer ids for weights exceed elem.numWts");
-            }
+            SLIC_ERROR_IF(nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts,
+                          "ComputeMortarWts: integer ids for weights exceed elem.numWts");
 
             // compute nonmortar/nonmortar mortar weight
             elem.mortarWts[ nonmortarNonmortarId ]  += integ.wts[ip] * phiNonmortarA * phiNonmortarB;
@@ -120,10 +118,7 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 {
    // check to make sure mortar weights have been computed locally 
    // for the SurfaceContactElem object
-   if (elem.mortarWts == nullptr)
-   {
-      SLIC_ERROR("ComputeNodalGap< SINGLE_MORTAR >: compute local weights on input struct first.");
-   }
+   SLIC_ERROR_IF(elem.mortarWts==nullptr, "ComputeNodalGap< SINGLE_MORTAR >: compute local weights on input struct first.");
 
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
@@ -131,15 +126,11 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
    IndexType const * const nonmortarConn = nonmortarMesh.m_connectivity;
 
    // will populate local gaps on nonmortar face on nonmortar mesh data object
-   if (nonmortarMesh.m_nodalFields.m_node_gap == nullptr)
-   {
-      SLIC_ERROR("ComputeNodalGap< SINGLE_MORTAR >: allocate gaps on mesh data object."); 
-   }
+   SLIC_ERROR_IF(nonmortarMesh.m_nodalFields.m_node_gap == nullptr,
+                 "ComputeNodalGap< SINGLE_MORTAR >: allocate gaps on mesh data object."); 
 
-   if (nonmortarMesh.m_node_nX == nullptr || nonmortarMesh.m_node_nY == nullptr)
-   {
-      SLIC_ERROR("ComputeNodalGap< SINGLE_MORTAR >: allocate and compute nodal normals on mesh data object.");   
-   }
+   SLIC_ERROR_IF(nonmortarMesh.m_node_nX == nullptr || nonmortarMesh.m_node_nY == nullptr,
+                 "ComputeNodalGap< SINGLE_MORTAR >: allocate and compute nodal normals on mesh data object.");   
 
    // compute gap contributions associated with face 2 on the SurfaceContactElem 
    // (i.e. nonmortar surface)
