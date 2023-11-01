@@ -32,7 +32,7 @@ class ContactPlaneManager;
  * \param [in] cCase the Tribol contact Case
  * \param [in] inContact true if pair are in contact per CG routines
  *
- * \return 0 if no error, 1 if error
+ * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
  *
  * \note will need the contact case for specialized geometry checks
  *
@@ -225,7 +225,7 @@ public:
     *
     * \param [in] interpen true if the two faces interpenetrate
     *
-    * \return 0 if no error, >0 face geom error
+    * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
    virtual FaceGeomError computeLocalInterpenOverlap(bool& interpen) = 0 ;
    
@@ -567,7 +567,7 @@ public:
     *
     * \param [in] interpen true if the two faces interpenetrate
     *
-    * \return 0 if no error, >0 face geom error
+    * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
    virtual FaceGeomError computeLocalInterpenOverlap(bool& interpen);
    
@@ -672,7 +672,7 @@ public:
     *
     * \param [in] interpen true if the two faces interpenetrate
     *
-    * \return 0 if no error, >0 face geom error
+    * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
    virtual FaceGeomError computeLocalInterpenOverlap(bool& interpen);
    
@@ -705,7 +705,7 @@ public:
  * \param [in] fullOverlap True if full overlap calculation is used, false if interpenetration calculation is used
  * \param [in,out] cp contact plane object to be populated
  *
- * \return 0 if no error, >0 a face geom error
+ * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
  * 
  */
 FaceGeomError CheckFacePair( InterfacePair& pair, 
@@ -729,7 +729,7 @@ ContactPlane3D CheckAlignedFacePair( InterfacePair& pair );
  * \param [in] fullOverlap True if full overlap calculation is used, false if interpenetration calculation is used
  * \param [in,out] cp contact plane object to be populated
  *
- * \return 0 if no error, >0 a face geom error
+ * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
  * 
  */
 FaceGeomError CheckEdgePair( InterfacePair& pair, 
