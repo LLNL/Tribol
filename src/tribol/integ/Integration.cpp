@@ -10,7 +10,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/integ/FE.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
-#include "tribol/common/logger.hpp" 
 
 // axom includes
 #include "axom/slic.hpp" 

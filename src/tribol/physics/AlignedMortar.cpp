@@ -19,7 +19,6 @@
 #include "tribol/integ/FE.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 #include "tribol/utils/Math.hpp"
-#include "tribol/common/logger.hpp" 
 
 #include <fstream>
 #include <iostream>

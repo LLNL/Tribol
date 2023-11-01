@@ -14,8 +14,6 @@
 #include <cmath>
 #include <iostream> 
 
-#include "tribol/common/logger.hpp"
-
 namespace tribol
 {
 

@@ -6,7 +6,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/integ/FE.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
-#include "tribol/common/logger.hpp"
 
 #include "axom/slic.hpp" 
 

@@ -7,7 +7,6 @@
 
 // Tribol includes
 #include "tribol/interface/simple_tribol.hpp"
-#include "tribol/common/logger.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/types.hpp"
 

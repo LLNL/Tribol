@@ -6,7 +6,6 @@
 #include "tribol.hpp"
 
 // Tribol includes
-#include "tribol/common/logger.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/types.hpp"
 

@@ -5,7 +5,6 @@
 
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/utils/Math.hpp"
-#include "tribol/common/logger.hpp"
 
 #include <cmath> 
 #include <iostream> 
