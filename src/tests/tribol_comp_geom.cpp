@@ -324,7 +324,7 @@ TEST_F( CompGeomTest, 2d_projections )
    faceNormal1[1] = -lambdaX1;
 
    real lambdaX2 = x2[2]-x2[0];
-   real lambdaY1 = x2[3]-x2[1];
+   real lambdaY2 = x2[3]-x2[1];
 
    faceNormal2[0] = lambdaY2;
    faceNormal2[1] = -lambdaX2;
@@ -337,7 +337,7 @@ TEST_F( CompGeomTest, 2d_projections )
 
    // average the vertex averaged centroids of each face to get a pretty good 
    // estimate of the common plane centroid
-   real cX[dim];
+   real cx[dim];
    cx[0] = 0.5*(cxf1[0] + cxf2[0]);
    cx[1] = 0.5*(cxf1[1] + cxf2[1]);
 
@@ -349,8 +349,14 @@ TEST_F( CompGeomTest, 2d_projections )
    tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal2[0], faceNormal2[1], 
                                   cxf2[0], cxf2[1], cxProj2[0], cxProj2[1] );
 
-   SLIC_INFO("Projected point to face 1:" << cxProj1[0] << ", " << cxProj1[1] );
-   SLIC_INFO("Projected point to face 2:" << cxProj2[0] << ", " << cxProj2[1] );
+   real diffx1 = std::abs(cxProj1[0] - 0.738595);
+   real diffy1 = std::abs(cxProj1[1] - 0.0915028);
+   real diffx2 = std::abs(cxProj2[0] - 0.738591);
+   real diffy2 = std::abs(cxProj2[1] - 0.0915022);
+   EXPECT_LE(diffx1, 1.e-6);  
+   EXPECT_LE(diffy1, 1.e-6); 
+   EXPECT_LE(diffx2, 1.e-6); 
+   EXPECT_LE(diffy2, 1.e-6); 
 }
 
 int main(int argc, char* argv[])
