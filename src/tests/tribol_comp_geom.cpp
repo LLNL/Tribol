@@ -295,7 +295,7 @@ TEST_F( CompGeomTest, poly_area_centroid_2 )
    EXPECT_LE( diff_mag, tol );
 }
 
-TEST_F( CompGeomTest, 2d_projections )
+TEST_F( CompGeomTest, 2d_projections_1 )
 {
    int dim = 2;
    int numVerts = 2;
@@ -353,6 +353,70 @@ TEST_F( CompGeomTest, 2d_projections )
    real diffy1 = std::abs(cxProj1[1] - 0.0915028);
    real diffx2 = std::abs(cxProj2[0] - 0.738591);
    real diffy2 = std::abs(cxProj2[1] - 0.0915022);
+   EXPECT_LE(diffx1, 1.e-6);  
+   EXPECT_LE(diffy1, 1.e-6); 
+   EXPECT_LE(diffx2, 1.e-6); 
+   EXPECT_LE(diffy2, 1.e-6); 
+}
+
+TEST_F( CompGeomTest, 2d_projections_2 )
+{
+   int dim = 2;
+   int numVerts = 2;
+   real x1[dim*numVerts];
+   real x2[dim*numVerts];
+
+   // face coordinates from testing
+   x1[0] = 0.75;
+   x1[1] = 0.;
+   x1[2] = 0.727322;
+   x1[3] = 0.183039;
+
+   x2[0] = 0.727322;
+   x2[1] = 0.183039;
+   x2[2] = 0.75;
+   x2[3] = 0.;
+
+   // compute face normal
+   real faceNormal1[dim];
+   real faceNormal2[dim];
+
+   real lambdaX1 = x1[2]-x1[0];
+   real lambdaY1 = x1[3]-x1[1];
+
+   faceNormal1[0] = lambdaY1;
+   faceNormal1[1] = -lambdaX1;
+
+   real lambdaX2 = x2[2]-x2[0];
+   real lambdaY2 = x2[3]-x2[1];
+
+   faceNormal2[0] = lambdaY2;
+   faceNormal2[1] = -lambdaX2;
+
+   real cxf1[3] = {0., 0., 0.};
+   real cxf2[3] = {0., 0., 0.};
+
+   tribol::VertexAvgCentroid( x1, dim, numVerts, cxf1[0], cxf1[1], cxf1[2] );
+   tribol::VertexAvgCentroid( x2, dim, numVerts, cxf2[0], cxf2[1], cxf2[2] );
+
+   // average the vertex averaged centroids of each face to get a pretty good 
+   // estimate of the common plane centroid
+   real cx[dim];
+   cx[0] = 0.5*(cxf1[0] + cxf2[0]);
+   cx[1] = 0.5*(cxf1[1] + cxf2[1]);
+
+   real cxProj1[3] = {0., 0., 0.}; 
+   real cxProj2[3] = {0., 0., 0.}; 
+
+   tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal1[0], faceNormal1[1], 
+                                  cxf1[0], cxf1[1], cxProj1[0], cxProj1[1] );
+   tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal2[0], faceNormal2[1], 
+                                  cxf2[0], cxf2[1], cxProj2[0], cxProj2[1] );
+
+   real diffx1 = std::abs(cxProj1[0] - cx[0]); 
+   real diffy1 = std::abs(cxProj1[1] - cx[1]);
+   real diffx2 = std::abs(cxProj2[0] - cx[0]); 
+   real diffy2 = std::abs(cxProj2[1] - cx[1]); 
    EXPECT_LE(diffx1, 1.e-6);  
    EXPECT_LE(diffy1, 1.e-6); 
    EXPECT_LE(diffx2, 1.e-6); 
