@@ -87,18 +87,12 @@ void SegmentBasis( const real* const RESTRICT x,
                    const int numPoints, const int vertexId, 
                    real& phi )
 {
-   if (numPoints != 2)
-   {
-      SLIC_ERROR("SegmentBasis: numPoints is " << numPoints 
-                    << " but should be 2.");
-   }
+   SLIC_ERROR_IF(numPoints != 2, "SegmentBasis: numPoints is " << numPoints <<
+                 " but should be 2.");
 
    // note, vertexId is the index, 0 or 1.
-   if (vertexId > numPoints-1)
-   {
-      SLIC_ERROR("SegmentBasis: vertexId is " << vertexId
-                  << " but should be 0 or 1.");
-   }
+   SLIC_ERROR_IF(vertexId > numPoints-1, "SegmentBasis: vertexId is " << vertexId << 
+                 " but should be 0 or 1.");
 
    // compute length of segment
    real vx = x[numPoints*1] - x[numPoints*0];
@@ -113,10 +107,7 @@ void SegmentBasis( const real* const RESTRICT x,
 
    phi = 1.0 / lambda * (lambda - magW);
 
-   if (phi > 1.0 || phi < 0.0)
-   {
-      SLIC_ERROR("SegmentBasis: phi is " << phi << " not between 0. and 1." );
-   }
+   SLIC_ERROR_IF(phi > 1.0 || phi < 0.0, "SegmentBasis: phi is " << phi << " not between 0. and 1." );
 
    return;
 }
