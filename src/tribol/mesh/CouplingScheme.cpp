@@ -965,14 +965,6 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
       computeTimeStep(dt);
    }
 
-   // TODO address this, SRW
-   // can't output on root because not all ranks may get here 
-   // consider allowing all ranks to get here and do a reduction to get min dt.
-   if (dt > 0.)
-   {
-      SLIC_INFO( "The Tribol timestep vote is: " << dt );
-   }
-
    // write output
    writeInterfaceOutput( params.output_directory,
                          params.vis_type, 
