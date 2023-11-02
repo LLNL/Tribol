@@ -692,6 +692,12 @@ void registerMortarGaps( integer meshId,
                     "on mesh " << meshId << ".");
       mesh.m_isValid = false;
    }
+   else if (gaps == nullptr && mesh.m_numCells <= 0)
+   {
+      SLIC_DEBUG( "tribol::registerMortarGaps(): null pointer to gap data " << 
+                  "on mesh " << meshId << ".");
+      // don't have to set mesh to invalid. Null meshes handled separately
+   }
    else
    {
       mesh.m_nodalFields.m_node_gap = gaps;
@@ -716,6 +722,12 @@ void registerMortarPressures( integer meshId,
       SLIC_WARNING( "tribol::registerMortarPressures(): null pointer to pressure data " << 
                     "on mesh " << meshId << ".");
       mesh.m_isValid = false;
+   }
+   else if (pressures == nullptr && mesh.m_numCells <= 0)
+   {
+      SLIC_DEBUG( "tribol::registerMortarPressures(): null pointer to pressure data " << 
+                  "on mesh " << meshId << ".");
+      // don't have to set mesh to invalid. Null meshes handled separately
    }
    else
    {
