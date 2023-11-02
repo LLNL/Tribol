@@ -333,8 +333,20 @@ public:
                              const integer cycle, 
                              const real t );
 
+  /*!
+   * \brief Sets the coupling scheme logging level member variable 
+   *
+   * \param [in] log_level the LoggingLevel enum value 
+   *
+   */
   void setLoggingLevel( const LoggingLevel log_level ) { m_loggingLevel = log_level; }
 
+  /*!
+   * \brief Sets the SLIC logging level per the coupling scheme logging level 
+   *
+   * \pre must call setLoggingLevel() first
+   *
+   */
   void setSlicLoggingLevel();
 
   LoggingLevel getLoggingLevel() const { return m_loggingLevel; }

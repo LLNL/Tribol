@@ -571,7 +571,7 @@ void ContactPlaneManager::addContactPlane( const ContactPlane2D& cp )
    // add dimension check
    if ( m_spaceDim == 3)
    {
-      SLIC_ASSERT("Cannot add 2D contact plane for 3D problem.");
+      SLIC_ERROR("Cannot add 2D contact plane for 3D problem.");
       return;
    }
 

@@ -223,7 +223,7 @@ public:
    /*!
     * \brief Compute the contact plane integral gap expression
     *
-    * \param [in] interpen true if the two faces interpenetrate
+    * \param [in,out] interpen true if the two faces interpenetrate
     *
     * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
@@ -565,7 +565,7 @@ public:
     *        faces lying on the contact plane that are interpenetrating the contact 
     *        plane.
     *
-    * \param [in] interpen true if the two faces interpenetrate
+    * \param [in,out] interpen true if the two faces interpenetrate
     *
     * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
@@ -670,7 +670,7 @@ public:
     *        faces lying on the contact plane that are interpenetrating the contact 
     *        plane.
     *
-    * \param [in] interpen true if the two faces interpenetrate
+    * \param [in,out] interpen true if the two faces interpenetrate
     *
     * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */

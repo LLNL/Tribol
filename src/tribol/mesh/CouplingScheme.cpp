@@ -401,7 +401,6 @@ bool CouplingScheme::isValidCouplingScheme()
    // set boolean for null meshes
    if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
-      SLIC_DEBUG("Coupling scheme, " << this->m_id << ", has null-mesh(es).");
       this->m_nullMeshes = true;
       valid = false;
    }
@@ -912,12 +911,13 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
                                                       m_contactCase, interact );
 
 
-     // TODO refine how these errors are handled. Here we skip over face-paris with errors. That is, 
+     // TODO refine how these errors are handled. Here we skip over face-pairs with errors. That is, 
      // they are not registered for contact, but we don't error out.
      if (interact_err != NO_FACE_GEOM_ERROR)
      {
         pair_err = 1;
         pair.inContact = false;
+        // TODO consider printing offending face(s) coordinates for debugging
         SLIC_DEBUG("Face geometry error, " << static_cast<int>(interact_err) << "for pair, " << kp << ".");
         continue;
      }

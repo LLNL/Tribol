@@ -163,11 +163,11 @@ void setKinematicElementPenalty( int meshId,
 
    SLIC_ERROR_ROOT_IF(!meshManager.hasMesh(meshId), 
                       "tribol::setKinematicElementPenalty(): " << 
-                 "no mesh with id, " << meshId << "exists.");
+                      "no mesh with id, " << meshId << "exists.");
 
    SLIC_ERROR_ROOT_IF(material_modulus == nullptr || element_thickness == nullptr, 
                       "tribol::setKinematicElementPenalty() contains nullptrs for " << 
-                 "element_stiffness options.");
+                      "element_stiffness options.");
 
    registerRealElementField( meshId, BULK_MODULUS, material_modulus ); 
    registerRealElementField( meshId, ELEMENT_THICKNESS, element_thickness ); 
@@ -218,8 +218,8 @@ void setContactAreaFrac( double frac )
    parameters_t & parameters = parameters_t::getInstance();
    if (frac < 1.e-12)
    {
-      SLIC_DEBUG("tribol::setContactAreaFrac(): area fraction too small or negative; " << 
-                 "setting to default 1.e-8.");
+      SLIC_DEBUG_ROOT("tribol::setContactAreaFrac(): area fraction too small or negative; " << 
+                      "setting to default 1.e-8.");
       frac = 1.e-8;
    }
    parameters.overlap_area_frac = frac;
@@ -327,7 +327,7 @@ void setOutputDirectory( const std::string& dir)
 }
 
 //------------------------------------------------------------------------------
-void setLoggingLevel( const int csId, const LoggingLevel log_level )
+void setLoggingLevel( int csId, LoggingLevel log_level )
 {
    CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
    SLIC_ERROR_IF(!csManager.hasCoupling(csId), "tribol::setLoggingLevel(): " << 
@@ -375,9 +375,9 @@ void registerMesh( integer meshId,
    {
       if (x == nullptr || y == nullptr)
       {
-         SLIC_WARNING("tribol::registerMesh(): pointer to x or y-component " << 
-                      "mesh coordinate arrays are null pointers " <<
-                      " for mesh id, " << meshId << ".");
+         SLIC_WARNING_ROOT("tribol::registerMesh(): pointer to x or y-component " << 
+                           "mesh coordinate arrays are null pointers " <<
+                           " for mesh id, " << meshId << ".");
          mesh.m_isValid = false;
       }
 
@@ -385,8 +385,8 @@ void registerMesh( integer meshId,
       {
          if (z == nullptr)
          {
-            SLIC_WARNING("tribol::registerMesh(): pointer to z-component " << 
-                         "mesh coordinates is null for mesh id, " << meshId << ".");
+            SLIC_WARNING_ROOT("tribol::registerMesh(): pointer to z-component " << 
+                              "mesh coordinates is null for mesh id, " << meshId << ".");
             mesh.m_isValid = false;
          }
       }
@@ -569,6 +569,8 @@ void registerNodalResponse( integer meshId,
 int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
 {
 
+   // note, SLIC_ERROR_ROOT_IF is not used here because it's possible not all ranks 
+   // will have method (i.e. mortar) data.
    SLIC_ERROR_IF(*sMat!=nullptr, "tribol::getMfemSparseMatrix(): " << 
                  "sparse matrix pointer not null.");
 
@@ -609,6 +611,8 @@ int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
 
    CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
 
+   // Note, SLIC_<>_ROOT macros are not here because it's possible not all ranks will have 
+   // method data.
    SLIC_ERROR_IF(!csManager.hasCoupling(csId), "tribol::getJacobianCSRMatrix(): invalid " << 
                  "CouplingScheme id.");
 
@@ -682,7 +686,7 @@ void registerMortarGaps( integer meshId,
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
 
-   if (gaps == nullptr)
+   if (gaps == nullptr && mesh.m_numCells > 0)
    {
       SLIC_WARNING( "tribol::registerMortarGaps(): null pointer to gap data " << 
                     "on mesh " << meshId << ".");
@@ -707,7 +711,7 @@ void registerMortarPressures( integer meshId,
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
 
-   if (pressures == nullptr)
+   if (pressures == nullptr && mesh.m_numCells > 0)
    {
       SLIC_WARNING( "tribol::registerMortarPressures(): null pointer to pressure data " << 
                     "on mesh " << meshId << ".");
@@ -747,8 +751,8 @@ void registerRealElementField( integer meshId,
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
-   SLIC_ERROR_ROOT_IF(!meshManager.hasMesh(meshId), "tribol::registerRealElementField(): " << 
-                      "no mesh with id " << meshId << " exists.");
+   SLIC_ERROR_IF(!meshManager.hasMesh(meshId), "tribol::registerRealElementField(): " << 
+                 "no mesh with id " << meshId << " exists.");
 
    MeshData & mesh = meshManager.GetMeshInstance( meshId );
 

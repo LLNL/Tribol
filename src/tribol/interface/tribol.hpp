@@ -151,7 +151,7 @@ void setOutputDirectory( const std::string& dir );
  *
  * \note this overrides the logging level set in initialize().
  */
-void setLoggingLevel( const int csId, const LoggingLevel log_level );
+void setLoggingLevel( int csId, LoggingLevel log_level );
 
 /// @}
 

@@ -554,7 +554,7 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
    // project face nodes onto contact plane. Still do this for mortar. 
    // The mortar face may not be exactly planar so we still need to project 
    // the nodes onto the contact plane, which is defined by average normal of the 
-   // mortar face.
+   // nonmortar face.
    real projX1[ mesh1.m_numNodesPerCell ];
    real projY1[ mesh1.m_numNodesPerCell ];
    real projZ1[ mesh1.m_numNodesPerCell ];

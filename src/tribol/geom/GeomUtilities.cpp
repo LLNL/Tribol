@@ -1098,6 +1098,7 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
       return false;
    }
 
+   // TODO refine how these debug calculations are guarded
    {
      // debug check to make sure the intersection coordinates derived from 
      // each segment equation (scaled with tA and tB) are the same to some 
