@@ -22,8 +22,8 @@ void ProjectPointToPlane( const real x, const real y, const real z,
                           const real ox, const real oy, const real oz, 
                           real& px, real& py, real& pz )
 {
-   // compute the vector from the origin point on the plane to the 
-   // input point
+   // compute the vector from input point to be projected to 
+   // the origin point on the plane
    real vx = x - ox;
    real vy = y - oy;
    real vz = z - oz;
@@ -46,8 +46,8 @@ void ProjectPointToSegment( const real x, const real y,
                             const real ox, const real oy,
                             real& px, real& py )
 {
-   // compute the vector from the origin point on the plane to the 
-   // input point
+   // compute the vector from input point to be projected to 
+   // the origin point on the plane
    real vx = x - ox;
    real vy = y - oy;
 

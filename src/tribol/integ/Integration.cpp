@@ -51,6 +51,8 @@ void EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
    // project the overlap centroid to each face
    if (elem.dim == 3)
    {
+      // TODO we should probably project in the direction of the overlap normal
+      // As the faces become less coplanar we lose conservation of angular momentum
       ProjectPointToPlane( cx[0], cx[1], cx[2],
                            elem.faceNormal1[0],
                            elem.faceNormal1[1],
@@ -67,6 +69,8 @@ void EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
    } 
    else
    {
+      // TODO we should probably project in the direction of the overlap normal
+      // As the faces become less coplanar we lose conservation of angular momentum
       ProjectPointToSegment( cx[0], cx[1], 
                              elem.faceNormal1[0],
                              elem.faceNormal1[1],
