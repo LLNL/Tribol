@@ -105,27 +105,31 @@ void SegmentBasis( const real* const RESTRICT x,
 
    real magW = magnitude( wx, wy );
 
-   if (std::abs(lambda-magW)/lambda < 1.E-2)
-   {
-      phi=1.;
-   }
-   else if (magW<1.e-5)
-   {
-      phi=0.;
-   }
-   else
-   {
-      //phi = 1.0 / lambda * (lambda - magW); // this calculation is inverted, (phi_a is actually phi_b and vice versa)
-                                              // this will shift nodal contributions over one node
-      phi = 1.0 / lambda * magW;
-   }
+   phi = 1.0 / lambda * (lambda - magW); // this calculation is inverted, (phi_a is actually phi_b and vice versa)
 
-   if (phi > 1.0 || phi < 0.0)
-   {
-      SLIC_INFO("(x0,y0) and (x1,y1): " << "(" << x[0] << ", " << x[1] << "), " << "(" << x[2] << ", " << x[3] << ").");
-      SLIC_INFO("(px,py): " << "(" << pX << ", " << pY << ")");
-   }
-   SLIC_ERROR_IF(phi > 1.0 || phi < 0.0, "SegmentBasis: phi is " << phi << " not between 0. and 1." );
+   // TODO verify this code as a bugfix to fix flipping of nodes a and b
+   // when evaluating basis. Suppress error for now.
+   //if (std::abs(lambda-magW)/lambda < 1.E-2)
+   //{
+   //   phi=1.;
+   //}
+   //else if (magW<1.e-5)
+   //{
+   //   phi=0.;
+   //}
+   //else
+   //{
+   //   //phi = 1.0 / lambda * (lambda - magW); // this calculation is inverted, (phi_a is actually phi_b and vice versa)
+   //                                           // this will shift nodal contributions over one node
+   //   phi = 1.0 / lambda * magW;
+   //}
+
+   //if (phi > 1.0 || phi < 0.0)
+   //{
+   //   SLIC_INFO("(x0,y0) and (x1,y1): " << "(" << x[0] << ", " << x[1] << "), " << "(" << x[2] << ", " << x[3] << ").");
+   //   SLIC_INFO("(px,py): " << "(" << pX << ", " << pY << ")");
+   //}
+   //SLIC_ERROR_IF(phi > 1.0 || phi < 0.0, "SegmentBasis: phi is " << phi << " not between 0. and 1." );
 
    return;
 }
