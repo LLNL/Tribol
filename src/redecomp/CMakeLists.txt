@@ -18,6 +18,7 @@ set( redecomp_headers
      partition/RCB.hpp
      transfer/GridFnTransfer.hpp
      transfer/MatrixTransfer.hpp
+     transfer/QuadratureMatrixTransfer.hpp
      transfer/TransferByElements.hpp
      transfer/TransferByNodes.hpp
      utils/ArrayUtility.hpp
@@ -37,6 +38,7 @@ set( redecomp_sources
      partition/PartitionMethod.cpp
      partition/RCB.cpp
      transfer/MatrixTransfer.cpp
+     transfer/QuadratureMatrixTransfer.cpp
      transfer/TransferByElements.cpp
      transfer/TransferByNodes.cpp
      utils/MPIUtility.cpp
