@@ -240,8 +240,10 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
    tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
    bool isInit = scheme->init();
-
+  
    EXPECT_EQ( isInit, false );
+ 
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, aligned_mortar_2D )
@@ -276,6 +278,8 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, mortar_weights_2D )
@@ -302,6 +306,8 @@ TEST_F( CouplingSchemeTest, mortar_weights_2D )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
@@ -336,6 +342,8 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, common_plane_lagrange_multiplier )
@@ -388,6 +396,8 @@ TEST_F( CouplingSchemeTest, mortar_no_nodal_gaps_or_pressures )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, mortar_tied )
@@ -422,6 +432,8 @@ TEST_F( CouplingSchemeTest, mortar_tied )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, mortar_coulomb )
@@ -456,6 +468,8 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, common_plane_tied )
@@ -486,6 +500,8 @@ TEST_F( CouplingSchemeTest, common_plane_tied )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, common_plane_coulomb )
@@ -516,6 +532,8 @@ TEST_F( CouplingSchemeTest, common_plane_coulomb )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
@@ -663,11 +681,11 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    EXPECT_EQ(tribol::update(1, 1., dt), 0);
    EXPECT_EQ(cs_null->getNumActivePairs(), 0);
 
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
 {
-   // TODO finish this test
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
@@ -732,6 +750,8 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, finalize )
@@ -872,6 +892,8 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
@@ -910,6 +932,8 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
@@ -938,6 +962,8 @@ TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
@@ -966,6 +992,8 @@ TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
@@ -998,6 +1026,8 @@ TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
@@ -1038,6 +1068,8 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+
+   tribol::finalize();
 }
 
 int main(int argc, char* argv[])
@@ -1047,7 +1079,6 @@ int main(int argc, char* argv[])
   ::testing::InitGoogleTest(&argc, argv);
 
   axom::slic::SimpleLogger logger;  // create & initialize logger,
-  tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
 
   result = RUN_ALL_TESTS();
 
