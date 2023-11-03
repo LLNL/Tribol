@@ -8,7 +8,6 @@
 #include "axom/slic.hpp"
 
 #include "redecomp/RedecompMesh.hpp"
-#include <HYPRE_utilities.h>
 
 namespace redecomp
 {
@@ -26,15 +25,15 @@ MatrixTransfer::MatrixTransfer(
 {
   auto test_redecomp = dynamic_cast<const RedecompMesh*>(redecomp_test_fes_.GetMesh());
   auto trial_redecomp = dynamic_cast<const RedecompMesh*>(redecomp_trial_fes_.GetMesh());
-  SLIC_ERROR_IF(test_redecomp == nullptr,
+  SLIC_ERROR_ROOT_IF(test_redecomp == nullptr,
     "The Redecomp test finite element space must have a Redecomp mesh.");
-  SLIC_ERROR_IF(trial_redecomp == nullptr,
+  SLIC_ERROR_ROOT_IF(trial_redecomp == nullptr,
     "The Redecomp trial finite element space must have a Redecomp mesh.");
-  SLIC_ERROR_IF(&test_redecomp->getParent() != parent_test_fes_.GetParMesh(),
+  SLIC_ERROR_ROOT_IF(&test_redecomp->getParent() != parent_test_fes_.GetParMesh(),
     "The parent test finite element space mesh must be linked to the test Redecomp mesh.");
-  SLIC_ERROR_IF(&trial_redecomp->getParent() != parent_trial_fes_.GetParMesh(),
+  SLIC_ERROR_ROOT_IF(&trial_redecomp->getParent() != parent_trial_fes_.GetParMesh(),
     "The parent trial finite element space mesh must be linked to the trial Redecomp mesh.");
-  SLIC_ERROR_IF(&test_redecomp->getMPIUtility().MPIComm() != &trial_redecomp->getMPIUtility().MPIComm(),
+  SLIC_ERROR_ROOT_IF(&test_redecomp->getMPIUtility().MPIComm() != &trial_redecomp->getMPIUtility().MPIComm(),
     "MPI Communicator must match in test and trial spaces.");
 
   trial_r2p_elem_rank_ = buildRedecomp2ParentElemRank(*trial_redecomp, false);
