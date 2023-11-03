@@ -302,7 +302,32 @@ TEST_F( CompGeomTest, 2d_projections_1 )
    real xy1[dim*numVerts];
    real xy2[dim*numVerts];
 
-   // face coordinates from testing
+
+// Notice how the face vertices are flipped between register mesh and the segment basis eval!
+
+//registerMesh() face 1 x: 1, 0.75, 0.744548
+//registerMesh() face 1 y: 1, 0, 0.0902704
+//registerMesh() face 1 x: 2, 0.744548, 0.75
+//registerMesh() face 1 y: 2, 0.0902704, 0
+//(x0,y0) and (x1,y1): (0.744548, 0.0902704), (0.75, 0).
+//(px,py): (0.735935, 0.136655)
+//SegmentBasis: phi is 1.51907 not between 0. and 1.
+//(x0,y0) and (x1,y1): (0.75, 0), (0.744548, 0.0902704).
+//(px,py): (0.735935, 0.136655)
+//SegmentBasis: phi is 1.51907 not between 0. and 1.
+
+   // TODO update to use these face coordinates from testing
+//   xy1[0] = 0.75;
+//   xy1[1] = 0. ;
+//   xy1[2] = 0.744548; 
+//   xy1[3] = 0.0902704;
+//
+//   xy2[0] = 0.744548;
+//   xy2[1] = 0.0902704;
+//   xy2[2] = 0.75;
+//   xy2[3] = 0.;
+
+   // this geometry should be in contact
    xy1[0] = 0.75;
    xy1[1] = 0.;
    xy1[2] = 0.727322;
@@ -408,6 +433,8 @@ TEST_F( CompGeomTest, 2d_projections_1 )
 
    double dt = 1.;
    int update_err = tribol::update( 1, 1., dt );
+
+   EXPECT_EQ( update_err, 0 );
 
 }
 

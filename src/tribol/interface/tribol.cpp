@@ -84,9 +84,6 @@ void initialize( integer dimension, CommType comm )
    parameters.dimension    = dimension;
    parameters.problem_comm = comm;
 
-   // test
-   axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
-
    internal::set_defaults( );
 }
 
