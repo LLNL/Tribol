@@ -6,13 +6,16 @@
 #ifndef SRC_REDECOMP_QUADRATUREMATRIXTRANSFER_HPP_
 #define SRC_REDECOMP_QUADRATUREMATRIXTRANSFER_HPP_
 
+#include <memory>
+
 #include "mfem.hpp"
 
-#include "redecomp/common/TypeDefs.hpp"
+#include "axom/core.hpp"
 
 namespace redecomp
 {
 
+class MPIUtility;
 class RedecompMesh;
 
 /**

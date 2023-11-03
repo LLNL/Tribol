@@ -5,8 +5,12 @@
 
 #include "QuadratureMatrixTransfer.hpp"
 
+#include <unordered_map>
+
 #include "axom/slic.hpp"
 
+#include "redecomp/utils/MPIUtility.hpp"
+#include "redecomp/utils/MPIArray.hpp"
 #include "redecomp/RedecompMesh.hpp"
 
 namespace redecomp
