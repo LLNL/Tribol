@@ -66,6 +66,12 @@ private:
    */
   static const RedecompMesh& getRedecompMesh(const mfem::QuadratureSpace& quadrature_space);
 
+  /**
+   * @brief Build vector of parent element offsets for each MPI rank
+   * 
+   * @param redecomp_mesh RedecompMesh whose parent linked mesh the element offset vector is desired
+   * @return axom::Array<HYPRE_BigInt> Array of element offsets for each MPI rank
+   */
   static axom::Array<HYPRE_BigInt> BuildParentElementRankOffsets(const RedecompMesh& redecomp_mesh);
 
   /**
