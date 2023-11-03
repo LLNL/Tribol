@@ -20,6 +20,8 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
 - Renamed getMfemSparseMatrix() to getJacobianSparseMatrix() and getCSRMatrix()
   to getJacobianCSRMatrix() to avoid confusion with the separate new MFEM
   interface.
+- Logging refactor using SLIC macros. Lots of warnings were demoted to DEBUG level.
+- Changed various computational geometry routines to return a FaceGeomError enum error handling
   
 ### Fixed
 - Allow null velocity and response pointers for various use cases

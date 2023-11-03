@@ -71,9 +71,6 @@ public:
   {
     if ( hasMesh( meshID ) )
     {
-       TRIBOL_DEBUG_LOG( "MeshData::CreateMesh(): new mesh with id, " << meshID << 
-                         ", overwriting existing registered mesh with same id." );
-                        
        m_meshInstances.erase(meshID);
     }
     return m_meshInstances[meshID];

@@ -10,7 +10,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/integ/FE.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
-#include "tribol/common/logger.hpp" 
 
 // axom includes
 #include "axom/slic.hpp" 
@@ -52,6 +51,8 @@ void EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
    // project the overlap centroid to each face
    if (elem.dim == 3)
    {
+      // TODO we should probably project in the direction of the overlap normal
+      // As the faces become less coplanar we lose conservation of angular momentum
       ProjectPointToPlane( cx[0], cx[1], cx[2],
                            elem.faceNormal1[0],
                            elem.faceNormal1[1],
@@ -68,6 +69,8 @@ void EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
    } 
    else
    {
+      // TODO we should probably project in the direction of the overlap normal
+      // As the faces become less coplanar we lose conservation of angular momentum
       ProjectPointToSegment( cx[0], cx[1], 
                              elem.faceNormal1[0],
                              elem.faceNormal1[1],
@@ -102,7 +105,7 @@ void TWBPolyInt( SurfaceContactElem const & elem,
    // check that the order, k, is either 2 or 3
    if (k != 2 && k !=3)
    {
-      TRIBOL_ERROR("TWBPolyInt: input argument, k, must be 2 or 3.");
+      SLIC_ERROR("TWBPolyInt: input argument, k, must be 2 or 3.");
       return;
    }
 
@@ -317,7 +320,7 @@ int NumTWBPointsPerTri( integer order )
       case 3:
          return 6;
       default:
-         TRIBOL_ERROR("NumTWBPoints: integration rule order not supported.");
+         SLIC_ERROR("NumTWBPoints: integration rule order not supported.");
          break;
    }
 
@@ -345,7 +348,7 @@ void GaussPolyIntTri( SurfaceContactElem const & elem,
          numTotalPoints = numTriPoints * elem.numPolyVert;
          break;
       default:
-         TRIBOL_ERROR("GaussPolyIntTri: only Gauss integration of order 2-4 is implemented.");
+         SLIC_ERROR("GaussPolyIntTri: only Gauss integration of order 2-4 is implemented.");
          return;
    }
 
@@ -481,7 +484,7 @@ void GaussPolyIntQuad( SurfaceContactElem const & TRIBOL_UNUSED_PARAM(elem),
          numQuadPoints = 25;
          break;
       default:
-         TRIBOL_ERROR("GaussPolyIntQuad: only Gauss integration of order 2-5 is implemented.");
+         SLIC_ERROR("GaussPolyIntQuad: only Gauss integration of order 2-5 is implemented.");
          return;
    }
 
