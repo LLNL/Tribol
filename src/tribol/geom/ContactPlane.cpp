@@ -2623,8 +2623,8 @@ void ContactPlane2D::checkSegOverlap( const real* const RESTRICT pX1, const real
 {
    parameters_t & parameters = parameters_t::getInstance();
 
-   SLIC_ASSERT( nV1 != 2);
-   SLIC_ASSERT( nV2 != 2);
+   SLIC_ASSERT( nV1 == 2 );
+   SLIC_ASSERT( nV2 == 2 );
 
    // get mesh ids
    int mesh1Id = getCpMeshId(1);
