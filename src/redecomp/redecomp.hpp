@@ -9,6 +9,7 @@
 #include "partition/Partitioner.hpp"
 #include "partition/PartitionElements.hpp"
 #include "partition/RCB.hpp"
+#include "transfer/QuadratureMatrixTransfer.hpp"
 #include "transfer/MatrixTransfer.hpp"
 
 #include "MultiRedecomp.hpp"
