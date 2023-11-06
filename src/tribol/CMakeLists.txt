@@ -101,7 +101,7 @@ if (ENABLE_FORTRAN)
 endif()
 
 ## setup the dependency list for tribol
-set(tribol_depends axom::slic mfem)
+set(tribol_depends axom::primal axom::slic mfem)
 blt_list_append(TO tribol_depends ELEMENTS mpi IF TRIBOL_USE_MPI )
 blt_list_append(TO tribol_depends ELEMENTS redecomp IF BUILD_REDECOMP )
 blt_list_append(TO tribol_depends ELEMENTS cuda IF ENABLE_CUDA )
