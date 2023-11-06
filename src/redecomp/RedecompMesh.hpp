@@ -49,7 +49,8 @@ public:
    */
   RedecompMesh(
     const mfem::ParMesh& parent,
-    PartitionType method = RCB
+    PartitionType method = RCB,
+    double ghost_length = -1.0
   );
 
   /**
@@ -64,7 +65,8 @@ public:
    */
   RedecompMesh(
     const mfem::ParMesh& parent,
-    std::unique_ptr<const Partitioner> partitioner
+    std::unique_ptr<const Partitioner> partitioner,
+    double ghost_length = -1.0
   );
 
   /**
@@ -148,9 +150,14 @@ private:
    * 
    * @param partitioner Method of partitioning the elements
    * @param n_parts Number of parts to partition the mesh into
+   * @param ghost_length Length around the domain border to include ghost elements
    * @return List of parent element IDs and ghost elements sorted by Redecomp rank
    */
-  EntityIndexByRank BuildP2RElementList(const Partitioner& partitioner, int n_parts) const;
+  EntityIndexByRank BuildP2RElementList(
+    const Partitioner& partitioner, 
+    int n_parts,
+    double ghost_length = -1.0
+  ) const;
 
   /**
    * @brief Builds the Redecomp mesh and inverse element transfer list

@@ -18,7 +18,8 @@ namespace redecomp
 
 RedecompMesh::RedecompMesh(
   const mfem::ParMesh& parent,
-  PartitionType method
+  PartitionType method,
+  double ghost_length
 )
 : parent_ { parent },
   mpi_ { parent.GetComm() }
@@ -65,13 +66,14 @@ RedecompMesh::RedecompMesh(
     parent.GetNRanks(), 
     (static_cast<int>(parent.GetGlobalNE()) + 1) / 2
   );
-  p2r_elems_ = BuildP2RElementList(*partitioner, n_parts);
+  p2r_elems_ = BuildP2RElementList(*partitioner, n_parts, ghost_length);
   BuildRedecomp();
 }
 
 RedecompMesh::RedecompMesh(
   const mfem::ParMesh& parent,
-  std::unique_ptr<const Partitioner> partitioner
+  std::unique_ptr<const Partitioner> partitioner,
+  double ghost_length
 )
 : parent_ { parent },
   mpi_ { parent.GetComm() }
@@ -108,7 +110,7 @@ RedecompMesh::RedecompMesh(
   // preclude degenerate case where num elements < num ranks
   auto n_parts = std::min(parent.GetNRanks(), static_cast<int>(parent.GetGlobalNE()));
   // p2r = parent to redecomp
-  p2r_elems_ = BuildP2RElementList(*partitioner, n_parts);
+  p2r_elems_ = BuildP2RElementList(*partitioner, n_parts, ghost_length);
   BuildRedecomp();
 }
 
@@ -125,13 +127,18 @@ RedecompMesh::RedecompMesh(
 
 EntityIndexByRank RedecompMesh::BuildP2RElementList(
   const Partitioner& partitioner,
-  int n_parts
+  int n_parts,
+  double ghost_length
 ) const
 {
+  if (ghost_length < 0.0)
+  {
+    ghost_length = 1.25 * MaxElementSize(parent_, partitioner.getMPIUtility());
+  }
   return partitioner.generatePartitioning(
     n_parts,
     { &parent_ },
-    1.25 * MaxElementSize(parent_, partitioner.getMPIUtility())
+    ghost_length
   )[0];
 }
 
