@@ -69,8 +69,8 @@ if ( BUILD_REDECOMP )
   set( redecomp_examples
       domain_redecomp.cpp
       multidomain_redecomp.cpp
-      matrix_redecomp.cpp
-      quadrature_matrix_redecomp.cpp
+      element_matrix_redecomp.cpp
+      sparse_matrix_redecomp.cpp
       )
 
   foreach( example ${redecomp_examples} )

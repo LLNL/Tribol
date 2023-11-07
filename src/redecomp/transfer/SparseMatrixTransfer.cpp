@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: (MIT)
 
-#include "QuadratureMatrixTransfer.hpp"
+#include "SparseMatrixTransfer.hpp"
 
 #include <unordered_map>
 
@@ -16,11 +16,11 @@
 namespace redecomp
 {
 
-QuadratureMatrixTransfer::QuadratureMatrixTransfer(
-  const mfem::QuadratureSpace& parent_test_space,
-  const mfem::QuadratureSpace& parent_trial_space,
-  const mfem::QuadratureSpace& redecomp_test_space,
-  const mfem::QuadratureSpace& redecomp_trial_space
+SparseMatrixTransfer::SparseMatrixTransfer(
+  const mfem::ParFiniteElementSpace& parent_test_space,
+  const mfem::ParFiniteElementSpace& parent_trial_space,
+  const mfem::FiniteElementSpace& redecomp_test_space,
+  const mfem::FiniteElementSpace& redecomp_trial_space
 )
 : parent_test_space_ { parent_test_space },
   parent_trial_space_ { parent_trial_space },
@@ -37,24 +37,26 @@ QuadratureMatrixTransfer::QuadratureMatrixTransfer(
     "MPI Communicator must match in test and trial spaces.");
 
   // one value per element for initial implementation
-  SLIC_ERROR_ROOT_IF(parent_test_space_.GetOrder() != 1 || parent_trial_space_.GetOrder() != 1 ||
-    redecomp_test_space_.GetOrder() != 1 || redecomp_trial_space_.GetOrder() != 1, 
-    "Only one quadrature point per element is currently supported.");
+  SLIC_ERROR_ROOT_IF(!parent_test_space_.IsDGSpace() || !parent_trial_space_.IsDGSpace() ||
+    !redecomp_test_space_.IsDGSpace() || !redecomp_trial_space_.IsDGSpace(), 
+    "Only DG (L2) spaces are currently supported.");
+  SLIC_ERROR_ROOT_IF(parent_test_space_.GetMaxElementOrder() != 0 || parent_trial_space_.GetMaxElementOrder() != 0 ||
+    redecomp_test_space_.GetMaxElementOrder() != 0 || redecomp_trial_space_.GetMaxElementOrder() != 0, 
+    "Only one value per element (zero-th order) is currently supported.");
+  SLIC_ERROR_ROOT_IF(parent_test_space_.GetVDim() != 1 || parent_trial_space_.GetVDim() != 1 ||
+    redecomp_test_space_.GetVDim() != 1 || redecomp_trial_space_.GetVDim() != 1, 
+    "Only one value per element (zero-th order) is currently supported.");
 }
 
-std::tuple<
-  std::unique_ptr<mfem::HypreParMatrix>, 
-  axom::Array<int>, 
-  axom::Array<int>
-> QuadratureMatrixTransfer::TransferToParallel(
+std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
   const mfem::SparseMatrix& src
 ) const
 {
   // check sizing on src
-  SLIC_ERROR_ROOT_IF(src.Height() != redecomp_test_space_.GetSize(),
-    "The number of rows in src must match the size of the test QuadratureSpace.");
-  SLIC_ERROR_ROOT_IF(src.Width() != redecomp_trial_space_.GetSize(),
-    "The number of columns in src must match the size of the trial QuadratureSpace.");
+  SLIC_ERROR_ROOT_IF(src.Height() != redecomp_test_space_.GetVSize(),
+    "The number of rows in src must match the size of the test FiniteElementSpace.");
+  SLIC_ERROR_ROOT_IF(src.Width() != redecomp_trial_space_.GetVSize(),
+    "The number of columns in src must match the size of the trial FiniteElementSpace.");
   
   // we want a csr matrix.  make sure src is finalized
   SLIC_ERROR_ROOT_IF(!src.Finalized(), "src must be finalized first.");
@@ -181,15 +183,14 @@ std::tuple<
 
   // Now we need to build the CSR data for the hypre diag and offd matrices.  diag holds data with both rows and cols
   // on-rank and offd holds data with rows on-rank and cols off-rank.
-  auto row_starts = BuildParentElementRankOffsets(redecomp_test_mesh_);
   auto col_starts = BuildParentElementRankOffsets(redecomp_trial_mesh_);
   // size i_diag and i_offd, number of columms per row of matrix, and build a global dof to local offd column map
   auto diag_nnz = 0;
   auto offd_nnz = 0;
   // NOTE: these will be owned by the HypreParMatrix. using mfem::Memory, the data will not be deleted upon destruction.
-  mfem::Memory<HYPRE_Int> i_diag(redecomp_test_space_.GetSize() + 1);
-  mfem::Memory<HYPRE_Int> i_offd(redecomp_test_space_.GetSize() + 1);
-  for (int i{0}; i < redecomp_test_space_.GetSize() + 1; ++i)
+  mfem::Memory<HYPRE_Int> i_diag(redecomp_test_space_.GetVSize() + 1);
+  mfem::Memory<HYPRE_Int> i_offd(redecomp_test_space_.GetVSize() + 1);
+  for (int i{0}; i < redecomp_test_space_.GetVSize() + 1; ++i)
   {
     i_diag[i] = 0;
     i_offd[i] = 0;
@@ -215,13 +216,13 @@ std::tuple<
     }
   }
   // sum up i_diag and i_offd (completing their definition)
-  for (int i{0}; i < redecomp_test_space_.GetSize(); ++i)
+  for (int i{0}; i < redecomp_test_space_.GetVSize(); ++i)
   {
     i_diag[i+1] += i_diag[i];
     i_offd[i+1] += i_offd[i];
   }
-  SLIC_ASSERT(i_diag[redecomp_test_space_.GetSize()] == diag_nnz);
-  SLIC_ASSERT(i_offd[redecomp_test_space_.GetSize()] == offd_nnz);
+  SLIC_ASSERT(i_diag[redecomp_test_space_.GetVSize()] == diag_nnz);
+  SLIC_ASSERT(i_offd[redecomp_test_space_.GetVSize()] == offd_nnz);
   // create cmap, offd column map from local to global element IDs
   mfem::Memory<HYPRE_BigInt> cmap(cmap_j_offd.size());
   for (auto& cmap_val : cmap_j_offd)
@@ -229,8 +230,8 @@ std::tuple<
     cmap[cmap_val.second] = cmap_val.first;
   }
   // compute j_diag and j_offd, the columns for each row (row offsets given by i).  will not be sorted.
-  axom::Array<int> i_diag_ct(redecomp_test_space_.GetSize(), redecomp_test_space_.GetSize());
-  axom::Array<int> i_offd_ct(redecomp_test_space_.GetSize(), redecomp_test_space_.GetSize());
+  axom::Array<int> i_diag_ct(redecomp_test_space_.GetVSize(), redecomp_test_space_.GetVSize());
+  axom::Array<int> i_offd_ct(redecomp_test_space_.GetVSize(), redecomp_test_space_.GetVSize());
   mfem::Memory<HYPRE_Int> j_diag(diag_nnz);
   mfem::Memory<double> data_diag(diag_nnz);
   mfem::Memory<HYPRE_Int> j_offd(offd_nnz);
@@ -255,55 +256,22 @@ std::tuple<
       }
     }
   }
-  // resize row_starts and col_starts if needed
-  if (HYPRE_AssumedPartitionCheck())
-  {
-    row_starts[0] = row_starts[my_rank];
-    row_starts[1] = row_starts[my_rank + 1];
-    if (row_starts.size() < 3)
-    {
-      auto old_size = row_starts.size();
-      row_starts.resize(3);
-      row_starts[2] = row_starts[old_size - 1];
-    }
-    else
-    {
-      row_starts[2] = row_starts.back();
-      row_starts.resize(3);
-      row_starts.shrink();
-    }
-    col_starts[0] = col_starts[my_rank];
-    col_starts[1] = col_starts[my_rank + 1];
-    if (col_starts.size() < 3)
-    {
-      auto old_size = col_starts.size();
-      col_starts.resize(3);
-      col_starts[2] = col_starts[old_size - 1];
-    }
-    else
-    {
-      col_starts[2] = col_starts.back();
-      col_starts.resize(3);
-      col_starts.shrink();
-    }
-  }
   // create hypre par matrix
-  auto J_full = std::make_unique<mfem::HypreParMatrix>(getMPIUtility().MPIComm(),
-    row_starts.back(), col_starts.back(), row_starts.data(), col_starts.data(),
+  return std::make_unique<mfem::HypreParMatrix>(getMPIUtility().MPIComm(),
+    parent_test_space_.GlobalVSize(), parent_trial_space_.GlobalVSize(), 
+    parent_test_space_.GetDofOffsets(), parent_trial_space_.GetDofOffsets(),
     i_diag, j_diag, data_diag, i_offd, j_offd, data_offd, cmap_j_offd.size(), cmap
   );
-  
-  return {std::move(J_full), row_starts, col_starts};
 }
 
-const RedecompMesh& QuadratureMatrixTransfer::getRedecompMesh(const mfem::QuadratureSpace& quadrature_space)
+const RedecompMesh& SparseMatrixTransfer::getRedecompMesh(const mfem::FiniteElementSpace& quadrature_space)
 {
   auto redecomp_mesh = dynamic_cast<const RedecompMesh*>(quadrature_space.GetMesh());
   SLIC_ERROR_ROOT_IF(redecomp_mesh == nullptr, "The quadrature space must have a Redecomp mesh.");
   return *redecomp_mesh;
 }
 
-axom::Array<HYPRE_BigInt> QuadratureMatrixTransfer::BuildParentElementRankOffsets(const RedecompMesh& redecomp_mesh)
+axom::Array<HYPRE_BigInt> SparseMatrixTransfer::BuildParentElementRankOffsets(const RedecompMesh& redecomp_mesh)
 {
   auto n_ranks = redecomp_mesh.getMPIUtility().NRanks();
   auto my_rank = redecomp_mesh.getMPIUtility().MyRank();
@@ -317,7 +285,7 @@ axom::Array<HYPRE_BigInt> QuadratureMatrixTransfer::BuildParentElementRankOffset
   return elem_offsets;
 }
 
-const MPIUtility& QuadratureMatrixTransfer::getMPIUtility() const
+const MPIUtility& SparseMatrixTransfer::getMPIUtility() const
 {
   return redecomp_test_mesh_.getMPIUtility();
 }
