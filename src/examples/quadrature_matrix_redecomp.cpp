@@ -87,17 +87,17 @@ int main( int argc, char** argv )
 
   SLIC_INFO_ROOT("Creating mfem::ParMesh...");
   // read serial mesh
-  auto mesh = std::make_unique<mfem::Mesh>(mesh_file.c_str(), 1, 1);
+  //auto mesh = std::make_unique<mfem::Mesh>(mesh_file.c_str(), 1, 1);
+  auto mesh = mfem::Mesh::MakeCartesian2D(4, 4, mfem::Element::Type::QUADRILATERAL);
 
   // refine serial mesh
   for (int i{0}; i < ref_levels; ++i)
   {
-    mesh->UniformRefinement();
+    mesh.UniformRefinement();
   }
   
   // create parallel mesh from serial
-  auto pmesh = std::make_unique<mfem::ParMesh>(MPI_COMM_WORLD, *mesh);
-  mesh.reset(nullptr);
+  auto pmesh = std::make_unique<mfem::ParMesh>(MPI_COMM_WORLD, mesh);
 
   // further refinement of parallel mesh
   {
@@ -162,14 +162,27 @@ int main( int argc, char** argv )
   // normalize each row to conserve mass
   for (int i=0; i<n_local_elem; i++) {
     mfem::Vector row_data(smat.GetRowEntries(i), n_row_entries[i]);
-    row_data /= row_data.Norml2();
+    row_data /= row_data.Norml1();
   }
 
   SLIC_INFO_ROOT("Transferring something from RedecompMesh to ParMesh...");
   auto Mmat_xfer = matrix_xfer.TransferToParallel(smat);
+  mfem::HypreParMatrix *W = std::get<0>(Mmat_xfer).get();
 
   pmesh_dc.Save();
   redecomp_dc.Save();
+
+  // test filter
+  mfem::L2_FECollection l2_fec(0, dim);
+  mfem::ParFiniteElementSpace l2_fes(pmesh.get(), &l2_fec);
+  mfem::ParGridFunction x(&l2_fes);
+  mfem::ParGridFunction xf(&l2_fes);
+
+
+  
+  W->Mult(x, xf);
+  x.Print();
+  xf.Print();
 
   // cleanup
   MPI_Finalize();
