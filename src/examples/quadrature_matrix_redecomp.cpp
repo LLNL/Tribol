@@ -64,6 +64,8 @@ int main( int argc, char** argv )
   // polynomial order of the finite element discretization
   int order = 1;
 
+  double filter_radius = 1.0;
+
   axom::CLI::App app { "matrix_redecomp" };
   app.add_option("-m,--mesh", mesh_file, "Mesh file to use.")
     ->check(axom::CLI::ExistingFile)
@@ -74,6 +76,8 @@ int main( int argc, char** argv )
   app.add_option("-o,--order", order, 
     "Finite element order (polynomial degree).")
     ->capture_default_str();
+  app.add_option("-R,--filter-radius", filter_radius,
+    "Explicit filter radius.");
   CLI11_PARSE(app, argc, argv);
 
   SLIC_INFO_ROOT("Running quadrature_matrix_redecomp with the following options:");
@@ -110,8 +114,8 @@ int main( int argc, char** argv )
   mfem::QuadratureSpace pmesh_quad_space { pmesh.get(), 1 };
 
   SLIC_INFO_ROOT("Creating redecomp::RedecompMesh...");
-  // create redecomp mesh
-  redecomp::RedecompMesh redecomp_mesh { *pmesh, redecomp::RedecompMesh::RCB, 1.0 };
+  // create redecomp mesh (ensure ghost region is >= filter radius)
+  redecomp::RedecompMesh redecomp_mesh { *pmesh, redecomp::RedecompMesh::RCB, filter_radius };
   
   mfem::VisItDataCollection redecomp_dc { "redecomp", &redecomp_mesh };
   
@@ -128,8 +132,38 @@ int main( int argc, char** argv )
 
   SLIC_INFO_ROOT("Compute something on redecomp::RedecompMesh...");
   mfem::SparseMatrix smat { redecomp_quad_space.GetSize(), redecomp_quad_space.GetSize() };
-  // Compute something here...
+
+  auto filter_kernel = [&filter_radius](const mfem::Vector &xi, const mfem::Vector &xj) {
+    return std::max(0.0, filter_radius - xi.DistanceTo(xj));
+  };
+
+  int n_local_elem = redecomp_mesh.GetNE();
+  int dim = redecomp_mesh.SpaceDimension();
+  mfem::Vector xi(dim), xj(dim);
+  std::vector<int> n_row_entries(n_local_elem);
+
+  // loop over each element to form a row of the matrix
+  for (int i=0; i<n_local_elem; i++) {
+    redecomp_mesh.GetElementCenter(i, xi);
+
+    // loop over each element to fill in each column (j) of row (i)
+    n_row_entries[i] = 0;
+    for (int j=0; j<n_local_elem; j++) {
+      redecomp_mesh.GetElementCenter(j, xj);
+      double Wij = filter_kernel(xi, xj);
+      if (Wij > 0.0) {
+        smat.Add(i, j, Wij);
+        n_row_entries[i]++;
+      }
+    }
+  }
   smat.Finalize();
+
+  // normalize each row to conserve mass
+  for (int i=0; i<n_local_elem; i++) {
+    mfem::Vector row_data(smat.GetRowEntries(i), n_row_entries[i]);
+    row_data /= row_data.Norml2();
+  }
 
   SLIC_INFO_ROOT("Transferring something from RedecompMesh to ParMesh...");
   auto Mmat_xfer = matrix_xfer.TransferToParallel(smat);
