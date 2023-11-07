@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 # !!!! This is a generated file, edit at own risk !!!!
 #------------------------------------------------------------------------------
-# CMake executable path: /usr/tce/packages/cmake/cmake-3.19.2/bin/cmake
+# CMake executable path: /usr/tce/bin/cmake
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -11,11 +11,11 @@
 #------------------------------------------------------------------------------
 if(DEFINED ENV{SPACK_CC})
 
-  set(CMAKE_C_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_05_15_16_48_01/spack/lib/spack/env/clang/clang" CACHE PATH "")
+  set(CMAKE_C_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_10_05_11_51_13/spack/lib/spack/env/clang/clang" CACHE PATH "")
 
-  set(CMAKE_CXX_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_05_15_16_48_01/spack/lib/spack/env/clang/clang++" CACHE PATH "")
+  set(CMAKE_CXX_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_10_05_11_51_13/spack/lib/spack/env/clang/clang++" CACHE PATH "")
 
-  set(CMAKE_Fortran_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_05_15_16_48_01/spack/lib/spack/env/clang/gfortran" CACHE PATH "")
+  set(CMAKE_Fortran_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_10_05_11_51_13/spack/lib/spack/env/clang/gfortran" CACHE PATH "")
 
 else()
 
@@ -59,11 +59,13 @@ set(BUILD_REDECOMP ON CACHE BOOL "")
 # TPLs
 #------------------------------------------------------------------------------
 
-set(AXOM_DIR "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_05_15_16_48_01/clang-14.0.6/axom-0.7.0.4-7yvghxm25gchzhxd2dkrku3ijvdagkgv" CACHE PATH "")
+set(TPL_ROOT "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_10_05_11_51_13/clang-14.0.6" CACHE PATH "")
 
-set(MFEM_DIR "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_05_15_16_48_01/clang-14.0.6/mfem-4.5.3.1-owdvfytz2ylcq64kmqr2mk3er57zf63e" CACHE PATH "")
+set(AXOM_DIR "${TPL_ROOT}/axom-0.8.1.0-fmihhyfff5mn3gxl7efalenmrfwpqtrp" CACHE PATH "")
 
-set(UMPIRE_DIR "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_05_15_16_48_01/clang-14.0.6/umpire-2022.03.1-ajucxrsv36uol47jqweilp5ju72nbxoi" CACHE PATH "")
+set(MFEM_DIR "${TPL_ROOT}/mfem-4.6.1.1-h5d6nozyqhf5ghm7htn2qw5i2alxulco" CACHE PATH "")
+
+set(UMPIRE_DIR "${TPL_ROOT}/umpire-2022.10.0-elyevat7ywowgjdwxjdlzyityvvazh4e" CACHE PATH "")
 
 #------------------------------------------------------------------------------
 # Devtools
@@ -71,11 +73,11 @@ set(UMPIRE_DIR "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_05_15_16_48_0
 
 # Root directory for generated developer tools
 
-set(DEVTOOLS_ROOT "/usr/WS2/smithdev/devtools/toss_4_x86_64_ib/2023_05_15_14_17_13/._view/cgnz3nqe7bpcm5tl4ph5mrykvso7zsze" CACHE PATH "")
+set(DEVTOOLS_ROOT "/usr/WS2/smithdev/devtools/toss_4_x86_64_ib/2023_06_20_15_40_50/._view/stgut4ihv3bnadn3coy5fjvrxd5iymtf" CACHE PATH "")
 
-set(CLANGFORMAT_EXECUTABLE "/usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/python-3.10.10/bin/clang-format" CACHE PATH "")
+set(CLANGFORMAT_EXECUTABLE "${DEVTOOLS_ROOT}/python-3.10.10/bin/clang-format" CACHE PATH "")
 
-set(CLANGTIDY_EXECUTABLE "/usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/python-3.10.10/bin/clang-tidy" CACHE PATH "")
+set(CLANGTIDY_EXECUTABLE "${DEVTOOLS_ROOT}/python-3.10.10/bin/clang-tidy" CACHE PATH "")
 
 set(ENABLE_DOCS ON CACHE BOOL "")
 

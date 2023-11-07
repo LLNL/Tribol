@@ -122,6 +122,8 @@ TEST_F( CompGeomTest, common_plane_check )
       couplingSchemeManager.getCoupling( 0 );
 
    EXPECT_EQ( userSpecifiedNumOverlaps, couplingScheme->getNumActivePairs() );
+
+   tribol::finalize();
 }
 
 TEST_F( CompGeomTest, single_mortar_check )
@@ -178,6 +180,7 @@ TEST_F( CompGeomTest, single_mortar_check )
 
    EXPECT_EQ( userSpecifiedNumOverlaps, couplingScheme->getNumActivePairs() );
 
+   tribol::finalize();
 }
 
 TEST_F( CompGeomTest, poly_area_centroid_1 )
@@ -290,6 +293,213 @@ TEST_F( CompGeomTest, poly_area_centroid_2 )
 
    real tol = 1.e-5;
    EXPECT_LE( diff_mag, tol );
+}
+
+TEST_F( CompGeomTest, 2d_projections_1 )
+{
+   int dim = 2;
+   int numVerts = 2;
+   real xy1[dim*numVerts];
+   real xy2[dim*numVerts];
+
+
+// Notice how the face vertices are flipped between register mesh and the segment basis eval!
+
+//registerMesh() face 1 x: 1, 0.75, 0.744548
+//registerMesh() face 1 y: 1, 0, 0.0902704
+//registerMesh() face 1 x: 2, 0.744548, 0.75
+//registerMesh() face 1 y: 2, 0.0902704, 0
+//(x0,y0) and (x1,y1): (0.744548, 0.0902704), (0.75, 0).
+//(px,py): (0.735935, 0.136655)
+//SegmentBasis: phi is 1.51907 not between 0. and 1.
+//(x0,y0) and (x1,y1): (0.75, 0), (0.744548, 0.0902704).
+//(px,py): (0.735935, 0.136655)
+//SegmentBasis: phi is 1.51907 not between 0. and 1.
+
+   // TODO update to use these face coordinates from testing
+//   xy1[0] = 0.75;
+//   xy1[1] = 0. ;
+//   xy1[2] = 0.744548; 
+//   xy1[3] = 0.0902704;
+//
+//   xy2[0] = 0.744548;
+//   xy2[1] = 0.0902704;
+//   xy2[2] = 0.75;
+//   xy2[3] = 0.;
+
+   // this geometry should be in contact
+   xy1[0] = 0.75;
+   xy1[1] = 0.;
+   xy1[2] = 0.727322;
+   xy1[3] = 0.183039;
+
+   xy2[0] = 0.72705;
+   xy2[1] = 0.182971;
+   xy2[2] = 0.75;
+   xy2[3] = 0.;
+
+   // compute face normal
+   real faceNormal1[dim];
+   real faceNormal2[dim];
+
+   real lambdaX1 = xy1[2]-xy1[0];
+   real lambdaY1 = xy1[3]-xy1[1];
+
+   faceNormal1[0] = lambdaY1;
+   faceNormal1[1] = -lambdaX1;
+
+   real lambdaX2 = xy2[2]-xy2[0];
+   real lambdaY2 = xy2[3]-xy2[1];
+
+   faceNormal2[0] = lambdaY2;
+   faceNormal2[1] = -lambdaX2;
+
+   real cxf1[3] = {0., 0., 0.};
+   real cxf2[3] = {0., 0., 0.};
+
+   tribol::VertexAvgCentroid( xy1, dim, numVerts, cxf1[0], cxf1[1], cxf1[2] );
+   tribol::VertexAvgCentroid( xy2, dim, numVerts, cxf2[0], cxf2[1], cxf2[2] );
+
+   // average the vertex averaged centroids of each face to get a pretty good 
+   // estimate of the common plane centroid
+   real cx[dim];
+   cx[0] = 0.5*(cxf1[0] + cxf2[0]);
+   cx[1] = 0.5*(cxf1[1] + cxf2[1]);
+
+   real cxProj1[3] = {0., 0., 0.}; 
+   real cxProj2[3] = {0., 0., 0.}; 
+
+   tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal1[0], faceNormal1[1], 
+                                  cxf1[0], cxf1[1], cxProj1[0], cxProj1[1] );
+   tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal2[0], faceNormal2[1], 
+                                  cxf2[0], cxf2[1], cxProj2[0], cxProj2[1] );
+
+   real diffx1 = std::abs(cxProj1[0] - 0.738595);
+   real diffy1 = std::abs(cxProj1[1] - 0.0915028);
+   real diffx2 = std::abs(cxProj2[0] - 0.738591);
+   real diffy2 = std::abs(cxProj2[1] - 0.0915022);
+   EXPECT_LE(diffx1, 1.e-6);  
+   EXPECT_LE(diffy1, 1.e-6); 
+   EXPECT_LE(diffx2, 1.e-6); 
+   EXPECT_LE(diffy2, 1.e-6); 
+
+   // check with call to tribol::update()
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 2, problem_comm );
+
+   real x1[numVerts];
+   real y1[numVerts];
+   real x2[numVerts];
+   real y2[numVerts];
+
+   for (int i=0; i<numVerts; ++i)
+   {
+      x1[i] = xy1[i*dim];
+      y1[i] = xy1[i*dim+1];
+      x2[i] = xy2[i*dim];
+      y2[i] = xy2[i*dim+1];
+   }
+
+   tribol::IndexType conn1[2] = {0,1};
+   tribol::IndexType conn2[2] = {0,1};
+
+   tribol::registerMesh( 0, 1, 2, &conn1[0], (int)(tribol::LINEAR_EDGE), &x1[0], &y1[0], nullptr );
+   tribol::registerMesh( 1, 1, 2, &conn2[0], (int)(tribol::LINEAR_EDGE), &x2[0], &y2[0], nullptr );
+
+   real fx1[2] = {0., 0.};
+   real fy1[2] = {0., 0.};
+   real fx2[2] = {0., 0.};
+   real fy2[2] = {0., 0.};
+
+   tribol::registerNodalResponse( 0, &fx1[0], &fy1[0], nullptr );
+   tribol::registerNodalResponse( 1, &fx2[0], &fy2[0], nullptr );
+
+   tribol::setKinematicConstantPenalty( 0, 1. );
+   tribol::setKinematicConstantPenalty( 1, 1. );
+
+   tribol::registerCouplingScheme( 0, 0, 1,
+                                   tribol::SURFACE_TO_SURFACE,
+                                   tribol::AUTO,
+                                   tribol::COMMON_PLANE,
+                                   tribol::FRICTIONLESS,
+                                   tribol::PENALTY,
+                                   tribol::BINNING_GRID );
+
+   tribol::setPenaltyOptions( 0, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT );
+   tribol::setContactPenFrac(0.5);
+   tribol::setContactAreaFrac(1.e-4);
+
+   // TODO check penetration and overlap tolerance with what is being used in host-code
+
+   double dt = 1.;
+   int update_err = tribol::update( 1, 1., dt );
+
+   EXPECT_EQ( update_err, 0 );
+
+}
+
+TEST_F( CompGeomTest, 2d_projections_2 )
+{
+   int dim = 2;
+   int numVerts = 2;
+   real xy1[dim*numVerts];
+   real xy2[dim*numVerts];
+
+   // face coordinates from testing
+   xy1[0] = 0.75;
+   xy1[1] = 0.;
+   xy1[2] = 0.727322;
+   xy1[3] = 0.183039;
+
+   xy2[0] = 0.727322;
+   xy2[1] = 0.183039;
+   xy2[2] = 0.75;
+   xy2[3] = 0.;
+
+   // compute face normal
+   real faceNormal1[dim];
+   real faceNormal2[dim];
+
+   real lambdaX1 = xy1[2]-xy1[0];
+   real lambdaY1 = xy1[3]-xy1[1];
+
+   faceNormal1[0] = lambdaY1;
+   faceNormal1[1] = -lambdaX1;
+
+   real lambdaX2 = xy2[2]-xy2[0];
+   real lambdaY2 = xy2[3]-xy2[1];
+
+   faceNormal2[0] = lambdaY2;
+   faceNormal2[1] = -lambdaX2;
+
+   real cxf1[3] = {0., 0., 0.};
+   real cxf2[3] = {0., 0., 0.};
+
+   tribol::VertexAvgCentroid( xy1, dim, numVerts, cxf1[0], cxf1[1], cxf1[2] );
+   tribol::VertexAvgCentroid( xy2, dim, numVerts, cxf2[0], cxf2[1], cxf2[2] );
+
+   // average the vertex averaged centroids of each face to get a pretty good 
+   // estimate of the common plane centroid
+   real cx[dim];
+   cx[0] = 0.5*(cxf1[0] + cxf2[0]);
+   cx[1] = 0.5*(cxf1[1] + cxf2[1]);
+
+   real cxProj1[3] = {0., 0., 0.}; 
+   real cxProj2[3] = {0., 0., 0.}; 
+
+   tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal1[0], faceNormal1[1], 
+                                  cxf1[0], cxf1[1], cxProj1[0], cxProj1[1] );
+   tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal2[0], faceNormal2[1], 
+                                  cxf2[0], cxf2[1], cxProj2[0], cxProj2[1] );
+
+   real diffx1 = std::abs(cxProj1[0] - cx[0]); 
+   real diffy1 = std::abs(cxProj1[1] - cx[1]);
+   real diffx2 = std::abs(cxProj2[0] - cx[0]); 
+   real diffy2 = std::abs(cxProj2[1] - cx[1]); 
+   EXPECT_LE(diffx1, 1.e-6);  
+   EXPECT_LE(diffy1, 1.e-6); 
+   EXPECT_LE(diffx2, 1.e-6); 
+   EXPECT_LE(diffy2, 1.e-6); 
 }
 
 int main(int argc, char* argv[])

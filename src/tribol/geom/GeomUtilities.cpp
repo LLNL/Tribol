@@ -14,8 +14,6 @@
 #include <cmath>
 #include <iostream> 
 
-#include "tribol/common/logger.hpp"
-
 namespace tribol
 {
 
@@ -24,8 +22,8 @@ void ProjectPointToPlane( const real x, const real y, const real z,
                           const real ox, const real oy, const real oz, 
                           real& px, real& py, real& pz )
 {
-   // compute the vector from the origin point on the plane to the 
-   // input point
+   // compute the vector from input point to be projected to 
+   // the origin point on the plane
    real vx = x - ox;
    real vy = y - oy;
    real vz = z - oz;
@@ -48,8 +46,8 @@ void ProjectPointToSegment( const real x, const real y,
                             const real ox, const real oy,
                             real& px, real& py )
 {
-   // compute the vector from the origin point on the plane to the 
-   // input point
+   // compute the vector from input point to be projected to 
+   // the origin point on the plane
    real vx = x - ox;
    real vy = y - oy;
 
@@ -330,10 +328,8 @@ void GlobalTo2DLocalCoords( const real* const RESTRICT pX,
                             real* const RESTRICT pLY, int size )
 {
 
-   if (pLX == nullptr || pLY == nullptr)
-   {
-      TRIBOL_ERROR ("GlobalTo2DLocalCoords: local coordinate pointers are null");
-   }
+   SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
+                 "GlobalTo2DLocalCoords: local coordinate pointers are null");
 
    // loop over projected nodes
    for (int i=0; i<size; ++i) {
@@ -382,10 +378,7 @@ void VertexAvgCentroid( const real* const RESTRICT x,
                         const int numVert,
                         real& cX, real& cY, real& cZ )
 {
-   if (numVert == 0)
-   {
-     TRIBOL_ERROR ("VertexAvgCentroid: numVert = 0.");
-   }
+   SLIC_ERROR_IF (numVert==0, "VertexAvgCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -418,10 +411,7 @@ void VertexAvgCentroid( const real* const RESTRICT x,
                         const int numVert,
                         real& cX, real& cY, real& cZ )
 {
-   if (numVert == 0)
-   {
-     TRIBOL_ERROR ("VertexAvgCentroid: numVert = 0.");
-   }
+   SLIC_ERROR_IF(numVert==0, "VertexAvgCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -454,10 +444,7 @@ void PolyAreaCentroid( const real* const RESTRICT x,
                        const int numVert,
                        real& cX, real& cY, real& cZ )
 {
-   if (numVert == 0)
-   {
-     TRIBOL_ERROR ("PolyAreaCentroid: numVert = 0.");
-   }
+   SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -522,10 +509,7 @@ void PolyCentroid( const real* const RESTRICT x,
                    const int numVert,
                    real& cX, real& cY )
 {
-   if (numVert == 0)
-   {
-     TRIBOL_ERROR ("PolyAreaCentroid: numVert = 0.");
-   }
+   SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -550,44 +534,49 @@ void PolyCentroid( const real* const RESTRICT x,
 } // end PolyCentroid()
 
 //------------------------------------------------------------------------------
-void Intersection2DPolygon( const real* const RESTRICT xA, 
-                            const real* const RESTRICT yA, 
-                            const int numVertexA, 
-                            const real* const RESTRICT xB, 
-                            const real* const RESTRICT yB, 
-                            const int numVertexB,
-                            real posTol, real lenTol, 
-                            real* RESTRICT * RESTRICT polyX, 
-                            real* RESTRICT * RESTRICT polyY, 
-                            int& numPolyVert, real& area )
+FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA, 
+                                     const real* const RESTRICT yA, 
+                                     const int numVertexA, 
+                                     const real* const RESTRICT xB, 
+                                     const real* const RESTRICT yB, 
+                                     const int numVertexB,
+                                     real posTol, real lenTol, 
+                                     real* RESTRICT * RESTRICT polyX, 
+                                     real* RESTRICT * RESTRICT polyY, 
+                                     int& numPolyVert, real& area, bool orientCheck )
 {
-
    // for tribol, if you have called this routine it is because a positive area of 
    // overlap between two polygons (faces) exists. This routine does not perform a 
    // "proximity" check to determine if the faces are "close enough" to proceed with 
    // the full calculation. This can and probably should be added.
 
    // check to make sure the intersection polygon vertex pointers are null
-   if (*polyX != nullptr || *polyY != nullptr)
-   {
-     TRIBOL_ERROR("Intersection2DPolygon: expecting nullptr input arguments polyX, polyY");
-   }
+   SLIC_ERROR_IF(*polyX != nullptr || *polyY != nullptr, 
+                 "Intersection2DPolygon: expecting nullptr input arguments polyX, polyY.");
 
    // check numVertexA and numVertexB to make sure they are 3 (triangle) or more
    if (numVertexA < 3 || numVertexB < 3) 
    {
-      SLIC_ASSERT( numVertexA < 3 || numVertexB < 3 );
+      SLIC_DEBUG( "Intersection2DPolygon(): one or more degenerate faces with < 3 vertices." );
       area = 0.0;
-      return;
+      return INVALID_INPUT; 
    }
 
-   // check right hand rule ordering of polygon vertices
-   bool orientA = CheckPolyOrientation( xA, yA, numVertexA );
-   bool orientB = CheckPolyOrientation( xB, yB, numVertexB );
-
-   if (!orientA || !orientB)
+   // check right hand rule ordering of polygon vertices. 
+   // Note 1: This check is consistent with the ordering that comes from PolyReorder() 
+   // of two faces with unordered vertices. 
+   // Note 2: Intersection2DPolygon doesn't require consistent face vertex orientation
+   // between faces, as long as each are 'ordered' (CW or CCW).
+   if (orientCheck)
    {
-     TRIBOL_ERROR("Intersection2DPolygon: polygon vertices not ordered counter-clockwise");
+      bool orientA = CheckPolyOrientation( xA, yA, numVertexA );
+      bool orientB = CheckPolyOrientation( xB, yB, numVertexB );
+
+      if (!orientA || !orientB)
+      {
+         SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face A." );
+         return FACE_ORIENTATION;
+      }
    }
 
    // determine minimum number of vertices (for use later)
@@ -628,13 +617,9 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       }
    }
 
-   TRIBOL_DEBUG_LOG( "\nnumber of vertices of A in B: " << numVAI << ".\n" );
-
    // check to see if ALL of A is in B; then A is the overlapping polygon.
    if (numVAI == numVertexA)
    {
-      TRIBOL_DEBUG_LOG( "all of A is in B. \n" );
-
       *polyX = new real[ numVertexA ];
       *polyY = new real[ numVertexA ];
       numPolyVert = numVertexA;
@@ -646,7 +631,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       real* xVert = *polyX;
       real* yVert = *polyY;
       area = Area2DPolygon( xVert, yVert, numVertexA );
-      return;
+      return NO_FACE_GEOM_ERROR;
    }
 
    // check B in A
@@ -660,13 +645,9 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       }
    }
 
-   TRIBOL_DEBUG_LOG( "\nnumber of vertices of B in A: " << numVBI << ".\n" );
-
    // check to see if ALL of B is in A; then B is the overlapping polygon.
    if (numVBI == numVertexB)
    {
-      TRIBOL_DEBUG_LOG( "all of B is in A.\n" );
-
       *polyX = new real[ numVertexB ];
       *polyY = new real[ numVertexB ];
       numPolyVert = numVertexB;
@@ -678,7 +659,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       real* xVert = *polyX;
       real* yVert = *polyY;
       area = Area2DPolygon( xVert, yVert, numVertexB );
-      return;
+      return NO_FACE_GEOM_ERROR;
    }
 
    // check for coincident interior vertices. That is, a vertex on A interior to 
@@ -700,7 +681,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
               if (distMag < 1.E-15)
               {
                  // remove the interior designation for the vertex in polygon B
-//                 SLIC_INFO( "Removing duplicate interior vertex id: " << j << ".\n" );
+//                 SLIC_DEBUG( "Removing duplicate interior vertex id: " << j << ".\n" );
                  interiorVBId[j] = -1;
                  numVBI -= 1;
               }
@@ -760,10 +741,11 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
          // if both segments are not defined by nodes interior to the other polygon
          if (checkA && checkB) 
          {
-            // debug
             if (interId >= maxSegInter) 
             {
-               SLIC_ERROR ("Intersection2DPolygon: number of segment intersections exceeds precomputed maximum.");
+               SLIC_DEBUG("Intersection2DPolygon: number of segment/segment intersections exceeds precomputed maximum; " << 
+                          "check for degenerate overlap.");
+               return DEGENERATE_OVERLAP;
             }
 
             intersect[interId] = SegmentIntersection2D( xA[vAID1], yA[vAID1], xA[vAID2], yA[vAID2],
@@ -787,10 +769,8 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
    if (numSegInter == 0 && numVBI == 0 && numVAI == 0)
    {
       area = 0.0;
-      return;
+      return NO_FACE_GEOM_ERROR;
    }
-
-   TRIBOL_DEBUG_LOG( "Intersection2DPolygon: number of segment intersections = " << numSegInter << ".\n" );
 
    // allocate temp intersection polygon vertex coordinate arrays to consist 
    // of segment-segment intersections and number of interior points in A and B
@@ -816,9 +796,11 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       if (interiorVAId[i] != -1)
       {
          // debug
-         if (k > (numPolyVert))
+         if (k > numPolyVert)
          {
-            TRIBOL_ERROR("Intersection2DPolygon: iterator k greater than numPolyVert (1)");
+            SLIC_DEBUG("Intersection2DPolygon(): number of A vertices interior to B " << 
+                       "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+            return FACE_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
          polyXTemp[k] = xA[i];
@@ -832,9 +814,11 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       if (interiorVBId[i] != -1)
       {
          // debug
-         if (k > (numPolyVert))
+         if (k > numPolyVert)
          {
-            TRIBOL_ERROR("Intersection2DPolygon: iterator k greater than numPolyVert (2)");
+            SLIC_DEBUG("Intersection2DPolygon(): number of B vertices interior to A " << 
+                       "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+            return FACE_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
          polyXTemp[k] = xB[i];
@@ -843,19 +827,20 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
       }
    }
 
-   // reorder the vertices in counter clockwise fashion
+   // order the unordered vertices (in counter clockwise fashion)
    PolyReorder( polyXTemp, polyYTemp, numPolyVert );
 
    // check length of segs against tolerance and collapse short segments if necessary
    // This is where polyX and polyY get allocated.
    int numFinalVert = 0; 
 
-   TRIBOL_DEBUG_LOG( "number of polygonal vertices (prior to CheckPolySegs call): " << numPolyVert << ".\n" );
+   FaceGeomError segErr = CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
+                                         lenTol, polyX, polyY, numFinalVert );
 
-   CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
-                  lenTol, polyX, polyY, numFinalVert );
-
-   TRIBOL_DEBUG_LOG( "number of final polygonal vertices (after call to CheckPolySegs): " << numFinalVert << ".\n" );
+   if (segErr != 0)
+   {
+      return segErr;
+   }
 
    numPolyVert = numFinalVert;
 
@@ -863,7 +848,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
    if (numPolyVert < 3)
    {
       area = 0.0;
-      return;
+      return NO_FACE_GEOM_ERROR; // don't return error here. We should tolerate 'collapsed' (zero area) overlaps
    }
 
    // compute the area of the polygon
@@ -872,7 +857,7 @@ void Intersection2DPolygon( const real* const RESTRICT xA,
    area = 0.0;
    area = Area2DPolygon( xVert, yVert, numPolyVert );
 
-   return;
+   return NO_FACE_GEOM_ERROR;
 
 } // end Intersection2DPolygon()
 
@@ -926,15 +911,9 @@ bool Point2DInFace( const real xPoint, const real yPoint,
                     const real xC, const real yC, 
                     const int numPolyVert )
 {
-   if (numPolyVert < 3)
-   {
-      TRIBOL_ERROR ("Point2DInFace: number of face vertices is less than 3");
-   }
+   SLIC_ERROR_IF(numPolyVert<3, "Point2DInFace: number of face vertices is less than 3");
 
-   if (xPoly == nullptr || yPoly == nullptr)
-   {
-      TRIBOL_ERROR ("Point2DInFace: input pointer not set");
-   }
+   SLIC_ERROR_IF(xPoly == nullptr || yPoly == nullptr, "Point2DInFace: input pointer not set");
 
    // if face is triangle (numPolyVert), call Point2DInTri once
    if (numPolyVert == 3)
@@ -1119,8 +1098,8 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
       return false;
    }
 
-   #ifdef AXOM_DEBUG
-
+   // TODO refine how these debug calculations are guarded
+   {
      // debug check to make sure the intersection coordinates derived from 
      // each segment equation (scaled with tA and tB) are the same to some 
      // tolerance
@@ -1137,10 +1116,9 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
      yDiff = (yDiff < 0.) ? -1.0 * yDiff : yDiff;
 
      real diffTol = 1.0E-3;
-     SLIC_ERROR_IF( xDiff > diffTol || yDiff > diffTol, 
+     SLIC_DEBUG_IF( xDiff > diffTol || yDiff > diffTol, 
                    "SegmentIntersection2D(): Intersection coordinates are not equally derived." );
-
-   #endif
+   }
 
    // if we get here then it means we have an intersection point.
    // Find the minimum distance of the intersection point to any of the segment 
@@ -1203,8 +1181,6 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
    {
       if (interior == nullptr || interior[idMin])
       {
-         TRIBOL_DEBUG_LOG( "segment intersection duplicate vertex due to min distance.\n" );
- 
          x = xMinVert;
          y = yMinVert;
          duplicate = true;
@@ -1219,10 +1195,10 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
 } // end SegmentIntersection2D()
 
 //------------------------------------------------------------------------------
-void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y, 
-                    const int numPoints, const real tol, 
-                    real* RESTRICT * RESTRICT xnew, real* RESTRICT * RESTRICT ynew, 
-                    int& numNewPoints )
+FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y, 
+                             const int numPoints, const real tol, 
+                             real* RESTRICT * RESTRICT xnew, real* RESTRICT * RESTRICT ynew, 
+                             int& numNewPoints )
 {
    real newIDs[ numPoints ];
 
@@ -1246,8 +1222,6 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
       // check segment length against tolerance
       if (lambdaMag < tol)
       {
-         TRIBOL_DEBUG_LOG( "collapsing seg in CheckPolySegs with length: " << lambdaMag << ".\n" );
-
          // collapse second vertex to the first vertex of the current segment
          newIDs[ib] = i;
       }
@@ -1275,10 +1249,10 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
    {
       if (newIDs[i] == i)
       {
-         // debug error
          if (k > numNewPoints)
          {
-            TRIBOL_ERROR("checkPolySegs: index into polyX/polyY exceeds allocated space");
+            SLIC_DEBUG("checkPolySegs(): index into polyX/polyY exceeds allocated space");
+            return FACE_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
          (*xnew)[k] = x[i];
@@ -1287,7 +1261,7 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
       }
    }
 
-   return;
+   return NO_FACE_GEOM_ERROR;
 
 } // end CheckPolySegs()
 
@@ -1295,10 +1269,7 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
 void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numPoints )
 {
 
-   if (numPoints < 3)
-   {
-      TRIBOL_ERROR ("PolyReorder: numPoints < 3.");
-   }
+   SLIC_ERROR_IF(numPoints<3, "PolyReorder: numPoints < 3.");
 
    real xC, yC, zC;
    real * z = nullptr;
@@ -1423,10 +1394,7 @@ void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numP
       refy = y[newIDs[i+1]] - y[newIDs[i]];
       refMag = magnitude( refx, refy );
 
-//      if (refMag < 1.E-12)
-//      {
-//         SLIC_ERROR("PolyReorder: reference segment for link vector check is nearly zero length");
-//      }
+//      SLIC_ERROR_IF(refMag < 1.E-12, "PolyReorder: reference segment for link vector check is nearly zero length");
 
       // loop over link vectors of unassigned vertices
       int nextVertexID = 2+i;
@@ -1473,6 +1441,26 @@ void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numP
    return;
 
 } // end PolyReorder()
+
+//------------------------------------------------------------------------------
+void PolyReverse( real* const RESTRICT x, real* const RESTRICT y, const int numPoints )
+{
+   real xtemp[ numPoints ];
+   real ytemp[ numPoints ];
+   for (int i=0; i<numPoints; ++i)
+   {
+      xtemp[i] = x[i];
+      ytemp[i] = y[i];
+   }
+
+   int k=1;
+   for (int i=(numPoints-1); i>0; --i)
+   {
+      x[k] = xtemp[i];
+      y[k] = ytemp[i];
+      ++k;
+   }
+}
 
 //------------------------------------------------------------------------------
 void PolyReorderWithNormal( real* const RESTRICT x,
@@ -1647,10 +1635,14 @@ void Vertex2DOrderToCCW( const real* const RESTRICT x, const real* const RESTRIC
                          real* RESTRICT xTemp, real* RESTRICT yTemp,
                          const int numVert )
 {
-   if (x == nullptr || y == nullptr || xTemp == nullptr || yTemp == nullptr)
+   if (numVert <= 0)
    {
-      TRIBOL_ERROR("Vertex2DOrderToCCW: must set pointers prior to call to routine.");
+      SLIC_DEBUG("Vertex2DOrderToCCW: numVert <= 0; returning.");
+      return;
    }
+
+   SLIC_ERROR_IF(x == nullptr || y == nullptr || xTemp == nullptr || yTemp == nullptr,
+                 "Vertex2DOrderToCCW: must set pointers prior to call to routine.");
 
    xTemp[0] = x[0];
    yTemp[0] = y[0];

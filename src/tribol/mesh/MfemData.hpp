@@ -82,6 +82,18 @@ public:
   ) const;
 
   /**
+   * @brief Transfer grid function on parent-linked boundary submesh to grid
+   * function on LOR mesh
+   *
+   * @param [in] submesh_src Grid function on parent-linked boundary submesh
+   * @param [out] lor_dst Zero-valued grid function on LOR mesh
+   */
+  void SubmeshToLOR(
+    const mfem::ParGridFunction& submesh_src,
+    mfem::ParGridFunction& lor_dst
+  );
+
+  /**
    * @brief Access the local low-order grid function on the LOR mesh
    * 
    * @return mfem::ParGridFunction& 
@@ -1061,6 +1073,22 @@ public:
   {
     return GetUpdateData().redecomp_mesh_;
   }
+  
+  /**
+   * @brief Get the set of boundary attributes on the parent mesh corresponding
+   * to surface elements contained in the first Tribol registered mesh
+   *
+   * @return Set of boundary attributes
+   */
+  const std::set<int>& GetBoundaryAttribs1() const { return attributes_1_; }
+
+  /**
+   * @brief Get the set of boundary attributes on the parent mesh corresponding
+   * to surface elements contained in the second Tribol registered mesh
+   *
+   * @return Set of boundary attributes
+   */
+  const std::set<int>& GetBoundaryAttribs2() const { return attributes_2_; }
 
   /**
    * @brief Get the finite element space on the parent-linked boundary submesh
@@ -1646,7 +1674,8 @@ public:
    */
   MfemJacobianData(
     const MfemMeshData& parent_data,
-    const MfemSubmeshData& submesh_data
+    const MfemSubmeshData& submesh_data,
+    ContactMethod contact_method
   );
 
   /**
@@ -1722,6 +1751,11 @@ private:
    * @brief List giving global parent vdof given the submesh vdof
    */
   mfem::Array<int> submesh2parent_vdof_list_;
+
+  /**
+   * @brief List of submesh true dofs that only exist on the mortar surface
+   */
+  mfem::Array<int> mortar_tdof_list_;
 
   /**
    * @brief UpdateData object created upon calling UpdateMatrixXfer()

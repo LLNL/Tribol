@@ -31,6 +31,19 @@ inline bool in_range( integer target, integer N )
 constexpr integer ANY_MESH = -1;
 
 /*!
+ * \brief Enumerates the logging level options
+ */
+enum LoggingLevel
+{
+   UNDEFINED, ///! Undefined 
+   DEBUG,     ///! Debug and higher
+   INFO,      ///! Info and higher
+   WARNING,   ///! Warning and higher
+   ERROR,     ///! Errors only
+   NUM_LOGGING_LEVELS = ERROR
+};
+
+/*!
  * \brief Enumerates the interface element types  
  */
 enum InterfaceElementType
@@ -273,6 +286,19 @@ enum BasisEvalType
    PARENT,   ///! Evaluate basis in parent space
    PHYSICAL, ///! Evaluate basis in physical space
    NUM_BASIS_EVAL_TYPES = PHYSICAL
+};
+
+/*!
+ * \brief Enumerates face-pair computational geometry errors
+ */
+enum FaceGeomError
+{
+   NO_FACE_GEOM_ERROR,
+   FACE_ORIENTATION,
+   INVALID_INPUT,
+   DEGENERATE_OVERLAP,
+   FACE_INDEX_EXCEEDS_OVERLAP_VERTICES, 
+   NUM_FACE_GEOM_ERRORS
 };
 
 /*!

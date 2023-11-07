@@ -271,6 +271,16 @@ mfem::ParGridFunction& getMfemPressure( integer cs_id );
  */
 void updateMfemParallelDecomposition();
 
+/**
+ * @brief Create VisIt output of the parallel repartitioned RedecompMesh
+ *
+ * @pre Coupling schemes must be registered using registerMfemCouplingScheme()
+ * @pre Redecomp mesh must be created and up to date by calling updateMfemParallelDecomposition()
+ * 
+ * @param output_id Unique identifier in the saved file name (usually cycle number)
+ */
+void saveRedecompMesh( integer output_id );
+
 } /* namespace tribol */
 
 #endif /* BUILD_REDECOMP */

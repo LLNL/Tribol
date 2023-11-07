@@ -16,7 +16,6 @@ endif()
 ## list of headers
 set(tribol_headers
 
-    common/logger.hpp
     common/Parameters.hpp
 
     interface/mfem_tribol.hpp

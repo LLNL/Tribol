@@ -166,7 +166,7 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    }
 
    // initialize
-   int err = Initialize( 3, true );
+   int err = Initialize( 3 );
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
@@ -280,7 +280,7 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
    }
 
    // initialize
-   int err = Initialize( 3, true );
+   int err = Initialize( 3 );
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
@@ -395,7 +395,7 @@ TEST_F( MortarGeomTest, mortar_ironing )
    }
 
    // initialize
-   int err = Initialize( 3, true );
+   int err = Initialize( 3 );
 
    // setup simple coupling
    SimpleCouplingSetup( 3,
@@ -554,7 +554,7 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
    }
 
    // initialize
-   int err = Initialize( 3, true );
+   int err = Initialize( 3 );
 
    // setup simple coupling
    SimpleCouplingSetup( 3,

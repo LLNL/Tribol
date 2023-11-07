@@ -19,7 +19,6 @@
 #include "tribol/integ/FE.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 #include "tribol/utils/Math.hpp"
-#include "tribol/common/logger.hpp"
 
 // Axom includes
 #include "axom/slic.hpp"
@@ -95,12 +94,8 @@ void ComputeMortarWeights( SurfaceContactElem & elem )
             LinIsoQuadShapeFunc( xi[0], xi[1], a, phiNonmortarA );
             LinIsoQuadShapeFunc( xi[0], xi[1], b, phiNonmortarB );
 
-            #ifdef TRIBOL_DEBUG_LOG
-               if (nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts)
-               {
-                  TRIBOL_ERROR("ComputeMortarWts: integer ids for weights exceed elem.numWts");
-               }
-            #endif /* TRIBOL_DEBUG_LOG */
+            SLIC_ERROR_IF(nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts,
+                          "ComputeMortarWts: integer ids for weights exceed elem.numWts");
 
             // compute nonmortar/nonmortar mortar weight
             elem.mortarWts[ nonmortarNonmortarId ]  += integ.wts[ip] * phiNonmortarA * phiNonmortarB;
@@ -123,12 +118,7 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 {
    // check to make sure mortar weights have been computed locally 
    // for the SurfaceContactElem object
-   #ifdef TRIBOL_DEBUG_LOG
-      if (elem.mortarWts == nullptr)
-      {
-         TRIBOL_ERROR("ComputeNodalGap< SINGLE_MORTAR >: compute local weights on input struct first.");
-      }
-   #endif /* TRIBOL_DEBUG_LOG */
+   SLIC_ERROR_IF(elem.mortarWts==nullptr, "ComputeNodalGap< SINGLE_MORTAR >: compute local weights on input struct first.");
 
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
@@ -136,15 +126,11 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
    IndexType const * const nonmortarConn = nonmortarMesh.m_connectivity;
 
    // will populate local gaps on nonmortar face on nonmortar mesh data object
-   if (nonmortarMesh.m_nodalFields.m_node_gap == nullptr)
-   {
-      SLIC_ERROR("ComputeNodalGap< SINGLE_MORTAR >: allocate gaps on mesh data object."); 
-   }
+   SLIC_ERROR_IF(nonmortarMesh.m_nodalFields.m_node_gap == nullptr,
+                 "ComputeNodalGap< SINGLE_MORTAR >: allocate gaps on mesh data object."); 
 
-   if (nonmortarMesh.m_node_nX == nullptr || nonmortarMesh.m_node_nY == nullptr)
-   {
-      SLIC_ERROR("ComputeNodalGap< SINGLE_MORTAR >: allocate and compute nodal normals on mesh data object.");   
-   }
+   SLIC_ERROR_IF(nonmortarMesh.m_node_nX == nullptr || nonmortarMesh.m_node_nY == nullptr,
+                 "ComputeNodalGap< SINGLE_MORTAR >: allocate and compute nodal normals on mesh data object.");   
 
    // compute gap contributions associated with face 2 on the SurfaceContactElem 
    // (i.e. nonmortar surface)
@@ -395,7 +381,8 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    }
    else
    {
-      SLIC_ERROR("Unsupported Jacobian storage method.");
+      SLIC_WARNING("Unsupported Jacobian storage method.");
+      return 1;
    }
 
    ////////////////////////////////////////////////////////////////
@@ -524,7 +511,8 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
          }
          else
          {
-            SLIC_ERROR("Unsupported Jacobian storage method.");
+            SLIC_WARNING("Unsupported Jacobian storage method.");
+            return 1;
          }
          
       }
@@ -817,9 +805,12 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
       // Note: active nonmortar nodes (i.e. active gaps) are checked in this routine.
       const EnforcementOptions& enforcement_options = const_cast<EnforcementOptions&>(cs->getEnforcementOptions());
       const SparseMode sparse_mode = enforcement_options.lm_implicit_options.sparse_mode;
-      SLIC_ERROR_IF(sparse_mode == SparseMode::MFEM_ELEMENT_DENSE, 
-         "GetMethodData<MORTAR_WEIGHTS>() MFEM_ELEMENT_DENSE " << 
-         "Unassembled element dense matrix output not implemented.");
+      if (sparse_mode == SparseMode::MFEM_ELEMENT_DENSE)
+      {
+        SLIC_WARNING( "GetMethodData<MORTAR_WEIGHTS>() MFEM_ELEMENT_DENSE " << 
+                      "Unassembled element dense matrix output not implemented." );
+        return 1;
+      }
       static_cast<MortarData*>( cs->getMethodData() )->assembleMortarWts( elem, sparse_mode );
 
       ++cpID;
