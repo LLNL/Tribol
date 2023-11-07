@@ -240,12 +240,9 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
    jac.ToDenseMatrix(dJac);
    int rank = dJac.Rank(1.e-15);
 
-   SLIC_INFO( "Matrix rank: " << rank );
+   SLIC_DEBUG( "Matrix rank: " << rank );
 
-   if (rank < numRows)
-   {
-      SLIC_ERROR("Jacobian rank (" << rank << ") less than row dimension (" << numRows << ")" );
-   }
+   SLIC_ERROR_IF(rank<numRows, "Jacobian rank (" << rank << ") less than row dimension (" << numRows << ")" );
 
    // instantiate mfem dense matrix inverse object and 
    // solution vector
@@ -312,7 +309,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
          nonmortarForceSum += this->m_mesh.fz2[ offset + i ];
       }
       pressure_rel_error = nonmortarForceSum;
-      SLIC_INFO("NODAL FORCE SUM (NONMORTAR, TRIBOL RESIDUALS): " << nonmortarForceSum);
+      SLIC_DEBUG("NODAL FORCE SUM (NONMORTAR, TRIBOL RESIDUALS): " << nonmortarForceSum);
    }
 
    // update nodal coordinates in separate stacked array. Keep original 
@@ -523,7 +520,7 @@ TEST_F( MortarLMPatchTest, single_mortar_uniform_patch )
    }
 
    double press_tol = 1.e-2; // 0.02% error in pressure
-   SLIC_INFO( "press_rel_error: " << press_rel_error );
+   SLIC_DEBUG( "press_rel_error: " << press_rel_error );
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }
 
@@ -610,7 +607,7 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_mortar_fine_patch )
    }
 
    double press_tol = 5.e-3; // 0.5% error in pressure
-   SLIC_INFO( "press_rel_error: " << press_rel_error );
+   SLIC_DEBUG( "press_rel_error: " << press_rel_error );
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }
 
@@ -694,7 +691,7 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_nonmortar_fine_patch )
    }
 
    double press_tol = 1.e-7;
-   SLIC_INFO( "press_rel_error: " << press_rel_error );
+   SLIC_DEBUG( "press_rel_error: " << press_rel_error );
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }
 
@@ -778,7 +775,7 @@ TEST_F( MortarLMPatchTest, aligned_mortar_patch )
    }
 
    double press_tol = 1.e-7;
-   SLIC_INFO( "press_rel_error: " << press_rel_error );
+   SLIC_DEBUG( "press_rel_error: " << press_rel_error );
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }
 

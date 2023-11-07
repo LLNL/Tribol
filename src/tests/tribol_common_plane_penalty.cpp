@@ -292,9 +292,6 @@ TEST_F( CommonPlaneTest, penetration_gap_check )
    parameters.penalty_ratio = false;
    parameters.const_penalty = 1.0;
 
-   std::cout << "penetration gap check before slic test before tribolSetupAndUpdate()" << std::endl;
-   SLIC_INFO("slic test in penetration gap check before tribolSetupAndUpdate()");
-
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY,
                                          tribol::FRICTIONLESS, false, parameters );
@@ -310,6 +307,8 @@ TEST_F( CommonPlaneTest, penetration_gap_check )
    real gap = z_min2 - z_max1;
 
    compareGaps( couplingScheme, gap, 1.E-8, "kinematic_penetration" );
+
+   tribol::finalize();
 
 }
 
@@ -372,6 +371,7 @@ TEST_F( CommonPlaneTest, separation_gap_check )
 
    compareGaps( couplingScheme, gap, 1.E-8, "kinematic_separation" );
 
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, constant_penalty_check )
@@ -438,6 +438,7 @@ TEST_F( CommonPlaneTest, constant_penalty_check )
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme );
 
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, element_penalty_check )
@@ -533,6 +534,7 @@ TEST_F( CommonPlaneTest, element_penalty_check )
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme );
 
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, tied_contact_check )
@@ -596,6 +598,7 @@ TEST_F( CommonPlaneTest, tied_contact_check )
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme, true );
 
+   tribol::finalize();
 }
 
 int main(int argc, char* argv[])

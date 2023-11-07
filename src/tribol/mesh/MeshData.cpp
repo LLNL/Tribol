@@ -5,7 +5,6 @@
 
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/utils/Math.hpp"
-#include "tribol/common/logger.hpp"
 
 #include <cmath> 
 #include <iostream> 
@@ -633,7 +632,7 @@ void MeshData::computeNodalNormals( int const dim )
    if (this->m_nX == nullptr || 
        this->m_nY == nullptr)
    {
-      TRIBOL_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
+      SLIC_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
    }
 
    // allocate space for nodal normal array
@@ -845,7 +844,6 @@ int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
       {
          if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
          {
-            SLIC_WARNING("Invalid Kinematic penalty data.");
             err = 1;
          }
          break;
@@ -855,12 +853,10 @@ int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
       {
          if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
          {
-            SLIC_WARNING("Invalid Kinematic penalty data.");
             err = 1;
          }
          if (!this->m_elemData.isValidRatePenalty( p_enfrc_options ))
          {
-            SLIC_WARNING("Invalid Rate penalty data.");
             err = 1;
          }
          if (!this->m_nodalFields.m_is_velocity_set)

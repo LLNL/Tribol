@@ -341,6 +341,8 @@ TEST_F( CommonPlaneTest, constant_rate_penetration )
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions are not separated
 
+   tribol::finalize();
+
 } // end test 'rate_penetration'
 
 TEST_F( CommonPlaneTest, constant_rate_separation )
@@ -436,6 +438,8 @@ TEST_F( CommonPlaneTest, constant_rate_separation )
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions aren't separated
 
+   tribol::finalize();
+
 } // end test 'rate_separation'
 
 TEST_F( CommonPlaneTest, no_gap_constant_rate_penetration )
@@ -527,6 +531,8 @@ TEST_F( CommonPlaneTest, no_gap_constant_rate_penetration )
    real rate_gap = velZ2 - velZ1;
    real pressure = (gap < 0. && rate_gap < 0.) ? penalty * rate_gap : 0.;
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
+
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, percent_rate_penetration )
@@ -620,6 +626,8 @@ TEST_F( CommonPlaneTest, percent_rate_penetration )
    compareGaps( couplingScheme, rate_gap, 1.E-8, "rate_penetration" );
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions are not separated
+
+   tribol::finalize();
 
 } // end test 'rate_penetration'
 
@@ -717,6 +725,8 @@ TEST_F( CommonPlaneTest, percent_rate_separation )
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions aren't separated
 
+   tribol::finalize();
+
 } // end test 'rate_separation'
 
 TEST_F( CommonPlaneTest, no_gap_percent_rate_penetration )
@@ -808,6 +818,8 @@ TEST_F( CommonPlaneTest, no_gap_percent_rate_penetration )
    real rate_gap = velZ2 - velZ1;
    real pressure = (gap < 0. && rate_gap < 0.) ? penalty * rate_gap : 0.;
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
+
+   tribol::finalize();
 }
 
 int main(int argc, char* argv[])

@@ -72,15 +72,12 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
 
    EXPECT_EQ( csr_err, 0 );
 
-   if (I == nullptr)
-   {
-      SLIC_ERROR("Mortar wts test, I is null.");
-   }
+   SLIC_ERROR_IF(I==nullptr, "Mortar wts test, I is null.");
 
    // get mortar node id offset to distinguish mortar from nonmortar column contributions
    if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
    {
-      SLIC_INFO("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
+      SLIC_DEBUG("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
       mortarMesh.sortSurfaceNodeIds();
    }
    int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
@@ -253,6 +250,8 @@ TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
 
+   tribol::finalize();
+
    delete [] gaps;
 }
 
@@ -318,6 +317,8 @@ TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
    computeGapsFromSparseWts( couplingScheme, gaps );
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
+
+   tribol::finalize();
 
    delete [] gaps;
 }
@@ -386,6 +387,8 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_mortar_fine )
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
 
+   tribol::finalize();
+
    delete [] gaps;
 }
 
@@ -452,6 +455,8 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_nonmortar_fine )
    computeGapsFromSparseWts( couplingScheme, gaps );
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
+
+   tribol::finalize();
 
    delete [] gaps;
 }
