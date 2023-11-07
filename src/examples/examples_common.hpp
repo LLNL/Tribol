@@ -8,7 +8,6 @@
 
 // axom includes
 #include "axom/core.hpp"
-#include "axom/mint.hpp"
 #include "axom/primal.hpp"
 #include "axom/slic.hpp"
 #include "axom/CLI11.hpp"
@@ -25,7 +24,6 @@
 #include <iostream>
 
 // namespace aliases
-namespace mint      = axom::mint;
 namespace primal    = axom::primal;
 namespace slic      = axom::slic;
 namespace utilities = axom::utilities;
