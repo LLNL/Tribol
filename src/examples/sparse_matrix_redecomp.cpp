@@ -163,22 +163,26 @@ int main( int argc, char** argv )
 
   SLIC_INFO_ROOT("Transferring something from RedecompMesh to ParMesh...");
   auto Mmat_xfer = matrix_xfer.TransferToParallel(smat);
-  mfem::HypreParMatrix *W = std::get<0>(Mmat_xfer).get();
 
   pmesh_dc.Save();
   redecomp_dc.Save();
 
   // test filter
-  mfem::L2_FECollection l2_fec(0, dim);
-  mfem::ParFiniteElementSpace l2_fes(pmesh.get(), &l2_fec);
-  mfem::ParGridFunction x(&l2_fes);
-  mfem::ParGridFunction xf(&l2_fes);
+  mfem::ParGridFunction x(&pmesh_space);
+  mfem::ParGridFunction xf(&pmesh_space);
 
-
+  mfem::FunctionCoefficient x_func([](const mfem::Vector&x) {
+    return ((x[0] > 0.5) && (x[1] > 0.5))? 1.0 : 0.0;
+  });
   
-  W->Mult(x, xf);
-  x.Print();
-  xf.Print();
+  x.ProjectCoefficient(x_func);
+  
+  Mmat_xfer->Mult(x, xf);
+
+  mfem::VisItDataCollection visit_dc("test_filter", pmesh.get());
+  visit_dc.RegisterField("x", &x);
+  visit_dc.RegisterField("xf", &xf);
+  visit_dc.Save();
 
   // cleanup
   MPI_Finalize();
