@@ -96,7 +96,7 @@ std::tuple<
     for (int i{0}; i < src.Height(); ++i)
     {
       const auto test_elem_id = i; // assumes 1 point per element
-      while (test_elem_id == test_elem_offsets[test_parent_rank])
+      while (test_elem_id == test_elem_offsets[test_parent_rank + 1])
       {
         ++test_parent_rank;
         test_ghost_ct = 0;
@@ -114,12 +114,12 @@ std::tuple<
       {
         const int j{src_J[Ij]};
         const auto trial_elem_id = j; // assumes 1 point per element
-        while (trial_elem_id >= trial_elem_offsets[trial_parent_rank])
+        while (trial_elem_id >= trial_elem_offsets[trial_parent_rank + 1])
         {
           ++trial_parent_rank;
         }
         // if the entries in J aren't ordered, we might need to go backwards too
-        while (trial_parent_rank > 0 && trial_elem_id < trial_elem_offsets[trial_parent_rank - 1])
+        while (trial_parent_rank > 0 && trial_elem_id < trial_elem_offsets[trial_parent_rank])
         {
           --trial_parent_rank;
         }
@@ -260,14 +260,32 @@ std::tuple<
   {
     row_starts[0] = row_starts[my_rank];
     row_starts[1] = row_starts[my_rank + 1];
-    row_starts[2] = row_starts.back();
-    row_starts.resize(3);
-    row_starts.shrink();
+    if (row_starts.size() < 3)
+    {
+      auto old_size = row_starts.size();
+      row_starts.resize(3);
+      row_starts[2] = row_starts[old_size - 1];
+    }
+    else
+    {
+      row_starts[2] = row_starts.back();
+      row_starts.resize(3);
+      row_starts.shrink();
+    }
     col_starts[0] = col_starts[my_rank];
     col_starts[1] = col_starts[my_rank + 1];
-    col_starts[2] = col_starts.back();
-    col_starts.resize(3);
-    col_starts.shrink();
+    if (col_starts.size() < 3)
+    {
+      auto old_size = col_starts.size();
+      col_starts.resize(3);
+      col_starts[2] = col_starts[old_size - 1];
+    }
+    else
+    {
+      col_starts[2] = col_starts.back();
+      col_starts.resize(3);
+      col_starts.shrink();
+    }
   }
   // create hypre par matrix
   auto J_full = std::make_unique<mfem::HypreParMatrix>(getMPIUtility().MPIComm(),
