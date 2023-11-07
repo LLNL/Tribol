@@ -4,33 +4,28 @@
 // SPDX-License-Identifier: (MIT)
 
 /**
- * @file matrix_redecomp.cpp
+ * @file sparse_matrix_redecomp.cpp
  *
- * @brief Demonstrates moving a matrix using redecomp::MatrixTransfer
+ * @brief Demonstrates moving a matrix using redecomp::SparseMatrixTransfer
  *
- * Demonstrates use of redecomp::MatrixTransfer to move element-level matrices
- * from finite element spaces on a redecomp::RedecompMesh to an assembled,
- * global matrix on finite element spaces on a mfem::ParMesh. Specifically,
- * element contributions of the mass matrix are computed on the
- * redecomp::RedecompMesh, then transferred to the parent mfem::ParMesh where
- * they are assembled.  These mass matrix values are compared to mass matrix
- * values computed directly on the mfem::ParMesh.
+ * Demonstrates use of redecomp::SparseMatrixTransfer.
  *
  * For this example, the test space and trial space are the same, but
- * redecomp::MatrixTransfer supports rectangular matrices, with different trial
+ * redecomp::SparseMatrixTransfer supports rectangular matrices, with different trial
  * and test spaces.
  *
  * Example runs (from repo root directory):
- *   - mpirun -np 4 {build_dir}/examples/matrix_redecomp_ex -r 1 -m
+ *   - mpirun -np 4 {build_dir}/examples/sparse_matrix_redecomp_ex -r 1 -m
  *     data/two_hex.mesh
- *   - mpirun -np 4 {build_dir}/examples/matrix_redecomp_ex -r 1 -m
+ *   - mpirun -np 4 {build_dir}/examples/sparse_matrix_redecomp_ex -r 1 -m
  *     data/star.mesh
- *   - mpirun -np 4 {build_dir}/examples/matrix_redecomp_ex -r 1 -o 2 -m
+ *   - mpirun -np 4 {build_dir}/examples/sparse_matrix_redecomp_ex -r 1 -o 2 -m
  *     data/two_hex.mesh
- *   - mpirun -np 4 {build_dir}/examples/matrix_redecomp_ex -r 1 -o 2 -m
+ *   - mpirun -np 4 {build_dir}/examples/sparse_matrix_redecomp_ex -r 1 -o 2 -m
  *     data/star.mesh
  */
 
+#include <mfem/fem/fe_coll.hpp>
 #include <string>
 
 #include <mpi.h>
@@ -66,7 +61,7 @@ int main( int argc, char** argv )
 
   double filter_radius = 1.0;
 
-  axom::CLI::App app { "matrix_redecomp" };
+  axom::CLI::App app { "sparse_matrix_redecomp" };
   app.add_option("-m,--mesh", mesh_file, "Mesh file to use.")
     ->check(axom::CLI::ExistingFile)
     ->capture_default_str();
@@ -80,7 +75,7 @@ int main( int argc, char** argv )
     "Explicit filter radius.");
   CLI11_PARSE(app, argc, argv);
 
-  SLIC_INFO_ROOT("Running quadrature_matrix_redecomp with the following options:");
+  SLIC_INFO_ROOT("Running sparse_matrix_redecomp with the following options:");
   SLIC_INFO_ROOT(axom::fmt::format("mesh:   {0}", mesh_file));
   SLIC_INFO_ROOT(axom::fmt::format("refine: {0}", ref_levels));
   SLIC_INFO_ROOT(axom::fmt::format("order:  {0}\n", order));
@@ -110,8 +105,9 @@ int main( int argc, char** argv )
 
   mfem::VisItDataCollection pmesh_dc { "pmesh", pmesh.get() };
 
-  // create quadrature space on parmesh (1 point per element)
-  mfem::QuadratureSpace pmesh_quad_space { pmesh.get(), 1 };
+  // create finite element space on parmesh (1 point per element)
+  mfem::L2_FECollection fe_coll { 0, pmesh->SpaceDimension() };
+  mfem::ParFiniteElementSpace pmesh_space { pmesh.get(), &fe_coll };
 
   SLIC_INFO_ROOT("Creating redecomp::RedecompMesh...");
   // create redecomp mesh (ensure ghost region is >= filter radius)
@@ -119,19 +115,19 @@ int main( int argc, char** argv )
   
   mfem::VisItDataCollection redecomp_dc { "redecomp", &redecomp_mesh };
   
-  // create quadrature space on redecomp mesh (1 point per element)
-  mfem::QuadratureSpace redecomp_quad_space { &redecomp_mesh, 1 };
+  // create finite element space on redecomp mesh (1 point per element)
+  mfem::FiniteElementSpace redecomp_space { &redecomp_mesh, &fe_coll };
 
   // create transfer operator
-  redecomp::QuadratureMatrixTransfer matrix_xfer {
-    pmesh_quad_space,
-    pmesh_quad_space,
-    redecomp_quad_space, 
-    redecomp_quad_space
+  redecomp::SparseMatrixTransfer matrix_xfer {
+    pmesh_space,
+    pmesh_space,
+    redecomp_space, 
+    redecomp_space
   };
 
   SLIC_INFO_ROOT("Compute something on redecomp::RedecompMesh...");
-  mfem::SparseMatrix smat { redecomp_quad_space.GetSize(), redecomp_quad_space.GetSize() };
+  mfem::SparseMatrix smat { redecomp_space.GetVSize(), redecomp_space.GetVSize() };
 
   auto filter_kernel = [&filter_radius](const mfem::Vector &xi, const mfem::Vector &xj) {
     return std::max(0.0, filter_radius - xi.DistanceTo(xj));

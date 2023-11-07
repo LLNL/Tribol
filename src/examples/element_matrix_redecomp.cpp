@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: (MIT)
 
 /**
- * @file matrix_redecomp.cpp
+ * @file element_matrix_redecomp.cpp
  *
  * @brief Demonstrates moving a matrix using redecomp::MatrixTransfer
  *
@@ -21,13 +21,13 @@
  * and test spaces.
  *
  * Example runs (from repo root directory):
- *   - mpirun -np 4 {build_dir}/examples/matrix_redecomp_ex -r 1 -m
+ *   - mpirun -np 4 {build_dir}/examples/element_matrix_redecomp_ex -r 1 -m
  *     data/two_hex.mesh
- *   - mpirun -np 4 {build_dir}/examples/matrix_redecomp_ex -r 1 -m
+ *   - mpirun -np 4 {build_dir}/examples/element_matrix_redecomp_ex -r 1 -m
  *     data/star.mesh
- *   - mpirun -np 4 {build_dir}/examples/matrix_redecomp_ex -r 1 -o 2 -m
+ *   - mpirun -np 4 {build_dir}/examples/element_matrix_redecomp_ex -r 1 -o 2 -m
  *     data/two_hex.mesh
- *   - mpirun -np 4 {build_dir}/examples/matrix_redecomp_ex -r 1 -o 2 -m
+ *   - mpirun -np 4 {build_dir}/examples/element_matrix_redecomp_ex -r 1 -o 2 -m
  *     data/star.mesh
  */
 
@@ -64,7 +64,7 @@ int main( int argc, char** argv )
   // polynomial order of the finite element discretization
   int order = 1;
 
-  axom::CLI::App app { "matrix_redecomp" };
+  axom::CLI::App app { "element_matrix_redecomp" };
   app.add_option("-m,--mesh", mesh_file, "Mesh file to use.")
     ->check(axom::CLI::ExistingFile)
     ->capture_default_str();
@@ -76,7 +76,7 @@ int main( int argc, char** argv )
     ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
-  SLIC_INFO_ROOT("Running matrix_redecomp with the following options:");
+  SLIC_INFO_ROOT("Running element_matrix_redecomp with the following options:");
   SLIC_INFO_ROOT(axom::fmt::format("mesh:   {0}", mesh_file));
   SLIC_INFO_ROOT(axom::fmt::format("refine: {0}", ref_levels));
   SLIC_INFO_ROOT(axom::fmt::format("order:  {0}\n", order));
