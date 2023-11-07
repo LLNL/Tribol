@@ -188,9 +188,9 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
   auto diag_nnz = 0;
   auto offd_nnz = 0;
   // NOTE: these will be owned by the HypreParMatrix. using mfem::Memory, the data will not be deleted upon destruction.
-  mfem::Memory<HYPRE_Int> i_diag(redecomp_test_space_.GetVSize() + 1);
-  mfem::Memory<HYPRE_Int> i_offd(redecomp_test_space_.GetVSize() + 1);
-  for (int i{0}; i < redecomp_test_space_.GetVSize() + 1; ++i)
+  mfem::Memory<HYPRE_Int> i_diag(parent_test_space_.GetVSize() + 1);
+  mfem::Memory<HYPRE_Int> i_offd(parent_test_space_.GetVSize() + 1);
+  for (int i{0}; i < parent_test_space_.GetVSize() + 1; ++i)
   {
     i_diag[i] = 0;
     i_offd[i] = 0;
@@ -216,13 +216,13 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
     }
   }
   // sum up i_diag and i_offd (completing their definition)
-  for (int i{0}; i < redecomp_test_space_.GetVSize(); ++i)
+  for (int i{0}; i < parent_test_space_.GetVSize(); ++i)
   {
     i_diag[i+1] += i_diag[i];
     i_offd[i+1] += i_offd[i];
   }
-  SLIC_ASSERT(i_diag[redecomp_test_space_.GetVSize()] == diag_nnz);
-  SLIC_ASSERT(i_offd[redecomp_test_space_.GetVSize()] == offd_nnz);
+  SLIC_ASSERT(i_diag[parent_test_space_.GetVSize()] == diag_nnz);
+  SLIC_ASSERT(i_offd[parent_test_space_.GetVSize()] == offd_nnz);
   // create cmap, offd column map from local to global element IDs
   mfem::Memory<HYPRE_BigInt> cmap(cmap_j_offd.size());
   for (auto& cmap_val : cmap_j_offd)
@@ -230,8 +230,8 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
     cmap[cmap_val.second] = cmap_val.first;
   }
   // compute j_diag and j_offd, the columns for each row (row offsets given by i).  will not be sorted.
-  axom::Array<int> i_diag_ct(redecomp_test_space_.GetVSize(), redecomp_test_space_.GetVSize());
-  axom::Array<int> i_offd_ct(redecomp_test_space_.GetVSize(), redecomp_test_space_.GetVSize());
+  axom::Array<int> i_diag_ct(parent_test_space_.GetVSize(), parent_test_space_.GetVSize());
+  axom::Array<int> i_offd_ct(parent_test_space_.GetVSize(), parent_test_space_.GetVSize());
   mfem::Memory<HYPRE_Int> j_diag(diag_nnz);
   mfem::Memory<double> data_diag(diag_nnz);
   mfem::Memory<HYPRE_Int> j_offd(offd_nnz);
