@@ -31,9 +31,11 @@
 #include "tribol/utils/TestUtils.hpp"
 
 /**
- * @brief This tests the Tribol MFEM interface running a small common plane
- * explicit contact example using a central difference explicit time integration
- * scheme.
+ * @brief This tests the Tribol MFEM interface running a small common plane explicit contact example using a central
+ * difference explicit time integration scheme.
+ *
+ * Both the element penalty and a constant penalty are tested, with the constant penalty tuned to match the element
+ * penalty for this case.  As a result, the test comparisons are the same for both penalty types.
  *
  */
 class MfemCommonPlaneTest : public testing::TestWithParam<std::pair<int, tribol::KinematicPenaltyCalculation>> {
