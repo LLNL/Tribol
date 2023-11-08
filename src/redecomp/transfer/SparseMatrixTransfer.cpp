@@ -5,7 +5,7 @@
 
 #include "SparseMatrixTransfer.hpp"
 
-#include <unordered_map>
+#include <map>
 
 #include "axom/slic.hpp"
 
@@ -199,7 +199,8 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
     i_diag[i] = 0;
     i_offd[i] = 0;
   }
-  std::unordered_map<HYPRE_BigInt, int> cmap_j_offd;
+  // maps from global j to order of appearance in the loops below
+  std::map<HYPRE_BigInt, int> cmap_j_offd;
   for (int r{0}; r < n_ranks; ++r)
   {
     for (int i{0}; i < recv_parent_col_ranks[r].size(); ++i)
@@ -214,9 +215,7 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
       {
         ++offd_nnz;
         ++i_offd[recv_parent_local_row[r][i] + 1];
-        auto cmap_it = cmap_j_offd.insert(std::make_pair(
-          col_starts[col_rank] + recv_parent_local_col[r][i], cmap_j_offd.size()));
-        recv_parent_local_col[r][i] = cmap_it.first->second;
+        cmap_j_offd.insert(std::make_pair(col_starts[col_rank] + recv_parent_local_col[r][i], cmap_j_offd.size()));
       }
     }
   }
@@ -228,6 +227,14 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
   }
   SLIC_ASSERT(i_diag[parent_test_space_.GetVSize()] == diag_nnz);
   SLIC_ASSERT(i_offd[parent_test_space_.GetVSize()] == offd_nnz);
+  // re-order cmap_j_offd
+  {
+    auto offd_ct = 0;
+    for (auto& cmap_val : cmap_j_offd)
+    {
+      cmap_val.second = offd_ct++;
+    }
+  }
   // create cmap, offd column map from local to global element IDs
   mfem::Memory<HYPRE_BigInt> cmap(cmap_j_offd.size());
   for (auto& cmap_val : cmap_j_offd)
@@ -247,7 +254,8 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
     {
       auto curr_row = recv_parent_local_row[r][i];
       auto curr_col = recv_parent_local_col[r][i];
-      if (recv_parent_col_ranks[r][i] == my_rank)
+      auto col_rank = recv_parent_col_ranks[r][i];
+      if (col_rank == my_rank)
       {
         j_diag[i_diag[curr_row] + i_diag_ct[curr_row]] = curr_col;
         data_diag[i_diag[curr_row] + i_diag_ct[curr_row]] = recv_matrix_data[r][i];
@@ -255,7 +263,7 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
       }
       else
       {
-        j_offd[i_offd[curr_row] + i_offd_ct[curr_row]] = curr_col;
+        j_offd[i_offd[curr_row] + i_offd_ct[curr_row]] = cmap_j_offd[col_starts[col_rank] + curr_col];
         data_offd[i_offd[curr_row] + i_offd_ct[curr_row]] = recv_matrix_data[r][i];
         ++i_offd_ct[curr_row];
       }
