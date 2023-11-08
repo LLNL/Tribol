@@ -132,32 +132,21 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
         send_parent_col_ranks[test_parent_rank].push_back(trial_parent_rank);
       }
     }
-    // do MPI communication
-    recv_matrix_data.SendRecvArrayEach(send_matrix_data);
-    // NOTE: these hold offsets now; need to convert these to element numbers
-    recv_parent_local_row.SendRecvArrayEach(send_parent_local_row_offsets);
-    // NOTE: these are offsets, but if this rank doesn't own the element, it can't convert it to an element number.
-    // need to communicate the offsets to the owned rank, get the local element number, then move it back
-    recv_parent_local_col.SendRecvArrayEach(send_parent_local_col_offsets);
-    recv_parent_col_ranks.SendRecvArrayEach(send_parent_col_ranks);
-    // convert offsets to element numbers
+    // convert local col offsets to parent element ids: MPI transfer to the parent rank where the element lives, then
+    // use the p2r_elems_ map to convert to an element ID
     for (int r{0}; r < n_ranks; ++r)
     {
-      for (auto& row_elem : recv_parent_local_row[r])
-      {
-        row_elem = redecomp_test_mesh_.getParentToRedecompElems().first[r][row_elem];
-      }
       // do per-rank communication to transform local_col from offsets to element ids
       auto send_col_offsets_by_rank = MPIArray<int>(&getMPIUtility());
       // guess size and preallocate
-      auto approx_rank_size = 2 * recv_parent_local_col[r].size() / n_ranks;
+      auto approx_rank_size = 2 * send_parent_local_col_offsets[r].size() / n_ranks;
       for (auto& send_col_offsets : send_col_offsets_by_rank)
       {
         send_col_offsets.reserve(approx_rank_size);
       }
-      for (int i{0}; i < recv_parent_local_col[r].size(); ++i)
+      for (int i{0}; i < send_parent_local_col_offsets[r].size(); ++i)
       {
-        send_col_offsets_by_rank[recv_parent_col_ranks[r][i]].push_back(recv_parent_local_col[r][i]);
+        send_col_offsets_by_rank[send_parent_col_ranks[r][i]].push_back(send_parent_local_col_offsets[r][i]);
       }
       auto recv_col_offsets_by_rank = MPIArray<int>(&getMPIUtility());
       recv_col_offsets_by_rank.SendRecvArrayEach(send_col_offsets_by_rank);
@@ -171,12 +160,27 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
       }
       // send back to original rank
       send_col_offsets_by_rank.SendRecvArrayEach(recv_col_offsets_by_rank);
-      // fill recv_parent_local_col with local element ids
+      // fill send_parent_local_col_offsets with local element ids
       axom::Array<int> per_rank_ct(n_ranks, n_ranks);
-      for (int i{0}; i < recv_parent_local_col[r].size(); ++i)
+      for (int i{0}; i < send_parent_local_col_offsets[r].size(); ++i)
       {
-        auto col_rank = recv_parent_col_ranks[r][i];
-        recv_parent_local_col[r][i] = send_col_offsets_by_rank[col_rank][per_rank_ct[col_rank]++];
+        auto col_rank = send_parent_col_ranks[r][i];
+        send_parent_local_col_offsets[r][i] = send_col_offsets_by_rank[col_rank][per_rank_ct[col_rank]++];
+      }
+    }
+    //do MPI communication
+    recv_matrix_data.SendRecvArrayEach(send_matrix_data);
+    // NOTE: these hold offsets now; need to convert these to element numbers
+    recv_parent_local_row.SendRecvArrayEach(send_parent_local_row_offsets);
+    // NOTE: the send values were converted from offsets to element numbers in the block above
+    recv_parent_local_col.SendRecvArrayEach(send_parent_local_col_offsets);
+    recv_parent_col_ranks.SendRecvArrayEach(send_parent_col_ranks);
+    // convert local row offsets to element numbers
+    for (int r{0}; r < n_ranks; ++r)
+    {
+      for (auto& row_elem : recv_parent_local_row[r])
+      {
+        row_elem = redecomp_test_mesh_.getParentToRedecompElems().first[r][row_elem];
       }
     }
   }
@@ -200,7 +204,8 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
   {
     for (int i{0}; i < recv_parent_col_ranks[r].size(); ++i)
     {
-      if (recv_parent_col_ranks[r][i] == my_rank)
+      auto col_rank = recv_parent_col_ranks[r][i];
+      if (col_rank == my_rank)
       {
         ++diag_nnz;
         ++i_diag[recv_parent_local_row[r][i] + 1];
@@ -210,7 +215,7 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
         ++offd_nnz;
         ++i_offd[recv_parent_local_row[r][i] + 1];
         auto cmap_it = cmap_j_offd.insert(std::make_pair(
-          col_starts[r] + recv_parent_local_col[r][i], cmap_j_offd.size()));
+          col_starts[col_rank] + recv_parent_local_col[r][i], cmap_j_offd.size()));
         recv_parent_local_col[r][i] = cmap_it.first->second;
       }
     }
