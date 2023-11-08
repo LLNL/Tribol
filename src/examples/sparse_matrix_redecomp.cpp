@@ -113,7 +113,7 @@ int main( int argc, char** argv )
   // create redecomp mesh (ensure ghost region is >= filter radius)
   redecomp::RedecompMesh redecomp_mesh { *pmesh, redecomp::RedecompMesh::RCB, filter_radius };
   
-  mfem::VisItDataCollection redecomp_dc { "redecomp", &redecomp_mesh };
+  mfem::VisItDataCollection redecomp_dc { "redecomp_rank" + std::to_string(rank), &redecomp_mesh };
   
   // create finite element space on redecomp mesh (1 point per element)
   mfem::FiniteElementSpace redecomp_space { &redecomp_mesh, &fe_coll };
