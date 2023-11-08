@@ -823,6 +823,192 @@ public:
   }
 
   /**
+   * @brief Clears all kinematic and rate penalty data
+   */
+  void ClearAllPenaltyData();
+
+  /**
+   * @brief Clears rate penalty data
+   */
+  void ClearRatePenaltyData();
+
+  /**
+   * @brief Sets the kinematic constant penalty parameter for the first registered Tribol mesh
+   * 
+   * @param penalty Penalty value for the first registered Tribol mesh
+   */
+  void SetMesh1KinematicConstantPenalty(real penalty)
+  { 
+    kinematic_constant_penalty_1_ = std::make_unique<double>(penalty);
+  }
+
+  /**
+   * @brief Sets the kinematic constant penalty parameter for the second registered Tribol mesh
+   * 
+   * @param penalty Penalty value for the second registered Tribol mesh
+   */
+  void SetMesh2KinematicConstantPenalty(real penalty)
+  { 
+    kinematic_constant_penalty_2_ = std::make_unique<double>(penalty);
+  }
+
+  /**
+   * @brief Get the kinematic constant penalty parameter for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1KinematicConstantPenalty() const
+  { 
+    return kinematic_constant_penalty_1_.get();
+  }
+
+  /**
+   * @brief Get the kinematic constant penalty parameter for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2KinematicConstantPenalty() const
+  { 
+    return kinematic_constant_penalty_2_.get();
+  }
+
+  /**
+   * @brief Sets the kinematic penalty scale for the first registered Tribol mesh
+   * 
+   * @param scale Penalty scale value for the first registered Tribol mesh
+   */
+  void SetMesh1KinematicPenaltyScale(real scale)
+  {
+    kinematic_penalty_scale_1_ = std::make_unique<double>(scale);
+  }
+
+  /**
+   * @brief Sets the kinematic penalty scale for the second registered Tribol mesh
+   * 
+   * @param scale Penalty scale value for the second registered Tribol mesh
+   */
+  void SetMesh2KinematicPenaltyScale(real scale)
+  {
+    kinematic_penalty_scale_2_ = std::make_unique<double>(scale);
+  }
+
+  /**
+   * @brief Get the kinematic penalty scale for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1KinematicPenaltyScale() const { return kinematic_penalty_scale_1_.get(); }
+
+  /**
+   * @brief Get the kinematic penalty scale for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2KinematicPenaltyScale() const { return kinematic_penalty_scale_2_.get(); }
+
+  /**
+   * @brief Sets the rate constant penalty for the first registered Tribol mesh
+   * 
+   * @param penalty Rate constant penalty value for the first registered Tribol mesh
+   */
+  void SetMesh1RateConstantPenalty(real penalty) { rate_constant_penalty_1_ = std::make_unique<double>(penalty); }
+
+  /**
+   * @brief Sets the rate constant penalty for the second registered Tribol mesh
+   * 
+   * @param penalty Rate penalty value for the second registered Tribol mesh
+   */
+  void SetMesh2RateConstantPenalty(real penalty) { rate_constant_penalty_2_ = std::make_unique<double>(penalty); }
+
+  /**
+   * @brief Get the rate constant penalty for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1RateConstantPenalty() const { return rate_constant_penalty_1_.get(); }
+
+  /**
+   * @brief Get the rate constant penalty for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2RateConstantPenalty() const { return rate_constant_penalty_2_.get(); }
+
+  /**
+   * @brief Sets the rate penalty as a ratio of the kinematic penalty for the
+   * first registered Tribol mesh
+   *
+   * @param ratio Rate ratio for the first registered Tribol mesh
+   */
+  void SetMesh1RatePercentPenalty(real ratio) { rate_percent_ratio_1_ = std::make_unique<double>(ratio); }
+
+  /**
+   * @brief Sets the rate penalty as a ratio of the kinematic penalty for the
+   * second registered Tribol mesh
+   * 
+   * @param ratio Rate ratio for the second registered Tribol mesh
+   */
+  void SetMesh2RatePercentPenalty(real ratio) { rate_percent_ratio_2_ = std::make_unique<double>(ratio); }
+
+  /**
+   * @brief Get the rate penalty ratio for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1RatePercentPenalty() const { return rate_percent_ratio_1_.get(); }
+
+  /**
+   * @brief Get the rate penalty ratio for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2RatePercentPenalty() const { return rate_percent_ratio_2_.get(); }
+
+  /**
+   * @brief Get a pointer to the element thickness array for the first Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompElemThickness1() const
+  {
+    return tribol_elem_thickness_1_->data();
+  }
+
+  /**
+   * @brief Get a pointer to the element thickness array for the second Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompElemThickness2() const
+  {
+    return tribol_elem_thickness_2_->data();
+  }
+
+  /**
+   * @brief Get a pointer to the material modulus array for the first Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompMaterialModulus1() const
+  {
+    return tribol_material_modulus_1_->data();
+  }
+
+  /**
+   * @brief Get a pointer to the material modulus array for the second Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompMaterialModulus2() const
+  {
+    return tribol_material_modulus_2_->data();
+  }
+
+  /**
    * @brief Get the map from Tribol registered mesh 1 element indices to
    * redecomp mesh element indices
    *
@@ -932,6 +1118,19 @@ public:
    * @param lor_factor Number of element subdivisions per dimension
    */
   void SetLORFactor(integer lor_factor);
+
+  /**
+   * @brief Computes element thicknesses for volume elements attached to the contact surface
+   */
+  void ComputeElementThicknesses();
+
+  /**
+   * @brief Compute material modulus field at each element
+   *
+   * @param modulus_field An mfem::Coefficient which spatially evaluates to the material modulus value
+   */
+  void SetMaterialModulus(mfem::Coefficient& modulus_field);
+
 private:
   /**
    * @brief Creates and stores data that changes when the RedecompMesh is
@@ -1133,6 +1332,90 @@ private:
    * nullptr otherwise
    */
   std::unique_ptr<ParentField> velocity_;
+
+  /**
+   * @brief Kinematic constant contact penalty for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> kinematic_constant_penalty_1_;
+
+  /**
+   * @brief Kinematic constant contact penalty for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> kinematic_constant_penalty_2_;
+
+  /**
+   * @brief Scaling of kinematic penalty for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> kinematic_penalty_scale_1_;
+
+  /**
+   * @brief Scaling of kinematic penalty for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> kinematic_penalty_scale_2_;
+
+  /**
+   * @brief Rate constant contact penalty for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_constant_penalty_1_;
+
+  /**
+   * @brief Rate constant contact penalty for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_constant_penalty_2_;
+
+  /**
+   * @brief Rate percent penalty as a ratio of kinematic penalty for the first
+   * Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_percent_ratio_1_;
+
+  /**
+   * @brief Rate percent penalty as a ratio of kinematic penalty for the second
+   * Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_percent_ratio_2_;
+
+  /**
+   * @brief Stores element thicknesses for element-based penalty calculations on
+   * the submesh or the LOR mesh (if it exists); nullptr otherwise
+   */
+  std::unique_ptr<mfem::QuadratureFunction> elem_thickness_;
+
+  /**
+   * @brief Element thickness stored on the redecomp mesh
+   */
+  std::unique_ptr<mfem::QuadratureFunction> redecomp_elem_thickness_;
+
+  /**
+   * @brief Element thicknesses for the first Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_elem_thickness_1_;
+
+  /**
+   * @brief Element thicknesses for the second Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_elem_thickness_2_;
+
+  /**
+   * @brief Stores material moduli for element-based penalty calculations on
+   * the submesh or the LOR mesh (if it exists); nullptr otherwise
+   */
+  std::unique_ptr<mfem::QuadratureFunction> material_modulus_;
+
+  /**
+   * @brief Material modulus stored on the redecomp mesh
+   */
+  std::unique_ptr<mfem::QuadratureFunction> redecomp_material_modulus_;
+
+  /**
+   * @brief Material moduli for the first Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_material_modulus_1_;
+
+  /**
+   * @brief Material moduli for the second Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_material_modulus_2_;
 
   /**
    * @brief UpdateData object created upon call to UpdateMeshData()
