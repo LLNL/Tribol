@@ -448,12 +448,69 @@ void MfemMeshData::UpdateMfemMeshData()
   {
     velocity_->UpdateField(update_data_->vector_xfer_);
   }
+  if (elem_thickness_)
+  {
+    if (!material_modulus_)
+    {
+      SLIC_ERROR_ROOT("Kinematic element penalty requires material modulus information. "
+                      "Call registerMfemMaterialModulus() to set this.");
+    }
+    redecomp::RedecompTransfer redecomp_xfer;
+    // set element thickness on redecomp mesh
+    redecomp_elem_thickness_ = std::make_unique<mfem::QuadratureFunction>(
+      new mfem::QuadratureSpace(&GetRedecompMesh(), 0)
+    );
+    redecomp_elem_thickness_->SetOwnsSpace(true);
+    *redecomp_elem_thickness_ = 0.0;
+    redecomp_xfer.TransferToSerial(*elem_thickness_, *redecomp_elem_thickness_);
+    // set element thickness on tribol mesh
+    tribol_elem_thickness_1_ = std::make_unique<axom::Array<double>>(
+      0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
+    for (auto redecomp_e : GetElemMap1())
+    {
+      mfem::Vector quad_val;
+      redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
+      tribol_elem_thickness_1_->push_back(quad_val[0]);
+    }
+    tribol_elem_thickness_2_ = std::make_unique<axom::Array<double>>(
+      0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
+    for (auto redecomp_e : GetElemMap2())
+    {
+      mfem::Vector quad_val;
+      redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
+      tribol_elem_thickness_2_->push_back(quad_val[0]);
+    }
+    // set material modulus on redecomp mesh
+    redecomp_material_modulus_ = std::make_unique<mfem::QuadratureFunction>(
+      new mfem::QuadratureSpace(&GetRedecompMesh(), 0)
+    );
+    redecomp_material_modulus_->SetOwnsSpace(true);
+    *redecomp_material_modulus_ = 0.0;
+    redecomp_xfer.TransferToSerial(*material_modulus_, *redecomp_material_modulus_);
+    // set material modulus on tribol mesh
+    tribol_material_modulus_1_ = std::make_unique<axom::Array<double>>(
+      0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
+    for (auto redecomp_e : GetElemMap1())
+    {
+      mfem::Vector quad_val;
+      redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
+      tribol_material_modulus_1_->push_back(quad_val[0]);
+    }
+    tribol_material_modulus_2_ = std::make_unique<axom::Array<double>>(
+      0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
+    for (auto redecomp_e : GetElemMap2())
+    {
+      mfem::Vector quad_val;
+      redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
+      tribol_material_modulus_2_->push_back(quad_val[0]);
+    }
+  }
 }
 
 void MfemMeshData::GetParentResponse(mfem::Vector& r) const
 {
-    mfem::ParGridFunction r_gridfn(coords_.GetParentGridFn().ParFESpace(), r);
-    GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r_gridfn);
+  mfem::ParGridFunction r_gridfn(coords_.GetParentGridFn().ParFESpace(), r);
+  GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r_gridfn);
 }
 
 void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
@@ -466,6 +523,31 @@ void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
   {
     velocity_ = std::make_unique<ParentField>(velocity);
   }
+}
+
+void MfemMeshData::ClearAllPenaltyData()
+{
+  ClearRatePenaltyData();
+  kinematic_constant_penalty_1_.reset(nullptr);
+  kinematic_constant_penalty_2_.reset(nullptr);
+  kinematic_penalty_scale_1_.reset(nullptr);
+  kinematic_penalty_scale_2_.reset(nullptr);
+  elem_thickness_.reset(nullptr);
+  redecomp_elem_thickness_.reset(nullptr);
+  tribol_elem_thickness_1_.reset(nullptr);
+  tribol_elem_thickness_2_.reset(nullptr);
+  material_modulus_.reset(nullptr);
+  redecomp_material_modulus_.reset(nullptr);
+  tribol_material_modulus_1_.reset(nullptr);
+  tribol_material_modulus_2_.reset(nullptr);
+}
+
+void MfemMeshData::ClearRatePenaltyData()
+{
+  rate_constant_penalty_1_.reset(nullptr);
+  rate_constant_penalty_2_.reset(nullptr);
+  rate_percent_ratio_1_.reset(nullptr);
+  rate_percent_ratio_2_.reset(nullptr);
 }
 
 void MfemMeshData::SetLORFactor(integer lor_factor)
@@ -491,6 +573,99 @@ void MfemMeshData::SetLORFactor(integer lor_factor)
     *submesh_xfer_gridfn_.ParFESpace(),
     *lor_mesh_
   );
+}
+
+void MfemMeshData::ComputeElementThicknesses()
+{
+  auto submesh_thickness = std::make_unique<mfem::QuadratureFunction>(
+    new mfem::QuadratureSpace(&submesh_, 0)
+  );
+  submesh_thickness->SetOwnsSpace(true);
+  // All the elements in the submesh are on the contact surface. The algorithm
+  // works as follows:
+  // 1) For each submesh element, find the corresponding parent volume element
+  // 2) Compute the thickness of the parent volume element (det J at element
+  //    centroid)
+  // 3) If no LOR mesh, store this on a quadrature function on the submesh
+  // 4) If there is an LOR mesh, use the CoarseFineTransformation to find the
+  //    LOR elements linked to the HO mesh and store the thickness of the HO
+  //    element on all of its linked LOR elements.
+  for (int submesh_e{0}; submesh_e < submesh_.GetNE(); ++submesh_e)
+  {
+    // Step 1
+    auto parent_bdr_e = submesh_.GetParentElementIDMap()[submesh_e];
+    auto& parent_mesh = const_cast<mfem::ParMesh&>(parent_mesh_);
+    auto& face_el_tr = *parent_mesh.GetBdrFaceTransformations(parent_bdr_e);
+    auto mask = face_el_tr.GetConfigurationMask();
+    auto parent_e = (mask & mfem::FaceElementTransformations::HAVE_ELEM1) ?
+      face_el_tr.Elem1No :
+      face_el_tr.Elem2No;
+    
+    // Step 2 
+    // normal = (dx/dxi x dx/deta) / || dx/dxi x dx/deta || on parent volume boundary element centroid
+    auto& parent_fes = *coords_.GetParentGridFn().ParFESpace();
+    mfem::Array<int> be_dofs;
+    parent_fes.GetBdrElementDofs(parent_bdr_e, be_dofs);
+    mfem::DenseMatrix elem_coords(parent_mesh_.Dimension(), be_dofs.Size());
+    for (int d{0}; d < parent_mesh_.Dimension(); ++d)
+    {
+      mfem::Array<int> be_vdofs(be_dofs);
+      parent_fes.DofsToVDofs(d, be_vdofs);
+      mfem::Vector elemvect(be_dofs.Size());
+      coords_.GetParentGridFn().GetSubVector(be_vdofs, elemvect);
+      elem_coords.SetRow(d, elemvect);
+    }
+    auto& be = *parent_fes.GetBE(parent_bdr_e);
+    // create an integration point at the element centroid
+    mfem::IntegrationPoint ip;
+    ip.Init(0);
+    mfem::DenseMatrix dshape(be_dofs.Size(), submesh_.Dimension());
+    // calculate shape function derivatives at the surface element centroid
+    be.CalcDShape(ip, dshape);
+    mfem::DenseMatrix dxdxi_mat(parent_mesh_.Dimension(), submesh_.Dimension());
+    mfem::Mult(elem_coords, dshape, dxdxi_mat);
+    mfem::Vector norm(parent_mesh_.Dimension());
+    mfem::CalcOrtho(dxdxi_mat, norm);
+    double h = parent_mesh.GetElementSize(parent_e, norm);
+
+    // Step 3
+    mfem::Vector quad_val;
+    submesh_thickness->GetValues(submesh_e, quad_val);
+    quad_val[0] = h;
+  }
+
+  // Step 4
+  if (GetLORMesh())
+  {
+    elem_thickness_ = std::make_unique<mfem::QuadratureFunction>(
+      new mfem::QuadratureSpace(GetLORMesh(), 0)
+    );
+    elem_thickness_->SetOwnsSpace(true);
+    for (int lor_e{0}; lor_e < GetLORMesh()->GetNE(); ++lor_e)
+    {
+      auto submesh_e = GetLORMesh()->GetRefinementTransforms()
+        .embeddings[lor_e].parent;
+      mfem::Vector submesh_val;
+      submesh_thickness->GetValues(submesh_e, submesh_val);
+      mfem::Vector lor_val;
+      elem_thickness_->GetValues(lor_e, lor_val);
+      lor_val[0] = submesh_val[0];
+    }
+  }
+  else
+  {
+    elem_thickness_ = std::move(submesh_thickness);
+  }
+}
+
+void MfemMeshData::SetMaterialModulus(mfem::Coefficient& modulus_field)
+{
+  material_modulus_ = std::make_unique<mfem::QuadratureFunction>(
+    new mfem::QuadratureSpace(GetLORMesh() ? GetLORMesh() : &submesh_, 0)
+  );
+  material_modulus_->SetOwnsSpace(true);
+  // TODO: why isn't Project() const?
+  modulus_field.Project(*material_modulus_);
 }
 
 MfemMeshData::UpdateData::UpdateData(

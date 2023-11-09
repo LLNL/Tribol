@@ -35,7 +35,7 @@ set( tribol_tests
      tribol_twb_integ.cpp
      )
 
-set(test_depends axom mfem tribol gtest)
+set(test_depends tribol gtest)
 blt_list_append(TO test_depends ELEMENTS cuda IF ENABLE_CUDA )
 
 foreach( test ${tribol_tests} )
@@ -71,7 +71,7 @@ if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
       redecomp_sparsematrix.cpp
       )
 
-  set(redecomp_test_depends axom mfem redecomp tribol gtest)
+  set(redecomp_test_depends tribol gtest)
   blt_list_append(TO redecomp_test_depends ELEMENTS cuda IF ENABLE_CUDA )
 
   foreach( test ${redecomp_tests} )
@@ -109,7 +109,7 @@ if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
       tribol_mfem_mortar_lm.cpp
       )
 
-  set(combined_test_depends axom mfem redecomp tribol gtest)
+  set(combined_test_depends tribol gtest)
   blt_list_append(TO combined_test_depends ELEMENTS cuda IF ENABLE_CUDA )
 
   foreach( test ${combined_tests} )
