@@ -10,7 +10,7 @@ set( contact_examples
      )
 
 
-set(example_depends axom tribol axom::cli11 axom::fmt)
+set(example_depends tribol)
 blt_list_append(TO example_depends ELEMENTS cuda IF ENABLE_CUDA )
 
 foreach( example ${contact_examples} )
@@ -80,7 +80,7 @@ if ( BUILD_REDECOMP )
         NAME       ${example_name}_ex
         SOURCES    ${example}
         OUTPUT_DIR ${EXAMPLE_OUTPUT_DIRECTORY}
-        DEPENDS_ON axom mfem mpi redecomp tribol
+        DEPENDS_ON tribol
         )
 
     if (ENABLE_CUDA)
@@ -107,7 +107,7 @@ if ( BUILD_REDECOMP )
         NAME       ${example_name}_ex
         SOURCES    ${example}
         OUTPUT_DIR ${EXAMPLE_OUTPUT_DIRECTORY}
-        DEPENDS_ON axom mfem mpi redecomp tribol
+        DEPENDS_ON tribol
         )
 
     if (ENABLE_CUDA)
