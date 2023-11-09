@@ -19,21 +19,31 @@ namespace redecomp {
  * by applying it to a field and comparing the result to an analytic solution for the operator.
  *
  */
-class SparseMatrixTest : public testing::TestWithParam<std::pair<int, double>> {
+class SparseMatrixTest : public testing::TestWithParam<std::tuple<int, int, double>> {
 protected:
   double max_error_;
   void SetUp() override
   {
-    auto ref_levels = GetParam().first;
-    auto filter_radius = GetParam().second;
+    auto dim = std::get<0>(GetParam());
+    auto ref_levels = std::get<1>(GetParam());
+    auto filter_radius = std::get<2>(GetParam());
     
-    auto serial_mesh = mfem::Mesh::MakeCartesian2D(4, 4, mfem::Element::Type::QUADRILATERAL);
-    auto space_dim = serial_mesh.SpaceDimension();
-    auto dim = serial_mesh.Dimension();
-    for (int i{0}; i < ref_levels; ++i)
-    {
+    double side_length = 1.0;
+    int n_elem_per_dim = 4;
+    mfem::Mesh serial_mesh;
+    if (dim == 2) {
+      serial_mesh = mfem::Mesh::MakeCartesian2D(n_elem_per_dim, n_elem_per_dim, mfem::Element::Type::QUADRILATERAL, false, side_length, side_length);
+    }
+    else {
+      serial_mesh = mfem::Mesh::MakeCartesian3D(n_elem_per_dim, n_elem_per_dim, n_elem_per_dim, mfem::Element::Type::HEXAHEDRON, side_length, side_length, side_length);
+    }
+    // refine mesh
+    for (int i{0}; i < ref_levels; ++i){
       serial_mesh.UniformRefinement();
     }
+    n_elem_per_dim *= std::pow(2, ref_levels);
+    double dx = side_length / n_elem_per_dim;
+
     mfem::ParMesh par_mesh { MPI_COMM_WORLD, serial_mesh };
     mfem::L2_FECollection l2_elems { 0, dim };
     mfem::ParFiniteElementSpace par_fes { &par_mesh, &l2_elems };
@@ -49,14 +59,14 @@ protected:
     };
 
     // compute sparse matrix on redecomp_fes (rows and col)
-    mfem::SparseMatrix rho_redecomp { redecomp_fes.GetVSize(), redecomp_fes.GetVSize() };
+    mfem::SparseMatrix W_redecomp { redecomp_fes.GetVSize(), redecomp_fes.GetVSize() };
 
     auto filter_kernel = [&filter_radius](const mfem::Vector &xi, const mfem::Vector &xj) {
       return std::max(0.0, filter_radius - xi.DistanceTo(xj));
     };
 
     int n_local_elem = redecomp_mesh.GetNE();
-    mfem::Vector xi(space_dim), xj(space_dim);
+    mfem::Vector xi(dim), xj(dim);
     std::vector<int> n_row_entries(n_local_elem);
 
     // loop over each element to form a row of the matrix
@@ -69,38 +79,92 @@ protected:
         redecomp_mesh.GetElementCenter(j, xj);
         double Wij = filter_kernel(xi, xj);
         if (Wij > 0.0) {
-          rho_redecomp.Add(i, j, Wij);
+          W_redecomp.Add(i, j, Wij);
           n_row_entries[i]++;
         }
       }
     }
 
-    rho_redecomp.Finalize();
+    W_redecomp.Finalize();
 
     // normalize each row to conserve mass
     for (int i=0; i<n_local_elem; i++) {
-      mfem::Vector row_data(rho_redecomp.GetRowEntries(i), n_row_entries[i]);
+      mfem::Vector row_data(W_redecomp.GetRowEntries(i), n_row_entries[i]);
       row_data /= row_data.Norml1();
     }
 
     // transfer to mfem::ParMesh
-    auto rho = matrix_xfer.TransferToParallel(rho_redecomp);
+    auto W = matrix_xfer.TransferToParallel(W_redecomp);
 
     // test operator
+    auto x_function = [&](const mfem::Vector&x) {
+      double pi = 3.1415;
+      double f = 0.0;
+      for (int i=0; i<dim; i++) {
+        f += std::sin(2.*pi*x[i]/side_length);
+      }
+      return 0.5 + 0.5*f/dim;
+    };
+
+    auto xf_function = [&](const mfem::Vector&x) {
+      mfem::Vector xj(dim);
+      double value = 0.0;
+      double denom = 0.0;
+      if (dim == 2) {
+        for (int i=0; i<n_elem_per_dim; i++) {
+          xj(0) = dx/2. + i*dx;
+          for (int j=0; j<n_elem_per_dim; j++) {
+            xj(1) = dx/2. + j*dx;
+            value += filter_kernel(x, xj)*x_function(xj);
+            denom += filter_kernel(x, xj);
+          }
+        }
+      }
+      else {
+        for (int i=0; i<n_elem_per_dim; i++) {
+          xj(0) = dx/2. + i*dx;
+          for (int j=0; j<n_elem_per_dim; j++) {
+            xj(1) = dx/2. + j*dx;
+              for (int k=0; k<n_elem_per_dim; k++) {
+                xj(2) = dx/2. + k*dx;
+                value += filter_kernel(x, xj)*x_function(xj);
+                denom += filter_kernel(x, xj);
+            }
+          }
+        }
+      }
+      return value / denom;
+    };
+
+    mfem::FunctionCoefficient xCoef(x_function);
+    mfem::FunctionCoefficient xfCoef(xf_function);
+    
+    // compare filtered filed with analytical solution
     mfem::ParGridFunction x(&par_fes);
-    mfem::ParGridFunction xf(&par_fes);
+    mfem::ParGridFunction xf_filt(&par_fes);
+    mfem::ParGridFunction xf_func(&par_fes);
 
-    mfem::FunctionCoefficient x_func([](const mfem::Vector&x) {
-      return ((x[0] > 0.5) && (x[1] > 0.5))? 1.0 : 0.0;
-    });
-    
-    x.ProjectCoefficient(x_func);
-    
-    rho->Mult(x, xf);
+    x.ProjectCoefficient(xCoef);
+    W->Mult(x, xf_filt);
+    xf_func.ProjectCoefficient(xfCoef);
 
-    // TODO: compute error
+    mfem::VisItDataCollection visit_dc("test_look", &par_mesh);
+    visit_dc.RegisterField("x", &x);
+    visit_dc.RegisterField("xf_filt", &xf_filt);
+    visit_dc.RegisterField("xf_func", &xf_func);
+    visit_dc.Save();
 
-    max_error_ = 0.0; // TODO: store l2 error here
+    std::cout << "filt" << std::endl;
+    xf_filt.Print();
+    std::cout << "func" << std::endl;
+    xf_func.Print();
+
+    // compute error
+    mfem::Vector error  = xf_filt;
+                 error -= xf_func;
+    std::cout << "error" << std::endl;
+    error.Print();
+    max_error_ = mfem::InnerProduct(par_mesh.GetComm(), error, error);
   }
 };
 
@@ -112,8 +176,23 @@ TEST_P(SparseMatrixTest, mass_matrix_transfer)
 }
 
 INSTANTIATE_TEST_SUITE_P(redecomp, SparseMatrixTest, testing::Values(
-  std::make_pair(3, 0.2)
-  // TODO: add more test combinations here...
+  //std::make_tuple(2, 0, 0.1),
+  //std::make_tuple(2, 0, 0.4),
+
+  //std::make_tuple(2, 1, 0.1),
+  //std::make_tuple(2, 1, 0.4),
+
+  //std::make_tuple(2, 2, 0.1),
+  //std::make_tuple(2, 2, 0.4)
+  //std::make_tuple(2, 3, 0.1),
+  //std::make_tuple(2, 3, 0.4),
+
+  //std::make_tuple(3, 0, 0.1),
+  //std::make_tuple(3, 0, 0.4),
+  //std::make_tuple(3, 1, 0.1),
+  std::make_tuple(3, 1, 0.4)
+  //std::make_tuple(3, 2, 0.1),
+  //std::make_tuple(3, 2, 0.4)
 ));
 
 }  // namespace redecomp

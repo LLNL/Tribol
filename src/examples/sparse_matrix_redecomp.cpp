@@ -83,7 +83,11 @@ int main( int argc, char** argv )
   SLIC_INFO_ROOT("Creating mfem::ParMesh...");
   // read serial mesh
   //auto mesh = std::make_unique<mfem::Mesh>(mesh_file.c_str(), 1, 1);
-  auto mesh = mfem::Mesh::MakeCartesian2D(4, 4, mfem::Element::Type::QUADRILATERAL);
+  //auto mesh = mfem::Mesh::MakeCartesian2D(n_elem_per_dim, n_elem_per_dim, mfem::Element::Type::QUADRILATERAL, false, side_length, side_length);
+  int side_length = 1.0;
+  int n_elem_per_dim = 4;
+  double dx = side_length / n_elem_per_dim;
+  auto mesh = mfem::Mesh::MakeCartesian3D(n_elem_per_dim, n_elem_per_dim, n_elem_per_dim, mfem::Element::Type::HEXAHEDRON, side_length, side_length, side_length);
 
   // refine serial mesh
   for (int i{0}; i < ref_levels; ++i)
@@ -171,17 +175,50 @@ int main( int argc, char** argv )
   mfem::ParGridFunction x(&pmesh_space);
   mfem::ParGridFunction xf(&pmesh_space);
 
-  mfem::FunctionCoefficient x_func([](const mfem::Vector&x) {
-    return ((x[0] > 0.5) && (x[1] > 0.5))? 1.0 : 0.0;
-  });
+  auto x_function = [&](const mfem::Vector&x) {
+    double pi = 3.1415;
+    double f = 0.0;
+    for (int i=0; i<dim; i++) {
+      f += std::sin(2.*pi*x[i]/side_length);
+    }
+    return 0.5 + 0.5*f/dim;
+  };
+
+  mfem::FunctionCoefficient xCoef(x_function);
   
-  x.ProjectCoefficient(x_func);
+  x.ProjectCoefficient(xCoef);
   
   Mmat_xfer->Mult(x, xf);
 
   mfem::VisItDataCollection visit_dc("test_filter", pmesh.get());
   visit_dc.RegisterField("x", &x);
   visit_dc.RegisterField("xf", &xf);
+
+  auto xf_function = [&](const mfem::Vector&x) {
+    mfem::Vector xj(dim);
+    double value = 0.0;
+    double denom = 0.0;
+    for (int i=0; i<n_elem_per_dim; i++) {
+      xj(0) = dx/2. + i*dx;
+      for (int j=0; j<n_elem_per_dim; j++) {
+        xj(1) = dx/2. + j*dx;
+        value += filter_kernel(x, xj)*x_function(xj);
+        denom += filter_kernel(x, xj);
+      }
+    }
+    return value / denom;
+  };
+
+  mfem::FunctionCoefficient xfCoef(xf_function);
+
+  mfem::ParGridFunction xf_analytical(&pmesh_space);
+  xf_analytical.ProjectCoefficient(xfCoef);
+
+  mfem::Vector error = xf_analytical;
+  error -= xf;
+  std::cout << "rank = " << rank << ", error = " << error.Norml2() << std::endl;
+
+  visit_dc.RegisterField("xa", &xf_analytical);
   visit_dc.Save();
 
   // cleanup
