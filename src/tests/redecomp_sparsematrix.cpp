@@ -18,6 +18,9 @@ namespace redecomp {
  * @brief This test transfers an mfem::SparseMatrix whose rows and colums are associated with an order-0 L2 field on a
  * RedecompMesh to an mfem::HypreParMatrix on the associated parent mfem::ParMesh.  The transferred matrix is verified
  * by applying it to a field and comparing the result to an analytic solution for the operator.
+ * 
+ * @details This test relies on using a cartesian mesh with uniform element size to obtain an analytical definition of the filtered field.
+ * Do not change the mesh to anything other than a square without adjusting the analytical filtered definition accordingly.
  *
  */
 class SparseMatrixTest : public testing::TestWithParam<std::tuple<int, int, double>> {
@@ -155,24 +158,6 @@ protected:
     mfem::ParGridFunction error  = xf_filt;
                           error -= xf_func;
     max_error_ = mfem::InnerProduct(par_mesh.GetComm(), error, error);
-
-    // debug output
-    // mfem::VisItDataCollection redecomp_dc { "redecomp_rank" + std::to_string(par_mesh.GetMyRank()), &redecomp_mesh };
-    // redecomp_dc.Save();
-
-    // mfem::VisItDataCollection visit_dc("test_look", &par_mesh);
-    // visit_dc.RegisterField("x", &x);
-    // visit_dc.RegisterField("xf_filt", &xf_filt);
-    // visit_dc.RegisterField("xf_func", &xf_func);
-    // visit_dc.RegisterField("error", &error);
-    // visit_dc.Save();
-
-    // std::cout << "filt" << std::endl;
-    // xf_filt.Print();
-    // std::cout << "func" << std::endl;
-    // xf_func.Print();
-    // std::cout << "error" << std::endl;
-    // error.Print();
   }
 };
 
@@ -186,15 +171,12 @@ TEST_P(SparseMatrixTest, mass_matrix_transfer)
 INSTANTIATE_TEST_SUITE_P(redecomp, SparseMatrixTest, testing::Values(
   std::make_tuple(2, 0, 0.1),
   std::make_tuple(2, 0, 0.4),
-
   std::make_tuple(2, 1, 0.1),
   std::make_tuple(2, 1, 0.4),
-
   std::make_tuple(2, 2, 0.1),
   std::make_tuple(2, 2, 0.4),
   std::make_tuple(2, 3, 0.1),
   std::make_tuple(2, 3, 0.4),
-
   std::make_tuple(3, 0, 0.1),
   std::make_tuple(3, 0, 0.4),
   std::make_tuple(3, 1, 0.1),
