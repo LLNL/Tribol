@@ -11,11 +11,11 @@
 #------------------------------------------------------------------------------
 if(DEFINED ENV{SPACK_CC})
 
-  set(CMAKE_C_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_10_05_11_51_13/spack/lib/spack/env/gcc/gcc" CACHE PATH "")
+  set(CMAKE_C_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_11_05_14_34_24/spack/lib/spack/env/gcc/gcc" CACHE PATH "")
 
-  set(CMAKE_CXX_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_10_05_11_51_13/spack/lib/spack/env/gcc/g++" CACHE PATH "")
+  set(CMAKE_CXX_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_11_05_14_34_24/spack/lib/spack/env/gcc/g++" CACHE PATH "")
 
-  set(CMAKE_Fortran_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_10_05_11_51_13/spack/lib/spack/env/gcc/gfortran" CACHE PATH "")
+  set(CMAKE_Fortran_COMPILER "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_11_05_14_34_24/spack/lib/spack/env/gcc/gfortran" CACHE PATH "")
 
 else()
 
@@ -59,7 +59,7 @@ set(BUILD_REDECOMP ON CACHE BOOL "")
 # TPLs
 #------------------------------------------------------------------------------
 
-set(TPL_ROOT "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_10_05_11_51_13/gcc-10.3.1" CACHE PATH "")
+set(TPL_ROOT "/usr/WS2/smithdev/libs/serac/toss_4_x86_64_ib/2023_11_05_14_34_24/gcc-10.3.1" CACHE PATH "")
 
 set(AXOM_DIR "${TPL_ROOT}/axom-0.8.1.0-kktqvdti6kvh7gntt7xueefm7oad4sri" CACHE PATH "")
 
@@ -71,15 +71,15 @@ set(UMPIRE_DIR "${TPL_ROOT}/umpire-2022.10.0-gayss6vwjqfnw76p5cvti5lvhvfprzar" C
 # Devtools
 #------------------------------------------------------------------------------
 
-set(DEVTOOLS_ROOT "/usr/WS2/smithdev/devtools/toss_4_x86_64_ib/2023_06_20_15_40_50/._view/stgut4ihv3bnadn3coy5fjvrxd5iymtf" CACHE PATH "")
+set(DEVTOOLS_ROOT "/usr/WS2/smithdev/devtools/toss_4_x86_64_ib/2023_11_04_22_38_05/._view/i6qqmxmihtba7m3eojwix64slyuqqcsv" CACHE PATH "")
 
-set(CLANGFORMAT_EXECUTABLE "${DEVTOOLS_ROOT}/python-3.10.10/bin/clang-format" CACHE PATH "")
+set(CLANGFORMAT_EXECUTABLE "${DEVTOOLS_ROOT}/python-3.10.12/bin/clang-format" CACHE PATH "")
 
-set(CLANGTIDY_EXECUTABLE "${DEVTOOLS_ROOT}/python-3.10.10/bin/clang-tidy" CACHE PATH "")
+set(CLANGTIDY_EXECUTABLE "${DEVTOOLS_ROOT}/python-3.10.12/bin/clang-tidy" CACHE PATH "")
 
 set(ENABLE_DOCS ON CACHE BOOL "")
 
-set(SPHINX_EXECUTABLE "${DEVTOOLS_ROOT}/python-3.10.10/bin/sphinx-build" CACHE PATH "")
+set(SPHINX_EXECUTABLE "${DEVTOOLS_ROOT}/python-3.10.12/bin/sphinx-build" CACHE PATH "")
 
 set(CPPCHECK_EXECUTABLE "${DEVTOOLS_ROOT}/cppcheck-2.9/bin/cppcheck" CACHE PATH "")
 
