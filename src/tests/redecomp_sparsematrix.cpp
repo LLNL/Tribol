@@ -7,6 +7,7 @@
 
 #include "mfem.hpp"
 
+#include "redecomp/RedecompMesh.hpp"
 #include "tribol/config.hpp"
 #include "redecomp/redecomp.hpp"
 #include "redecomp/utils/ArrayUtility.hpp"
@@ -32,10 +33,12 @@ protected:
     int n_elem_per_dim = 4;
     mfem::Mesh serial_mesh;
     if (dim == 2) {
-      serial_mesh = mfem::Mesh::MakeCartesian2D(n_elem_per_dim, n_elem_per_dim, mfem::Element::Type::QUADRILATERAL, false, side_length, side_length);
+      serial_mesh = mfem::Mesh::MakeCartesian2D(n_elem_per_dim, n_elem_per_dim, 
+        mfem::Element::Type::QUADRILATERAL, false, side_length, side_length);
     }
     else {
-      serial_mesh = mfem::Mesh::MakeCartesian3D(n_elem_per_dim, n_elem_per_dim, n_elem_per_dim, mfem::Element::Type::HEXAHEDRON, side_length, side_length, side_length);
+      serial_mesh = mfem::Mesh::MakeCartesian3D(n_elem_per_dim, n_elem_per_dim, n_elem_per_dim, 
+        mfem::Element::Type::HEXAHEDRON, side_length, side_length, side_length);
     }
     // refine mesh
     for (int i{0}; i < ref_levels; ++i){
@@ -49,7 +52,7 @@ protected:
     mfem::ParFiniteElementSpace par_fes { &par_mesh, &l2_elems };
 
     // create RedecompMesh and fe space and sparse matrix transfer object
-    redecomp::RedecompMesh redecomp_mesh { par_mesh };
+    redecomp::RedecompMesh redecomp_mesh { par_mesh, redecomp::RedecompMesh::RCB, filter_radius };
     mfem::FiniteElementSpace redecomp_fes { &redecomp_mesh, &l2_elems };
     redecomp::SparseMatrixTransfer matrix_xfer {
       par_fes,
@@ -148,23 +151,28 @@ protected:
     W->Mult(x, xf_filt);
     xf_func.ProjectCoefficient(xfCoef);
 
-    mfem::VisItDataCollection visit_dc("test_look", &par_mesh);
-    visit_dc.RegisterField("x", &x);
-    visit_dc.RegisterField("xf_filt", &xf_filt);
-    visit_dc.RegisterField("xf_func", &xf_func);
-    visit_dc.Save();
-
-    std::cout << "filt" << std::endl;
-    xf_filt.Print();
-    std::cout << "func" << std::endl;
-    xf_func.Print();
-
     // compute error
-    mfem::Vector error  = xf_filt;
-                 error -= xf_func;
-    std::cout << "error" << std::endl;
-    error.Print();
+    mfem::ParGridFunction error  = xf_filt;
+                          error -= xf_func;
     max_error_ = mfem::InnerProduct(par_mesh.GetComm(), error, error);
+
+    // debug output
+    // mfem::VisItDataCollection redecomp_dc { "redecomp_rank" + std::to_string(par_mesh.GetMyRank()), &redecomp_mesh };
+    // redecomp_dc.Save();
+
+    // mfem::VisItDataCollection visit_dc("test_look", &par_mesh);
+    // visit_dc.RegisterField("x", &x);
+    // visit_dc.RegisterField("xf_filt", &xf_filt);
+    // visit_dc.RegisterField("xf_func", &xf_func);
+    // visit_dc.RegisterField("error", &error);
+    // visit_dc.Save();
+
+    // std::cout << "filt" << std::endl;
+    // xf_filt.Print();
+    // std::cout << "func" << std::endl;
+    // xf_func.Print();
+    // std::cout << "error" << std::endl;
+    // error.Print();
   }
 };
 
@@ -176,23 +184,23 @@ TEST_P(SparseMatrixTest, mass_matrix_transfer)
 }
 
 INSTANTIATE_TEST_SUITE_P(redecomp, SparseMatrixTest, testing::Values(
-  //std::make_tuple(2, 0, 0.1),
-  //std::make_tuple(2, 0, 0.4),
+  std::make_tuple(2, 0, 0.1),
+  std::make_tuple(2, 0, 0.4),
 
-  //std::make_tuple(2, 1, 0.1),
-  //std::make_tuple(2, 1, 0.4),
+  std::make_tuple(2, 1, 0.1),
+  std::make_tuple(2, 1, 0.4),
 
-  //std::make_tuple(2, 2, 0.1),
-  //std::make_tuple(2, 2, 0.4)
-  //std::make_tuple(2, 3, 0.1),
-  //std::make_tuple(2, 3, 0.4),
+  std::make_tuple(2, 2, 0.1),
+  std::make_tuple(2, 2, 0.4),
+  std::make_tuple(2, 3, 0.1),
+  std::make_tuple(2, 3, 0.4),
 
-  //std::make_tuple(3, 0, 0.1),
-  //std::make_tuple(3, 0, 0.4),
-  //std::make_tuple(3, 1, 0.1),
-  std::make_tuple(3, 1, 0.4)
-  //std::make_tuple(3, 2, 0.1),
-  //std::make_tuple(3, 2, 0.4)
+  std::make_tuple(3, 0, 0.1),
+  std::make_tuple(3, 0, 0.4),
+  std::make_tuple(3, 1, 0.1),
+  std::make_tuple(3, 1, 0.4),
+  std::make_tuple(3, 2, 0.1),
+  std::make_tuple(3, 2, 0.4)
 ));
 
 }  // namespace redecomp
