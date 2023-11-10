@@ -5,12 +5,13 @@
 
 #include <gtest/gtest.h>
 
+#include <mpi.h>
+
 #include "mfem.hpp"
 
-#include "redecomp/RedecompMesh.hpp"
 #include "tribol/config.hpp"
+
 #include "redecomp/redecomp.hpp"
-#include "redecomp/utils/ArrayUtility.hpp"
 
 namespace redecomp {
 
@@ -19,8 +20,9 @@ namespace redecomp {
  * RedecompMesh to an mfem::HypreParMatrix on the associated parent mfem::ParMesh.  The transferred matrix is verified
  * by applying it to a field and comparing the result to an analytic solution for the operator.
  * 
- * @details This test relies on using a cartesian mesh with uniform element size to obtain an analytical definition of the filtered field.
- * Do not change the mesh to anything other than a square without adjusting the analytical filtered definition accordingly.
+ * @details This test relies on using a cartesian mesh with uniform element size to obtain an analytical definition of
+ * the filtered field. Do not change the mesh to anything other than a square without adjusting the analytical filtered
+ * definition accordingly.
  *
  */
 class SparseMatrixTest : public testing::TestWithParam<std::tuple<int, int, double>> {
@@ -150,7 +152,7 @@ protected:
       return value / denom;
     };
 
-     // compare filtered filed with analytical solution
+    // compare filtered filed with analytical solution
     mfem::FunctionCoefficient xCoef(x_function);
     mfem::FunctionCoefficient xfCoef(xf_function);
     mfem::ParGridFunction x(&par_fes);
