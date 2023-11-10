@@ -77,9 +77,8 @@ int main( int argc, char** argv )
   SLIC_INFO_ROOT(axom::fmt::format("filter-radius: {0}\n", filter_radius));
 
   SLIC_INFO_ROOT("Creating mfem::ParMesh...");
-  double side_length { 1.0 };
-  int n_elem_per_dim { 4 };
-  double dx { side_length / n_elem_per_dim };
+  double side_length { 1.0 }; // side length of square domain
+  int n_elem_per_dim { 4 };   // number of elements per dimension
   mfem::Mesh serial_mesh;
   if (dim == 2) {
     serial_mesh = mfem::Mesh::MakeCartesian2D(n_elem_per_dim, n_elem_per_dim, 
@@ -94,26 +93,22 @@ int main( int argc, char** argv )
   {
     serial_mesh.UniformRefinement();
   }
+  // update the number of elements per dimension to reflect the refined mesh
+  n_elem_per_dim *= std::pow(2, ref_levels);
+  // compute the element side length
+  double dx { side_length / n_elem_per_dim };
   // create parallel mesh from serial
   mfem::ParMesh par_mesh { MPI_COMM_WORLD, serial_mesh };
-  // further refinement of parallel mesh
-  {
-    int par_ref_levels = 0;
-    for (int i{0}; i < par_ref_levels; ++i)
-    {
-      par_mesh.UniformRefinement();
-    }
-  }
 
   SLIC_INFO_ROOT("Creating redecomp::RedecompMesh...");
   // the last argument sets the ghost radius == filter_radius
   redecomp::RedecompMesh redecomp_mesh { par_mesh, redecomp::RedecompMesh::RCB, filter_radius };
   
   SLIC_INFO_ROOT("Creating finite element spaces...");
-  // create finite element space on parmesh (1 point per element)
+  // create 0-order L2 finite element space on parmesh (1 point per element)
   mfem::L2_FECollection l2_elems { 0, par_mesh.SpaceDimension() };
   mfem::ParFiniteElementSpace par_fes { &par_mesh, &l2_elems };
-  // create finite element space on redecomp mesh (1 point per element)
+  // create 0-order L2 finite element space on redecomp mesh (1 point per element)
   mfem::FiniteElementSpace redecomp_fes { &redecomp_mesh, &l2_elems };
 
   SLIC_INFO_ROOT("Creating sparse matrix transfer operator...");
