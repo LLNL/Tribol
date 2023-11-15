@@ -98,14 +98,14 @@ public:
    * 
    * @return mfem::ParGridFunction& 
    */
-  mfem::ParGridFunction& GetLORGridFn() { return lor_gridfn_; }
+  mfem::ParGridFunction& GetLORGridFn() { return *lor_gridfn_; }
 
   /**
    * @brief Access the local low-order grid function on the LOR mesh
    * 
    * @return const mfem::ParGridFunction& 
    */
-  const mfem::ParGridFunction& GetLORGridFn() const { return lor_gridfn_; }
+  const mfem::ParGridFunction& GetLORGridFn() const { return *lor_gridfn_; }
 
 private:
   /**
@@ -116,7 +116,7 @@ private:
   * @param vdim Vector dimension of the grid function
   * @return mfem::ParGridFunction on lor_mesh, with lor_fec and vdim specified
   */
-  static mfem::ParGridFunction CreateLORGridFunction(
+  static std::unique_ptr<mfem::ParGridFunction> CreateLORGridFunction(
     mfem::ParMesh& lor_mesh,
     std::unique_ptr<mfem::FiniteElementCollection> lor_fec,
     integer vdim
@@ -125,7 +125,7 @@ private:
   /**
    * @brief Local low-order grid function on the LOR mesh 
    */
-  mfem::ParGridFunction lor_gridfn_;
+  std::unique_ptr<mfem::ParGridFunction> lor_gridfn_;
 
   /**
    * @brief Low-order refined <-> higher-order coarse transfer object
