@@ -267,33 +267,9 @@ spack:
         prefix: /usr
       buildable: false
 
-    # External dependencies for SCR
-    lsf:
-      buildable: False
-      externals:
-      - spec: lsf@10.1
-        prefix: /opt/ibm/spectrumcomputing/lsf/10.1
-    slurm:
-      buildable: false
-      externals:
-      - spec: slurm@20
-        prefix: /usr
-    libyogrt:
-      buildable: false
-      externals:
-      - spec: libyogrt@1.0.0 scheduler=lsf
-        prefix: /usr
-      - spec: libyogrt@1.0.0 scheduler=slurm
-        prefix: /usr
-    pdsh:
-      buildable: false
-      externals:
-      - spec: pdsh@2.33
-        prefix: /usr
-
     # Globally lock version of third party libraries
     axom:
-      variants: ~examples~fortran~lua~tools
+      variants: ~openmp~examples~fortran~lua~tools
     camp:
       require: "@2023.06.0"
     conduit:
@@ -305,11 +281,9 @@ spack:
     mfem:
       require: "@4.5.2"
     raja:
-      require: "@2023.06.0~shared~examples~exercises"
-    scr:
-      require: "@3.0.1~shared~tests~examples"
+      require: "@2023.06.0~openmp~shared~examples~exercises"
     umpire:
-      require: "@2023.06.0~shared~examples"
+      require: "@2023.06.0~openmp~shared~examples"
 
     # Globally lock in versions of Devtools
     cmake:
