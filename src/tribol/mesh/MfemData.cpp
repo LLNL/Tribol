@@ -22,23 +22,21 @@ SubmeshLORTransfer::SubmeshLORTransfer(
     std::make_unique<mfem::H1_FECollection>(1, lor_mesh.SpaceDimension()),
     submesh_fes.GetVDim()
   ) },
-  lor_xfer_ { submesh_fes, *lor_gridfn_.ParFESpace() }
-{
-  SLIC_WARNING_ROOT("LOR support is experimental at this time.");
-}
+  lor_xfer_ { submesh_fes, *lor_gridfn_->ParFESpace() }
+{}
 
 void SubmeshLORTransfer::TransferToLORGridFn(
   const mfem::ParGridFunction& submesh_src
 )
 {
-  SubmeshToLOR(submesh_src, lor_gridfn_);
+  SubmeshToLOR(submesh_src, *lor_gridfn_);
 }
 
 void SubmeshLORTransfer::TransferFromLORGridFn(
   mfem::ParGridFunction& submesh_dst
 ) const
 {
-  lor_xfer_.ForwardOperator().MultTranspose(lor_gridfn_, submesh_dst);
+  lor_xfer_.ForwardOperator().MultTranspose(*lor_gridfn_, submesh_dst);
 }
 
 void SubmeshLORTransfer::SubmeshToLOR(
@@ -49,21 +47,21 @@ void SubmeshLORTransfer::SubmeshToLOR(
   lor_xfer_.ForwardOperator().Mult(submesh_src, lor_dst);
 }
 
-mfem::ParGridFunction SubmeshLORTransfer::CreateLORGridFunction(
+std::unique_ptr<mfem::ParGridFunction> SubmeshLORTransfer::CreateLORGridFunction(
   mfem::ParMesh& lor_mesh,
   std::unique_ptr<mfem::FiniteElementCollection> lor_fec,
   integer vdim
 )
 {
-  mfem::ParGridFunction lor_gridfn {
+  auto lor_gridfn = std::make_unique<mfem::ParGridFunction>( 
     new mfem::ParFiniteElementSpace(
       &lor_mesh,
       lor_fec.get(),
       vdim,
       mfem::Ordering::byNODES
     )
-  };
-  lor_gridfn.MakeOwner(lor_fec.release());
+  );
+  lor_gridfn->MakeOwner(lor_fec.release());
   return lor_gridfn;
 }
 
