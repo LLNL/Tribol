@@ -72,13 +72,13 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     with when("+redecomp"):
         depends_on("mfem+metis+mpi")
-        # Further testing needed with rocm
-        depends_on("mfem+raja", when="+raja~rocm")
-        depends_on("mfem+umpire", when="+umpire~rocm")
+        depends_on("mfem+raja", when="+raja")
+        depends_on("mfem+umpire", when="+umpire")
         depends_on("axom+raja", when="+raja")
         depends_on("axom+umpire", when="+umpire")
 
     for val in CudaPackage.cuda_arch_values:
+        depends_on("mfem cuda_arch={0}".format(val), when="cuda_arch={0}".format(val))
         depends_on("axom cuda_arch={0}".format(val), when="cuda_arch={0}".format(val))
         depends_on("raja cuda_arch={0}".format(val), when="+raja cuda_arch={0}".format(val))
         depends_on("umpire cuda_arch={0}".format(val), when="+umpire cuda_arch={0}".format(val))
