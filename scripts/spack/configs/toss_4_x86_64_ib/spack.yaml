@@ -41,6 +41,19 @@ spack:
         fc: /usr/tce/packages/gcc/gcc-10.3.1/bin/gfortran
       spec: gcc@10.3.1
       target: x86_64
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: rhel8
+      paths:
+        cc: /usr/tce/packages/intel/intel-2022.1.0/compiler/2022.1.0/linux/bin/icx
+        cxx: /usr/tce/packages/intel/intel-2022.1.0/compiler/2022.1.0/linux/bin/icpx
+        f77: /usr/tce/packages/intel/intel-2022.1.0/compiler/2022.1.0/linux/bin/ifx
+        fc: /usr/tce/packages/intel/intel-2022.1.0/compiler/2022.1.0/linux/bin/ifx
+      spec: intel@2022.1.0
+      target: x86_64
 
   packages:
     all:
@@ -81,6 +94,8 @@ spack:
         prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-clang-14.0.6
       - spec: mvapich2@2.3.6%gcc@10.3.1 process_managers=slurm arch=linux-rhel8-ivybridge
         prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-gcc-10.3.1
+      - spec: mvapich2@2.3.6%intel@2022.1.0 process_managers=slurm arch=linux-rhel8-ivybridge
+        prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-intel-2022.1.0
 
     netlib-lapack:
       buildable: false
@@ -246,6 +261,14 @@ spack:
       - spec: zlib@1.2.11
         prefix: /usr
 
+    # Globally lock version of third party libraries
+    conduit:
+      require: "@0.8.8~shared~test~examples~utilities"
+    raja:
+      require: "@2023.06.0~shared~examples~exercises~openmp"
+    umpire:
+      require: "@2023.06.0~shared~examples~openmp"
+
   # Lock in versions of Devtools
     cmake:
       version: [3.23.1]
@@ -253,51 +276,33 @@ spack:
       externals:
       - spec: cmake@3.23.1
         prefix: /usr/tce
-    cppcheck:
-      version: [2.9]
-      buildable: false
-      externals:
-      - spec: cppcheck@2.9
-        prefix: /usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/cppcheck-2.9
     doxygen:
       version: [1.9.6]
       buildable: false
       externals:
       - spec: doxygen@1.9.6
-        prefix: /usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/doxygen-1.9.6
+        prefix: /collab/usr/gapps/axom/devtools/toss_4_x86_64_ib/latest/doxygen-1.9.6
     # TODO: make installed clang 14.0.6 work
     llvm:
       version: [10.0.0]
       buildable: false
       externals:
       - spec: llvm+clang@10.0.0
-        prefix: /usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/python-3.10.10
-    py-ats:
-      version: [7.0.105]
+        prefix: /collab/usr/gapps/axom/devtools/toss_4_x86_64_ib/latest/llvm-10.0.0
+    py-shroud:
+      version: [0.12.2]
       buildable: false
       externals:
-      - spec: py-ats@7.0.105
-        prefix: /usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/python-3.10.10
+      - spec: py-shroud@0.12.2
+        prefix: /collab/usr/gapps/axom/devtools/toss_4_x86_64_ib/latest/python-3.10.10
     py-sphinx:
-      version: [7.0.0]
+      version: [4.4.0]
       buildable: false
       externals:
-      - spec: py-sphinx@7.0.0
-        prefix: /usr/workspace/smithdev/devtools/toss_4_x86_64_ib/latest/python-3.10.10
+      - spec: py-sphinx@4.4.0
+        prefix: /collab/usr/gapps/axom/devtools/toss_4_x86_64_ib/latest/python-3.10.10
     python:
       buildable: false
       externals:
-      - spec: python@3.9.12
-        prefix: /usr/tce/packages/python/python-3.9.12
-
-    # Globally lock version of third party libraries
-    camp:
-      require: "@2022.10.1"
-    conduit:
-      require: "@0.8.8~shared~test~examples~utilities"
-    hdf5:
-      variants: ~shared~mpi
-    raja:
-      require: "@2022.10.5~shared~examples~exercises"
-    umpire:
-      require: "@2022.10.0~shared~examples"
+      - spec: python@3.10.10
+        prefix: /collab/usr/gapps/axom/devtools/toss_4_x86_64_ib/latest/python-3.10.10
