@@ -18,7 +18,7 @@ SubmeshLORTransfer::SubmeshLORTransfer(
   mfem::ParMesh& lor_mesh
 )
 : lor_gridfn_ { CreateLORGridFunction(
-    lor_mesh, 
+    lor_mesh,
     std::make_unique<mfem::H1_FECollection>(1, lor_mesh.SpaceDimension()),
     submesh_fes.GetVDim()
   ) },
