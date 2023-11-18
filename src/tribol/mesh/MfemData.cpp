@@ -124,6 +124,22 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   }
   // transfer data from redecomp mesh
   redecomp_xfer_.TransferToParallel(redecomp_src, *dst_ptr);
+  // using redecomp, shared dof values are set equal (i.e. a ParGridFunction), but we want the sum of shared dof
+  // values to equal the actual dof value when transferring dual fields (i.e. force and gap) back to the parallel mesh
+  // following MFEMs convention.  set non-owned DOF values to zero.
+  auto P_I = dst_ptr->ParFESpace()->Dof_TrueDof_Matrix()->GetDiagMemoryI();
+  HYPRE_Int tdof_ct {0};
+  for (int i{0}; i < dst_ptr->ParFESpace()->GetVSize(); ++i)
+  {
+    if (P_I[i+1] != tdof_ct)
+    {
+      ++tdof_ct;
+    }
+    else
+    {
+      (*dst_ptr)[i] = 0.0;
+    }
+  }
   // if using LOR, transfer data from LOR mesh to submesh
   if (submesh_lor_xfer_)
   {
