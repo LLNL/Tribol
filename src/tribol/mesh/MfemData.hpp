@@ -66,9 +66,9 @@ public:
   void TransferToLORGridFn(const mfem::ParGridFunction& submesh_src);
 
   /**
-   * @brief Transfers data to a higher-order grid function on a parent-linked boundary submesh
+   * @brief Transfers data to a higher-order vector on a parent-linked boundary submesh
    *
-   * Data must be stored in the low-order grid function on the LOR mesh accessed using GetLORGridFn().
+   * Data must be stored in the low-order vector on the LOR mesh accessed using GetLORVector().
    *
    * @param submesh_dst Destination higher-order vector on the parent-linked boundary submesh
    */
@@ -101,16 +101,16 @@ public:
   const mfem::ParGridFunction& GetLORGridFn() const { return *lor_gridfn_; }
 
   /**
-   * @brief Access the local low-order grid function on the LOR mesh
+   * @brief Access the local low-order vector on the LOR mesh
    * 
-   * @return mfem::ParGridFunction& 
+   * @return mfem::Vector& 
    */
   mfem::Vector& GetLORVector() { return *lor_gridfn_; }
 
   /**
-   * @brief Access the local low-order grid function on the LOR mesh
+   * @brief Access the local low-order vector on the LOR mesh
    * 
-   * @return const mfem::ParGridFunction& 
+   * @return const mfem::Vector& 
    */
   const mfem::Vector& GetLORVector() const { return *lor_gridfn_; }
 
@@ -189,7 +189,7 @@ public:
    * @brief Transfer grid function on redecomp mesh to vector on parent-linked boundary submesh
    *
    * @note The redecomp_src GridFunction is expected to have values at shared DOFs equal.  The submesh_dst will need
-   * parallel summation for shared DOF values to be equal.  This arrangement of DOF values is in line with dual fields
+   * parallel summation for shared DOF values to be equal.  This arrangement of DOF values is in line with dual vectors
    * in MFEM.
    *
    * @param redecomp_src Grid function on redecomp mesh
@@ -305,16 +305,16 @@ public:
   ) const;
   
   /**
-   * @brief Transfer grid function on redecomp mesh to grid function on parent
-   * mesh
+   * @brief Transfer grid function on redecomp mesh to vector on parent mesh
+   *
+   * @note The redecomp_src GridFunction is expected to have values at shared DOFs equal.  The parallel_dst will need
+   * parallel summation for shared DOF values to be equal.  This arrangement of DOF values is in line with dual vectors
+   * in MFEM.
    *
    * @param [in] redecomp_src Grid function on RedecompMesh
-   * @param [out] parent_dst Zero-valued grid function on parent mesh
+   * @param [out] parent_dst Zero-valued vector on parent mesh
    */
-  void RedecompToParent(
-    const mfem::GridFunction& redecomp_src, 
-    mfem::ParGridFunction& parent_dst
-  ) const;
+  void RedecompToParent(const mfem::GridFunction& redecomp_src, mfem::Vector& parent_dst) const;
 
   /**
    * @brief Get the parent-linked boundary submesh finite element space
@@ -789,8 +789,9 @@ public:
   /**
    * @brief Get the nodal response vector on the parent mesh
    *
-   * @param [out] r Pre-allocated, initialized mfem::Vector to which response
-   * vector is added
+   * @note This is stored as a dual vector, meaning the shared DOFs must be summed over all ranks to obtain their value.
+   *
+   * @param [out] r Pre-allocated, initialized mfem::Vector to which response vector is added
    */
   void GetParentResponse(mfem::Vector& r) const;
 
@@ -1562,6 +1563,8 @@ public:
 
   /**
    * @brief Get the gap vector on the parent-linked boundary submesh
+   *
+   * @note This is stored as a dual vector, meaning the shared DOFs must be summed over all ranks to obtain their value.
    *
    * @param [out] g Un-initialized mfem::Vector holding the nodal gap values
    */

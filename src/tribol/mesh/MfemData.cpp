@@ -120,12 +120,13 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   // first initialize LOR grid function (if using LOR)
   if (submesh_lor_xfer_)
   {
-    submesh_lor_xfer_->GetLORGridFn() = 0.0;
+    submesh_lor_xfer_->GetLORVector() = 0.0;
     dst_ptr = &submesh_lor_xfer_->GetLORVector();
     dst_fespace_ptr = submesh_lor_xfer_->GetLORGridFn().ParFESpace();
   }
   // transfer data from redecomp mesh
-  redecomp_xfer_.TransferToParallel(redecomp_src, *dst_ptr);
+  mfem::ParGridFunction dst_gridfn(dst_fespace_ptr, *dst_ptr);
+  redecomp_xfer_.TransferToParallel(redecomp_src, dst_gridfn);
   // using redecomp, shared dof values are set equal (i.e. a ParGridFunction), but we want the sum of shared dof
   // values to equal the actual dof value when transferring dual fields (i.e. force and gap) back to the parallel mesh
   // following MFEMs convention.  set non-owned DOF values to zero.
@@ -145,7 +146,7 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   // if using LOR, transfer data from LOR mesh to submesh
   if (submesh_lor_xfer_)
   {
-    submesh_lor_xfer_->TransferFromLORGridFn(submesh_dst);
+    submesh_lor_xfer_->TransferFromLORVector(submesh_dst);
   }
 }
 
@@ -199,12 +200,14 @@ void ParentRedecompTransfer::ParentToRedecomp(
 
 void ParentRedecompTransfer::RedecompToParent(
   const mfem::GridFunction& redecomp_src,
-  mfem::ParGridFunction& parent_dst
+  mfem::Vector& parent_dst
 ) const
 {
   submesh_gridfn_ = 0.0;
   submesh_redecomp_xfer_.RedecompToSubmesh(redecomp_src, submesh_gridfn_);
-  submesh_redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, parent_dst);
+  // submesh transfer requires a grid function.  create one using parent_dst's data
+  mfem::ParGridFunction parent_gridfn(&parent_fes_, parent_dst);
+  submesh_redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, parent_gridfn);
 }
 
 ParentField::ParentField(
@@ -525,8 +528,7 @@ void MfemMeshData::UpdateMfemMeshData()
 
 void MfemMeshData::GetParentResponse(mfem::Vector& r) const
 {
-  mfem::ParGridFunction r_gridfn(coords_.GetParentGridFn().ParFESpace(), r);
-  GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r_gridfn);
+  GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r);
 }
 
 void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
@@ -834,9 +836,8 @@ void MfemSubmeshData::UpdateMfemSubmeshData(redecomp::RedecompMesh& redecomp_mes
 void MfemSubmeshData::GetSubmeshGap(mfem::Vector& g) const
 {
   g.SetSize(submesh_pressure_.ParFESpace()->GetVSize());
-  mfem::ParGridFunction g_gridfn(submesh_pressure_.ParFESpace(), g);
-  g_gridfn = 0.0;
-  GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g_gridfn);
+  g = 0.0;
+  GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g);
 }
 
 MfemSubmeshData::UpdateData::UpdateData(

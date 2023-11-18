@@ -203,15 +203,14 @@ void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
 /**
  * @brief Returns the response (RHS) vector to a given mfem::Vector
  *
- * @pre Coupling scheme cs_id must be registered using
- * registerMfemCouplingScheme()
- * @pre Redecomp mesh must be created and up to date by calling
- * updateMfemParallelDecomposition()
+ * @note This is stored as a dual vector, meaning the shared DOFs must be summed over all ranks to obtain their value.
+ *
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
+ * @pre Redecomp mesh must be created and up to date by calling updateMfemParallelDecomposition()
  * @pre Tribol data must be up to date for current geometry by calling update()
  *
  * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh
- * @param [out] r mfem::Vector of the response (RHS) vector (properly sized,
- * pre-allocated, and initialized)
+ * @param [out] r mfem::Vector of the response (RHS) vector (properly sized, pre-allocated, and initialized)
  */
 void getMfemResponse( integer cs_id, mfem::Vector& r );
 
@@ -238,16 +237,14 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
 /**
  * @brief Returns gap vector to a given mfem::Vector
  *
- * @pre Coupling scheme cs_id must be registered using
- * registerMfemCouplingScheme()
- * @pre Redecomp mesh must be created and up to date by calling
- * updateMfemParallelDecomposition()
- * @pre Response vector must be up to date for current geometry by calling
- * update()
+ * @note This is stored as a dual vector, meaning the shared DOFs must be summed over all ranks to obtain their value.
+ *
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
+ * @pre Redecomp mesh must be created and up to date by calling updateMfemParallelDecomposition()
+ * @pre Response vector must be up to date for current geometry by calling update()
  *
  * @param [in] cs_id Coupling scheme id with a registered MFEM mesh
- * @param [out] g Nodal gap values (values do not have to be pre-allocated) on
- * the parent-linked boundary submesh
+ * @param [out] g Nodal gap values (values do not have to be pre-allocated) on the parent-linked boundary submesh
  */
 void getMfemGap( integer cs_id, mfem::Vector& g );
 
