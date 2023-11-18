@@ -32,8 +32,8 @@ void SubmeshLORTransfer::TransferToLORGridFn(
   SubmeshToLOR(submesh_src, *lor_gridfn_);
 }
 
-void SubmeshLORTransfer::TransferFromLORGridFn(
-  mfem::ParGridFunction& submesh_dst
+void SubmeshLORTransfer::TransferFromLORVector(
+  mfem::Vector& submesh_dst
 ) const
 {
   lor_xfer_.ForwardOperator().MultTranspose(*lor_gridfn_, submesh_dst);
@@ -112,24 +112,26 @@ void SubmeshRedecompTransfer::SubmeshToRedecomp(
 
 void SubmeshRedecompTransfer::RedecompToSubmesh(
   const mfem::GridFunction& redecomp_src,
-  mfem::ParGridFunction& submesh_dst
+  mfem::Vector& submesh_dst
 ) const
 {
   auto dst_ptr = &submesh_dst;
+  auto dst_fespace_ptr = &submesh_fes_;
   // first initialize LOR grid function (if using LOR)
   if (submesh_lor_xfer_)
   {
     submesh_lor_xfer_->GetLORGridFn() = 0.0;
-    dst_ptr = &submesh_lor_xfer_->GetLORGridFn();
+    dst_ptr = &submesh_lor_xfer_->GetLORVector();
+    dst_fespace_ptr = submesh_lor_xfer_->GetLORGridFn().ParFESpace();
   }
   // transfer data from redecomp mesh
   redecomp_xfer_.TransferToParallel(redecomp_src, *dst_ptr);
   // using redecomp, shared dof values are set equal (i.e. a ParGridFunction), but we want the sum of shared dof
   // values to equal the actual dof value when transferring dual fields (i.e. force and gap) back to the parallel mesh
   // following MFEMs convention.  set non-owned DOF values to zero.
-  auto P_I = dst_ptr->ParFESpace()->Dof_TrueDof_Matrix()->GetDiagMemoryI();
+  auto P_I = dst_fespace_ptr->Dof_TrueDof_Matrix()->GetDiagMemoryI();
   HYPRE_Int tdof_ct {0};
-  for (int i{0}; i < dst_ptr->ParFESpace()->GetVSize(); ++i)
+  for (int i{0}; i < dst_fespace_ptr->GetVSize(); ++i)
   {
     if (P_I[i+1] != tdof_ct)
     {

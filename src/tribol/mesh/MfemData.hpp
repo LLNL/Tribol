@@ -63,23 +63,16 @@ public:
    * @param submesh_src Source higher-order grid function on the parent-linked
    * boundary submesh
    */
-  void TransferToLORGridFn(
-    const mfem::ParGridFunction& submesh_src
-  );
+  void TransferToLORGridFn(const mfem::ParGridFunction& submesh_src);
 
   /**
-   * @brief Transfers data to a higher-order grid function on a parent-linked
-   * boundary submesh
+   * @brief Transfers data to a higher-order grid function on a parent-linked boundary submesh
    *
-   * Data must be stored in the low-order grid function on the LOR mesh accessed
-   * using GetLORGridFn().
+   * Data must be stored in the low-order grid function on the LOR mesh accessed using GetLORGridFn().
    *
-   * @param submesh_dst Destination higher-order grid function on the
-   * parent-linked boundary submesh
+   * @param submesh_dst Destination higher-order vector on the parent-linked boundary submesh
    */
-  void TransferFromLORGridFn(
-    mfem::ParGridFunction& submesh_dst
-  ) const;
+  void TransferFromLORVector(mfem::Vector& submesh_dst) const;
 
   /**
    * @brief Transfer grid function on parent-linked boundary submesh to grid
@@ -103,9 +96,23 @@ public:
   /**
    * @brief Access the local low-order grid function on the LOR mesh
    * 
-   * @return const mfem::ParGridFunction& 
+   * @return mfem::ParGridFunction& 
    */
   const mfem::ParGridFunction& GetLORGridFn() const { return *lor_gridfn_; }
+
+  /**
+   * @brief Access the local low-order grid function on the LOR mesh
+   * 
+   * @return mfem::ParGridFunction& 
+   */
+  mfem::Vector& GetLORVector() { return *lor_gridfn_; }
+
+  /**
+   * @brief Access the local low-order grid function on the LOR mesh
+   * 
+   * @return const mfem::ParGridFunction& 
+   */
+  const mfem::Vector& GetLORVector() const { return *lor_gridfn_; }
 
 private:
   /**
@@ -179,16 +186,18 @@ public:
   ) const;
 
   /**
-   * @brief Transfer grid function on redecomp mesh to grid function on
-   * parent-linked boundary submesh
+   * @brief Transfer grid function on redecomp mesh to vector on parent-linked boundary submesh
+   *
+   * @note The redecomp_src GridFunction is expected to have values at shared DOFs equal.  The submesh_dst will need
+   * parallel summation for shared DOF values to be equal.  This arrangement of DOF values is in line with dual fields
+   * in MFEM.
    *
    * @param redecomp_src Grid function on redecomp mesh
-   * @param submesh_dst Zero-valued grid function on parent-linked boundary
-   * submesh
+   * @param submesh_dst Zero-valued vector on parent-linked boundary submesh
    */
   void RedecompToSubmesh(
     const mfem::GridFunction& redecomp_src,
-    mfem::ParGridFunction& submesh_dst
+    mfem::Vector& submesh_dst
   ) const;
 
   /**
