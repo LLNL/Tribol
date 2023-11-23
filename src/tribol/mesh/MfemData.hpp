@@ -1233,6 +1233,9 @@ private:
       const std::set<integer>& attributes_2
     );
 
+    /**
+     * @brief Sets the number of vertices per element and the element type for the redecomp mesh
+     */
     void SetElementData();
   };
   
