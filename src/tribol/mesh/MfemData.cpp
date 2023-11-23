@@ -395,42 +395,6 @@ MfemMeshData::MfemMeshData(
   {
     SetLORFactor(current_coords.FESpace()->FEColl()->GetOrder());
   }
-
-  // set the element type
-  mfem::Element::Type element_type = mfem::Element::QUADRILATERAL;
-  if (submesh_.GetNE() > 0)
-  {
-    element_type = submesh_.GetElementType(0);
-  }
-
-  switch (element_type) 
-  {
-    case mfem::Element::SEGMENT:
-      elem_type_ = LINEAR_EDGE;
-      break;
-    case mfem::Element::TRIANGLE:
-      elem_type_ = LINEAR_TRIANGLE;
-      break;
-    case mfem::Element::QUADRILATERAL:
-      elem_type_ = LINEAR_QUAD;
-      break;
-    case mfem::Element::TETRAHEDRON:
-      elem_type_ = LINEAR_TET;
-      break;
-    case mfem::Element::HEXAHEDRON:
-      elem_type_ = LINEAR_HEX;
-      break;
-
-    case mfem::Element::POINT:
-      SLIC_ERROR_ROOT("Unsupported element type!");
-      break;
-
-    default:
-      SLIC_ERROR_ROOT("Unknown element type!");
-      break;
-  }
-
-  num_verts_per_elem_ = mfem::Geometry::NumVerts[element_type];
 }
 
 void MfemMeshData::SetParentCoords(const mfem::ParGridFunction& current_coords)
@@ -457,8 +421,7 @@ void MfemMeshData::UpdateMfemMeshData()
     submesh_xfer_gridfn_,
     submesh_lor_xfer_.get(),
     attributes_1_, 
-    attributes_2_, 
-    num_verts_per_elem_
+    attributes_2_
   );
   coords_.UpdateField(update_data_->vector_xfer_);
   redecomp_response_.SetSpace(coords_.GetRedecompGridFn().FESpace());
@@ -693,8 +656,7 @@ MfemMeshData::UpdateData::UpdateData(
   mfem::ParGridFunction& submesh_gridfn,
   SubmeshLORTransfer* submesh_lor_xfer,
   const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2,
-  integer num_verts_per_elem
+  const std::set<integer>& attributes_2
 )
 : redecomp_mesh_ { lor_mesh ? 
     redecomp::RedecompMesh(*lor_mesh) :
@@ -702,18 +664,19 @@ MfemMeshData::UpdateData::UpdateData(
   },
   vector_xfer_ { parent_fes, submesh_gridfn, submesh_lor_xfer, redecomp_mesh_ }
 {
+  // set element type based on redecomp mesh
+  SetElementData();
   // updates the connectivity of the tribol surface mesh
-  UpdateConnectivity(attributes_1, attributes_2, num_verts_per_elem);
+  UpdateConnectivity(attributes_1, attributes_2);
 }
 
 void MfemMeshData::UpdateData::UpdateConnectivity(
   const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2,
-  integer num_verts_per_elem
+  const std::set<integer>& attributes_2
 )
 {
-  conn_1_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem);
-  conn_2_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem);
+  conn_1_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem_);
+  conn_2_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem_);
   elem_map_1_.reserve(static_cast<size_t>(redecomp_mesh_.GetNE()));
   elem_map_2_.reserve(static_cast<size_t>(redecomp_mesh_.GetNE()));
   for (int e{}; e < redecomp_mesh_.GetNE(); ++e)
@@ -727,8 +690,8 @@ void MfemMeshData::UpdateData::UpdateConnectivity(
       if (attribute_1 == elem_attrib)
       {
         elem_map_1_.push_back(e);
-        conn_1_.resize(elem_map_1_.size(), num_verts_per_elem);
-        for (int v{}; v < num_verts_per_elem; ++v)
+        conn_1_.resize(elem_map_1_.size(), num_verts_per_elem_);
+        for (int v{}; v < num_verts_per_elem_; ++v)
         {
           conn_1_(elem_map_1_.size() - 1, v) = elem_conn[v];
         }
@@ -743,8 +706,8 @@ void MfemMeshData::UpdateData::UpdateConnectivity(
         if (attribute_2 == elem_attrib)
         {
           elem_map_2_.push_back(e);
-          conn_2_.resize(elem_map_2_.size(), num_verts_per_elem);
-          for (int v{}; v < num_verts_per_elem; ++v)
+          conn_2_.resize(elem_map_2_.size(), num_verts_per_elem_);
+          for (int v{}; v < num_verts_per_elem_; ++v)
           {
             conn_2_(elem_map_2_.size() - 1, v) = elem_conn[v];
           }
@@ -793,6 +756,49 @@ mfem::ParSubMesh MfemMeshData::CreateSubmesh(
     parent_mesh,
     attributes_array
   );
+}
+
+void MfemMeshData::UpdateData::SetElementData()
+{
+  if (redecomp_mesh_.GetNE() > 0)
+  {
+    auto element_type = redecomp_mesh_.GetElementType(0);
+
+    switch (element_type) 
+    {
+      case mfem::Element::SEGMENT:
+        elem_type_ = LINEAR_EDGE;
+        break;
+      case mfem::Element::TRIANGLE:
+        elem_type_ = LINEAR_TRIANGLE;
+        break;
+      case mfem::Element::QUADRILATERAL:
+        elem_type_ = LINEAR_QUAD;
+        break;
+      case mfem::Element::TETRAHEDRON:
+        elem_type_ = LINEAR_TET;
+        break;
+      case mfem::Element::HEXAHEDRON:
+        elem_type_ = LINEAR_HEX;
+        break;
+
+      case mfem::Element::POINT:
+        SLIC_ERROR_ROOT("Unsupported element type!");
+        break;
+
+      default:
+        SLIC_ERROR_ROOT("Unknown element type!");
+        break;
+    }
+
+    num_verts_per_elem_ = mfem::Geometry::NumVerts[element_type];
+  }
+  else
+  {
+    // just put something here so Tribol will not give a warning for zero element meshes
+    elem_type_ = LINEAR_EDGE;
+    num_verts_per_elem_ = 2;
+  }
 }
 
 MfemSubmeshData::MfemSubmeshData(

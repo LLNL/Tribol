@@ -703,7 +703,7 @@ public:
    */
   integer GetMesh1NE() const
   { 
-    return GetUpdateData().conn_1_.size() / num_verts_per_elem_;
+    return GetUpdateData().conn_1_.size() / update_data_->num_verts_per_elem_;
   }
 
   /**
@@ -713,7 +713,7 @@ public:
    */
   integer GetMesh2NE() const
   {
-    return GetUpdateData().conn_2_.size() / num_verts_per_elem_;
+    return GetUpdateData().conn_2_.size() / update_data_->num_verts_per_elem_;
   }
 
   /**
@@ -748,7 +748,7 @@ public:
    *
    * @return integer 
    */
-  integer GetElemType() const { return elem_type_; }
+  integer GetElemType() const { return update_data_->elem_type_; }
 
   /**
    * @brief Get pointers to component arrays of the coordinates on the
@@ -1163,7 +1163,6 @@ private:
      * the first Tribol registered mesh
      * @param attributes_2 Set of boundary attributes identifying elements in
      * the second Tribol registered mesh
-     * @param num_verts_per_elem Number of vertices on each element
      */
     UpdateData(
       mfem::ParSubMesh& submesh,
@@ -1172,8 +1171,7 @@ private:
       mfem::ParGridFunction& submesh_gridfn,
       SubmeshLORTransfer* submesh_lor_xfer,
       const std::set<integer>& attributes_1,
-      const std::set<integer>& attributes_2,
-      integer num_verts_per_elem
+      const std::set<integer>& attributes_2
     );
 
     /**
@@ -1210,6 +1208,16 @@ private:
      */
     std::vector<integer> elem_map_2_;
 
+    /**
+    * @brief Type of elements on the contact meshes
+    */
+    InterfaceElementType elem_type_;
+
+    /**
+    * @brief Number of vertices on each element in the contact meshes
+    */
+    integer num_verts_per_elem_;
+
   private:
     /**
      * @brief Builds connectivity arrays and redecomp mesh to Tribol registered
@@ -1219,13 +1227,13 @@ private:
      * registered mesh
      * @param attributes_2 Set of boundary attributes for the second Tribol
      * registered mesh
-     * @param num_verts_per_elem Number of vertices on each element
      */
     void UpdateConnectivity(
       const std::set<integer>& attributes_1,
-      const std::set<integer>& attributes_2,
-      integer num_verts_per_elem
+      const std::set<integer>& attributes_2
     );
+
+    void SetElementData();
   };
   
   /**
@@ -1256,18 +1264,6 @@ private:
     const mfem::ParMesh& parent_mesh,
     const std::set<integer>& attributes_1,
     const std::set<integer>& attributes_2
-  );
-
-  /**
-   * @brief Create a grid function on the given parent-linked boundary submesh
-   *
-   * @param submesh Parent-linked boundary submesh
-   * @param parent_fes Finite element space on the parent mesh
-   * @return mfem::ParGridFunction 
-   */
-  static mfem::ParGridFunction CreateSubmeshGridFn(
-    mfem::ParSubMesh& submesh,
-    mfem::ParFiniteElementSpace& parent_fes
   );
 
   /**
@@ -1326,16 +1322,6 @@ private:
    * used; nullptr otherwise
    */
   std::unique_ptr<SubmeshLORTransfer> submesh_lor_xfer_;
-
-  /**
-   * @brief Type of elements on the contact meshes
-   */
-  InterfaceElementType elem_type_;
-
-  /**
-   * @brief Number of vertices on each element in the contact meshes
-   */
-  integer num_verts_per_elem_;
 
   /**
    * @brief Contains velocity grid function and transfer operators if set;
