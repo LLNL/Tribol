@@ -41,3 +41,7 @@ endif()
 if ( TRIBOL_ENABLE_EXAMPLES )
   add_subdirectory(examples)
 endif()
+
+# Generate and install config header
+tribol_configure_file(${PROJECT_SOURCE_DIR}/src/tribol/config.hpp.in
+                      ${PROJECT_BINARY_DIR}/include/tribol/config.hpp)
