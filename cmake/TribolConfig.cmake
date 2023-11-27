@@ -13,9 +13,6 @@ message(STATUS "Configuring Tribol version ${TRIBOL_VERSION_FULL}")
 #------------------------------------------------------------------------------
 # General Build Info
 #------------------------------------------------------------------------------
-convert_to_native_escaped_file_path(${PROJECT_SOURCE_DIR} TRIBOL_REPO_DIR)
-convert_to_native_escaped_file_path(${CMAKE_BINARY_DIR}   TRIBOL_BIN_DIR)
-
 install(FILES ${PROJECT_BINARY_DIR}/include/tribol/config.hpp DESTINATION include/tribol)
 
 # Set up some paths, preserve existing cache values (if present)
