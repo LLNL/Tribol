@@ -21,7 +21,9 @@ spack:
   - compiler:
       environment: {}
       extra_rpaths: []
-      flags: {}
+      flags: 
+        # Fix for "undefined reference to `_gfortran_transfer_integer_write'"
+        ldlibs: -lgfortran
       modules: []
       operating_system: rhel7
       paths:
@@ -34,7 +36,9 @@ spack:
   - compiler:
       environment: {}
       extra_rpaths: []
-      flags: {}
+      flags:
+        # Fix for "undefined reference to `_gfortran_transfer_integer_write'"
+        ldlibs: -lgfortran
       modules: []
       operating_system: rhel7
       paths:
