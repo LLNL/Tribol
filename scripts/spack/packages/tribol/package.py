@@ -84,6 +84,7 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on("umpire cuda_arch={0}".format(val), when="+umpire cuda_arch={0}".format(val))
 
     for val in ROCmPackage.amdgpu_targets:
+        depends_on("mfem amdgpu_target={0}".format(val), when="amdgpu_target={0}".format(val))
         depends_on("axom amdgpu_target={0}".format(val), when="amdgpu_target={0}".format(val))
         depends_on("raja amdgpu_target={0}".format(val), when="amdgpu_target={0}".format(val))
         depends_on("umpire amdgpu_target={0}".format(val), when="amdgpu_target={0}".format(val))
@@ -208,8 +209,10 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
             # Fixes for mpi for rocm until wrapper paths are fixed
             # These flags are already part of the wrapped compilers on TOSS4 systems
             hip_link_flags = ""
-            if "+fortran" in spec and self.is_fortran_compiler("amdflang"):
+            if self.spec.satisfies('%clang'):
+                # only with fortran for axom, but seems to always be needed for tribol
                 hip_link_flags += "-Wl,--disable-new-dtags "
+            if "+fortran" in spec and self.is_fortran_compiler("amdflang"):
                 hip_link_flags += "-L{0}/../llvm/lib -L{0}/lib ".format(hip_root)
                 hip_link_flags += "-Wl,-rpath,{0}/../llvm/lib:{0}/lib ".format(hip_root)
                 hip_link_flags += "-lpgmath -lflang -lflangrti -lompstub -lamdhip64 "

@@ -95,6 +95,17 @@ spack:
       - spec: hip@5.6.0
         prefix: /opt/rocm-5.6.0/hip
 
+    hipsparse:
+      version: [5.2.3, 5.4.3, 5.6.0]
+      buildable: false
+      externals:
+      - spec: hipsparse@5.2.3
+        prefix: /opt/rocm-5.2.3/hipsparse
+      - spec: hipsparse@5.4.3
+        prefix: /opt/rocm-5.4.3/hipsparse
+      - spec: hipsparse@5.6.0
+        prefix: /opt/rocm-5.6.0/hipsparse
+
     llvm-amdgpu:
       version: [5.2.3, 5.4.3, 5.6.0]
       buildable: false
@@ -246,6 +257,11 @@ spack:
       externals:
       - spec: ghostscript@9.25
         prefix: /usr
+    git:
+      buildable: false
+      externals:
+      - spec: git@2.29.1
+        prefix: /usr/tce/packages/git/git-2.29.1
     gmake:
       buildable: false
       externals:
