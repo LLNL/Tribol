@@ -18,6 +18,7 @@
       "intel@2022.1.0+devtools+raja+umpire" ],
 
     "__comment__":"no support for GPU-aware MPI. run 'export MPICH_GPU_SUPPORT_ENABLED=0' before running tests.",
+    "__comment__":"mfem not building with cce@15.0.1 or clang@16.0.0.  TODO: update spack to get latest mfem package.py.",
     "toss_4_x86_64_ib_cray":
     [ "clang@14.0.0+rocm+umpire+raja amdgpu_target=gfx90a ^hip@5.2.3 ^rocprim@5.2.3 ^hsa-rocr-dev@5.2.3 ^llvm-amdgpu@5.2.3 ^raja~openmp+rocm",
       "clang@15.0.0+rocm+umpire+raja amdgpu_target=gfx90a ^hip@5.4.3 ^rocprim@5.4.3 ^hsa-rocr-dev@5.4.3 ^llvm-amdgpu@5.4.3 ^raja~openmp+rocm" ],
