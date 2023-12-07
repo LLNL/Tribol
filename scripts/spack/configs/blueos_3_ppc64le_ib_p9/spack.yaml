@@ -311,7 +311,7 @@ spack:
 
     # Globally lock version of third party libraries
     axom:
-      require: "@0.8.1.0~examples~fortran~lua~tools~openmp"
+      variants: ~examples~fortran~lua~tools~openmp
     camp:
       require: "@2023.06.0"
     conduit:
@@ -320,8 +320,6 @@ spack:
       variants: ~shared~mpi
     hypre:
       version: [2.24.0]
-    mfem:
-      require: "@4.6.1.1"
     raja:
       require: "@2023.06.0~openmp~shared~examples~exercises"
     umpire:

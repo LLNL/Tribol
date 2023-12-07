@@ -261,14 +261,6 @@ spack:
       - spec: zlib@1.2.11
         prefix: /usr
 
-    # Globally lock version of third party libraries
-    conduit:
-      require: "@0.8.8~shared~test~examples~utilities"
-    raja:
-      require: "@2023.06.0~shared~examples~exercises~openmp"
-    umpire:
-      require: "@2023.06.0~shared~examples~openmp"
-
   # Lock in versions of Devtools
     cmake:
       version: [3.23.1]
@@ -306,3 +298,11 @@ spack:
       externals:
       - spec: python@3.10.10
         prefix: /collab/usr/gapps/axom/devtools/toss_4_x86_64_ib/latest/python-3.10.10
+
+    # Globally lock version of third party libraries
+    conduit:
+      require: "@0.8.8~shared~test~examples~utilities"
+    raja:
+      require: "@2023.06.0~shared~examples~exercises~openmp"
+    umpire:
+      require: "@2023.06.0~shared~examples~openmp"

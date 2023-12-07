@@ -360,13 +360,9 @@ spack:
       require: "@2023.06.0"
     conduit:
       require: "@0.8.8~shared~test~examples~utilities"
-    hdf5:
-      variants: ~shared~mpi
     hypre:
       version: [2.24.0]
     raja:
       require: "@2023.06.0~shared~examples~exercises"
-    scr:
-      require: "@3.0.1~shared~tests~examples"
     umpire:
       require: "@2023.06.0~shared~examples"
