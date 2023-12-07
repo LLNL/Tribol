@@ -80,7 +80,7 @@ public:
    bool isMesh1DataSizeSet {false};
    bool isMesh2DataSizeSet {false};
 
-   SetMesh1DataSize( const int numTotalNodes, const int numNodesPerCell, const int numFaces )
+   void SetMesh1DataSize( const int numTotalNodes, const int numNodesPerCell, const int numFaces )
    {
       this->lengthConn1 = numNodesPerCell * numFaces;
       this->lengthNodes1 = numTotalNodes;
@@ -89,7 +89,7 @@ public:
       this->isMesh1DataSizeSet = true;
    }
 
-   SetMesh2DataSize( const int numTotalNodes, const int numNodesPerCell, const int numFaces )
+   void SetMesh2DataSize( const int numTotalNodes, const int numNodesPerCell, const int numFaces )
    {
       this->lengthConn2 = numNodesPerCell * numFaces;
       this->lengthNodes2 = numTotalNodes;
@@ -98,34 +98,34 @@ public:
       this->isMesh2DataSizeSet = true;
    }
 
-   LoadFace1VertexDataFiles3D( std::string &face1x_file, std::string &face1y_file, std::string &face1z_file )
+   void LoadFace1VertexDataFiles3D( std::string &face1x_file, std::string &face1y_file, std::string &face1z_file )
    {
-      SLIC_ERROR_IF(!isMesh1DataSizeSet, "LoadFace1VertexDataFiles3D(): Test must call SetMesh1DataSize() first.")
+      SLIC_ERROR_IF(!isMesh1DataSizeSet, "LoadFace1VertexDataFiles3D(): Test must call SetMesh1DataSize() first.");
 
       std::ifstream face1x( face1x_file );
       std::ifstream face1y( face1y_file );
       std::ifstream face1z( face1z_file );
  
-      this->v_x1.Load( face1x, this->numFacesPerMesh*this->numVertsPerFace );
-      this->v_y1.Load( face1y, numFacesPerMesh*numVertsPerFace );
-      this->v_z1.Load( face1z, numFacesPerMesh*numVertsPerFace );
+      this->v_x1.Load( face1x, this->numCells1*this->numNodesPerCell1 );
+      this->v_y1.Load( face1y, this->numCells1*this->numNodesPerCell1 );
+      this->v_z1.Load( face1z, this->numCells1*this->numNodesPerCell1 );
 
       face1x.close();
       face1y.close();
       face1z.close();
    }
 
-   LoadFace2VertexDataFiles3D( std::string &face2x_file, std::string &face2y_file, std::string &face2z_file )
+   void LoadFace2VertexDataFiles3D( std::string &face2x_file, std::string &face2y_file, std::string &face2z_file )
    {
-      SLIC_ERROR_IF(!isMesh2DataSizeSet, "LoadFace2VertexDataFiles3D(): Test must call SetMesh2DataSize() first.")
+      SLIC_ERROR_IF(!isMesh2DataSizeSet, "LoadFace2VertexDataFiles3D(): Test must call SetMesh2DataSize() first.");
 
       std::ifstream face2x( face2x_file );
       std::ifstream face2y( face2y_file );
       std::ifstream face2z( face2z_file );
 
-      this->v_x2.Load( face2x, numFacesPerMesh*numVertsPerFace );
-      this->v_y2.Load( face2y, numFacesPerMesh*numVertsPerFace );
-      this->v_z2.Load( face2z, numFacesPerMesh*numVertsPerFace );
+      this->v_x2.Load( face2x, this->numCells2*this->numNodesPerCell2 );
+      this->v_y2.Load( face2y, this->numCells2*this->numNodesPerCell2 );
+      this->v_z2.Load( face2z, this->numCells2*this->numNodesPerCell2 );
 
       face2x.close();
       face2y.close();
@@ -133,10 +133,10 @@ public:
    } 
 
    // set the size and initialize the force vectors
-   SetAndInitializeForceVectors()
+   void SetAndInitializeForceVectors()
    {
       SLIC_ERROR_IF(!isMesh1DataSizeSet || !isMesh2DataSizeSet, 
-                    "SetAndInitializeForceVectors: Test must call SetMesh1DataSize() and SetMesh2DataSize() first.")
+                    "SetAndInitializeForceVectors: Test must call SetMesh1DataSize() and SetMesh2DataSize() first.");
       this->v_fx1.SetSize( this->lengthNodes1 );
       this->v_fy1.SetSize( this->lengthNodes1 );
       this->v_fz1.SetSize( this->lengthNodes1 );
@@ -153,17 +153,17 @@ public:
    }
 
    // set and assign the connectivity of mesh 1 from connectivity pointer
-   SetAndAssignConn1( *conn1 )
+   void SetAndAssignConn1( int* const conn1 )
    {
-      SLIC_ERROR_IF(!isMesh1DataSizeSet, "SetAndAssignConn1(): Test must call SetMesh1DataSize() first.")
+      SLIC_ERROR_IF(!isMesh1DataSizeSet, "SetAndAssignConn1(): Test must call SetMesh1DataSize() first.");
       this->conn1.SetSize( this->numNodesPerCell1 * this->numCells1 );
       this->conn1.Assign(conn1);
    }
 
    // set and assign the connectivity of mesh 2 from connectivity pointer
-   SetAndAssignConn2( *conn2 )
+   void SetAndAssignConn2( int* const conn2 )
    {
-      SLIC_ERROR_IF(!isMesh2DataSizeSet, "SetAndAssignConn2(): Test must call SetMesh2DataSize() first.")
+      SLIC_ERROR_IF(!isMesh2DataSizeSet, "SetAndAssignConn2(): Test must call SetMesh2DataSize() first.");
       this->conn2.SetSize( this->numNodesPerCell2 * this->numCells2 );
       this->conn2.Assign(conn2);
    }
@@ -206,7 +206,7 @@ TEST_F( CommonPlaneCompGeomTest, overlap_with_duplicate_vertex_misordering )
    LoadFace1VertexDataFiles3D( face1x_f, face1y_f, face1z_f );
    LoadFace2VertexDataFiles3D( face2x_f, face2y_f, face2z_f );
 
-   SetAndInitializeForceVectors()
+   SetAndInitializeForceVectors();
 
    // manually setup the connectivity for this single face per side problem
    int face_conn1[numVertsPerFace] = {0,1,2,3};
@@ -235,7 +235,7 @@ TEST_F( CommonPlaneCompGeomTest, overlap_with_duplicate_vertex_misordering )
                                    tribol::COMMON_PLANE,
                                    tribol::FRICTIONLESS,
                                    tribol::PENALTY,
-                                   tribol::BINNING_CARTESIAN );
+                                   tribol::BINNING_CARTESIAN_PRODUCT );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT );
    tribol::setContactPenFrac(0.5);
