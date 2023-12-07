@@ -20,6 +20,7 @@
 // Axom includes
 #include "axom/core.hpp"
 #include "axom/slic.hpp"
+#include "axom/fmt.hpp"
 
 #ifdef TRIBOL_USE_UMPIRE
 // Umpire includes
@@ -38,6 +39,7 @@
 
 using real = tribol::real;
 namespace axom_fs = axom::utilities::filesystem;
+namespace fmt = axom::fmt;
 
 /*!
  * Test fixture class with some setup necessary to test 
@@ -168,6 +170,49 @@ public:
       this->conn2.Assign(conn2);
    }
 
+   void PrintOverlap( int const cpID )
+   {
+      // print overlap vertices
+      tribol::ContactPlaneManager& cpManager = tribol::ContactPlaneManager::getInstance();
+      std::string name = fmt::format("overlap_vertices.txt");
+      std::string f_name = axom::utilities::filesystem::joinPath("./", name);
+      std::ofstream overlap;
+      overlap.setf(std::ios::scientific);
+      overlap.open(f_name.c_str());
+
+      for (int i=0; i<cpManager.m_numPolyVert[cpID]; ++i)
+      {
+         fmt::print(overlap, "{} {} {}\n",
+            cpManager.m_polyX[cpID][i],
+            cpManager.m_polyY[cpID][i],
+            cpManager.m_polyZ[cpID][i]);
+      }
+   }
+
+   void PrintProjectedFace( const int meshId, int const faceId, int const cpID, int const numNodesPerFace )
+   {
+      double projX[numNodesPerFace];
+      double projY[numNodesPerFace];
+      double projZ[numNodesPerFace];
+      tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
+      tribol::MeshData& mesh = meshManager.GetMeshInstance( meshId );
+      tribol::ContactPlaneManager& cpManager = tribol::ContactPlaneManager::getInstance();
+      tribol::ProjectFaceNodesToPlane( mesh, faceId, cpManager.m_nX[cpID], cpManager.m_nY[cpID], cpManager.m_nZ[cpID],
+                                       cpManager.m_cX[cpID], cpManager.m_cY[cpID], cpManager.m_cZ[cpID],
+                                       &projX[0], &projY[0], &projZ[0] );
+      // print projected face
+      std::string name = fmt::format("projected_face__mesh{:02}_face{:02}.txt", meshId, faceId);
+      std::string f_name = axom::utilities::filesystem::joinPath("./", name);
+      std::ofstream proj_face;
+      proj_face.setf(std::ios::scientific);
+      proj_face.open(f_name.c_str());
+
+      for (int i=0; i<numNodesPerFace; ++i)
+      {
+         fmt::print(proj_face, "{} {} {}\n",
+            projX[i], projY[i], projZ[i]);
+      }
+   }
 
 protected:
 
@@ -191,6 +236,10 @@ TEST_F( CommonPlaneCompGeomTest, overlap_with_duplicate_vertex_misordering )
    int numVertsPerFace = 4;
    int numFacesPerMesh = 1;
    int numTotalNodesPerMesh = numVertsPerFace;
+   int meshId1 = 0;
+   int meshId2 = 1;
+   int faceId1 = 0;
+   int faceId2 = 0;
 
    // read data sets for mesh
    std::string face1x_f = axom_fs::joinPath(TRIBOL_DATA_DIR,"common_plane_parallel_1_overlap/face1x_bug.txt");
@@ -218,18 +267,20 @@ TEST_F( CommonPlaneCompGeomTest, overlap_with_duplicate_vertex_misordering )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( dim, problem_comm );
 
-   tribol::registerMesh( 0, numFacesPerMesh, numFacesPerMesh*numVertsPerFace, this->conn1.GetData(), (int)(tribol::LINEAR_QUAD),
+   tribol::registerMesh( meshId1, numFacesPerMesh, numFacesPerMesh*numVertsPerFace, this->conn1.GetData(), (int)(tribol::LINEAR_QUAD),
                          this->v_x1.GetData(), this->v_y1.GetData(), this->v_z1.GetData() );
-   tribol::registerMesh( 1, numFacesPerMesh, numFacesPerMesh*numVertsPerFace, this->conn2.GetData(), (int)(tribol::LINEAR_QUAD),
+   tribol::registerMesh( meshId2, numFacesPerMesh, numFacesPerMesh*numVertsPerFace, this->conn2.GetData(), (int)(tribol::LINEAR_QUAD),
                          this->v_x2.GetData(), this->v_y2.GetData(), this->v_z2.GetData() );
 
-   tribol::registerNodalResponse( 0, this->v_fx1.GetData(), this->v_fy1.GetData(), this->v_fz1.GetData() );
-   tribol::registerNodalResponse( 0, this->v_fx2.GetData(), this->v_fy2.GetData(), this->v_fz2.GetData() );
+   tribol::registerNodalResponse( meshId1, this->v_fx1.GetData(), this->v_fy1.GetData(), this->v_fz1.GetData() );
+   tribol::registerNodalResponse( meshId2, this->v_fx2.GetData(), this->v_fy2.GetData(), this->v_fz2.GetData() );
 
-   tribol::setKinematicConstantPenalty( 0, 1. );
-   tribol::setKinematicConstantPenalty( 1, 1. );
+   double penalty = 1.0;
+   tribol::setKinematicConstantPenalty( meshId1, penalty );
+   tribol::setKinematicConstantPenalty( meshId2, penalty );
 
-   tribol::registerCouplingScheme( 0, 0, 1,
+   int csID = 0;
+   tribol::registerCouplingScheme( csID, meshId1, meshId2,
                                    tribol::SURFACE_TO_SURFACE,
                                    tribol::AUTO,
                                    tribol::COMMON_PLANE,
@@ -237,7 +288,7 @@ TEST_F( CommonPlaneCompGeomTest, overlap_with_duplicate_vertex_misordering )
                                    tribol::PENALTY,
                                    tribol::BINNING_CARTESIAN_PRODUCT );
 
-   tribol::setPenaltyOptions( 0, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT );
+   tribol::setPenaltyOptions( csID, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT );
    tribol::setContactPenFrac(0.5);
    tribol::setContactAreaFrac(1.e-4);
 
@@ -245,6 +296,19 @@ TEST_F( CommonPlaneCompGeomTest, overlap_with_duplicate_vertex_misordering )
    int update_err = tribol::update( 1, 1., dt );
 
    EXPECT_EQ( update_err, 0 );
+
+   // contact overlap debug prints
+   int cpID = 0;
+   tribol::ContactPlaneManager& cpManager = tribol::ContactPlaneManager::getInstance();
+  
+   EXPECT_EQ( cpManager.size(), 1 );
+   EXPECT_EQ( cpManager.m_inContact[cpID], true );
+   EXPECT_EQ( cpManager.m_interpenOverlap[cpID], false ); // expect full overlap
+
+   PrintOverlap( cpID );
+   PrintProjectedFace( meshId1, faceId1, cpID, numVertsPerFace );
+   PrintProjectedFace( meshId2, faceId2, cpID, numVertsPerFace );
+
 }
 
 
