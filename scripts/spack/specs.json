@@ -28,5 +28,9 @@
       "gcc@8.3.1.2+devtools+cuda+raja+umpire cuda_arch=70" ],
 
     "linux_ubuntu_20":
-    [ "gcc@9.4.0~minbuild+devtools+fortran" ]
+    [ "gcc@9.4.0~minbuild+devtools+fortran" ],
+
+    "linux_ubuntu_22":
+    [ "gcc@11.4.0+devtools+cuda+raja+umpire cuda_arch=70",
+      "gcc@11.4.0+devtools+raja+umpire" ]
 }

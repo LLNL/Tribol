@@ -1,4 +1,4 @@
-# Copyright 2013-2021 Lawrence Livermore National Security, LLC and other
+# Copyright 2013-2023 Lawrence Livermore National Security, LLC and other
 # Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -18,9 +18,9 @@ class CrayMpich(Package):
 
     maintainers = ['haampie']
 
-    # AXOM EDIT START
+    # TRIBOL EDIT START
     version('8.1.13')
-    # AXOM EDIT END
+    # TRIBOL EDIT END
     version('8.1.9')
     version('8.1.7')
     version('8.1.0')
@@ -33,9 +33,9 @@ class CrayMpich(Package):
     version('7.7.14')
     version('7.7.13')
 
-    # AXOM EDIT START
+    # TRIBOL EDIT START
     variant("slurm", default=True, description="Added to get MPIEXEC_NUMPROC_FLAG right")
-    # AXOM EDIT END
+    # TRIBOL EDIT END
 
     provides('mpi@3')
 
