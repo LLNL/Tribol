@@ -10,8 +10,9 @@
 #------------------------------------------------------------------------------
 set( tribol_tests
      tribol_check_tpl.cpp
-     tribol_common_plane_penalty.cpp
      tribol_common_plane_gap_rate.cpp
+     tribol_common_plane_geom_failures.cpp
+     tribol_common_plane_penalty.cpp
      tribol_comp_geom.cpp
      tribol_coupling_scheme.cpp
      tribol_coupling_scheme_manager.cpp
