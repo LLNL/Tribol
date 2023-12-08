@@ -15,6 +15,21 @@ spack:
       modules: []
       environment: {}
       extra_rpaths: []
+  - compiler:
+      spec: clang@14.0.0
+      paths:
+        cc: /usr/bin/clang
+        cxx: /usr/bin/clang++
+        f77: /usr/bin/gfortran
+        fc: /usr/bin/gfortran
+      flags: 
+        cflags: -pthread
+        cxxflags: -pthread
+      operating_system: ubuntu22.04
+      target: x86_64
+      modules: []
+      environment: {}
+      extra_rpaths: []
 
   # Regular TPLs do not need views
   view: false
