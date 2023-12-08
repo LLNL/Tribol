@@ -116,8 +116,8 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
         special_case = ""
         if "+cuda" in self.spec:
             special_case += "_cuda"
-        if "~fortran" in self.spec:
-            special_case += "_nofortran"
+        if "+fortran" in self.spec:
+            special_case += "_fortran"
         if "+rocm" in self.spec:
             special_case += "_hip"
         return "{0}-{1}-{2}@{3}{4}.cmake".format(
