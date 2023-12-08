@@ -3,10 +3,20 @@
 //
 // SPDX-License-Identifier: (MIT)
 
-#include <mpi.h>
 #include <set>
 
 #include <gtest/gtest.h>
+
+// Tribol includes
+#include "tribol/common/Parameters.hpp"
+#include "tribol/config.hpp"
+#include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
+#include "tribol/utils/TestUtils.hpp"
+#include "tribol/types.hpp"
+
+// Redecomp includes
+#include "redecomp/redecomp.hpp"
 
 #ifdef TRIBOL_USE_UMPIRE
 // Umpire includes
@@ -19,16 +29,6 @@
 // Axom includes
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
-
-// Redecomp includes
-#include "redecomp/redecomp.hpp"
-
-// Tribol includes
-#include "tribol/common/Parameters.hpp"
-#include "tribol/config.hpp"
-#include "tribol/interface/tribol.hpp"
-#include "tribol/interface/mfem_tribol.hpp"
-#include "tribol/utils/TestUtils.hpp"
 
 /**
  * @brief This tests the Tribol MFEM interface running a small common plane explicit contact example using a central

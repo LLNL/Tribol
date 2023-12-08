@@ -43,10 +43,17 @@
  * Example output can be viewed in VisIt or ParaView.
  */
 
-#include <mfem/linalg/hypre.hpp>
-#include <mfem/linalg/solvers.hpp>
-#include <mfem/linalg/superlu.hpp>
 #include <set>
+
+// Tribol includes
+#include "tribol/common/Parameters.hpp"
+#include "tribol/config.hpp"
+#include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
+#include "tribol/types.hpp"
+
+// Redecomp includes
+#include "redecomp/redecomp.hpp"
 
 #ifdef TRIBOL_USE_UMPIRE
 // Umpire includes
@@ -59,15 +66,6 @@
 // Axom includes
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
-
-// Redecomp includes
-#include "redecomp/redecomp.hpp"
-
-// Tribol includes
-#include "tribol/common/Parameters.hpp"
-#include "tribol/config.hpp"
-#include "tribol/interface/tribol.hpp"
-#include "tribol/interface/mfem_tribol.hpp"
 
 int main( int argc, char** argv )
 {
