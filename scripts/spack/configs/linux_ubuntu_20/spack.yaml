@@ -1,5 +1,5 @@
 spack:
-  compilers::
+  compilers:
   - compiler:
       spec: gcc@9.4.0
       paths:

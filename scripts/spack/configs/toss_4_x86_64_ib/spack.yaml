@@ -12,7 +12,7 @@ spack:
   # Regular TPLs do not need views
   view: false
 
-  compilers::
+  compilers:
   - compiler:
       environment: {}
       extra_rpaths: []

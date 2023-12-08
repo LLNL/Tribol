@@ -17,7 +17,7 @@ spack:
   # Regular TPLs do not need views
   view: false
 
-  compilers::
+  compilers:
   - compiler:
       environment: {}
       extra_rpaths: []
@@ -31,22 +31,7 @@ spack:
         cxx: /usr/tce/packages/gcc/gcc-8.3.1/bin/g++
         f77: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
         fc:  /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
-      spec: gcc@8.3.1.1
-      target: ppc64le
-  - compiler:
-      environment: {}
-      extra_rpaths: []
-      flags:
-        # Fix for "undefined reference to `_gfortran_transfer_integer_write'"
-        ldlibs: -lgfortran
-      modules: []
-      operating_system: rhel7
-      paths:
-        cc:  /usr/tce/packages/gcc/gcc-8.3.1/bin/gcc
-        cxx: /usr/tce/packages/gcc/gcc-8.3.1/bin/g++
-        f77: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
-        fc:  /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
-      spec: gcc@8.3.1.2
+      spec: gcc@8.3.1
       target: ppc64le
   - compiler:
       environment: {}
@@ -61,22 +46,7 @@ spack:
         cxx: /usr/tce/packages/clang/clang-ibm-10.0.1-gcc-8.3.1/bin/clang++
         f77: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
         fc:  /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
-      spec: clang@10.0.1.1
-      target: ppc64le
-  - compiler:
-      environment: {}
-      extra_rpaths: []
-      flags:
-        # Fix for "undefined reference to `_gfortran_transfer_integer_write'"
-        ldlibs: -lgfortran
-      modules: []
-      operating_system: rhel7
-      paths:
-        cc:  /usr/tce/packages/clang/clang-ibm-10.0.1-gcc-8.3.1/bin/clang
-        cxx: /usr/tce/packages/clang/clang-ibm-10.0.1-gcc-8.3.1/bin/clang++
-        f77: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
-        fc:  /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
-      spec: clang@10.0.1.2
+      spec: clang@10.0.1
       target: ppc64le
   - compiler:
       environment: {}
@@ -131,13 +101,9 @@ spack:
     spectrum-mpi:
       buildable: false
       externals:
-      - spec: spectrum-mpi@release%gcc@8.3.1.1
+      - spec: spectrum-mpi@release%gcc@8.3.1
         prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-8.3.1/
-      - spec: spectrum-mpi@release%gcc@8.3.1.2
-        prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-8.3.1/
-      - spec: spectrum-mpi@release%clang@10.0.1.1
-        prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-clang-10.0.1-gcc-8.3.1/
-      - spec: spectrum-mpi@release%clang@10.0.1.2
+      - spec: spectrum-mpi@release%clang@10.0.1
         prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-clang-10.0.1-gcc-8.3.1/
       - spec: spectrum-mpi@release%xl@16.1.1.1
         prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl-2022.08.19/
@@ -150,13 +116,9 @@ spack:
       buildable: false
       externals:
       # These have trailing underscores in their symbols
-      - spec: netlib-lapack@3.9.0%gcc@8.3.1.1
+      - spec: netlib-lapack@3.9.0%gcc@8.3.1
         prefix: /usr/tcetmp/packages/lapack/lapack-3.9.0-P9-gcc-7.3.1/
-      - spec: netlib-lapack@3.9.0%gcc@8.3.1.2
-        prefix: /usr/tcetmp/packages/lapack/lapack-3.9.0-P9-gcc-7.3.1/
-      - spec: netlib-lapack@3.9.0%clang@10.0.1.1
-        prefix: /usr/tcetmp/packages/lapack/lapack-3.9.0-P9-gcc-7.3.1/
-      - spec: netlib-lapack@3.9.0%clang@10.0.1.2
+      - spec: netlib-lapack@3.9.0%clang@10.0.1
         prefix: /usr/tcetmp/packages/lapack/lapack-3.9.0-P9-gcc-7.3.1/
       # These do not have trailing underscores in their symbols
       - spec: netlib-lapack@3.9.0%xl@16.1.1.1

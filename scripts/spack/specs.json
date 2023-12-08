@@ -24,8 +24,8 @@
       "clang@15.0.0+rocm+umpire+raja amdgpu_target=gfx90a ^hip@5.4.3 ^rocprim@5.4.3 ^hsa-rocr-dev@5.4.3 ^llvm-amdgpu@5.4.3 ^raja~openmp+rocm" ],
 
     "blueos_3_ppc64le_ib_p9":
-    [ "clang@10.0.1.2+devtools+cuda+raja+umpire cuda_arch=70",
-      "gcc@8.3.1.2+devtools+cuda+raja+umpire cuda_arch=70" ],
+    [ "clang@10.0.1+devtools+cuda+raja+umpire cuda_arch=70",
+      "gcc@8.3.1+devtools+cuda+raja+umpire cuda_arch=70" ],
 
     "linux_ubuntu_20":
     [ "gcc@9.4.0+devtools" ],
