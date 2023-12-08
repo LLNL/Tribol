@@ -90,6 +90,18 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on("umpire amdgpu_target={0}".format(val), when="amdgpu_target={0}".format(val))
 
     depends_on("rocprim", when="+rocm")
+    
+    # Optional (require our variant in "when")
+    for dep in ["raja", "umpire"]:
+        depends_on("{0} build_type=Debug".format(dep), when="+{0} build_type=Debug".format(dep))
+        
+    # Required
+    for dep in ["axom", "conduit", "metis", "parmetis"]:
+        depends_on("{0} build_type=Debug".format(dep), when="build_type=Debug")
+
+    # Required but not CMake
+    for dep in ["hypre", "mfem"]:
+        depends_on("{0}+debug".format(dep), when="build_type=Debug")
 
     # Devtool dependencies these need to match tribol_devtools/package.py
     depends_on("doxygen", when="+devtools")
