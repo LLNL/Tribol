@@ -37,7 +37,7 @@ RedecompMesh::RedecompMesh(
           );
           break;
         default:
-          SLIC_ASSERT_MSG(false, "Only recursive coordinate bisection (RCB) decompositions "
+          SLIC_ERROR_ROOT("Only recursive coordinate bisection (RCB) decompositions "
             "are currently supported.");
       }
       break;
@@ -51,12 +51,12 @@ RedecompMesh::RedecompMesh(
           );
           break;
         default:
-          SLIC_ASSERT_MSG(false, "Only recursive coordinate bisection (RCB) decompositions "
+          SLIC_ERROR_ROOT("Only recursive coordinate bisection (RCB) decompositions "
             "are currently supported.");
       }
       break;
     default:
-      SLIC_ASSERT_MSG(false, "Only 2D and 3D meshes are supported.");
+      SLIC_ERROR_ROOT("Only 2D and 3D meshes are supported.");
   }
 
   // preclude degenerate case where num elements/2 < num ranks
@@ -82,27 +82,27 @@ RedecompMesh::RedecompMesh(
     case 2:
     {
       auto partitioner2d = dynamic_cast<const Partitioner2D*>(partitioner.get());
-      SLIC_ASSERT_MSG(partitioner2d != nullptr, "Partitioner must be Partitioner2D.");
+      SLIC_ERROR_ROOT_IF(partitioner2d == nullptr, "Partitioner must be Partitioner2D.");
       auto partition_elems2d = dynamic_cast<const PartitionElements2D*>(
         partitioner2d->getPartitionEntity()
       );
-      SLIC_ASSERT_MSG(partition_elems2d != nullptr, "Redecomp requires the PartitionEntity "
+      SLIC_ERROR_ROOT_IF(partition_elems2d == nullptr, "Redecomp requires the PartitionEntity "
         "to be PartitionElements.");
       break;
     }
     case 3:
     {
       auto partitioner3d = dynamic_cast<const Partitioner3D*>(partitioner.get());
-      SLIC_ASSERT_MSG(partitioner3d != nullptr, "Partitioner must be Partitioner3D.");
+      SLIC_ERROR_ROOT_IF(partitioner3d == nullptr, "Partitioner must be Partitioner3D.");
       auto partition_elems3d = dynamic_cast<const PartitionElements3D*>(
         partitioner3d->getPartitionEntity()
       );
-      SLIC_ASSERT_MSG(partition_elems3d != nullptr, "Redecomp requires the PartitionEntity "
+      SLIC_ERROR_ROOT_IF(partition_elems3d == nullptr, "Redecomp requires the PartitionEntity "
         "to be PartitionElements.");
       break;
     }
     default:
-      SLIC_ASSERT_MSG(false, "Only 2D and 3D meshes are supported.");
+      SLIC_ERROR_ROOT("Only 2D and 3D meshes are supported.");
   }
 
   // preclude degenerate case where num elements < num ranks
@@ -360,7 +360,7 @@ void RedecompMesh::BuildRedecomp()
     auto parent_node_pargf = dynamic_cast<const mfem::ParGridFunction*>(
       parent_.GetNodes()
     );
-    SLIC_ASSERT_MSG(parent_node_pargf != nullptr,
+    SLIC_ERROR_ROOT_IF(parent_node_pargf == nullptr,
       "Nodes in ParMesh parent_ must be a ParGridFunction.");
     auto node_transfer = RedecompTransfer();
     node_transfer.TransferToSerial(*parent_node_pargf, *Nodes);
