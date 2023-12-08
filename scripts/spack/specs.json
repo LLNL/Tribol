@@ -32,5 +32,6 @@
 
     "linux_ubuntu_22":
     [ "gcc@11.4.0+devtools+cuda+raja+umpire cuda_arch=70",
-      "gcc@11.4.0+devtools+raja+umpire" ]
+      "gcc@11.4.0+devtools+raja+umpire",
+      "clang@14.0.0+devtools+raja+umpire" ]
 }
