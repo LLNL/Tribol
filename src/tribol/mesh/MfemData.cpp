@@ -211,9 +211,11 @@ std::vector<const real*> ParentField::GetRedecompFieldPtrs() const
   auto data_ptrs = std::vector<const real*>(3, nullptr);
   if (GetRedecompGridFn().FESpace()->GetNDofs() > 0)
   {
+    // Tribol only computes on host
+    auto data = GetRedecompGridFn().HostRead();
     for (size_t i{}; i < static_cast<size_t>(GetRedecompGridFn().FESpace()->GetVDim()); ++i)
     {
-      data_ptrs[i] = &GetRedecompGridFn()(GetRedecompGridFn().FESpace()->DofToVDof(0, i));
+      data_ptrs[i] = &data[GetRedecompGridFn().FESpace()->DofToVDof(0, i)];
     }
   }
   return data_ptrs;
@@ -224,9 +226,10 @@ std::vector<real*> ParentField::GetRedecompFieldPtrs(mfem::GridFunction& redecom
   auto data_ptrs = std::vector<real*>(3, nullptr);
   if (redecomp_gridfn.FESpace()->GetNDofs() > 0)
   {
+    auto data = redecomp_gridfn.HostReadWrite();
     for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
     {
-      data_ptrs[i] = &redecomp_gridfn(redecomp_gridfn.FESpace()->DofToVDof(0, i));
+      data_ptrs[i] = &data[redecomp_gridfn.FESpace()->DofToVDof(0, i)];
     }
   }
   return data_ptrs;
@@ -283,9 +286,10 @@ std::vector<const real*> PressureField::GetRedecompFieldPtrs() const
   auto data_ptrs = std::vector<const real*>(3, nullptr);
   if (GetRedecompGridFn().FESpace()->GetNDofs() > 0)
   {
+    auto data = GetRedecompGridFn().HostRead();
     for (size_t i{}; i < static_cast<size_t>(GetRedecompGridFn().FESpace()->GetVDim()); ++i)
     {
-      data_ptrs[i] = &GetRedecompGridFn()(GetRedecompGridFn().FESpace()->DofToVDof(0, i));
+      data_ptrs[i] = &data[GetRedecompGridFn().FESpace()->DofToVDof(0, i)];
     }
   }
   return data_ptrs;
@@ -296,9 +300,10 @@ std::vector<real*> PressureField::GetRedecompFieldPtrs(mfem::GridFunction& redec
   auto data_ptrs = std::vector<real*>(3, nullptr);
   if (redecomp_gridfn.FESpace()->GetNDofs() > 0)
   {
+    auto data = redecomp_gridfn.HostReadWrite();
     for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
     {
-      data_ptrs[i] = &redecomp_gridfn(redecomp_gridfn.FESpace()->DofToVDof(0, i));
+      data_ptrs[i] = &data[redecomp_gridfn.FESpace()->DofToVDof(0, i)];
     }
   }
   return data_ptrs;
@@ -1127,11 +1132,12 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
     J_true->GetComm(), J_true->GetGlobalNumRows(), J_true->GetRowStarts(), &inactive_sm
   );
   // Have the mfem::HypreParMatrix manage the data pointers
-  rows.GetMemory().SetHostPtrOwner(false);
-  mortar_tdofs.GetMemory().SetHostPtrOwner(false);
-  ones.GetMemory().SetHostPtrOwner(false);
-  inactive_sm.SetDataOwner(false);
-  inactive_hpm->SetOwnerFlags(3, 3, 1);
+  rows.GetMemory().ClearOwnerFlags();
+  mortar_tdofs.GetMemory().ClearOwnerFlags();
+  ones.GetMemory().ClearOwnerFlags();
+  inactive_sm.GetMemoryI().ClearOwnerFlags();
+  inactive_sm.GetMemoryJ().ClearOwnerFlags();
+  inactive_sm.GetMemoryData().ClearOwnerFlags();
 
   block_J->SetBlock(0, 1, J_true->Transpose());
   block_J->SetBlock(1, 0, J_true.release());
