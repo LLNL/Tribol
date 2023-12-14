@@ -367,14 +367,17 @@ int main( int argc, char** argv )
   // Create a block RHS vector storing forces and gaps. Note no external forces
   // are present in this problem.
   mfem::BlockVector B_blk { A_blk->RowOffsets() };
+  B_blk.UseDevice(true);
   B_blk = 0.0;
   // Create a block solution vector storing displacement and pressures.
   mfem::BlockVector X_blk { A_blk->ColOffsets() };
+  X_blk.UseDevice(true);
   X_blk = 0.0;
 
   // This API call returns the mortar nodal gap vector to an (uninitialized)
   // vector. The function sizes and initializes the vector.
   mfem::Vector g;
+  g.UseDevice(true);
   tribol::getMfemGap(coupling_scheme_id, g);
 
   // Apply a restriction operator on the submesh: maps dofs stored in g to tdofs
@@ -388,6 +391,7 @@ int main( int argc, char** argv )
     auto& R_submesh = *tribol::getMfemPressure(coupling_scheme_id)
       .ParFESpace()->GetRestrictionMatrix();
     R_submesh.Mult(g, G);
+    G.DeleteDevice();
   }
 
   // Create a single HypreParMatrix from blocks (useful for different
