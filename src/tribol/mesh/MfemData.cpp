@@ -127,9 +127,13 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   // transfer data from redecomp mesh
   mfem::ParGridFunction dst_gridfn(dst_fespace_ptr, *dst_ptr);
   redecomp_xfer_.TransferToParallel(redecomp_src, dst_gridfn);
-  // using redecomp, shared dof values are set equal (i.e. a ParGridFunction), but we want the sum of shared dof
-  // values to equal the actual dof value when transferring dual fields (i.e. force and gap) back to the parallel mesh
+
+  // using redecomp, shared dof values are set equal (i.e. a ParGridFunction), but we want the sum of shared dof values
+  // to equal the actual dof value when transferring dual fields (i.e. force and gap) back to the parallel mesh
   // following MFEMs convention.  set non-owned DOF values to zero.
+  
+  // P_I is the row index vector on the MFEM prolongation matrix. If there are no column entries for the row, then the
+  // DOF is owned by another rank.
   auto P_I = dst_fespace_ptr->Dof_TrueDof_Matrix()->GetDiagMemoryI();
   HYPRE_Int tdof_ct {0};
   for (int i{0}; i < dst_fespace_ptr->GetVSize(); ++i)

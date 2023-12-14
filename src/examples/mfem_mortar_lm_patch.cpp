@@ -377,8 +377,8 @@ int main( int argc, char** argv )
   mfem::Vector g;
   tribol::getMfemGap(coupling_scheme_id, g);
 
-  // Apply a restriction operator on the submesh: maps dofs stored in g to tdofs
-  // stored in G for parallel solution of the linear system.
+  // Apply a transpose prolongation operator on the submesh: maps dofs stored in g to tdofs stored in G for parallel
+  // solution of the linear system.
   //
   // NOTE: gap is a dual field so we apply the transpose prolongation operator
   {

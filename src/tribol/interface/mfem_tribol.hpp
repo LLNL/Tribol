@@ -237,7 +237,8 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
 /**
  * @brief Returns gap vector to a given mfem::Vector
  *
- * @note This is stored as a dual vector, meaning the shared DOFs must be summed over all ranks to obtain their value.
+ * @note This is stored as an MFEM dual vector, meaning the shared DOFs expect to be summed over all ranks to obtain
+ * their value.
  *
  * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
  * @pre Redecomp mesh must be created and up to date by calling updateMfemParallelDecomposition()

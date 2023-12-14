@@ -703,7 +703,7 @@ public:
    */
   integer GetMesh1NE() const
   { 
-    return GetUpdateData().conn_1_.size() / update_data_->num_verts_per_elem_;
+    return GetUpdateData().conn_1_.size() / GetUpdateData().num_verts_per_elem_;
   }
 
   /**
@@ -713,7 +713,7 @@ public:
    */
   integer GetMesh2NE() const
   {
-    return GetUpdateData().conn_2_.size() / update_data_->num_verts_per_elem_;
+    return GetUpdateData().conn_2_.size() / GetUpdateData().num_verts_per_elem_;
   }
 
   /**
@@ -748,7 +748,7 @@ public:
    *
    * @return integer 
    */
-  integer GetElemType() const { return update_data_->elem_type_; }
+  InterfaceElementType GetElemType() const { return GetUpdateData().elem_type_; }
 
   /**
    * @brief Get pointers to component arrays of the coordinates on the
@@ -789,7 +789,8 @@ public:
   /**
    * @brief Get the nodal response vector on the parent mesh
    *
-   * @note This is stored as a dual vector, meaning the shared DOFs must be summed over all ranks to obtain their value.
+   * @note This is stored as an MFEM dual vector, meaning the shared DOFs are expected to be summed over all ranks to
+   * obtain their value.
    *
    * @param [out] r Pre-allocated, initialized mfem::Vector to which response vector is added
    */
@@ -1553,7 +1554,8 @@ public:
   /**
    * @brief Get the gap vector on the parent-linked boundary submesh
    *
-   * @note This is stored as a dual vector, meaning the shared DOFs must be summed over all ranks to obtain their value.
+   * @note This is stored as an MFEM dual vector, meaning the shared DOFs are expected to be summed over all ranks to
+   * obtain their value.
    *
    * @param [out] g Un-initialized mfem::Vector holding the nodal gap values
    */
