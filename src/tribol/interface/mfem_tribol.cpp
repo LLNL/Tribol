@@ -40,9 +40,9 @@ void registerMfemCouplingScheme( integer cs_id,
    );
    // register empty meshes so the coupling scheme is valid
    registerMesh(
-      mesh_id_1, 0, 0, nullptr, mfem_data->GetElemType(), nullptr, nullptr);
+      mesh_id_1, 0, 0, nullptr, 1, nullptr, nullptr);
    registerMesh(
-      mesh_id_2, 0, 0, nullptr, mfem_data->GetElemType(), nullptr, nullptr);
+      mesh_id_2, 0, 0, nullptr, 1, nullptr, nullptr);
    registerCouplingScheme(
       cs_id,
       mesh_id_1,

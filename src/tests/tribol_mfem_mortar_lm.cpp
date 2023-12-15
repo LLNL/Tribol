@@ -191,11 +191,11 @@ protected:
     mfem::ParGridFunction g;
     tribol::getMfemGap(0, g);
 
-  // restriction operator on submesh: maps dofs stored in g to tdofs stored in G
+  // prolongation transpose operator on submesh: maps dofs stored in g to tdofs stored in G
     {
       auto& G = B_blk.GetBlock(1);
-      auto& R_submesh = *tribol::getMfemPressure(0).ParFESpace()->GetRestrictionOperator();
-      R_submesh.Mult(g, G);
+      auto& P_submesh = *tribol::getMfemPressure(0).ParFESpace()->GetProlongationMatrix();
+      P_submesh.MultTranspose(g, G);
     }
 
     // solve for X_blk

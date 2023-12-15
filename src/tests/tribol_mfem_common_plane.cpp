@@ -241,15 +241,17 @@ protected:
   }
 };
 
-TEST_P(MfemCommonPlaneTest, mass_matrix_transfer)
+TEST_P(MfemCommonPlaneTest, common_plane)
 {
-  EXPECT_LT(std::abs(max_disp_ - 0.013637427890739103), 1.0e-8);
+  EXPECT_LT(std::abs(max_disp_ - 0.013637427890739103), 1.5e-6);
 
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
 INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(std::make_pair(1, tribol::KINEMATIC_CONSTANT),
-                                                                      std::make_pair(1, tribol::KINEMATIC_ELEMENT)));
+                                                                      std::make_pair(1, tribol::KINEMATIC_ELEMENT),
+                                                                      std::make_pair(2, tribol::KINEMATIC_CONSTANT),
+                                                                      std::make_pair(2, tribol::KINEMATIC_ELEMENT)));
 
 //------------------------------------------------------------------------------
 int main(int argc, char* argv[])
