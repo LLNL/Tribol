@@ -63,6 +63,11 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
 
   auto my_rank = getMPIUtility().MyRank();
   auto n_ranks = getMPIUtility().NRanks();
+    
+  // The corresponding parent rank of redecomp mesh elements are ordered, i.e. the parent rank of redecomp element i-1
+  // is <= the parent rank of redecomp element i. As a result, the map from redecomp elements to parent ranks only
+  // stores element offsets. Elements that lie in the ghost region (ghost elements) are stored as an array of arrays,
+  // with the first index corresponding to the parent rank and the nested array holding sorted ghost element indices.
 
   // package the entries to send to other ranks
   MPIArray<double> recv_matrix_data(&getMPIUtility());
@@ -70,9 +75,13 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
   MPIArray<int> recv_parent_local_col(&getMPIUtility());
   MPIArray<int> recv_parent_col_ranks(&getMPIUtility());
   {
+    // values to send to parent ranks
     MPIArray<double> send_matrix_data(&getMPIUtility());
+    // indices in redecomp_mesh_.p2r_elems_ (to obtain parent element id)
     MPIArray<int> send_parent_local_row_offsets(&getMPIUtility());
+    // indices in redecomp_mesh_.p2r_elems_ (to obtain parent element id)
     MPIArray<int> send_parent_local_col_offsets(&getMPIUtility());
+    // parent rank which owns the column (trial) space element. we need this to convert offsets to parent element ids.
     MPIArray<int> send_parent_col_ranks(&getMPIUtility());
     // guess size and preallocate
     auto approx_size = 2 * src.NumNonZeroElems() / n_ranks;
@@ -92,8 +101,9 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
     auto& test_ghost_elems = redecomp_test_mesh_.getRedecompToParentGhostElems();
     auto& trial_elem_offsets = redecomp_trial_mesh_.getRedecompToParentElemOffsets();
 
-    // test space = row space
+    // NOTE: test space = row space
     auto test_parent_rank = 0;
+    // tracks index of ghost elements for each rank
     auto test_ghost_ct = 0;
     for (int i{0}; i < src.Height(); ++i)
     {
@@ -101,21 +111,26 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
       while (test_elem_id == test_elem_offsets[test_parent_rank + 1])
       {
         ++test_parent_rank;
+        // the rank increased, reset the ghost element index
         test_ghost_ct = 0;
       }
       // skip unowned elements
       if (test_ghost_ct < test_ghost_elems[test_parent_rank].size() 
         && test_elem_id == test_ghost_elems[test_parent_rank][test_ghost_ct])
       {
+        // the element is a ghost on this rank. increase the index to check for the next ghost (since they are sorted in
+        // ascending order).
         ++test_ghost_ct;
         continue;
       }
-      // trial space = col space
+      // at this point, we know the element in the row space is own by the redecomp mesh. loop through the column (trial
+      // space) data in the SparseMatrix for this row.
       auto trial_parent_rank = 0;
       for (int Ij{src_I[i]}; Ij < src_I[i+1]; ++Ij)
       {
         const int j{src_J[Ij]};
         const auto trial_elem_id = j; // assumes 1 point per element
+        // use the offset data to find the parent rank where this element is stored.
         while (trial_elem_id >= trial_elem_offsets[trial_parent_rank + 1])
         {
           ++trial_parent_rank;
@@ -168,7 +183,7 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
         send_parent_local_col_offsets[r][i] = send_col_offsets_by_rank[col_rank][per_rank_ct[col_rank]++];
       }
     }
-    //do MPI communication
+    // do MPI communication
     recv_matrix_data.SendRecvArrayEach(send_matrix_data);
     // NOTE: these hold offsets now; need to convert these to element numbers
     recv_parent_local_row.SendRecvArrayEach(send_parent_local_row_offsets);
