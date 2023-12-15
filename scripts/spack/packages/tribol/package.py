@@ -40,7 +40,7 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
     # Variants
     # -----------------------------------------------------------------------
     variant("redecomp", default=True,
-            description="Build redecomp domain redecompsition library")
+            description="Build redecomp domain redecomposition library")
     variant("fortran", default=False,
             description="Enable Fortran support")
     variant("tests", default=False,
