@@ -63,23 +63,16 @@ public:
    * @param submesh_src Source higher-order grid function on the parent-linked
    * boundary submesh
    */
-  void TransferToLORGridFn(
-    const mfem::ParGridFunction& submesh_src
-  );
+  void TransferToLORGridFn(const mfem::ParGridFunction& submesh_src);
 
   /**
-   * @brief Transfers data to a higher-order grid function on a parent-linked
-   * boundary submesh
+   * @brief Transfers data to a higher-order vector on a parent-linked boundary submesh
    *
-   * Data must be stored in the low-order grid function on the LOR mesh accessed
-   * using GetLORGridFn().
+   * Data must be stored in the low-order vector on the LOR mesh accessed using GetLORVector().
    *
-   * @param submesh_dst Destination higher-order grid function on the
-   * parent-linked boundary submesh
+   * @param submesh_dst Destination higher-order vector on the parent-linked boundary submesh
    */
-  void TransferFromLORGridFn(
-    mfem::ParGridFunction& submesh_dst
-  ) const;
+  void TransferFromLORVector(mfem::Vector& submesh_dst) const;
 
   /**
    * @brief Transfer grid function on parent-linked boundary submesh to grid
@@ -103,9 +96,23 @@ public:
   /**
    * @brief Access the local low-order grid function on the LOR mesh
    * 
-   * @return const mfem::ParGridFunction& 
+   * @return mfem::ParGridFunction& 
    */
   const mfem::ParGridFunction& GetLORGridFn() const { return *lor_gridfn_; }
+
+  /**
+   * @brief Access the local low-order vector on the LOR mesh
+   * 
+   * @return mfem::Vector& 
+   */
+  mfem::Vector& GetLORVector() { return *lor_gridfn_; }
+
+  /**
+   * @brief Access the local low-order vector on the LOR mesh
+   * 
+   * @return const mfem::Vector& 
+   */
+  const mfem::Vector& GetLORVector() const { return *lor_gridfn_; }
 
 private:
   /**
@@ -179,16 +186,18 @@ public:
   ) const;
 
   /**
-   * @brief Transfer grid function on redecomp mesh to grid function on
-   * parent-linked boundary submesh
+   * @brief Transfer grid function on redecomp mesh to vector on parent-linked boundary submesh
+   *
+   * @note The redecomp_src GridFunction is expected to have values at shared DOFs equal.  The submesh_dst will need
+   * parallel summation for shared DOF values to be equal.  This arrangement of DOF values is in line with dual vectors
+   * in MFEM.
    *
    * @param redecomp_src Grid function on redecomp mesh
-   * @param submesh_dst Zero-valued grid function on parent-linked boundary
-   * submesh
+   * @param submesh_dst Zero-valued vector on parent-linked boundary submesh
    */
   void RedecompToSubmesh(
     const mfem::GridFunction& redecomp_src,
-    mfem::ParGridFunction& submesh_dst
+    mfem::Vector& submesh_dst
   ) const;
 
   /**
@@ -296,16 +305,16 @@ public:
   ) const;
   
   /**
-   * @brief Transfer grid function on redecomp mesh to grid function on parent
-   * mesh
+   * @brief Transfer grid function on redecomp mesh to vector on parent mesh
+   *
+   * @note The redecomp_src GridFunction is expected to have values at shared DOFs equal.  The parallel_dst will need
+   * parallel summation for shared DOF values to be equal.  This arrangement of DOF values is in line with dual vectors
+   * in MFEM.
    *
    * @param [in] redecomp_src Grid function on RedecompMesh
-   * @param [out] parent_dst Zero-valued grid function on parent mesh
+   * @param [out] parent_dst Zero-valued vector on parent mesh
    */
-  void RedecompToParent(
-    const mfem::GridFunction& redecomp_src, 
-    mfem::ParGridFunction& parent_dst
-  ) const;
+  void RedecompToParent(const mfem::GridFunction& redecomp_src, mfem::Vector& parent_dst) const;
 
   /**
    * @brief Get the parent-linked boundary submesh finite element space
@@ -694,7 +703,7 @@ public:
    */
   integer GetMesh1NE() const
   { 
-    return GetUpdateData().conn_1_.size() / num_verts_per_elem_;
+    return GetUpdateData().conn_1_.size() / GetUpdateData().num_verts_per_elem_;
   }
 
   /**
@@ -704,7 +713,7 @@ public:
    */
   integer GetMesh2NE() const
   {
-    return GetUpdateData().conn_2_.size() / num_verts_per_elem_;
+    return GetUpdateData().conn_2_.size() / GetUpdateData().num_verts_per_elem_;
   }
 
   /**
@@ -739,7 +748,7 @@ public:
    *
    * @return integer 
    */
-  integer GetElemType() const { return elem_type_; }
+  InterfaceElementType GetElemType() const { return GetUpdateData().elem_type_; }
 
   /**
    * @brief Get pointers to component arrays of the coordinates on the
@@ -780,8 +789,10 @@ public:
   /**
    * @brief Get the nodal response vector on the parent mesh
    *
-   * @param [out] r Pre-allocated, initialized mfem::Vector to which response
-   * vector is added
+   * @note This is stored as an MFEM dual vector, meaning the shared DOFs are expected to be summed over all ranks to
+   * obtain their value.
+   *
+   * @param [out] r Pre-allocated, initialized mfem::Vector to which response vector is added
    */
   void GetParentResponse(mfem::Vector& r) const;
 
@@ -1153,7 +1164,6 @@ private:
      * the first Tribol registered mesh
      * @param attributes_2 Set of boundary attributes identifying elements in
      * the second Tribol registered mesh
-     * @param num_verts_per_elem Number of vertices on each element
      */
     UpdateData(
       mfem::ParSubMesh& submesh,
@@ -1162,8 +1172,7 @@ private:
       mfem::ParGridFunction& submesh_gridfn,
       SubmeshLORTransfer* submesh_lor_xfer,
       const std::set<integer>& attributes_1,
-      const std::set<integer>& attributes_2,
-      integer num_verts_per_elem
+      const std::set<integer>& attributes_2
     );
 
     /**
@@ -1200,6 +1209,16 @@ private:
      */
     std::vector<integer> elem_map_2_;
 
+    /**
+    * @brief Type of elements on the contact meshes
+    */
+    InterfaceElementType elem_type_;
+
+    /**
+    * @brief Number of vertices on each element in the contact meshes
+    */
+    integer num_verts_per_elem_;
+
   private:
     /**
      * @brief Builds connectivity arrays and redecomp mesh to Tribol registered
@@ -1209,13 +1228,16 @@ private:
      * registered mesh
      * @param attributes_2 Set of boundary attributes for the second Tribol
      * registered mesh
-     * @param num_verts_per_elem Number of vertices on each element
      */
     void UpdateConnectivity(
       const std::set<integer>& attributes_1,
-      const std::set<integer>& attributes_2,
-      integer num_verts_per_elem
+      const std::set<integer>& attributes_2
     );
+
+    /**
+     * @brief Sets the number of vertices per element and the element type for the redecomp mesh
+     */
+    void SetElementData();
   };
   
   /**
@@ -1246,18 +1268,6 @@ private:
     const mfem::ParMesh& parent_mesh,
     const std::set<integer>& attributes_1,
     const std::set<integer>& attributes_2
-  );
-
-  /**
-   * @brief Create a grid function on the given parent-linked boundary submesh
-   *
-   * @param submesh Parent-linked boundary submesh
-   * @param parent_fes Finite element space on the parent mesh
-   * @return mfem::ParGridFunction 
-   */
-  static mfem::ParGridFunction CreateSubmeshGridFn(
-    mfem::ParSubMesh& submesh,
-    mfem::ParFiniteElementSpace& parent_fes
   );
 
   /**
@@ -1316,16 +1326,6 @@ private:
    * used; nullptr otherwise
    */
   std::unique_ptr<SubmeshLORTransfer> submesh_lor_xfer_;
-
-  /**
-   * @brief Type of elements on the contact meshes
-   */
-  InterfaceElementType elem_type_;
-
-  /**
-   * @brief Number of vertices on each element in the contact meshes
-   */
-  integer num_verts_per_elem_;
 
   /**
    * @brief Contains velocity grid function and transfer operators if set;
@@ -1553,6 +1553,9 @@ public:
 
   /**
    * @brief Get the gap vector on the parent-linked boundary submesh
+   *
+   * @note This is stored as an MFEM dual vector, meaning the shared DOFs are expected to be summed over all ranks to
+   * obtain their value.
    *
    * @param [out] g Un-initialized mfem::Vector holding the nodal gap values
    */
