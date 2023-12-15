@@ -32,8 +32,8 @@ void SubmeshLORTransfer::TransferToLORGridFn(
   SubmeshToLOR(submesh_src, *lor_gridfn_);
 }
 
-void SubmeshLORTransfer::TransferFromLORGridFn(
-  mfem::ParGridFunction& submesh_dst
+void SubmeshLORTransfer::TransferFromLORVector(
+  mfem::Vector& submesh_dst
 ) const
 {
   lor_xfer_.ForwardOperator().MultTranspose(*lor_gridfn_, submesh_dst);
@@ -112,22 +112,45 @@ void SubmeshRedecompTransfer::SubmeshToRedecomp(
 
 void SubmeshRedecompTransfer::RedecompToSubmesh(
   const mfem::GridFunction& redecomp_src,
-  mfem::ParGridFunction& submesh_dst
+  mfem::Vector& submesh_dst
 ) const
 {
   auto dst_ptr = &submesh_dst;
+  auto dst_fespace_ptr = &submesh_fes_;
   // first initialize LOR grid function (if using LOR)
   if (submesh_lor_xfer_)
   {
-    submesh_lor_xfer_->GetLORGridFn() = 0.0;
-    dst_ptr = &submesh_lor_xfer_->GetLORGridFn();
+    submesh_lor_xfer_->GetLORVector() = 0.0;
+    dst_ptr = &submesh_lor_xfer_->GetLORVector();
+    dst_fespace_ptr = submesh_lor_xfer_->GetLORGridFn().ParFESpace();
   }
   // transfer data from redecomp mesh
-  redecomp_xfer_.TransferToParallel(redecomp_src, *dst_ptr);
+  mfem::ParGridFunction dst_gridfn(dst_fespace_ptr, *dst_ptr);
+  redecomp_xfer_.TransferToParallel(redecomp_src, dst_gridfn);
+
+  // using redecomp, shared dof values are set equal (i.e. a ParGridFunction), but we want the sum of shared dof values
+  // to equal the actual dof value when transferring dual fields (i.e. force and gap) back to the parallel mesh
+  // following MFEMs convention.  set non-owned DOF values to zero.
+  
+  // P_I is the row index vector on the MFEM prolongation matrix. If there are no column entries for the row, then the
+  // DOF is owned by another rank.
+  auto P_I = dst_fespace_ptr->Dof_TrueDof_Matrix()->GetDiagMemoryI();
+  HYPRE_Int tdof_ct {0};
+  for (int i{0}; i < dst_fespace_ptr->GetVSize(); ++i)
+  {
+    if (P_I[i+1] != tdof_ct)
+    {
+      ++tdof_ct;
+    }
+    else
+    {
+      (*dst_ptr)[i] = 0.0;
+    }
+  }
   // if using LOR, transfer data from LOR mesh to submesh
   if (submesh_lor_xfer_)
   {
-    submesh_lor_xfer_->TransferFromLORGridFn(submesh_dst);
+    submesh_lor_xfer_->TransferFromLORVector(submesh_dst);
   }
 }
 
@@ -181,12 +204,14 @@ void ParentRedecompTransfer::ParentToRedecomp(
 
 void ParentRedecompTransfer::RedecompToParent(
   const mfem::GridFunction& redecomp_src,
-  mfem::ParGridFunction& parent_dst
+  mfem::Vector& parent_dst
 ) const
 {
   submesh_gridfn_ = 0.0;
   submesh_redecomp_xfer_.RedecompToSubmesh(redecomp_src, submesh_gridfn_);
-  submesh_redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, parent_dst);
+  // submesh transfer requires a grid function.  create one using parent_dst's data
+  mfem::ParGridFunction parent_gridfn(&parent_fes_, parent_dst);
+  submesh_redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, parent_gridfn);
 }
 
 ParentField::ParentField(
@@ -379,42 +404,6 @@ MfemMeshData::MfemMeshData(
   {
     SetLORFactor(current_coords.FESpace()->FEColl()->GetOrder());
   }
-
-  // set the element type
-  mfem::Element::Type element_type = mfem::Element::QUADRILATERAL;
-  if (submesh_.GetNE() > 0)
-  {
-    element_type = submesh_.GetElementType(0);
-  }
-
-  switch (element_type) 
-  {
-    case mfem::Element::SEGMENT:
-      elem_type_ = LINEAR_EDGE;
-      break;
-    case mfem::Element::TRIANGLE:
-      elem_type_ = LINEAR_TRIANGLE;
-      break;
-    case mfem::Element::QUADRILATERAL:
-      elem_type_ = LINEAR_QUAD;
-      break;
-    case mfem::Element::TETRAHEDRON:
-      elem_type_ = LINEAR_TET;
-      break;
-    case mfem::Element::HEXAHEDRON:
-      elem_type_ = LINEAR_HEX;
-      break;
-
-    case mfem::Element::POINT:
-      SLIC_ERROR_ROOT("Unsupported element type!");
-      break;
-
-    default:
-      SLIC_ERROR_ROOT("Unknown element type!");
-      break;
-  }
-
-  num_verts_per_elem_ = mfem::Geometry::NumVerts[element_type];
 }
 
 void MfemMeshData::SetParentCoords(const mfem::ParGridFunction& current_coords)
@@ -441,8 +430,7 @@ void MfemMeshData::UpdateMfemMeshData()
     submesh_xfer_gridfn_,
     submesh_lor_xfer_.get(),
     attributes_1_, 
-    attributes_2_, 
-    num_verts_per_elem_
+    attributes_2_
   );
   coords_.UpdateField(update_data_->vector_xfer_);
   redecomp_response_.SetSpace(coords_.GetRedecompGridFn().FESpace());
@@ -512,8 +500,7 @@ void MfemMeshData::UpdateMfemMeshData()
 
 void MfemMeshData::GetParentResponse(mfem::Vector& r) const
 {
-  mfem::ParGridFunction r_gridfn(coords_.GetParentGridFn().ParFESpace(), r);
-  GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r_gridfn);
+  GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r);
 }
 
 void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
@@ -678,8 +665,7 @@ MfemMeshData::UpdateData::UpdateData(
   mfem::ParGridFunction& submesh_gridfn,
   SubmeshLORTransfer* submesh_lor_xfer,
   const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2,
-  integer num_verts_per_elem
+  const std::set<integer>& attributes_2
 )
 : redecomp_mesh_ { lor_mesh ? 
     redecomp::RedecompMesh(*lor_mesh) :
@@ -687,18 +673,19 @@ MfemMeshData::UpdateData::UpdateData(
   },
   vector_xfer_ { parent_fes, submesh_gridfn, submesh_lor_xfer, redecomp_mesh_ }
 {
+  // set element type based on redecomp mesh
+  SetElementData();
   // updates the connectivity of the tribol surface mesh
-  UpdateConnectivity(attributes_1, attributes_2, num_verts_per_elem);
+  UpdateConnectivity(attributes_1, attributes_2);
 }
 
 void MfemMeshData::UpdateData::UpdateConnectivity(
   const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2,
-  integer num_verts_per_elem
+  const std::set<integer>& attributes_2
 )
 {
-  conn_1_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem);
-  conn_2_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem);
+  conn_1_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem_);
+  conn_2_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem_);
   elem_map_1_.reserve(static_cast<size_t>(redecomp_mesh_.GetNE()));
   elem_map_2_.reserve(static_cast<size_t>(redecomp_mesh_.GetNE()));
   for (int e{}; e < redecomp_mesh_.GetNE(); ++e)
@@ -712,8 +699,8 @@ void MfemMeshData::UpdateData::UpdateConnectivity(
       if (attribute_1 == elem_attrib)
       {
         elem_map_1_.push_back(e);
-        conn_1_.resize(elem_map_1_.size(), num_verts_per_elem);
-        for (int v{}; v < num_verts_per_elem; ++v)
+        conn_1_.resize(elem_map_1_.size(), num_verts_per_elem_);
+        for (int v{}; v < num_verts_per_elem_; ++v)
         {
           conn_1_(elem_map_1_.size() - 1, v) = elem_conn[v];
         }
@@ -728,8 +715,8 @@ void MfemMeshData::UpdateData::UpdateConnectivity(
         if (attribute_2 == elem_attrib)
         {
           elem_map_2_.push_back(e);
-          conn_2_.resize(elem_map_2_.size(), num_verts_per_elem);
-          for (int v{}; v < num_verts_per_elem; ++v)
+          conn_2_.resize(elem_map_2_.size(), num_verts_per_elem_);
+          for (int v{}; v < num_verts_per_elem_; ++v)
           {
             conn_2_(elem_map_2_.size() - 1, v) = elem_conn[v];
           }
@@ -780,6 +767,49 @@ mfem::ParSubMesh MfemMeshData::CreateSubmesh(
   );
 }
 
+void MfemMeshData::UpdateData::SetElementData()
+{
+  if (redecomp_mesh_.GetNE() > 0)
+  {
+    auto element_type = redecomp_mesh_.GetElementType(0);
+
+    switch (element_type) 
+    {
+      case mfem::Element::SEGMENT:
+        elem_type_ = LINEAR_EDGE;
+        break;
+      case mfem::Element::TRIANGLE:
+        elem_type_ = LINEAR_TRIANGLE;
+        break;
+      case mfem::Element::QUADRILATERAL:
+        elem_type_ = LINEAR_QUAD;
+        break;
+      case mfem::Element::TETRAHEDRON:
+        elem_type_ = LINEAR_TET;
+        break;
+      case mfem::Element::HEXAHEDRON:
+        elem_type_ = LINEAR_HEX;
+        break;
+
+      case mfem::Element::POINT:
+        SLIC_ERROR_ROOT("Unsupported element type!");
+        break;
+
+      default:
+        SLIC_ERROR_ROOT("Unknown element type!");
+        break;
+    }
+
+    num_verts_per_elem_ = mfem::Geometry::NumVerts[element_type];
+  }
+  else
+  {
+    // just put something here so Tribol will not give a warning for zero element meshes
+    elem_type_ = LINEAR_EDGE;
+    num_verts_per_elem_ = 2;
+  }
+}
+
 MfemSubmeshData::MfemSubmeshData(
   mfem::ParSubMesh& submesh,
   mfem::ParMesh* lor_mesh,
@@ -821,9 +851,8 @@ void MfemSubmeshData::UpdateMfemSubmeshData(redecomp::RedecompMesh& redecomp_mes
 void MfemSubmeshData::GetSubmeshGap(mfem::Vector& g) const
 {
   g.SetSize(submesh_pressure_.ParFESpace()->GetVSize());
-  mfem::ParGridFunction g_gridfn(submesh_pressure_.ParFESpace(), g);
-  g_gridfn = 0.0;
-  GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g_gridfn);
+  g = 0.0;
+  GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g);
 }
 
 MfemSubmeshData::UpdateData::UpdateData(

@@ -29,8 +29,8 @@
 #include <set>
 
 // Tribol includes
-#include "tribol/common/Parameters.hpp"
 #include "tribol/config.hpp"
+#include "tribol/common/Parameters.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/interface/mfem_tribol.hpp"
 #include "tribol/utils/TestUtils.hpp"
