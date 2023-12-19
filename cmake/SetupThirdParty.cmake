@@ -10,7 +10,7 @@
 message(STATUS "Configuring TPLs...\n"
                "----------------------")
 
-set(TPL_DEPS)
+set(EXPORTED_TPL_DEPS)
 include(CMakeFindDependencyMacro)
 
 #------------------------------------------------------------------------------
@@ -44,9 +44,6 @@ if (TARGET axom)
 elseif (DEFINED AXOM_DIR)
   message(STATUS "Setting up external Axom TPL...")
   include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupAxom.cmake)
-
-  list(APPEND TPL_DEPS axom)
-
 else()
   message(FATAL_ERROR 
      "Axom is a required dependency for tribol. "
@@ -79,7 +76,7 @@ elseif (DEFINED MFEM_DIR)
 
   include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupMFEM.cmake)
 
-  list(APPEND TPL_DEPS mfem)
+  list(APPEND EXPORTED_TPL_DEPS mfem)
 else()
   message(FATAL_ERROR 
      "MFEM is a required dependency for tribol. "
@@ -94,9 +91,9 @@ endif()
 if (DEFINED UMPIRE_DIR)
   message(STATUS "Setting up external Umpire TPL...")
 
-  include(${UMPIRE_DIR}/lib/cmake/umpire/umpire-targets.cmake)
+  find_package(umpire REQUIRED NO_DEFAULT_PATH 
+               PATHS ${UMPIRE_DIR})
 
-  list(APPEND TPL_DEPS umpire)
   set(TRIBOL_USE_UMPIRE TRUE)
 else()
   message(STATUS "Umpire support is OFF")
@@ -155,7 +152,7 @@ foreach(_target ${_imported_targets})
 endforeach()
 
 # export tribol-targets
-foreach(dep ${TPL_DEPS})
+foreach(dep ${EXPORTED_TPL_DEPS})
   # If the target is EXPORTABLE, add it to the export set
   get_target_property(_is_imported ${dep} IMPORTED)
   if(NOT ${_is_imported})
@@ -166,9 +163,6 @@ foreach(dep ${TPL_DEPS})
       set_target_properties(${dep} PROPERTIES EXPORT_NAME tribol::${dep})
   endif()
 endforeach()
-
-# export BLT targets
-blt_export_tpl_targets(EXPORT tribol-targets NAMESPACE tribol)
 
 message(STATUS "--------------------------\n"
                "Finished configuring TPLs")
