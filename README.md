@@ -15,7 +15,7 @@ development of advanced contact algorithms.
 git clone --recursive git@github.com:LLNL/Tribol.git
 ```
 
-### Setup for Development
+### Setup for development
 
 Development tools can optionally be installed through the Spack package manager. Development tools are typically not
 needed when using Tribol. The command to install development tools is
