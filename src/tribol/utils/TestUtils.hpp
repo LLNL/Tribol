@@ -514,6 +514,8 @@ public:
       mfem::Coefficient& mu
    );
 
+   using mfem::SecondOrderTimeDependentOperator::Mult;
+
    /**
     * @brief Compute acceleration given displacement and velocity
     * 

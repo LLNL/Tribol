@@ -28,6 +28,17 @@
 
 #include <set>
 
+// Tribol includes
+#include "tribol/config.hpp"
+#include "tribol/common/Parameters.hpp"
+#include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
+#include "tribol/utils/TestUtils.hpp"
+#include "tribol/types.hpp"
+
+// Redecomp includes
+#include "redecomp/redecomp.hpp"
+
 #ifdef TRIBOL_USE_UMPIRE
 // Umpire includes
 #include "umpire/ResourceManager.hpp"
@@ -39,16 +50,6 @@
 // Axom includes
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
-
-// Redecomp includes
-#include "redecomp/redecomp.hpp"
-
-// Tribol includes
-#include "tribol/common/Parameters.hpp"
-#include "tribol/config.hpp"
-#include "tribol/interface/tribol.hpp"
-#include "tribol/interface/mfem_tribol.hpp"
-#include "tribol/utils/TestUtils.hpp"
 
 int main( int argc, char** argv )
 {

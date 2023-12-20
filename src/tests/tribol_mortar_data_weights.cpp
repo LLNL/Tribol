@@ -78,7 +78,7 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
       mortarMesh.sortSurfaceNodeIds();
    }
 
-   int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
+   // int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
 
    double area = 0.;
    int numTotalNodes = static_cast<tribol::MortarData*>( cs->getMethodData() )->m_numTotalNodes;
