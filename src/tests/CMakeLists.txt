@@ -36,7 +36,6 @@ set( tribol_tests
      )
 
 set(test_depends tribol gtest)
-blt_list_append(TO test_depends ELEMENTS cuda IF ENABLE_CUDA )
 
 foreach( test ${tribol_tests} )
 
@@ -46,7 +45,7 @@ foreach( test ${tribol_tests} )
     NAME ${test_name}_test
     SOURCES ${test}
     OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-    DEPENDS_ON ${test_depends}
+    DEPENDS_ON ${test_depends} ${tribol_device_depends}
     FOLDER tribol/tests )
 
   blt_add_test( NAME ${test_name}
@@ -72,7 +71,6 @@ if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
       )
 
   set(redecomp_test_depends tribol gtest)
-  blt_list_append(TO redecomp_test_depends ELEMENTS cuda IF ENABLE_CUDA )
 
   foreach( test ${redecomp_tests} )
 
@@ -82,7 +80,7 @@ if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
       NAME ${test_name}_test
       SOURCES ${test}
       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-      DEPENDS_ON ${redecomp_test_depends}
+      DEPENDS_ON ${redecomp_test_depends} ${tribol_device_depends}
       FOLDER redecomp/tests )
 
     foreach ( nranks RANGE 1 3 )
@@ -110,7 +108,6 @@ if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
       )
 
   set(combined_test_depends tribol gtest)
-  blt_list_append(TO combined_test_depends ELEMENTS cuda IF ENABLE_CUDA )
 
   foreach( test ${combined_tests} )
 
@@ -120,7 +117,7 @@ if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
       NAME ${test_name}_test
       SOURCES ${test}
       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-      DEPENDS_ON ${combined_test_depends}
+      DEPENDS_ON ${combined_test_depends} ${tribol_device_depends}
       FOLDER tribol/tests )
 
     foreach ( nranks RANGE 1 3 )
@@ -143,12 +140,11 @@ endif()
 
 if( MFEM_FOUND )
   set(mfem_smoke_depends mfem gtest)
-  blt_list_append(TO mfem_smoke_depends ELEMENTS umpire cuda IF ENABLE_CUDA )
   blt_add_executable(
     NAME mfem_smoke_test
     SOURCES mfem_smoke.cpp
     OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-    DEPENDS_ON ${mfem_smoke_depends}
+    DEPENDS_ON ${mfem_smoke_depends} ${tribol_device_depends}
     FOLDER tribol/tests )
 
   blt_add_test( NAME mfem_smoke_test

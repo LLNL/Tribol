@@ -53,7 +53,7 @@ blt_add_library(
     NAME redecomp
     SOURCES ${redecomp_sources}
     HEADERS ${redecomp_headers}
-    DEPENDS_ON ${redecomp_depends}
+    DEPENDS_ON ${redecomp_depends} ${tribol_device_depends}
     FOLDER redecomp
     )
 
