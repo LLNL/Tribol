@@ -8,33 +8,25 @@
  *
  * @brief Demonstrates contact patch test using the mortar method
  *
- * Demonstrates a three dimensional contact patch test using the mortar method
- * in Tribol. Contact is enforced between two blocks which are initially in
- * contact. The blocks occupy [0, 1]^3 and [0, 1]x[0, 1]x[0.99, 1.99]. To
- * enforce symmetry and prevent rigid body modes, Dirichlet boundary conditions
- * are applied in the x-direction along the x = 0 plane, in the y-direction
- * along y = 0 plane, and in the z-direction along the z = 0 and z = 1.99
- * planes. Enforcement is through Lagrange multipliers. Small deformation
- * contact is assumed and, consequently, the system is linear and the solution
- * is determined through a single linear solve (no timestepping). The elasticity
- * solution for this problem predicts a constant pressure field on the contact
- * surface and linearly varying pressures. Since these fields can be exactly
- * represented by the finite element space, we expect the solution to be exact
- * to machine precision.
+ * Demonstrates a three dimensional contact patch test using the mortar method in Tribol. Contact is enforced between
+ * two blocks which are initially in contact. The blocks occupy [0, 1]^3 and [0, 1]x[0, 1]x[0.99, 1.99]. To enforce
+ * symmetry and prevent rigid body modes, Dirichlet boundary conditions are applied in the x-direction along the x = 0
+ * plane, in the y-direction along y = 0 plane, and in the z-direction along the z = 0 and z = 1.99 planes. Enforcement
+ * is through Lagrange multipliers. Small deformation contact is assumed and, consequently, the system is linear and the
+ * solution is determined through a single linear solve (no timestepping). The elasticity solution for this problem
+ * predicts a constant pressure field on the contact surface and linearly varying pressures. Since these fields can be
+ * exactly represented by the finite element space, we expect the solution to be exact to machine precision.
  *
  * The linear system solved is
  *  | A B^T | | d | = | f |
  *  | B 0   | | p |   | g | ,
  *
- * where A is the system matrix for elasticity, B is the constraint matrix for
- * mortar contact, d is the vector of nodal displacements, p is the vector of
- * contact pressures, f is the vector of nodal forces, and g is the vector of
- * gaps on the contact surface.  MFEM block operators and vectors are used to
- * store the linear system.
+ * where A is the system matrix for elasticity, B is the constraint matrix for mortar contact, d is the vector of nodal
+ * displacements, p is the vector of contact pressures, f is the vector of nodal forces, and g is the vector of gaps on
+ * the contact surface.  MFEM block operators and vectors are used to store the linear system.
  *
- * The example uses the Tribol MFEM interface, which supports decomposed (MPI)
- * meshes and will support higher order meshes (through LOR) in a future update
- * (pending implementation of transfer of Jacobian from LOR to HO). Comments in
+ * The example uses the Tribol MFEM interface, which supports decomposed (MPI) meshes and will support higher order
+ * meshes (through LOR) in a future update (pending implementation of transfer of Jacobian from LOR to HO). Comments in
  * the main function below give details on each step of the example code.
  *
  * Example runs (from repo root directory):
@@ -84,8 +76,7 @@ int main( int argc, char** argv )
   axom::slic::setIsRoot(rank == 0);
 
   // define command line options
-  // number of times to uniformly refine the serial mesh before constructing the
-  // parallel mesh
+  // number of times to uniformly refine the serial mesh before constructing the parallel mesh
   int ref_levels = 2;
   // polynomial order of the finite element discretization
   int order = 1;
@@ -119,18 +110,15 @@ int main( int argc, char** argv )
   // fixed options
   // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
   std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_overlap.mesh";
-  // boundary element attributes of mortar surface, the z = 1 plane of the first
-  // block
+  // boundary element attributes of mortar surface, the z = 1 plane of the first block
   auto mortar_attrs = std::set<int>({4});
-  // boundary element attributes of nonmortar surface, the z = 0.99 plane of the
-  // second block
+  // boundary element attributes of nonmortar surface, the z = 0.99 plane of the second block
   auto nonmortar_attrs = std::set<int>({5});
   // boundary element attributes of x-fixed surfaces (at x = 0)
   auto xfixed_attrs = std::set<int>({1});
   // boundary element attributes of y-fixed surfaces (at y = 0)
   auto yfixed_attrs = std::set<int>({2});
-  // boundary element attributes of z-fixed surfaces (3: surface at z = 0, 6:
-  // surface at z = 1.99)
+  // boundary element attributes of z-fixed surfaces (3: surface at z = 0, 6: surface at z = 1.99)
   auto zfix_attribs = std::set<int>({3, 6});
 
   mfem::Device device("cuda");
@@ -138,10 +126,9 @@ int main( int argc, char** argv )
   // create an axom timer to give wall times for each step
   axom::utilities::Timer timer { false };
 
-  // This block of code will read the mesh data given in two_hex_overlap.mesh,
-  // create an mfem::Mesh, refine the mesh, then create an mfem::ParMesh.
-  // Optionally, the mfem::ParMesh can be refined further on each rank by
-  // setting par_ref_levels >= 1, though this is disabled below.
+  // This block of code will read the mesh data given in two_hex_overlap.mesh, create an mfem::Mesh, refine the mesh,
+  // then create an mfem::ParMesh. Optionally, the mfem::ParMesh can be refined further on each rank by setting
+  // par_ref_levels >= 1, though this is disabled below.
   timer.start();
   std::unique_ptr<mfem::ParMesh> pmesh { nullptr };
   {
@@ -176,16 +163,14 @@ int main( int argc, char** argv )
     "Time to create parallel mesh: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
   
-  // Set up an MFEM data collection for output. We output data in Paraview and
-  // VisIt formats.
+  // Set up an MFEM data collection for output. We output data in Paraview and VisIt formats.
   auto paraview_datacoll = mfem::ParaViewDataCollection("mortar_patch_pv", pmesh.get());
   auto visit_datacoll = mfem::VisItDataCollection("mortar_patch_vi", pmesh.get());
 
-  // This block of code creates position and displacement grid functions (and
-  // associated finite element collections and finite element spaces) on the
-  // mesh. The displacement grid function is initialized to zero. The position
-  // grid function is initialized with the nodal coordinates. These grid
-  // functions are registered with the data collections for output.
+  // This block of code creates position and displacement grid functions (and associated finite element collections and
+  // finite element spaces) on the mesh. The displacement grid function is initialized to zero. The position grid
+  // function is initialized with the nodal coordinates. These grid functions are registered with the data collections
+  // for output.
   timer.start();
   // Finite element collection (shared between all grid functions).
   auto fe_coll = mfem::H1_FECollection(order, pmesh->SpaceDimension());
@@ -194,11 +179,9 @@ int main( int argc, char** argv )
     pmesh.get(), &fe_coll, pmesh->SpaceDimension());
   // Create coordinate grid function
   auto coords = mfem::ParGridFunction(&par_fe_space);
-  // Set coordinate grid function based on nodal locations. In MFEM, nodal
-  // locations of higher order meshes are stored in a grid function. For linear
-  // MFEM meshes, nodal locations can be stored in a grid function or through
-  // the vertex coordinates. For consistency, we will create a nodal grid
-  // function even for linear meshes.
+  // Set coordinate grid function based on nodal locations. In MFEM, nodal locations of higher order meshes are stored
+  // in a grid function. For linear MFEM meshes, nodal locations can be stored in a grid function or through the vertex
+  // coordinates. For consistency, we will create a nodal grid function even for linear meshes.
   pmesh->SetNodalGridFunction(&coords, false);
   paraview_datacoll.RegisterField("pos", &coords);
   visit_datacoll.RegisterField("pos", &coords);
@@ -213,16 +196,13 @@ int main( int argc, char** argv )
     "Time to create grid functions: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
 
-  // This block of code builds a list of degrees of freedom to which homogeneous
-  // displacement boundary conditions will be applied. These boundary conditions
-  // enforce problem symmetry and prevent rigid body deformation modes. The
-  // boundary attribute sets for each direction are identified in the fixed
-  // options above.
+  // This block of code builds a list of degrees of freedom to which homogeneous displacement boundary conditions will
+  // be applied. These boundary conditions enforce problem symmetry and prevent rigid body deformation modes. The
+  // boundary attribute sets for each direction are identified in the fixed options above.
   timer.start();
   mfem::Array<int> ess_tdof_list;
   {
-    // First, build an array of "markers" (i.e. booleans) to denote which vdofs
-    // are in the list.
+    // First, build an array of "markers" (i.e. booleans) to denote which vdofs are in the list.
     mfem::Array<int> ess_vdof_marker;
     // Convert x-fixed boundary attributes into markers
     mfem::Array<int> ess_bdr(pmesh->bdr_attributes.Max());
@@ -271,8 +251,7 @@ int main( int argc, char** argv )
     "Time to set up boundary conditions: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
 
-  // This block of code constructs a small-deformation linear elastic bilinear
-  // form.
+  // This block of code constructs a small-deformation linear elastic bilinear form.
   timer.start();
   mfem::ParBilinearForm a(&par_fe_space);
   mfem::ConstantCoefficient lambda_coeff(lambda);
@@ -281,8 +260,7 @@ int main( int argc, char** argv )
 
   // Assemble the on-rank bilinear form stiffness matrix.
   a.Assemble();
-  // Reduce to tdofs and form a hypre parallel matrix for parallel solution of
-  // the linear system.
+  // Reduce to tdofs and form a hypre parallel matrix for parallel solution of the linear system.
   auto A = std::make_unique<mfem::HypreParMatrix>();
   a.FormSystemMatrix(ess_tdof_list, *A);
   timer.stop();
@@ -292,20 +270,15 @@ int main( int argc, char** argv )
 
   // This block of code does initial setup of Tribol.
   timer.start();
-  // First, Tribol is initialized with the spatial dimension and the MPI
-  // communicator. These are stored globally.
+  // First, Tribol is initialized with the spatial dimension and the MPI communicator. These are stored globally.
   tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
-  // Next, we create a Tribol coupling scheme between the contact surfaces on
-  // the MFEM mesh. To create the coupling scheme requires several steps: 1)
-  // building a boundary submesh, 2) building a LOR mesh (if required), 3)
-  // re-decomposing the domain to move spatially close surface element pairs on
-  // to the same rank, 4) creating Tribol meshes of each surface, and 5)
-  // registering the meshes and coupling scheme with Tribol. These 5 steps are
-  // performed by calling two methods: 1) registerMfemCouplingScheme() (steps 1
-  // and 2) and 2) updateMfemParallelDecomposition() (steps 3, 4, and 5).
-  // registerMfemCouplingScheme() is called here and
-  // updateMfemParallelDecomposition() is typically called before calling
-  // update().
+  // Next, we create a Tribol coupling scheme between the contact surfaces on the MFEM mesh. To create the coupling
+  // scheme requires several steps: 1) building a boundary submesh, 2) building a LOR mesh (if required), 3)
+  // re-decomposing the domain to move spatially close surface element pairs on to the same rank, 4) creating Tribol
+  // meshes of each surface, and 5) registering the meshes and coupling scheme with Tribol. These 5 steps are performed
+  // by calling two methods: 1) registerMfemCouplingScheme() (steps 1 and 2) and 2) updateMfemParallelDecomposition()
+  // (steps 3, 4, and 5). registerMfemCouplingScheme() is called here and updateMfemParallelDecomposition() is typically
+  // called before calling update().
   int coupling_scheme_id = 0;
   int mesh1_id = 0;
   int mesh2_id = 1;
@@ -319,9 +292,8 @@ int main( int argc, char** argv )
     tribol::LAGRANGE_MULTIPLIER,
     tribol::BINNING_GRID
   );
-  // The basic Lagrange multiplier options are set here. For this problem, we
-  // ask Tribol to compute a contact residual and a Jacobian (though we only use
-  // the Jacobian).
+  // The basic Lagrange multiplier options are set here. For this problem, we ask Tribol to compute a contact residual
+  // and a Jacobian (though we only use the Jacobian).
   tribol::setLagrangeMultiplierOptions(
     coupling_scheme_id,
     tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
@@ -331,8 +303,7 @@ int main( int argc, char** argv )
   paraview_datacoll.Save();
   visit_datacoll.Save();
   
-  // Update the cycle information for the data collections. Also update time
-  // with a pseudotime for the solution.
+  // Update the cycle information for the data collections. Also update time with a pseudotime for the solution.
   paraview_datacoll.SetCycle(1);
   paraview_datacoll.SetTime(1.0);
   paraview_datacoll.SetTimeStep(1.0);
@@ -340,21 +311,19 @@ int main( int argc, char** argv )
   visit_datacoll.SetTime(1.0);
   visit_datacoll.SetTimeStep(1.0);
 
-  // This creates the parallel adjacency-based mesh redecomposition. It also
-  // constructs new Tribol meshes as subsets of the redecomposed mesh.
+  // This creates the parallel adjacency-based mesh redecomposition. It also constructs new Tribol meshes as subsets of
+  // the redecomposed mesh.
   tribol::updateMfemParallelDecomposition();
   double dt {1.0};  // time is arbitrary here (no timesteps)
-  // This API call computes the contact response and Jacobian given the current
-  // mesh configuration.
+  // This API call computes the contact response and Jacobian given the current mesh configuration.
   tribol::update(1, 1.0, dt);
 
-  // HypreParMatrices holding the Jacobian from contact and stored in an MFEM
-  // block operator are returned from this API call.
+  // HypreParMatrices holding the Jacobian from contact and stored in an MFEM block operator are returned from this API
+  // call.
   //
-  // NOTE: The submesh contains both the mortar and nonmortar surfaces, but
-  // pressure DOFs are only present on the nonmortar surface. The pressure DOFs
-  // on the mortar surface are eliminated in the returned matrix with ones on
-  // the diagonal.
+  // NOTE: The submesh contains both the mortar and nonmortar surfaces, but pressure DOFs are only present on the
+  // nonmortar surface. The pressure DOFs on the mortar surface are eliminated in the returned matrix with ones on the
+  // diagonal.
   auto A_blk = tribol::getMfemBlockJacobian(coupling_scheme_id);
   // Add the Jacobian from the elasticity bilinear form to the top left block
   A_blk->SetBlock(0, 0, A.release());
@@ -363,14 +332,18 @@ int main( int argc, char** argv )
     "Time to setup Tribol and compute Jacobian: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
 
+  int n_disp_dofs = A_blk->ColOffsets()[1];
+  int n_lm_dofs = A_blk->ColOffsets()[2] - n_disp_dofs;
+  SLIC_INFO_ROOT(axom::fmt::format("  Number of displacement DOFs:        {0}", n_disp_dofs));
+  SLIC_INFO_ROOT(axom::fmt::format("  Number of Lagrange multiplier DOFs: {0}", n_lm_dofs));
+
   timer.start();
-  // Create a block RHS vector storing forces and gaps. Note no external forces
-  // are present in this problem.
-  mfem::BlockVector B_blk { A_blk->RowOffsets() };
+  // Create a RHS vector storing forces and gaps. Note no external forces are present in this problem.
+  mfem::Vector B_blk { A_blk->Height() };
   B_blk.UseDevice(true);
   B_blk = 0.0;
-  // Create a block solution vector storing displacement and pressures.
-  mfem::BlockVector X_blk { A_blk->ColOffsets() };
+  // Create a solution vector storing displacement and pressures.
+  mfem::Vector X_blk { A_blk->Width() };
   X_blk.UseDevice(true);
   X_blk = 0.0;
 
@@ -387,12 +360,11 @@ int main( int argc, char** argv )
   // this like a ParGridFunction: shared DOFs have the same (summed) value on
   // all ranks
   {
-    auto& G = B_blk.GetBlock(1);
+    mfem::Vector G { B_blk, n_disp_dofs, n_lm_dofs };
     auto& R_submesh = *tribol::getMfemPressure(coupling_scheme_id)
       .ParFESpace()->GetRestrictionMatrix();
     R_submesh.Mult(g, G);
-    G.DeleteDevice();
-  }
+  } 
 
   // Create a single HypreParMatrix from blocks (useful for different
   // solvers/preconditioners). This process requires two steps: (1) store
@@ -418,17 +390,20 @@ int main( int argc, char** argv )
     mfem::HypreParMatrixFromBlocks(hypre_blocks)
   );
   // Use a linear solver to find the block displacement/pressure vector.
-  mfem::MINRESSolver solver(MPI_COMM_WORLD);
-  solver.SetRelTol(1.0e-8);
-  solver.SetAbsTol(1.0e-12);
-  solver.SetMaxIter(5000);
-  solver.SetPrintLevel(3);
-  solver.SetOperator(*A_merged);
-  solver.Mult(B_blk, X_blk);
+  mfem::CGSolver cg { MPI_COMM_WORLD };
+  cg.SetRelTol(1.0e-12);
+  cg.SetMaxIter(2000);
+  cg.SetPrintLevel(3);
+  cg.SetOperator(*A_merged);
+
+  //mfem::HypreBoomerAMG prec { *A_merged };
+  //cg.SetPreconditioner(prec);
+
+  cg.Mult(B_blk, X_blk);
 
   // Move the block displacements to the displacement grid function.
   {
-    auto& U = X_blk.GetBlock(0);
+    mfem::Vector U { X_blk, 0, n_disp_dofs };
     auto& P = *par_fe_space.GetProlongationMatrix();
     P.Mult(U, displacement);
   }
@@ -436,7 +411,7 @@ int main( int argc, char** argv )
   displacement.Neg();
 
   // Update the pressure degrees of freedom (not used here)
-  auto& pressure_true = X_blk.GetBlock(1);
+  mfem::Vector pressure_true { X_blk, n_disp_dofs, n_lm_dofs };
   auto& pressure = tribol::getMfemPressure(0);
   pressure.ParFESpace()->GetProlongationMatrix()->Mult(pressure_true, pressure);
 
@@ -452,7 +427,7 @@ int main( int argc, char** argv )
   mfem::Vector int_force_true(par_fe_space.GetTrueVSize());
   int_force_true = 0.0;
   mfem::Vector contact_force_true(int_force_true);
-  auto& displacement_true = X_blk.GetBlock(0);
+  mfem::Vector displacement_true { X_blk, 0, n_disp_dofs };
   A_blk->GetBlock(0, 0).Mult(displacement_true, int_force_true);
   A_blk->GetBlock(0, 1).Mult(pressure_true, contact_force_true);
   mfem::Vector force_resid_true(int_force_true);
@@ -476,7 +451,7 @@ int main( int argc, char** argv )
 
   // Verify the gap is closed by the displacements, i.e. B*u = gap.
   // This should be true if the solver converges.
-  auto& gap_resid_true = B_blk.GetBlock(1);
+  mfem::Vector gap_resid_true { B_blk, n_disp_dofs, n_lm_dofs };
   mfem::Vector gap_from_disp_true(gap_resid_true.Size());
   A_blk->GetBlock(1,0).Mult(displacement_true, gap_from_disp_true);
   gap_resid_true -= gap_from_disp_true;
