@@ -82,7 +82,7 @@ if(NOT TRIBOL_FOUND)
   #----------------------------------------------------------------------------
   # Include targets installed by BLT
   #----------------------------------------------------------------------------
-  include(${AXOM_CMAKE_CONFIG_DIR}/BLTSetupTargets.cmake)
+  include(${TRIBOL_CMAKE_CONFIG_DIR}/BLTSetupTargets.cmake)
 
   #----------------------------------------------------------------------------
   # Include targets exported by cmake
