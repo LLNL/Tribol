@@ -22,7 +22,8 @@ needed when using Tribol. The command to install development tools is
 ```
 python3 scripts/uberenv/uberenv.py --project-json=scripts/spack/devtools.json --spack-env-file=scripts/spack/configs/<platform>/spack.yaml --prefix=../tribol_devtools
 ```
-Please verify `scripts/spack/configs/<platform>/spack.yaml` matches your system configuration.
+where `<platform>` is one of `blueos_3_ppc64le_ib_p9`, `linux_ubuntu_20`, `linux_ubuntu_22`, `toss_4_x86_64_ib`, or
+`toss_4_x86_64_ib_cray`. Please verify `scripts/spack/configs/<platform>/spack.yaml` matches your system configuration.
 
 ### Installing dependencies
 
