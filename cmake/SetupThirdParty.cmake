@@ -23,6 +23,23 @@ if(TRIBOL_ENABLE_HIP)
   set(tribol_device_depends blt::hip CACHE STRING "" FORCE)
 endif()
 
+
+#------------------------------------------------------------------------------
+# Umpire
+#------------------------------------------------------------------------------
+
+if (DEFINED UMPIRE_DIR)
+  message(STATUS "Setting up external Umpire TPL...")
+
+  set(umpire_DIR ${UMPIRE_DIR})
+  find_dependency(umpire REQUIRED)
+
+  set(TRIBOL_USE_UMPIRE TRUE)
+else()
+  message(STATUS "Umpire support is OFF")
+endif()
+
+
 #------------------------------------------------------------------------------
 # axom
 #------------------------------------------------------------------------------
@@ -83,21 +100,6 @@ else()
      "Please configure tribol with a path to MFEM via the MFEM_DIR variable.")
 endif()
 
-
-#------------------------------------------------------------------------------
-# Umpire
-#------------------------------------------------------------------------------
-
-if (DEFINED UMPIRE_DIR)
-  message(STATUS "Setting up external Umpire TPL...")
-
-  find_package(umpire REQUIRED NO_DEFAULT_PATH 
-               PATHS ${UMPIRE_DIR})
-
-  set(TRIBOL_USE_UMPIRE TRUE)
-else()
-  message(STATUS "Umpire support is OFF")
-endif()
 
 #------------------------------------------------------------------------------
 # Shroud - Generates C/Fortran/Python bindings
