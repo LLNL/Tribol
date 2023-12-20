@@ -12,6 +12,17 @@ message(STATUS "Configuring TPLs...\n"
 
 set(TPL_DEPS)
 include(CMakeFindDependencyMacro)
+
+#------------------------------------------------------------------------------
+# Create global variable to toggle between GPU targets
+#------------------------------------------------------------------------------
+if(TRIBOL_ENABLE_CUDA)
+  set(tribol_device_depends cuda CACHE STRING "" FORCE)
+endif()
+if(TRIBOL_ENABLE_HIP)
+  set(tribol_device_depends blt::hip CACHE STRING "" FORCE)
+endif()
+
 #------------------------------------------------------------------------------
 # axom
 #------------------------------------------------------------------------------

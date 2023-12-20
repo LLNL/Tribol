@@ -102,6 +102,9 @@ else()
     else()
         message(WARNING "No third party library flags found in ${MFEM_CFG_DIR}/config.mk")
     endif()
+    if(mfem_cfg_file_txt MATCHES "MFEM_USE_CUDA += YES")
+        string(REGEX REPLACE "-Xlinker=-rpath," "-Xlinker -rpath -Xlinker " mfem_tpl_lnk_flags "${mfem_tpl_lnk_flags}")
+    endif()
 
     list(APPEND MFEM_LIBRARIES ${mfem_tpl_lnk_flags})
 
