@@ -56,7 +56,7 @@ configure_package_config_file(
   )
 
 # Install BLT files
-blt_install_tpl_setups(DESTIONATION ${TRIBOL_INSTALL_CMAKE_MODULE_DIR})
+blt_install_tpl_setups(DESTINATION ${TRIBOL_INSTALL_CMAKE_MODULE_DIR})
 
 # Install config files
 install(
