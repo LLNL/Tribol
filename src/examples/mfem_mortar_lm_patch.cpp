@@ -43,10 +43,17 @@
  * Example output can be viewed in VisIt or ParaView.
  */
 
-#include <mfem/linalg/hypre.hpp>
-#include <mfem/linalg/solvers.hpp>
-#include <mfem/linalg/superlu.hpp>
 #include <set>
+
+// Tribol includes
+#include "tribol/config.hpp"
+#include "tribol/common/Parameters.hpp"
+#include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
+#include "tribol/types.hpp"
+
+// Redecomp includes
+#include "redecomp/redecomp.hpp"
 
 #ifdef TRIBOL_USE_UMPIRE
 // Umpire includes
@@ -59,15 +66,6 @@
 // Axom includes
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
-
-// Redecomp includes
-#include "redecomp/redecomp.hpp"
-
-// Tribol includes
-#include "tribol/common/Parameters.hpp"
-#include "tribol/config.hpp"
-#include "tribol/interface/tribol.hpp"
-#include "tribol/interface/mfem_tribol.hpp"
 
 int main( int argc, char** argv )
 {
@@ -377,21 +375,18 @@ int main( int argc, char** argv )
   mfem::Vector g;
   tribol::getMfemGap(coupling_scheme_id, g);
 
-  // Apply a restriction operator on the submesh: maps dofs stored in g to tdofs
-  // stored in G for parallel solution of the linear system.
+  // Apply a transpose prolongation operator on the submesh: maps dofs stored in g to tdofs stored in G for parallel
+  // solution of the linear system.
   //
-  // NOTE: gap is a dual field, but we still apply R here because tribol stores
-  // this like a ParGridFunction: shared DOFs have the same (summed) value on
-  // all ranks
+  // NOTE: gap is a dual field so we apply the transpose prolongation operator
   {
     auto& G = B_blk.GetBlock(1);
-    auto& R_submesh = *tribol::getMfemPressure(coupling_scheme_id)
-      .ParFESpace()->GetRestrictionMatrix();
-    R_submesh.Mult(g, G);
+    auto& P_submesh = *tribol::getMfemPressure(coupling_scheme_id)
+      .ParFESpace()->GetProlongationMatrix();
+    P_submesh.MultTranspose(g, G);
   }
 
-  // Create a single HypreParMatrix from blocks (useful for different
-  // solvers/preconditioners). This process requires two steps: (1) store
+  // Create a single HypreParMatrix from blocks. This process requires two steps: (1) store
   // pointer to the BlockOperator HypreParMatrixs in a 2D array and (2) call
   // mfem::HypreParMatrixFromBlocks() to create the merged, single
   // HypreParMatrix (without blocks).

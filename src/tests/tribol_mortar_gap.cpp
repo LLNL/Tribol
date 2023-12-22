@@ -149,7 +149,7 @@ public:
       } // end loop over nodes
 
       // register the mesh with tribol
-      int cellType;
+      int cellType = static_cast<int>(tribol::UNDEFINED_ELEMENT);
       switch (this->numNodesPerFace)
       {
          case 4:

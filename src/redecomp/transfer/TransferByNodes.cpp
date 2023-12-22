@@ -23,10 +23,10 @@ TransferByNodes::TransferByNodes(
   redecomp_fes_ { &redecomp_fes },
   redecomp_ { dynamic_cast<const RedecompMesh*>(redecomp_fes.GetMesh()) }
 {
-  SLIC_ASSERT_MSG(redecomp_ != nullptr,
+  SLIC_ERROR_ROOT_IF(redecomp_ == nullptr,
     "The Redecomp mesh pointer is null.  Does the redecomp_fes contain an "
     "underlying Redecomp mesh?");
-  SLIC_ASSERT_MSG(parent_fes_->GetParMesh() == &redecomp_->getParent(),
+  SLIC_ERROR_ROOT_IF(parent_fes_->GetParMesh() != &redecomp_->getParent(),
     "The ParMesh associated with both parent_fes and the redecomp mesh must match.");
 
   // p2r = parent to redecomp
@@ -42,7 +42,7 @@ TransferByNodes::TransferByNodes(
 : parent_fes_ { &parent_fes },
   redecomp_ { &redecomp }
 {
-  SLIC_ASSERT_MSG(parent_fes_->GetParMesh() == &redecomp_->getParent(),
+  SLIC_ERROR_ROOT_IF(parent_fes_->GetParMesh() != &redecomp_->getParent(),
     "The ParMesh associated with both parent_fes and redecomp mesh must match.");
 }
 
@@ -60,10 +60,10 @@ void TransferByNodes::TransferToSerial(
   const auto& dst_nodes = r2p_nodes_;
 
   // checks to make sure src and dst are valid
-  SLIC_ASSERT_MSG(dst_fes == redecomp_fes_,
+  SLIC_ERROR_ROOT_IF(dst_fes != redecomp_fes_,
     "The FiniteElementSpace of GridFunction dst must match the FiniteElementSpace "
     "in TransferByNodes.");
-  SLIC_ASSERT_MSG(src_fes == parent_fes_,
+  SLIC_ERROR_ROOT_IF(src_fes != parent_fes_,
     "The ParFiniteElementSpace of GridFunction src must match the ParFiniteElementSpace "
     "in TransferByNodes.");
 
@@ -119,10 +119,10 @@ void TransferByNodes::TransferToParallel(
   const auto& dst_nodes = p2r_nodes_;
 
   // checks to make sure src and dst are valid
-  SLIC_ASSERT_MSG(src.FESpace() == redecomp_fes_,
+  SLIC_ERROR_ROOT_IF(src.FESpace() != redecomp_fes_,
     "The FiniteElementSpace of GridFunction src must match the FiniteElementSpace "
     "in TransferByNodes.");
-  SLIC_ASSERT_MSG(dst.ParFESpace() == parent_fes_,
+  SLIC_ERROR_ROOT_IF(dst.ParFESpace() != parent_fes_,
     "The ParFiniteElementSpace of GridFunction dst must match the ParFiniteElementSpace "
     "in TransferByNodes.");
 

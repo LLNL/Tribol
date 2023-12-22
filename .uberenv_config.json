@@ -1,14 +1,12 @@
 {
-  "package_name" : "tribol",
-  "package_version" : "develop",
-  "package_final_phase" : "initconfig",
-  "package_source_dir" : "../..",
-  "force_commandline_prefix" : false,
+  "package_name": "tribol",
+  "package_version": "develop",
+  "package_final_phase": "initconfig",
+  "package_source_dir": "../..",
   "spack_url": "https://github.com/spack/spack.git",
-  "spack_commit": "22f3ef0a212676a16d9ece2562dedb50de7f1999",
+  "spack_commit": "44f0708af424cb12dd05dd761de1cdae986ea5cf",
   "spack_configs_path": "scripts/spack/configs",
-  "spack_packages_path": "scripts/spack/packages",
-  "spack_activate" : {},
+  "spack_packages_path": ["scripts/spack/radiuss-spack-configs/packages", "scripts/spack/packages"],
   "spack_concretizer": "clingo"
   }
-    
+  
