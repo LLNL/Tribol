@@ -27,11 +27,12 @@ struct InterfacePair
    // overload constructor
    InterfacePair( integer m1, integer t1, integer i1,
                   integer m2, integer t2, integer i2,
-                  bool contacting, integer id )
+                  bool contacting, bool proximate, integer id )
       : pairId(id)
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
-      , inContact(contacting) {}
+      , inContact(contacting) 
+      , isProximate(proximate) {}
 
    // overload constructor to handle zero input arguments
    InterfacePair() : pairId(-1)
