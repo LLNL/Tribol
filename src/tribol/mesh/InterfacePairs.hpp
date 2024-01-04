@@ -22,7 +22,7 @@ struct InterfacePair
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
       , inContact(false) 
-      , isProximate(false) {}
+      , isContactCandidate(false) {}
 
    // overload constructor
    InterfacePair( integer m1, integer t1, integer i1,
@@ -32,14 +32,14 @@ struct InterfacePair
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
       , inContact(contacting) 
-      , isProximate(proximate) {}
+      , isContactCandidate(proximate) {}
 
    // overload constructor to handle zero input arguments
    InterfacePair() : pairId(-1)
                    , meshId1(-1), pairType1(-1), pairIndex1(-1)
                    , meshId2(-1), pairType2(-1), pairIndex2(-1)
                    , inContact(false) 
-                   , isProximate(false) {}
+                   , isContactCandidate(false) {}
 
    // pair id
    integer pairId;
@@ -58,7 +58,7 @@ struct InterfacePair
    bool inContact;
 
    // boolean indicating if binned pair is proximate enough to be considered for contact
-   bool isProximate;
+   bool isContactCandidate;
 };
 
 class InterfacePairs
@@ -105,7 +105,7 @@ private:
   containerArray<integer> m_pairIndex1;
   containerArray<integer> m_pairIndex2;
   containerArray<bool>    m_inContact;
-  containerArray<bool>    m_isProximate;
+  containerArray<bool>    m_isContactCandidate;
 };
 
 } /* namespace tribol */

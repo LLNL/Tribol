@@ -13,7 +13,7 @@ void InterfacePairs::reserve(integer new_size)
    m_pairIndex1.reserve(new_size);
    m_pairIndex2.reserve(new_size);
    m_inContact.reserve(new_size);
-   m_isProximate.reserve(new_size);
+   m_isContactCandidate.reserve(new_size);
 }
 
 void InterfacePairs::clear()
@@ -21,7 +21,7 @@ void InterfacePairs::clear()
    m_pairIndex1.clear();
    m_pairIndex2.clear();
    m_inContact.clear();
-   m_isProximate.clear();
+   m_isContactCandidate.clear();
 }
 
 
@@ -40,14 +40,14 @@ void InterfacePairs::addInterfacePair( InterfacePair const& pair )
 
    // set contact boolean container entry
    m_inContact.push_back(pair.inContact);
-   m_isProximate.push_back(pair.isProximate);
+   m_isContactCandidate.push_back(pair.isContactCandidate);
 }
 
 void InterfacePairs::updateInterfacePair( InterfacePair const& pair, 
                                           integer const idx )
 {
-   m_inContact  [ idx ] = pair.inContact;
-   m_isProximate[ idx ] = pair.isProximate;
+   m_inContact[ idx ] = pair.inContact;
+   m_isContactCandidate[ idx ] = pair.isContactCandidate;
 }
 
 InterfacePair InterfacePairs::getInterfacePair(IndexType idx) const
@@ -57,7 +57,7 @@ InterfacePair InterfacePairs::getInterfacePair(IndexType idx) const
    return InterfacePair {
       m_meshId1, m_pairType1, m_pairIndex1[idx],
       m_meshId2, m_pairType2, m_pairIndex2[idx], 
-      m_inContact[idx], m_isProximate[idx], idx };
+      m_inContact[idx], m_isContactCandidate[idx], idx };
 }
 
 } // namespace tribol
