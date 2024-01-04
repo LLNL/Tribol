@@ -2080,15 +2080,14 @@ void ExplicitMechanics::Mult(
    elasticity.Mult(u, f_int);
    f.Add(-1.0, f_int);
 
+   f.Add(1.0, f_ext);
+
    // sum forces over ranks
    auto& fespace = *elasticity.ParFESpace();
    const Operator& P = *fespace.GetProlongationMatrix();
    mfem::Vector f_true {fespace.GetTrueVSize()};
    P.MultTranspose(f, f_true);
    P.Mult(f_true, f);
-
-   // external force already summed over ranks
-   f.Add(1.0, f_ext);
 
    for (int i {0}; i < inv_lumped_mass.Size(); ++i)
    {

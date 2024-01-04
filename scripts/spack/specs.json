@@ -12,16 +12,26 @@
     "__comment__":"#                                                                             ",
     "__comment__":"##############################################################################",
 
-    "toss_3_x86_64_ib":
-    [ "clang@10.0.0~minbuild+devtools",
-      "gcc@8.3.1~minbuild+devtools+fortran",
-      "intel@19.0.4~minbuild+devtools+fortran" ],
+    "toss_4_x86_64_ib":
+    [ "clang@14.0.6+devtools+raja+umpire",
+      "gcc@10.3.1+devtools+raja+umpire",
+      "intel@2022.1.0+devtools+raja+umpire" ],
+
+    "__comment__":"no support for GPU-aware MPI. run 'export MPICH_GPU_SUPPORT_ENABLED=0' before running tests.",
+    "__comment__":"mfem not building with cce@15.0.1 or clang@16.0.0.  TODO: update spack to get latest mfem package.py.",
+    "toss_4_x86_64_ib_cray":
+    [ "clang@14.0.0+rocm+umpire+raja amdgpu_target=gfx90a ^hip@5.2.3 ^rocprim@5.2.3 ^hsa-rocr-dev@5.2.3 ^llvm-amdgpu@5.2.3 ^raja~openmp+rocm",
+      "clang@15.0.0+rocm+umpire+raja amdgpu_target=gfx90a ^hip@5.4.3 ^rocprim@5.4.3 ^hsa-rocr-dev@5.4.3 ^llvm-amdgpu@5.4.3 ^raja~openmp+rocm" ],
 
     "blueos_3_ppc64le_ib_p9":
-    [ "clang@10.0.1+devtools+cuda+raja+umpire",
-      "xl@16.1.1.1+devtools+fortran+cuda+raja+umpire",
-      "xl@16.1.1.12+devtools+fortran+cuda+raja+umpire" ],
+    [ "clang@10.0.1+devtools+cuda+raja+umpire cuda_arch=70",
+      "gcc@8.3.1+devtools+cuda+raja+umpire cuda_arch=70" ],
 
     "linux_ubuntu_20":
-    [ "gcc@9.4.0~minbuild+devtools+fortran" ]
+    [ "gcc@9.4.0+devtools" ],
+
+    "linux_ubuntu_22":
+    [ "gcc@11.4.0+devtools+cuda+raja+umpire cuda_arch=70",
+      "gcc@11.4.0+devtools+raja+umpire",
+      "clang@14.0.0+devtools+raja+umpire" ]
 }

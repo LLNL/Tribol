@@ -380,7 +380,7 @@ void MPIUtility::SendAll(const T& container) const
 template <typename T>
 T MPIUtility::RecvSendAll(type<T>, int rank) const
 {
-  SLIC_ASSERT(rank != my_rank_);
+  SLIC_ERROR_IF(rank == my_rank_, "Send and receive rank are the same.");
   const auto send_tree = BuildSendTree(rank);
   auto lvl_it = --send_tree.end();
   auto node_it = send_tree.begin(lvl_it) + my_rank_;
