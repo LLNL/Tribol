@@ -43,7 +43,17 @@ endif()
 # mfem
 #------------------------------------------------------------------------------
 
-if (DEFINED MFEM_DIR)
+if (TARGET mfem)
+    # Case: Tribol included in project that also creates an mfem target, no need to recreate mfem
+    # Note - white238: I can't seem to get this to pass install testing due to mfem being included
+    # in multiple export sets
+    message(STATUS "MFEM support is ON, using existing mfem target")
+    # Add it to this export set but don't prefix it with tribol::
+    install(TARGETS              mfem
+            EXPORT               tribol-targets
+            DESTINATION          lib)
+    set(MFEM_FOUND TRUE CACHE BOOL "" FORCE)
+elseif (DEFINED MFEM_DIR)
   message(STATUS "Setting up external MFEM TPL...")
 
   include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupMFEM.cmake)
