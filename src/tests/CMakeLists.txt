@@ -67,6 +67,7 @@ if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
       redecomp_multitransfer.cpp
       redecomp_massmatrix.cpp
       redecomp_rectmatrix.cpp
+      redecomp_sparsematrix.cpp
       )
 
   set(redecomp_test_depends tribol gtest)
