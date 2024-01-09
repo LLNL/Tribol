@@ -1257,6 +1257,13 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    {
       InterfacePair pair = m_interfacePairs->getInterfacePair(kp);
 
+      // a pair that is NOT a contact candidate will NOT have a contact plane;
+      // thus, we need to skip these pairs
+      if (!pair.isContactCandidate)
+      {
+         continue;
+      }
+   
       real x1[dim * numNodesPerCell1];
       real v1[dim * numNodesPerCell1];
       mesh1.getFaceCoords( pair.pairIndex1, &x1[0] );

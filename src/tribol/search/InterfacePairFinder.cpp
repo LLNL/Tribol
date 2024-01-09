@@ -434,13 +434,18 @@ public:
             InterfacePair pair( meshId1, cellType1, fromIdx,
                                 meshId2, cellType2, toIdx, false, true,
                                 -1 );
-            bool contact = geomFilter( pair, m_couplingScheme->getContactMode() );
+            bool isContactCandidate = geomFilter( pair, m_couplingScheme->getContactMode() );
 
-            if (contact)
+            if (isContactCandidate)
             {
+               pair.isContactCandidate = true;
                pair.pairId = k;
                contactPairs->addInterfacePair( pair );
                ++k;
+            }
+            else
+            {
+               pair.isContactCandidate = false;
             }
          }
       }
@@ -511,13 +516,18 @@ private:
           InterfacePair pair( meshId1, cellType1, fromIdx,
                               meshId2, cellType2, toIdx, false, true,
                               -1 );
-          bool contact = geomFilter( pair, cs->getContactMode() );
+          bool isContactCandidate = geomFilter( pair, cs->getContactMode() );
 
-          if (contact)
+          if (isContactCandidate)
           {
+             pair.isContactCandidate = true;
              pair.pairId = k;
              contactPairs->addInterfacePair( pair );
              ++k;
+          }
+          else
+          {
+             pair.isContactCandidate = false;
           }
        }
     }

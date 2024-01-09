@@ -32,6 +32,7 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
                                   bool& inContact )
 {
    inContact = false;
+   pair.isContactCandidate = false;
 
    // note: will likely need the ContactCase for specialized 
    // geometry check(s)/routine(s)
@@ -69,6 +70,7 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
            }
            else if (cpTemp.m_inContact)
            {
+              pair.isContactCandidate = true;
               cpMgr.addContactPlane( cpTemp ); 
               inContact = true;
            }
@@ -89,6 +91,7 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
            }
            else if (cpTemp.m_inContact)
            {
+              pair.isContactCandidate = true;
               cpMgr.addContactPlane( cpTemp ); 
               inContact = true;
            }
@@ -116,6 +119,7 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
 
             if (cpTemp.m_inContact)
             {
+               pair.isContactCandidate = true;
                cpMgr.addContactPlane( cpTemp );
                inContact = true;
             }

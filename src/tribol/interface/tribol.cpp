@@ -953,7 +953,12 @@ void setInterfacePairs( integer couplingSchemeIndex,
 
       if (check)
       {
+         pair.isContactCandidate = true;
          pairs->addInterfacePair( pair );
+      }
+      else
+      {
+         pair.isContactCandidate = false;
       }
    }
 
