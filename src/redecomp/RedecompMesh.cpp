@@ -18,8 +18,15 @@ namespace redecomp
 
 RedecompMesh::RedecompMesh(
   const mfem::ParMesh& parent,
-  PartitionType method,
-  double ghost_length
+  PartitionType method
+)
+: RedecompMesh(parent, DefaultGhostLength(parent), method)
+{}
+
+RedecompMesh::RedecompMesh(
+  const mfem::ParMesh& parent,
+  double ghost_length,
+  PartitionType method
 )
 : parent_ { parent },
   mpi_ { parent.GetComm() }
@@ -72,8 +79,15 @@ RedecompMesh::RedecompMesh(
 
 RedecompMesh::RedecompMesh(
   const mfem::ParMesh& parent,
-  std::unique_ptr<const Partitioner> partitioner,
-  double ghost_length
+  std::unique_ptr<const Partitioner> partitioner
+)
+: RedecompMesh(parent, DefaultGhostLength(parent), std::move(partitioner))
+{}
+
+RedecompMesh::RedecompMesh(
+  const mfem::ParMesh& parent,
+  double ghost_length,
+  std::unique_ptr<const Partitioner> partitioner
 )
 : parent_ { parent },
   mpi_ { parent.GetComm() }
@@ -125,16 +139,18 @@ RedecompMesh::RedecompMesh(
   BuildRedecomp();
 }
 
+double RedecompMesh::DefaultGhostLength(const mfem::ParMesh& parent) const
+{
+  return 1.25 * MaxElementSize(parent, MPIUtility(parent.GetComm()));
+}
+
 EntityIndexByRank RedecompMesh::BuildP2RElementList(
   const Partitioner& partitioner,
   int n_parts,
   double ghost_length
 ) const
 {
-  if (ghost_length < 0.0)
-  {
-    ghost_length = 1.25 * MaxElementSize(parent_, partitioner.getMPIUtility());
-  }
+  SLIC_ERROR_ROOT_IF(ghost_length < 0.0, "Ghost element layer length should be 0 or larger.");
   return partitioner.generatePartitioning(
     n_parts,
     { &parent_ },

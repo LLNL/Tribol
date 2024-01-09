@@ -6,12 +6,12 @@
 /**
  * @file sparse_matrix_redecomp.cpp
  *
- * @brief Demonstrates moving a matrix using redecomp::SparseMatrixTransfer
+ * @brief Demonstrates moving a sparse matrix using redecomp::SparseMatrixTransfer
  *
  * Demonstrates use of redecomp::SparseMatrixTransfer to move a symmetric mfem::SparseMatrix whose rows and columns are
  * associated with a mfem::FiniteElementSpace on a redecomp::RedecompMesh to its representation as an
  * mfem::HypreParMatrix on the associated mfem::ParMesh and mfem::ParFiniteElementSpace. The row and column finite
- * element space are the same in this example, but redecomp::SparseMatrixTransfer supports rectangular matrices with
+ * element spaces are the same in this example, but redecomp::SparseMatrixTransfer supports rectangular matrices with
  * different trial and test spaces. The current implementation requires order-0 L2 finite element spaces with vdim = 1
  * (one value per element).
  *
@@ -24,8 +24,8 @@
  *   - mpirun -np 4 {build_dir}/examples/sparse_matrix_redecomp_ex -d 3 -r 0 -R 0.4
  *   - mpirun -np 4 {build_dir}/examples/sparse_matrix_redecomp_ex -d 3 -r 2 -R 0.1
  *
- * @details This example relies on using a cartesian mesh with uniform element size to obtain an analytical definition
- * of the filtered field. Do not change the mesh to anything other than a square without adjusting the analytical
+ * @details This example relies on using a Cartesian mesh with uniform element size to obtain an analytical definition
+ * of the filtered field. Do not change the mesh to anything other than a square/cube without adjusting the analytical
  * filtered definition accordingly.
  */
 
@@ -102,7 +102,7 @@ int main( int argc, char** argv )
 
   SLIC_INFO_ROOT("Creating redecomp::RedecompMesh...");
   // the last argument sets the ghost radius == filter_radius
-  redecomp::RedecompMesh redecomp_mesh { par_mesh, redecomp::RedecompMesh::RCB, filter_radius };
+  redecomp::RedecompMesh redecomp_mesh { par_mesh, filter_radius, redecomp::RedecompMesh::RCB };
   
   SLIC_INFO_ROOT("Creating finite element spaces...");
   // create 0-order L2 finite element space on parmesh (1 point per element)

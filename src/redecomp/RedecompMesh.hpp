@@ -49,8 +49,23 @@ public:
    */
   RedecompMesh(
     const mfem::ParMesh& parent,
-    PartitionType method = RCB,
-    double ghost_length = -1.0
+    PartitionType method = RCB
+  );
+
+  /**
+   * @brief Construct a new RedecompMesh object
+   *
+   * @note This constructor builds the Partitioner object based on the method
+   * passed. If no method is passed, a RCB Partitioner is constructed.
+   *
+   * @param parent The mfem::ParMesh that will be redecomposed
+   * @param ghost_length Size of layer of un-owned ghost elements to include around the edge of the on-rank domain
+   * @param method The method of redecomposition (optional)
+   */
+  RedecompMesh(
+    const mfem::ParMesh& parent,
+    double ghost_length,
+    PartitionType method = RCB
   );
 
   /**
@@ -65,8 +80,24 @@ public:
    */
   RedecompMesh(
     const mfem::ParMesh& parent,
-    std::unique_ptr<const Partitioner> partitioner,
-    double ghost_length = -1.0
+    std::unique_ptr<const Partitioner> partitioner
+  );
+
+  /**
+   * @brief Construct a new RedecompMesh object
+   *
+   * @note This constructor requires the Partitioner object passed directly to
+   * it. This can be used to customize the Partitioner used (for example, with
+   * non-default options with RCB or for a user-defined Partitioner).
+   *
+   * @param parent The mfem::ParMesh that will be redecomposed
+   * @param ghost_length Size of layer of un-owned ghost elements to include around the edge of the on-rank domain
+   * @param partitioner Partitioning object used to define redecomposition
+   */
+  RedecompMesh(
+    const mfem::ParMesh& parent,
+    double ghost_length,
+    std::unique_ptr<const Partitioner> partitioner
   );
 
   /**
@@ -136,27 +167,37 @@ public:
    * @brief Computes the largest element length in terms of stretch at the
    * element centroids
    *
-   * @note This can underestimate the largest element size if stretch is
-   * variable over the element.
+   * @note This can underestimate the largest element size if stretch is variable over the element.
    *
-   * @return Largest element length in terms of stretch component at element
-   * centroid
+   * @param parent The mfem::ParMesh containing the elements
+   * @param mpi MPI utility containing the communicator of the parent mesh
+   *
+   * @return Largest element length in terms of stretch component at element centroid
    */
   static double MaxElementSize(const mfem::ParMesh& parent, const MPIUtility& mpi);
 
 private:
   /**
+   * @brief Computes a default ghost element length: 1.25 * max element size
+   *
+   * @param parent The mfem::ParMesh containing the elements
+   *
+   * @return Default ghost element lemgth
+   */
+  double DefaultGhostLength(const mfem::ParMesh& parent) const;
+
+  /**
    * @brief Builds list of parent elements to be transfered to Redecomp ranks
    * 
    * @param partitioner Method of partitioning the elements
    * @param n_parts Number of parts to partition the mesh into
-   * @param ghost_length Length around the domain border to include ghost elements
+   * @param ghost_length Size of layer of un-owned ghost elements to include around the edge of the on-rank domain
    * @return List of parent element IDs and ghost elements sorted by Redecomp rank
    */
   EntityIndexByRank BuildP2RElementList(
     const Partitioner& partitioner, 
     int n_parts,
-    double ghost_length = -1.0
+    double ghost_length
   ) const;
 
   /**

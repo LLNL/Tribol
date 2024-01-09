@@ -23,7 +23,8 @@ class RedecompMesh;
  *
  * This class enables transferring an mfem::SparseMatrix whose rows and columns are linked to mfem::FiniteElementSpaces
  * on a RedecompMesh to a mfem::HypreParMatrix whose rows and columns are linked to mfem::ParFiniteElementSpaces on an
- * mfem::ParMesh.
+ * mfem::ParMesh.  Since the row and column space can be different (i.e. a rectangular matrix, in general), both spaces
+ * must be identified in the constructor.
  *
  * The class currently supports order 0 L2 fields (one value per element).
  */
@@ -71,8 +72,8 @@ private:
   /**
    * @brief Build vector of parent element offsets for each MPI rank
    * 
-   * @param redecomp_mesh RedecompMesh whose parent linked mesh the element offset vector is desired
-   * @return axom::Array<HYPRE_BigInt> Array of element offsets for each MPI rank
+   * @param redecomp_mesh Offset vector is computed on the parent-linked mesh of this mesh
+   * @return Array of element offsets for each MPI rank
    */
   static axom::Array<HYPRE_BigInt> BuildParentElementRankOffsets(const RedecompMesh& redecomp_mesh);
 

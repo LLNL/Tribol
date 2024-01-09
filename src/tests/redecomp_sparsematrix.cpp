@@ -16,9 +16,9 @@
 namespace redecomp {
 
 /**
- * @brief This test transfers an mfem::SparseMatrix whose rows and colums are associated with an order-0 L2 field on a
- * RedecompMesh to an mfem::HypreParMatrix on the associated parent mfem::ParMesh.  The transferred matrix is verified
- * by applying it to a field and comparing the result to an analytic solution for the operator.
+ * @brief This test transfers a symmetric mfem::SparseMatrix whose rows and colums are associated with an order-0 L2
+ * field on a RedecompMesh to an mfem::HypreParMatrix on the associated parent mfem::ParMesh.  The transferred matrix is
+ * verified by applying it to a field and comparing the result to an analytic solution for the operator.
  * 
  * @details This test relies on using a cartesian mesh with uniform element size to obtain an analytical definition of
  * the filtered field. Do not change the mesh to anything other than a square without adjusting the analytical filtered
@@ -60,7 +60,7 @@ protected:
     mfem::ParFiniteElementSpace par_fes { &par_mesh, &l2_elems };
 
     // create RedecompMesh and fe space and sparse matrix transfer object
-    redecomp::RedecompMesh redecomp_mesh { par_mesh, redecomp::RedecompMesh::RCB, filter_radius };
+    redecomp::RedecompMesh redecomp_mesh { par_mesh, filter_radius, redecomp::RedecompMesh::RCB };
     mfem::FiniteElementSpace redecomp_fes { &redecomp_mesh, &l2_elems };
     redecomp::SparseMatrixTransfer matrix_xfer {
       par_fes,
@@ -100,6 +100,7 @@ protected:
       }
     }
 
+    // convert linked list format to CSR format (required to use sparse matrix transfer)
     W_redecomp.Finalize();
 
     // normalize each row of filter matrix to conserve mass

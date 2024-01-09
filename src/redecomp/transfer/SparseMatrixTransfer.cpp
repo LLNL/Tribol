@@ -30,9 +30,9 @@ SparseMatrixTransfer::SparseMatrixTransfer(
   redecomp_trial_mesh_ { getRedecompMesh(redecomp_trial_space_) }
 {
   SLIC_ERROR_ROOT_IF(static_cast<const mfem::Mesh*>(&redecomp_test_mesh_.getParent()) != parent_test_space_.GetMesh(),
-    "The parent test quadrature space mesh must be linked to the test Redecomp mesh.");
+    "The parent test finite element space mesh must be linked to the test Redecomp mesh.");
   SLIC_ERROR_ROOT_IF(static_cast<const mfem::Mesh*>(&redecomp_trial_mesh_.getParent()) != parent_trial_space_.GetMesh(),
-    "The parent trial quadrature space mesh must be linked to the trial Redecomp mesh.");
+    "The parent trial finite element space mesh must be linked to the trial Redecomp mesh.");
   SLIC_ERROR_ROOT_IF(&redecomp_test_mesh_.getMPIUtility().MPIComm() != &redecomp_trial_mesh_.getMPIUtility().MPIComm(),
     "MPI Communicator must match in test and trial spaces.");
 
@@ -201,7 +201,9 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
   }
 
   // Now we need to build the CSR data for the hypre diag and offd matrices.  diag holds data with both rows and cols
-  // on-rank and offd holds data with rows on-rank and cols off-rank.
+  // on-rank and offd holds data with rows on-rank and cols off-rank.  the HypreParMatrix constructor that takes
+  // diagonal and offdiagonal CSR contributions is used.  see MFEM documentation and hypre documentation on the
+  // hypre_ParCSRMatrix for more details.
   auto col_starts = BuildParentElementRankOffsets(redecomp_trial_mesh_);
   // size i_diag and i_offd, number of columms per row of matrix, and build a global dof to local offd column map
   auto diag_nnz = 0;
@@ -214,7 +216,8 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
     i_diag[i] = 0;
     i_offd[i] = 0;
   }
-  // maps from global j to order of appearance in the loops below
+  // maps from global j to order of appearance from received data.  this is used to map offdiagonal J values from the
+  // local offdiagonal matrix to the global offdiagonal matrix.
   std::map<HYPRE_BigInt, int> cmap_j_offd;
   for (int r{0}; r < n_ranks; ++r)
   {
@@ -234,7 +237,7 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
       }
     }
   }
-  // sum up i_diag and i_offd (completing their definition)
+  // sum up i_diag and i_offd.  the definition of i_diag and i_offd is complete after summation.
   for (int i{0}; i < parent_test_space_.GetVSize(); ++i)
   {
     i_diag[i+1] += i_diag[i];
@@ -256,7 +259,8 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
   {
     cmap[cmap_val.second] = cmap_val.first;
   }
-  // compute j_diag and j_offd, the columns for each row (row offsets given by i).  will not be sorted.
+  // populate j_diag and j_offd, the columns for each row (row offsets given by i).  will not be sorted (i.e. larger
+  // column indices may appear before smaller ones in the same row)
   axom::Array<int> i_diag_ct(parent_test_space_.GetVSize(), parent_test_space_.GetVSize());
   axom::Array<int> i_offd_ct(parent_test_space_.GetVSize(), parent_test_space_.GetVSize());
   mfem::Memory<HYPRE_Int> j_diag(diag_nnz);
@@ -292,10 +296,10 @@ std::unique_ptr<mfem::HypreParMatrix> SparseMatrixTransfer::TransferToParallel(
   );
 }
 
-const RedecompMesh& SparseMatrixTransfer::getRedecompMesh(const mfem::FiniteElementSpace& quadrature_space)
+const RedecompMesh& SparseMatrixTransfer::getRedecompMesh(const mfem::FiniteElementSpace& fe_space)
 {
-  auto redecomp_mesh = dynamic_cast<const RedecompMesh*>(quadrature_space.GetMesh());
-  SLIC_ERROR_ROOT_IF(redecomp_mesh == nullptr, "The quadrature space must have a Redecomp mesh.");
+  auto redecomp_mesh = dynamic_cast<const RedecompMesh*>(fe_space.GetMesh());
+  SLIC_ERROR_ROOT_IF(redecomp_mesh == nullptr, "The finite element space must have a Redecomp mesh.");
   return *redecomp_mesh;
 }
 

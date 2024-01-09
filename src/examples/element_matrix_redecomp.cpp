@@ -6,7 +6,7 @@
 /**
  * @file element_matrix_redecomp.cpp
  *
- * @brief Demonstrates moving a matrix using redecomp::MatrixTransfer
+ * @brief Demonstrates moving element matrices using redecomp::MatrixTransfer
  *
  * Demonstrates use of redecomp::MatrixTransfer to move element-level matrices
  * from finite element spaces on a redecomp::RedecompMesh to an assembled,
