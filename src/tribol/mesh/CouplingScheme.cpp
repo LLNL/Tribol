@@ -899,6 +899,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
   // are interacting
   int numActivePairs = 0;
   int pair_err = 0;
+  std::cout << "number of interface pairs: " << numPairs << std::endl;
   for (IndexType kp = 0; kp < numPairs; ++kp)
   {
      InterfacePair pair = m_interfacePairs->getInterfacePair(kp);
@@ -932,7 +933,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      }
      
      // update the InterfacePairs container on the coupling scheme 
-     // to reflect the change to "in-contact"
+     // to reflect the change to isContactCandidate = true
      m_interfacePairs->updateInterfacePair( pair, kp ); 
 
    } // end loop over pairs
@@ -963,6 +964,8 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
                    "coupling scheme, " << this->m_id << ".");
 
    // compute Tribol timestep vote on the coupling scheme
+   std::cout << "numActivePairs: " << numActivePairs << std::endl;
+   std::cout << "cpMgr size: " << cpMgr.size() << std::endl;
    if (err==0 && numActivePairs>0)
    {
       computeTimeStep(dt);

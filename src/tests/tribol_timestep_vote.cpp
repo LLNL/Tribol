@@ -688,10 +688,10 @@ TEST_F( CommonPlaneTest, zero_velocity_large_separation )
 
    real x_min2 = 0.5;
    real y_min2 = 0.;
-   real z_min2 = 1.11;
+   real z_min2 = 1.2;
    real x_max2 = 1.5;
    real y_max2 = 1.;
-   real z_max2 = 2.11;
+   real z_max2 = 2.2;
 
    // compute element thickness for each block
    real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
