@@ -226,6 +226,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
          // filter checks, BUT does not actually violate this method's 
          // gap constraint. There will be data in the contact plane 
          // manager so we MUST increment the counter.
+         cpManager.m_inContact[ cpID ] = false;
          ++cpID; 
          continue;
       }
