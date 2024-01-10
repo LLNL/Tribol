@@ -932,7 +932,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      }
      
      // update the InterfacePairs container on the coupling scheme 
-     // to reflect the change to isContactCandidate = true
+     // to reflect any change to contact candidacy
      m_interfacePairs->updateInterfacePair( pair, kp ); 
 
    } // end loop over pairs
