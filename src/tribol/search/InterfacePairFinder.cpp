@@ -432,7 +432,7 @@ public:
 
             // Preliminary geometry/proximity checks, SRW
             InterfacePair pair( meshId1, cellType1, fromIdx,
-                                meshId2, cellType2, toIdx, false, true,
+                                meshId2, cellType2, toIdx, true,
                                 -1 );
             bool isContactCandidate = geomFilter( pair, m_couplingScheme->getContactMode() );
 
@@ -514,7 +514,7 @@ private:
        {
           // Preliminary geometry/proximity checks, SRW
           InterfacePair pair( meshId1, cellType1, fromIdx,
-                              meshId2, cellType2, toIdx, false, true,
+                              meshId2, cellType2, toIdx, true,
                               -1 );
           bool isContactCandidate = geomFilter( pair, cs->getContactMode() );
 

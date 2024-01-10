@@ -204,12 +204,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact) 
+      if (!pair.isContactCandidate) 
       {
-         // If a pair does NOT pass all geometric filter checks 
-         // then we have to pass over the interface pair. We don't 
-         // increment the contact plane manager index because this 
-         // pair will not have populated data in the manager
          continue;
       }
 

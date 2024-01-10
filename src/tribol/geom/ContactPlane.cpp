@@ -29,10 +29,9 @@ namespace tribol
 FaceGeomError CheckInterfacePair( InterfacePair& pair,
                                   ContactMethod const cMethod,
                                   ContactCase const TRIBOL_UNUSED_PARAM(cCase),
-                                  bool& inContact )
+                                  bool& isInteracting )
 {
-   inContact = false;
-   pair.isContactCandidate = false;
+   isInteracting = false;
 
    // note: will likely need the ContactCase for specialized 
    // geometry check(s)/routine(s)
@@ -66,17 +65,16 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
 
            if (face_err != NO_FACE_GEOM_ERROR)
            {
-              inContact = false;
+              isInteracting = false;
            }
            else if (cpTemp.m_inContact)
            {
-              pair.isContactCandidate = true;
               cpMgr.addContactPlane( cpTemp ); 
-              inContact = true;
+              isInteracting = true;
            }
            else
            {
-              inContact = false;
+              isInteracting = false;
            }
            return face_err;
          }
@@ -87,17 +85,16 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
 
            if (edge_err != NO_FACE_GEOM_ERROR)
            {
-              inContact = false;
+              isInteracting = false;
            }
            else if (cpTemp.m_inContact)
            {
-              pair.isContactCandidate = true;
               cpMgr.addContactPlane( cpTemp ); 
-              inContact = true;
+              isInteracting = true;
            }
            else
            {
-              inContact = false;
+              isInteracting = false;
            }
            return edge_err;
          }
@@ -119,13 +116,12 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
 
             if (cpTemp.m_inContact)
             {
-               pair.isContactCandidate = true;
                cpMgr.addContactPlane( cpTemp );
-               inContact = true;
+               isInteracting = true;
             }
             else
             {
-               inContact = false;
+               isInteracting = false;
             }
             return NO_FACE_GEOM_ERROR;
          }
@@ -359,9 +355,9 @@ ContactPlane3D::ContactPlane3D( InterfacePair& pair, real areaFrac,
    m_pair.meshId2    = pair.meshId2;
    m_pair.pairType2  = pair.pairType2;
    m_pair.pairIndex2 = pair.pairIndex2;
-
    m_pair.pairId     = pair.pairId;
-   m_pair.inContact  = pair.inContact;
+
+   m_pair.isContactCandidate = pair.isContactCandidate;
 
    m_intermediatePlane = (interPlane) ? true : false;
 
@@ -1817,9 +1813,9 @@ ContactPlane2D::ContactPlane2D( InterfacePair& pair, real lenFrac,
    m_pair.meshId2    = pair.meshId2;
    m_pair.pairType2  = pair.pairType2;
    m_pair.pairIndex2 = pair.pairIndex2;
-
    m_pair.pairId     = pair.pairId;
-   m_pair.inContact  = pair.inContact;
+
+   m_pair.isContactCandidate = pair.isContactCandidate;
 
    m_inContact = false;
    m_interpenOverlap = interpenOverlap;

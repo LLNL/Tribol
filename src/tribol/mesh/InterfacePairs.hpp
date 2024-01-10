@@ -21,24 +21,21 @@ struct InterfacePair
       : pairId(-1)
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
-      , inContact(false) 
       , isContactCandidate(false) {}
 
    // overload constructor
    InterfacePair( integer m1, integer t1, integer i1,
                   integer m2, integer t2, integer i2,
-                  bool contacting, bool proximate, integer id )
+                  bool proximate, integer id )
       : pairId(id)
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
-      , inContact(contacting) 
       , isContactCandidate(proximate) {}
 
    // overload constructor to handle zero input arguments
    InterfacePair() : pairId(-1)
                    , meshId1(-1), pairType1(-1), pairIndex1(-1)
                    , meshId2(-1), pairType2(-1), pairIndex2(-1)
-                   , inContact(false) 
                    , isContactCandidate(false) {}
 
    // pair id
@@ -53,9 +50,6 @@ struct InterfacePair
    integer meshId2;
    integer pairType2;
    integer pairIndex2;
-
-   // boolean to hold whether pair is in contact or not in contact
-   bool inContact;
 
    // boolean indicating if binned pair is proximate enough to be considered for contact
    bool isContactCandidate;
@@ -104,7 +98,6 @@ private:
 
   containerArray<integer> m_pairIndex1;
   containerArray<integer> m_pairIndex2;
-  containerArray<bool>    m_inContact;
   containerArray<bool>    m_isContactCandidate;
 };
 

@@ -916,18 +916,18 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      if (interact_err != NO_FACE_GEOM_ERROR)
      {
         pair_err = 1;
-        pair.inContact = false;
+        pair.isContactCandidate = false;
         // TODO consider printing offending face(s) coordinates for debugging
         SLIC_DEBUG("Face geometry error, " << static_cast<int>(interact_err) << "for pair, " << kp << ".");
         continue;
      }
      else if (!interact)
      {
-        pair.inContact = false;
+        pair.isContactCandidate = false;
      }
      else
      {
-        pair.inContact = true;
+        pair.isContactCandidate = true;
         ++numActivePairs;
      }
      
@@ -941,10 +941,13 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    // (which has been skipped over for contact eligibility) and reports this warning. Do we want to 
    // error out, or let a user detect bad contact behavior, but with a contact interaction that still
    // runs?
-   SLIC_WARNING_IF(pair_err!=0, "CouplingScheme::apply(): error with orientation, input, " << 
-                   "or invalid overlaps in CheckInterfacePair().");
+   SLIC_WARNING_IF( pair_err!=0, "CouplingScheme::apply(): error with orientation, input, " << 
+                    "or invalid overlaps in CheckInterfacePair()." );
 
    this->m_numActivePairs = numActivePairs;
+
+   SLIC_ERROR_IF( numActivePairs != cpMgr.size(), "CouplingScheme::apply(): " << 
+                  "number of active pairs does not match number of contact planes." );
 
    // aggregate across ranks for this coupling scheme? SRW
    SLIC_DEBUG("Number of active interface pairs: " << numActivePairs);
@@ -1257,8 +1260,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    {
       InterfacePair pair = m_interfacePairs->getInterfacePair(kp);
 
-      // a pair that is NOT a contact candidate will NOT have a contact plane;
-      // thus, we need to skip these pairs
+      // guard against the case where a pair does not have a contact plane; that is, 
+      // the pair is not a contact candidate
       if (!pair.isContactCandidate)
       {
          continue;
@@ -1379,7 +1382,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       real max_delta1 = proj_ratio * t1;
       real max_delta2 = proj_ratio * t2;
 
-      if (pair.inContact) // pair passes all geometric checks
+      if (cpMgr.m_inContact[cpID]) // pair passes all geometric checks
       {
          // Trigger for check 1 and 2:
          // check if there is further interpen or separation based on the 
@@ -1400,7 +1403,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
          real gapTol = this->getGapTol( pair.pairIndex1, pair.pairIndex2 );
  
-         if (cpMgr.m_gap[cpID] < gapTol) // TODO check to see if this is always the case for pair.inContact
+         if (cpMgr.m_gap[cpID] < gapTol) // double check gap
          {
             // check for nearly zero velocity and a gap that's too large.
             real tiny_vel_proj = 1.e-8;
