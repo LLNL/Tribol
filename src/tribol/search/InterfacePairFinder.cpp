@@ -430,12 +430,13 @@ public:
 
             // TODO: Add extra filter by bbox
 
-            // Preliminary geometry/proximity checks, SRW
             InterfacePair pair( meshId1, cellType1, fromIdx,
-                                meshId2, cellType2, toIdx, true,
-                                -1 );
+                                meshId2, cellType2, toIdx );
+
+            // perform initial geometry or validity checks to identify initially valid face-pairs
             bool isContactCandidate = geomFilter( pair, m_couplingScheme->getContactMode() );
 
+            // add interface pair for initially valid candidate face-pairs
             if (isContactCandidate)
             {
                pair.isContactCandidate = true;
@@ -512,12 +513,13 @@ private:
 
        for(int toIdx = startIdx; toIdx < mesh2NumElems; ++toIdx)
        {
-          // Preliminary geometry/proximity checks, SRW
           InterfacePair pair( meshId1, cellType1, fromIdx,
-                              meshId2, cellType2, toIdx, true,
-                              -1 );
+                              meshId2, cellType2, toIdx );
+          //
+          // perform initial geometry or validity checks to identify initially valid face-pairs
           bool isContactCandidate = geomFilter( pair, cs->getContactMode() );
 
+          // add interface pair for initially valid candidate face-pairs
           if (isContactCandidate)
           {
              pair.isContactCandidate = true;
