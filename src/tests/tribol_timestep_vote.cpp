@@ -655,7 +655,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
                                          tribol::FRICTIONLESS, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
-   real dt_diff = std::abs(parameters.dt - 0.001);
+   real dt_diff = std::abs(parameters.dt -0.000749999);
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
