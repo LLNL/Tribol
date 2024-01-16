@@ -31,7 +31,7 @@ namespace tribol
 /*!
  *  Perform geometry/proximity checks 1-4
  */
-bool geomFilter( InterfacePair const & iPair, ContactMode const mode )
+bool geomFilter( InterfacePair & iPair, ContactMode const mode )
 {
    // alias variables off the InterfacePair
    integer const & meshId1 = iPair.meshId1;
@@ -43,7 +43,8 @@ bool geomFilter( InterfacePair const & iPair, ContactMode const mode )
    ///           and the two mesh ids are not the same.
    if ((meshId1 == meshId2) && (faceId1 == faceId2))
    {
-      return false;
+      iPair.isContactCandidate = false;
+      return iPair.isContactCandidate;
    }
 
    // get instance of mesh manager
@@ -67,7 +68,8 @@ bool geomFilter( InterfacePair const & iPair, ContactMode const mode )
             int node2 = mesh2.getFaceNodeId(faceId2, j);
             if (node1 == node2)
             {
-              return false;
+              iPair.isContactCandidate = false;
+              return iPair.isContactCandidate;
             }
          }
       }
@@ -95,7 +97,8 @@ bool geomFilter( InterfacePair const & iPair, ContactMode const mode )
 
    // check normal projection against tolerance
    if (nrmlCheck > nrmlTol) {
-      return false;
+      iPair.isContactCandidate = false;
+      return iPair.isContactCandidate;
    }
 
    /// CHECK #4 (3D): Perform radius check, which involves seeing if
@@ -130,7 +133,8 @@ bool geomFilter( InterfacePair const & iPair, ContactMode const mode )
       real distMag = magnitude(distX, distY, distZ );
 
       if (distMag >= (distMax)) {
-         return false;
+         iPair.isContactCandidate = false;
+         return iPair.isContactCandidate;
       }
    } // end of dim == 3
    else if (dim == 2)
@@ -159,12 +163,14 @@ bool geomFilter( InterfacePair const & iPair, ContactMode const mode )
 
       if (distMag >= (distMax))
       {
-         return false;
+         iPair.isContactCandidate = false;
+         return iPair.isContactCandidate;
       }
    } // end of dim == 2
 
    // if we made it here we passed all checks
-   return true;
+   iPair.isContactCandidate = true;
+   return iPair.isContactCandidate;
 
 } // end geomFilter()
 
@@ -430,13 +436,14 @@ public:
 
             // TODO: Add extra filter by bbox
 
-            // Preliminary geometry/proximity checks, SRW
             InterfacePair pair( meshId1, cellType1, fromIdx,
-                                meshId2, cellType2, toIdx, false,
-                                -1 );
-            bool contact = geomFilter( pair, m_couplingScheme->getContactMode() );
+                                meshId2, cellType2, toIdx );
 
-            if (contact)
+            // perform initial geometry or validity checks to identify initially valid face-pairs
+            bool isContactCandidate = geomFilter( pair, m_couplingScheme->getContactMode() );
+
+            // add interface pair for initially valid candidate face-pairs
+            if (isContactCandidate)
             {
                pair.pairId = k;
                contactPairs->addInterfacePair( pair );
@@ -507,13 +514,14 @@ private:
 
        for(int toIdx = startIdx; toIdx < mesh2NumElems; ++toIdx)
        {
-          // Preliminary geometry/proximity checks, SRW
           InterfacePair pair( meshId1, cellType1, fromIdx,
-                              meshId2, cellType2, toIdx, false,
-                              -1 );
-          bool contact = geomFilter( pair, cs->getContactMode() );
+                              meshId2, cellType2, toIdx );
+          //
+          // perform initial geometry or validity checks to identify initially valid face-pairs
+          bool isContactCandidate = geomFilter( pair, cs->getContactMode() );
 
-          if (contact)
+          // add interface pair for initially valid candidate face-pairs
+          if (isContactCandidate)
           {
              pair.pairId = k;
              contactPairs->addInterfacePair( pair );

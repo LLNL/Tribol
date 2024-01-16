@@ -25,7 +25,7 @@ struct InterfacePair;
  * \param [in] mode ContactMode
  *
  */
-bool geomFilter( InterfacePair const & iPair, ContactMode const mode );
+bool geomFilter( InterfacePair & iPair, ContactMode const mode );
 
 /*!
  * \class InterfacePairFinder

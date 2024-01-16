@@ -30,7 +30,10 @@ class ContactPlaneManager;
  * \param [in] pair interface pair containing pair related indices
  * \param [in] cMethod the Tribol contact method
  * \param [in] cCase the Tribol contact Case
- * \param [in] inContact true if pair are in contact per CG routines
+ * \param [in] isInteracting true if pair passes all computational geometry filters 
+ *
+ * \note isInteracting is true indicating a contact candidate for intersecting or 
+ *       nearly intersecting face-pairs with a positive area of overlap
  *
  * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
  *
@@ -40,7 +43,7 @@ class ContactPlaneManager;
 FaceGeomError CheckInterfacePair( InterfacePair& pair,
                                   ContactMethod const cMethod,
                                   ContactCase const cCase,
-                                  bool& inContact );
+                                  bool& isInteracting );
 
 /*!
  *
