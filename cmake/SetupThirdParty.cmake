@@ -30,22 +30,14 @@ if (TARGET axom)
     # Case: Tribol included in project that also creates an axom target, no need to recreate axom
     message(STATUS "Axom support is ON, using existing axom target")
 
-    # Check to make sure the components and dependencies of axom exist
+    # Add components and dependencies of axom to this export set but don't prefix it with tribol::
     # NOTE(chapman39@llnl.gov): Cannot simply install axom, since it is an imported library
-    set(_axom_comp ${AXOM_COMPONENTS_ENABLED};cli11;fmt;sol;lua;hdf5;sparsehash)
-    foreach(_comp ${_axom_tpls})
-      if (NOT TARGET _comp)
-        message(FATAL_ERROR
-          "Axom is a required dependency for tribol. "
-          "${_comp} is a missing component of Axom that is also required.")
-      endif()
-    endforeach()
-    
-    # Add them to this export set but don't prefix it with tribol::
-    install(TARGETS              ${_axom_comp}
+    set(_axom_exported_targets ${axom_exported_targets})
+    list(REMOVE_ITEM _axom_exported_targets openmp)
+    install(TARGETS              ${_axom_exported_targets}
             EXPORT               tribol-targets
             DESTINATION          lib)
-    unset(_axom_comp)
+    unset(_axom_exported_targets)
 
     set(AXOM_FOUND TRUE CACHE BOOL "" FORCE)
 
