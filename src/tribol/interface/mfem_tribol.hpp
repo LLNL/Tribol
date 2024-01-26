@@ -223,7 +223,7 @@ void getMfemResponse( integer cs_id, mfem::Vector& r );
  *
  * This method requires registration of an mfem::ParMesh with the coupling scheme. The Jacobian contributions are split
  * into a 2x2 block structure. The first row (or column) block is associated with the coordinate grid function degrees
- * of freedom and the second row (or column) block is associated with the Lagrange multiplier (pressure ) degrees of
+ * of freedom and the second row (or column) block is associated with the Lagrange multiplier (pressure) degrees of
  * freedom. Specifically, the blocks are as follows (f = force, u = displacement, g = gap, p = pressure):
  *
  *   df/du | df/dp
@@ -231,7 +231,10 @@ void getMfemResponse( integer cs_id, mfem::Vector& r );
  *   dg/du | dg/dp
  *
  * Gap/pressure degrees of freedom which do not have a Lagrange multiplier contain empty rows of dg/du and empty columns
- * of df/dp and ones on the diagonal of the dg/dp block.
+ * of df/dp and ones on the diagonal of the dg/dp block. Pressure degrees of freedom exist on the submesh holding the
+ * contact surface. A pressure degree of freedom may not contain a Lagrange multiplier if, for instance, SINGLE_MORTAR
+ * is used as the ContactMethod, since this method only has Lagrange multipliers on the nonmortar surface. Note, Tribol
+ * does not track active constraints, so Lagrange multipliers will remain persistent regardless of the value of the gap.
  *
  * @param csId Coupling scheme id with a registered MFEM mesh
  * @return Jacobian contributions as an mfem::BlockOperator
