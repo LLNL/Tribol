@@ -968,7 +968,7 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
 {
   // 0 = displacement DOFs, 1 = lagrange multiplier DOFs
   // (0,0) block is empty (for now using SINGLE_MORTAR with approximate tangent)
-  // (1,1) block is empty
+  // (1,1) block id a diagonal matrix with ones on the diagonal of inactive dofs
   // (0,1) and (1,0) are symmetric (for now using SINGLE_MORTAR with approximate tangent)
   const auto& elem_map_1 = parent_data_.GetElemMap1();
   const auto& elem_map_2 = parent_data_.GetElemMap2();
