@@ -36,7 +36,6 @@
  * Example output can be viewed in VisIt or ParaView.
  */
 
-#include <mfem/fem/datacollection.hpp>
 #include <set>
 
 // Tribol includes
