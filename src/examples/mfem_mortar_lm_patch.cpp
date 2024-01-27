@@ -110,7 +110,7 @@ int main( int argc, char** argv )
   SLIC_INFO_ROOT("Running mfem_mortar_lm_patch with the following options:");
   SLIC_INFO_ROOT(axom::fmt::format("refine: {0}", ref_levels));
   SLIC_INFO_ROOT(axom::fmt::format("lambda: {0}", lambda));
-  SLIC_INFO_ROOT(axom::fmt::format("mu:     {0}\n", mu));
+  SLIC_INFO_ROOT(axom::fmt::format("mu:     {0}", mu));
   SLIC_INFO_ROOT(axom::fmt::format("device: {0}\n", device_config));
 
   // enable devices such as GPUs
