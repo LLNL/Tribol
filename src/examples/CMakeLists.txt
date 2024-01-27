@@ -96,7 +96,6 @@ if ( BUILD_REDECOMP )
   set( examples
       mfem_mortar_lm_patch.cpp
       mfem_common_plane.cpp
-      mfem_mortar_lm_patch_gpu.cpp
       )
 
   foreach( example ${examples} )
