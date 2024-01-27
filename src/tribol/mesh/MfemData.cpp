@@ -254,6 +254,7 @@ std::vector<real*> ParentField::GetRedecompFieldPtrs(mfem::GridFunction& redecom
   auto data_ptrs = std::vector<real*>(3, nullptr);
   if (redecomp_gridfn.FESpace()->GetNDofs() > 0)
   {
+    // Tribol only computes on host
     auto data = redecomp_gridfn.HostReadWrite();
     for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
     {
@@ -314,6 +315,7 @@ std::vector<const real*> PressureField::GetRedecompFieldPtrs() const
   auto data_ptrs = std::vector<const real*>(3, nullptr);
   if (GetRedecompGridFn().FESpace()->GetNDofs() > 0)
   {
+    // Tribol only computes on host
     auto data = GetRedecompGridFn().HostRead();
     for (size_t i{}; i < static_cast<size_t>(GetRedecompGridFn().FESpace()->GetVDim()); ++i)
     {
@@ -328,6 +330,7 @@ std::vector<real*> PressureField::GetRedecompFieldPtrs(mfem::GridFunction& redec
   auto data_ptrs = std::vector<real*>(3, nullptr);
   if (redecomp_gridfn.FESpace()->GetNDofs() > 0)
   {
+    // Tribol only computes on host
     auto data = redecomp_gridfn.HostReadWrite();
     for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
     {
