@@ -88,7 +88,7 @@ int main( int argc, char** argv )
   std::string device_config = "cpu";
 
   // parse command line options
-  axom::CLI::App app { "mfem_mortar_lm_patch_gpu" };
+  axom::CLI::App app { "mfem_mortar_lm_patch" };
   app.add_option("-r,--refine", ref_levels,
     "Number of times to refine the mesh uniformly.")
     ->capture_default_str();
@@ -107,7 +107,7 @@ int main( int argc, char** argv )
     ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
-  SLIC_INFO_ROOT("Running mfem_mortar_lm_patch_gpu with the following options:");
+  SLIC_INFO_ROOT("Running mfem_mortar_lm_patch with the following options:");
   SLIC_INFO_ROOT(axom::fmt::format("refine: {0}", ref_levels));
   SLIC_INFO_ROOT(axom::fmt::format("lambda: {0}", lambda));
   SLIC_INFO_ROOT(axom::fmt::format("mu:     {0}\n", mu));
