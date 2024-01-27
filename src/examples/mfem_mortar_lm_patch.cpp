@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: (MIT)
 
 /**
- * @file mfem_mortar_lm_patch_gpu.cpp
+ * @file mfem_mortar_lm_patch.cpp
  *
  * @brief Demonstrates contact patch test using the mortar method
  *
@@ -30,7 +30,8 @@
  * the main function below give details on each step of the example code.
  *
  * Example runs (from repo root directory):
- *   - mpirun -np 4 {build_dir}/examples/mfem_mortar_lm_patch_gpu_ex
+ *   - mpirun -np 4 {build_dir}/examples/mfem_mortar_lm_patch_ex
+ *   - mpirun -np 4 {build_dir}/examples/mfem_mortar_lm_patch_ex -r 4 -d cuda
  *
  * Example output can be viewed in VisIt or ParaView.
  */
