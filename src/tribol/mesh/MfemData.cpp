@@ -127,6 +127,7 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   // transfer data from redecomp mesh
   mfem::ParGridFunction dst_gridfn(dst_fespace_ptr, *dst_ptr);
   redecomp_xfer_.TransferToParallel(redecomp_src, dst_gridfn);
+  dst_ptr->SyncMemory(dst_gridfn);
 
   // using redecomp, shared dof values are set equal (i.e. a ParGridFunction), but we want the sum of shared dof values
   // to equal the actual dof value when transferring dual fields (i.e. force and gap) back to the parallel mesh
@@ -134,8 +135,10 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   
   // P_I is the row index vector on the MFEM prolongation matrix. If there are no column entries for the row, then the
   // DOF is owned by another rank.
-  auto P_I = dst_fespace_ptr->Dof_TrueDof_Matrix()->GetDiagMemoryI();
+  auto dst_data = dst_ptr->HostWrite();
+  auto P_I = mfem::Read(dst_fespace_ptr->Dof_TrueDof_Matrix()->GetDiagMemoryI(), dst_fespace_ptr->GetVSize() + 1, false);
   HYPRE_Int tdof_ct {0};
+  // TODO: Convert to mfem::forall() once tribol is on GPU (dst_data is always on host now so not needed yet)
   for (int i{0}; i < dst_fespace_ptr->GetVSize(); ++i)
   {
     if (P_I[i+1] != tdof_ct)
@@ -144,7 +147,7 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
     }
     else
     {
-      (*dst_ptr)[i] = 0.0;
+      dst_data[i] = 0.0;
     }
   }
   // if using LOR, transfer data from LOR mesh to submesh
