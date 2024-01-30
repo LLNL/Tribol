@@ -485,13 +485,6 @@ private:
     * @brief Tracks whether a step has been taken yet
     */
    bool first_step;
-
-   /**
-    * @brief Applies homogeneous BCs to dxdt
-    * 
-    * @param dxdt Velocity vector
-    */
-   void SetHomogeneousBC(mfem::Vector& dxdt) const;
 };
 
 /// Explicit solid mechanics update with lumped mass
@@ -530,11 +523,21 @@ public:
    ) const override;
 
    /**
+    * @brief Computes inverse lumped mass matrix
+    * 
+    * @param fespace FE space of displacement field
+    * @param rho Density coefficient
+    * @return mfem::Vector holding mass
+    */
+   static mfem::Vector ComputeInvMass(mfem::ParFiniteElementSpace& fespace, mfem::Coefficient& rho);
+
+   /**
     * @brief External force contribution (must be manually updated)
     */
    mfem::ParGridFunction f_ext;
 
 private:
+
    /**
     * @brief Elasticity bilinear form
     */

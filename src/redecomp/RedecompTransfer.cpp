@@ -94,7 +94,8 @@ void RedecompTransfer::TransferToSerial(
     for (int e{first_el}; e < last_el; ++e)
     {
       dst.GetValues(e, vals);
-      vals = &dst_vals[r][quadpt_ct];
+      const mfem::Vector dof_vals(&dst_vals[r][quadpt_ct], vals.Size());
+      vals = dof_vals;
       quadpt_ct += vals.Size();
     }
   }

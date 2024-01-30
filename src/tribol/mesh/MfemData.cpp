@@ -215,6 +215,7 @@ void ParentRedecompTransfer::RedecompToParent(
   // submesh transfer requires a grid function.  create one using parent_dst's data
   mfem::ParGridFunction parent_gridfn(&parent_fes_, parent_dst);
   submesh_redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, parent_gridfn);
+  parent_dst.SyncMemory(parent_gridfn);
 }
 
 ParentField::ParentField(
@@ -289,6 +290,8 @@ ParentField::UpdateData::UpdateData(
 : parent_redecomp_xfer_ { parent_redecomp_xfer },
   redecomp_gridfn_ { &parent_redecomp_xfer.GetRedecompFESpace() }
 {
+  // keep on host since tribol does computations there
+  redecomp_gridfn_.UseDevice(false);
   redecomp_gridfn_ = 0.0;
   parent_redecomp_xfer_.ParentToRedecomp(parent_gridfn, redecomp_gridfn_);
 }
@@ -365,6 +368,8 @@ PressureField::UpdateData::UpdateData(
 : submesh_redecomp_xfer_ { submesh_redecomp_xfer },
   redecomp_gridfn_ { &submesh_redecomp_xfer.GetRedecompFESpace() }
 {
+  // keep on host since tribol does computations there
+  redecomp_gridfn_.UseDevice(false);
   redecomp_gridfn_ = 0.0;
   submesh_redecomp_xfer_.SubmeshToRedecomp(submesh_gridfn, redecomp_gridfn_);
 }
@@ -410,6 +415,9 @@ MfemMeshData::MfemMeshData(
   {
     SetLORFactor(current_coords.FESpace()->FEColl()->GetOrder());
   }
+
+  // keep response grid function on host since tribol does computations there
+  redecomp_response_.UseDevice(false);
 }
 
 void MfemMeshData::SetParentCoords(const mfem::ParGridFunction& current_coords)
@@ -458,30 +466,36 @@ void MfemMeshData::UpdateMfemMeshData()
       new mfem::QuadratureSpace(&GetRedecompMesh(), 0)
     );
     redecomp_elem_thickness_->SetOwnsSpace(true);
+    // keep redecomp thickness on host since tribol does computations there
+    redecomp_elem_thickness_->UseDevice(false);
     *redecomp_elem_thickness_ = 0.0;
     redecomp_xfer.TransferToSerial(*elem_thickness_, *redecomp_elem_thickness_);
     // set element thickness on tribol mesh
     tribol_elem_thickness_1_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
+    mfem::Vector quad_val;
+    quad_val.UseDevice(true);
     for (auto redecomp_e : GetElemMap1())
     {
-      mfem::Vector quad_val;
       redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
-      tribol_elem_thickness_1_->push_back(quad_val[0]);
+      auto quad_val_ptr = quad_val.HostRead();
+      tribol_elem_thickness_1_->push_back(quad_val_ptr[0]);
     }
     tribol_elem_thickness_2_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
-      mfem::Vector quad_val;
       redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
-      tribol_elem_thickness_2_->push_back(quad_val[0]);
+      auto quad_val_ptr = quad_val.HostRead();
+      tribol_elem_thickness_2_->push_back(quad_val_ptr[0]);
     }
     // set material modulus on redecomp mesh
     redecomp_material_modulus_ = std::make_unique<mfem::QuadratureFunction>(
       new mfem::QuadratureSpace(&GetRedecompMesh(), 0)
     );
     redecomp_material_modulus_->SetOwnsSpace(true);
+    // keep redecomp material modulus on host since tribol does computations there
+    redecomp_material_modulus_->UseDevice(false);
     *redecomp_material_modulus_ = 0.0;
     redecomp_xfer.TransferToSerial(*material_modulus_, *redecomp_material_modulus_);
     // set material modulus on tribol mesh
@@ -489,17 +503,17 @@ void MfemMeshData::UpdateMfemMeshData()
       0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
     for (auto redecomp_e : GetElemMap1())
     {
-      mfem::Vector quad_val;
       redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
-      tribol_material_modulus_1_->push_back(quad_val[0]);
+      auto quad_val_ptr = quad_val.HostRead();
+      tribol_material_modulus_1_->push_back(quad_val_ptr[0]);
     }
     tribol_material_modulus_2_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
-      mfem::Vector quad_val;
       redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
-      tribol_material_modulus_2_->push_back(quad_val[0]);
+      auto quad_val_ptr = quad_val.HostRead();
+      tribol_material_modulus_2_->push_back(quad_val_ptr[0]);
     }
   }
 }
