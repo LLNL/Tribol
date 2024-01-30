@@ -26,7 +26,22 @@ endif()
 #------------------------------------------------------------------------------
 # axom
 #------------------------------------------------------------------------------
-if (DEFINED AXOM_DIR)
+if (TARGET axom)
+    # Case: Tribol included in project that also creates an axom target, no need to recreate axom
+    message(STATUS "Axom support is ON, using existing axom target")
+
+    # Add components and dependencies of axom to this export set but don't prefix it with tribol::
+    # NOTE(chapman39@llnl.gov): Cannot simply install axom, since it is an imported library
+    set(_axom_exported_targets ${axom_exported_targets})
+    list(REMOVE_ITEM _axom_exported_targets openmp)
+    install(TARGETS              ${_axom_exported_targets}
+            EXPORT               tribol-targets
+            DESTINATION          lib)
+    unset(_axom_exported_targets)
+
+    set(AXOM_FOUND TRUE CACHE BOOL "" FORCE)
+
+elseif (DEFINED AXOM_DIR)
   message(STATUS "Setting up external Axom TPL...")
   include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupAxom.cmake)
 
@@ -43,7 +58,17 @@ endif()
 # mfem
 #------------------------------------------------------------------------------
 
-if (DEFINED MFEM_DIR)
+if (TARGET mfem)
+    # Case: Tribol included in project that also creates an mfem target, no need to recreate mfem
+    # Note - white238: I can't seem to get this to pass install testing due to mfem being included
+    # in multiple export sets
+    message(STATUS "MFEM support is ON, using existing mfem target")
+    # Add it to this export set but don't prefix it with tribol::
+    install(TARGETS              mfem
+            EXPORT               tribol-targets
+            DESTINATION          lib)
+    set(MFEM_FOUND TRUE CACHE BOOL "" FORCE)
+elseif (DEFINED MFEM_DIR)
   message(STATUS "Setting up external MFEM TPL...")
 
   include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupMFEM.cmake)

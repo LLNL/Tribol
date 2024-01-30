@@ -204,12 +204,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact) 
+      if (!pair.isContactCandidate) 
       {
-         // If a pair does NOT pass all geometric filter checks 
-         // then we have to pass over the interface pair. We don't 
-         // increment the contact plane manager index because this 
-         // pair will not have populated data in the manager
          continue;
       }
 
@@ -230,6 +226,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
          // filter checks, BUT does not actually violate this method's 
          // gap constraint. There will be data in the contact plane 
          // manager so we MUST increment the counter.
+         cpManager.m_inContact[ cpID ] = false;
          ++cpID; 
          continue;
       }

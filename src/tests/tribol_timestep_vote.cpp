@@ -223,8 +223,7 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
    // note that with very small velocity, the dt estimate will be 
-   // very large. This is a case where the initial gap is just too large. 
-   // Tribol will print a message to screen if this is the case.
+   // very large. 
    EXPECT_EQ( parameters.dt, dt );
 
    tribol::finalize();
@@ -656,7 +655,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
                                          tribol::FRICTIONLESS, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
-   real dt_diff = std::abs(parameters.dt - 0.0007499999);
+   real dt_diff = std::abs(parameters.dt -0.000749999);
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 

@@ -223,15 +223,15 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
    real nonmortarX_bar[ size ];
    real* overlapX;
 
-   ////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////
    // compute nonmortar gaps to determine active set of contact dofs //
-   ////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////
    int cpID = 0;
    for (IndexType kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -395,7 +395,7 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -766,7 +766,7 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }

@@ -943,17 +943,24 @@ void setInterfacePairs( integer couplingSchemeIndex,
    // copy the interaction pairs
    for(int i=0; i< numPairs; ++i)
    {
-      // Perform basic geometry proximity filter prior to adding interface pair
-      // since a user may specify interface pairs that aren't, nor should be in contact.
       InterfacePair pair { meshId1[i], pairType1[i], pairIndex1[i],
-                           meshId2[i], pairType2[i], pairIndex2[i],
-                           false, i };
+                           meshId2[i], pairType2[i], pairIndex2[i], i };
       ContactMode mode = couplingScheme->getContactMode();
+
+      // perform initial face-pair validity checks to add valid face-pairs 
+      // to interface pair manager. Note, further computational geometry 
+      // filtering will be performed on each face-pair indendifying 
+      // contact candidates.
       bool check = geomFilter( pair, mode );
 
       if (check)
       {
+         pair.isContactCandidate = true;
          pairs->addInterfacePair( pair );
+      }
+      else
+      {
+         pair.isContactCandidate = false;
       }
    }
 

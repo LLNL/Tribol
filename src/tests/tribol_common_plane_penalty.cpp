@@ -46,7 +46,7 @@ void compareGaps( tribol::CouplingScheme const * cs,
    {
       tribol::InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -150,7 +150,7 @@ void checkPressures( tribol::CouplingScheme const * cs,
    {
       tribol::InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }

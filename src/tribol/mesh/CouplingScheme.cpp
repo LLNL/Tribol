@@ -916,23 +916,23 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      if (interact_err != NO_FACE_GEOM_ERROR)
      {
         pair_err = 1;
-        pair.inContact = false;
+        pair.isContactCandidate = false;
         // TODO consider printing offending face(s) coordinates for debugging
         SLIC_DEBUG("Face geometry error, " << static_cast<int>(interact_err) << "for pair, " << kp << ".");
         continue;
      }
      else if (!interact)
      {
-        pair.inContact = false;
+        pair.isContactCandidate = false;
      }
      else
      {
-        pair.inContact = true;
+        pair.isContactCandidate = true;
         ++numActivePairs;
      }
      
      // update the InterfacePairs container on the coupling scheme 
-     // to reflect the change to "in-contact"
+     // to reflect any change to contact candidacy
      m_interfacePairs->updateInterfacePair( pair, kp ); 
 
    } // end loop over pairs
@@ -941,10 +941,13 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    // (which has been skipped over for contact eligibility) and reports this warning. Do we want to 
    // error out, or let a user detect bad contact behavior, but with a contact interaction that still
    // runs?
-   SLIC_WARNING_IF(pair_err!=0, "CouplingScheme::apply(): error with orientation, input, " << 
-                   "or invalid overlaps in CheckInterfacePair().");
+   SLIC_WARNING_IF( pair_err!=0, "CouplingScheme::apply(): error with orientation, input, " << 
+                    "or invalid overlaps in CheckInterfacePair()." );
 
    this->m_numActivePairs = numActivePairs;
+
+   SLIC_ERROR_IF( numActivePairs != cpMgr.size(), "CouplingScheme::apply(): " << 
+                  "number of active pairs does not match number of contact planes." );
 
    // aggregate across ranks for this coupling scheme? SRW
    SLIC_DEBUG("Number of active interface pairs: " << numActivePairs);
@@ -1257,6 +1260,13 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    {
       InterfacePair pair = m_interfacePairs->getInterfacePair(kp);
 
+      // guard against the case where a pair does not have a contact plane; that is, 
+      // the pair is not a contact candidate
+      if (!pair.isContactCandidate)
+      {
+         continue;
+      }
+   
       real x1[dim * numNodesPerCell1];
       real v1[dim * numNodesPerCell1];
       mesh1.getFaceCoords( pair.pairIndex1, &x1[0] );
@@ -1372,128 +1382,123 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       real max_delta1 = proj_ratio * t1;
       real max_delta2 = proj_ratio * t2;
 
-      if (pair.inContact) // pair passes all geometric checks
+      // Trigger for check 1 and 2:
+      // check if there is further interpen or separation based on the 
+      // velocity projection in the direction of the common-plane normal. 
+      // The two cases are:
+      // if v1*n < 0 there is interpen
+      // if v2*n > 0 there is interpen 
+      dt1_vel_check = (v1_dot_n < 0.) ? true : false; 
+      dt2_vel_check = (v2_dot_n > 0.) ? true : false; 
+
+      ////////////////////////////////////////////////////////////////////
+      // 1. Current interpenetration gap exceeds max allowable interpen // 
+      ////////////////////////////////////////////////////////////////////
+
+      // check if pair is in contact per Common Plane method. Note: this check 
+      // to see if the face-pair is in contact uses the gap computed on the 
+      // contact plane, which is in the direction of the overlap normal
+      if (cpMgr.m_inContact[cpID]) // gap < gap_tol
       {
-         // Trigger for check 1 and 2:
-         // check if there is further interpen or separation based on the 
-         // velocity projection in the direction of the common-plane normal. 
-         // The two cases are:
-         // if v1*n < 0 there is interpen
-         // if v2*n > 0 there is interpen 
-         dt1_vel_check = (v1_dot_n < 0.) ? true : false; 
-         dt2_vel_check = (v2_dot_n > 0.) ? true : false; 
-
-         ///////////////////////////////////////////////////
-         // 1. Current gap exceeds max allowable interpen // 
-         ///////////////////////////////////////////////////
-
-         // check if pair is in contact per Common Plane method. Note: this check 
-         // to see if the face-pair is in contact uses the gap computed on the 
-         // contact plane, which is in the direction of the overlap normal
-
-         real gapTol = this->getGapTol( pair.pairIndex1, pair.pairIndex2 );
- 
-         if (cpMgr.m_gap[cpID] < gapTol) // TODO check to see if this is always the case for pair.inContact
+         // check for nearly zero velocity and a gap that's too large.
+         real tiny_vel_proj = 1.e-8;
+         real tiny_vel_tol = 1.e-6; // make larger than tiny_vel_proj
+         real tiny_vel_diff1 = std::abs(v1_dot_n - tiny_vel_proj);
+         real tiny_vel_diff2 = std::abs(v2_dot_n - tiny_vel_proj);
+         if (tiny_vel_diff1 < tiny_vel_tol || tiny_vel_diff2 < tiny_vel_tol)
          {
-            // check for nearly zero velocity and a gap that's too large.
-            real tiny_vel_proj = 1.e-8;
-            real tiny_vel_tol = 1.e-6; // make larger than tiny_vel_proj
-            real tiny_vel_diff1 = std::abs(v1_dot_n - tiny_vel_proj);
-            real tiny_vel_diff2 = std::abs(v2_dot_n - tiny_vel_proj);
-            if (tiny_vel_diff1 < tiny_vel_tol || tiny_vel_diff2 < tiny_vel_tol)
-            {
-               tiny_vel_msg = true;
-            }
-
-            // compute the difference between the 'face-gaps' and the max allowable 
-            // interpen as a function of element thickness. 
-            real delta1 = max_delta1 - gap_f1_n1; // >0 not exceeding max allowable
-            real delta2 = max_delta2 + gap_f2_n2; // >0 not exceeding max allowable
-
-            dt1_check1 = (dt1_vel_check) ? (delta1 < 0.) : false;
-            dt2_check1 = (dt2_vel_check) ? (delta2 < 0.) : false;
-
-            // compute dt for face 1 and 2 based on the velocity projection in the 
-            // direction of that face's outward unit normal
-            // Note, this calculation takes a fraction 
-            // of the computed dt to reduce the amount of face-displacement in a given 
-            // cycle.
-            dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
-            dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
-
-            SLIC_ERROR_IF( dt1<0., "Common plane timestep vote for gap-check of face 1 is negative.");
-            SLIC_ERROR_IF( dt2<0., "Common plane timestep vote for gap-check of face 2 is negative.");
-
-            dt_temp1 = axom::utilities::min(dt_temp1, 
-                       axom::utilities::min(dt1, dt2));
-
-         } // end case 1
-
-         ///////////////////////////////////////////////////////
-         // 2. Velocity projection exceeds interpen tolerance // 
-         //      Note: this check is for ALL face-pairs       // 
-         //            regardless of whether they pass all    // 
-         //            geometric checks or are in contact     // 
-         //            per the common-plane method            //
-         ///////////////////////////////////////////////////////
-
-         // compute delta between velocity projection of face-projected 
-         // overlap centroid and the OTHER face's face-projected overlap 
-         // centroid
-         real proj_delta_x1 = cpMgr.m_cXf1[cpID] + dt * vel_f1[0] - cpMgr.m_cXf2[cpID];
-         real proj_delta_y1 = cpMgr.m_cYf1[cpID] + dt * vel_f1[1] - cpMgr.m_cYf2[cpID];
-         real proj_delta_z1 = 0.;
-
-         real proj_delta_x2 = cpMgr.m_cXf2[cpID] + dt * vel_f2[0] - cpMgr.m_cXf1[cpID]; 
-         real proj_delta_y2 = cpMgr.m_cYf2[cpID] + dt * vel_f2[1] - cpMgr.m_cYf1[cpID];
-         real proj_delta_z2 = 0.;
-
-         // compute the dot product between each face's delta and the OTHER 
-         // face's outward unit normal. This is the magnitude of interpenetration 
-         // of one face's projected overlap-centroid in the 'thickness-direction' 
-         // of the other face (with whom in may be in contact currently, or in 
-         // a velocity projected sense).
-         real proj_delta_n_1 = proj_delta_x1 * fn2[0] + proj_delta_y1 * fn2[1];
-         real proj_delta_n_2 = proj_delta_x2 * fn1[0] + proj_delta_y2 * fn1[1];
-
-         if (dim == 3)
-         {
-            proj_delta_z1 = cpMgr.m_cZf1[cpID] + dt * vel_f1[2] - cpMgr.m_cZf2[cpID];
-            proj_delta_z2 = cpMgr.m_cZf2[cpID] + dt * vel_f2[2] - cpMgr.m_cZf1[cpID];
-
-            proj_delta_n_1 += proj_delta_z1 * fn2[2];
-            proj_delta_n_2 += proj_delta_z2 * fn1[2];
+            tiny_vel_msg = true;
          }
 
-         // If delta_n_i < 0, (i=1,2) there is interpen. Check this interpen 
-         // against the maximum allowable to determine if a velocity projection 
-         // timestep estimate is still required.
-         if (dt1_vel_check)
-         {
-            dt1_vel_check = (proj_delta_n_1 < 0.) ? ((std::abs(proj_delta_n_1) > max_delta1) ? true : false) : false;
-         }
-       
-         if (dt2_vel_check)
-         {
-            dt2_vel_check = (proj_delta_n_2 < 0.) ? ((std::abs(proj_delta_n_2) > max_delta2) ? true : false) : false;
-         }
+         // compute the difference between the 'face-gaps' and the max allowable 
+         // interpen as a function of element thickness. 
+         real delta1 = max_delta1 - gap_f1_n1; // >0 not exceeding max allowable
+         real delta2 = max_delta2 + gap_f2_n2; // >0 not exceeding max allowable
 
-         // if the 'case 1' check was not triggered for face 1 or 2, then
-         // check the sign of the delta-projections to determine if interpen 
-         // is occuring. If so, check against maximum allowable interpen. 
-         // In both cases if delta_n_i (i=1,2) < 0 there is interpen
-         dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
-         dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
+         dt1_check1 = (dt1_vel_check) ? (delta1 < 0.) : false;
+         dt2_check1 = (dt2_vel_check) ? (delta2 < 0.) : false;
 
-         SLIC_ERROR_IF( dt1<0, "Common plane timestep vote for velocity projection of face 1 is negative.");
-         SLIC_ERROR_IF( dt2<0, "Common plane timestep vote for velocity projection of face 2 is negative.");
+         // compute dt for face 1 and 2 based on the velocity projection in the 
+         // direction of that face's outward unit normal
+         // Note, this calculation takes a fraction 
+         // of the computed dt to reduce the amount of face-displacement in a given 
+         // cycle.
+         dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
+         dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
 
-         // update dt_temp2
-         dt_temp2 = axom::utilities::min(dt_temp2, 
+         SLIC_ERROR_IF( dt1<0., "Common plane timestep vote for gap-check of face 1 is negative.");
+         SLIC_ERROR_IF( dt2<0., "Common plane timestep vote for gap-check of face 2 is negative.");
+
+         dt_temp1 = axom::utilities::min(dt_temp1, 
                     axom::utilities::min(dt1, dt2));
 
-         ++cpID;
-      } // end case 2
+      } // end case 1
+
+      ///////////////////////////////////////////////////////////
+      // 2. Velocity projection exceeds interpen tolerance     // 
+      //    Note: This is performed for all contact candidates //
+      //          even if they are not 'in contact' per the    //
+      //          common-plane method                          //
+      ///////////////////////////////////////////////////////////
+
+      // compute delta between velocity projection of face-projected 
+      // overlap centroid and the OTHER face's face-projected overlap 
+      // centroid
+      real proj_delta_x1 = cpMgr.m_cXf1[cpID] + dt * vel_f1[0] - cpMgr.m_cXf2[cpID];
+      real proj_delta_y1 = cpMgr.m_cYf1[cpID] + dt * vel_f1[1] - cpMgr.m_cYf2[cpID];
+      real proj_delta_z1 = 0.;
+
+      real proj_delta_x2 = cpMgr.m_cXf2[cpID] + dt * vel_f2[0] - cpMgr.m_cXf1[cpID]; 
+      real proj_delta_y2 = cpMgr.m_cYf2[cpID] + dt * vel_f2[1] - cpMgr.m_cYf1[cpID];
+      real proj_delta_z2 = 0.;
+
+      // compute the dot product between each face's delta and the OTHER 
+      // face's outward unit normal. This is the magnitude of interpenetration 
+      // of one face's projected overlap-centroid in the 'thickness-direction' 
+      // of the other face (with whom in may be in contact currently, or in 
+      // a velocity projected sense).
+      real proj_delta_n_1 = proj_delta_x1 * fn2[0] + proj_delta_y1 * fn2[1];
+      real proj_delta_n_2 = proj_delta_x2 * fn1[0] + proj_delta_y2 * fn1[1];
+
+      if (dim == 3)
+      {
+         proj_delta_z1 = cpMgr.m_cZf1[cpID] + dt * vel_f1[2] - cpMgr.m_cZf2[cpID];
+         proj_delta_z2 = cpMgr.m_cZf2[cpID] + dt * vel_f2[2] - cpMgr.m_cZf1[cpID];
+
+         proj_delta_n_1 += proj_delta_z1 * fn2[2];
+         proj_delta_n_2 += proj_delta_z2 * fn1[2];
+      }
+
+      // If delta_n_i < 0, (i=1,2) there is interpen. Check this interpen 
+      // against the maximum allowable to determine if a velocity projection 
+      // timestep estimate is still required.
+      if (dt1_vel_check)
+      {
+         dt1_vel_check = (proj_delta_n_1 < 0.) ? ((std::abs(proj_delta_n_1) > max_delta1) ? true : false) : false;
+      }
+      
+      if (dt2_vel_check)
+      {
+         dt2_vel_check = (proj_delta_n_2 < 0.) ? ((std::abs(proj_delta_n_2) > max_delta2) ? true : false) : false;
+      }
+
+      // if the 'case 1' check was not triggered for face 1 or 2, then
+      // check the sign of the delta-projections to determine if interpen 
+      // is occuring. If so, check against maximum allowable interpen. 
+      // In both cases if delta_n_i (i=1,2) < 0 there is interpen
+      dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
+      dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
+
+      SLIC_ERROR_IF( dt1<0, "Common plane timestep vote for velocity projection of face 1 is negative.");
+      SLIC_ERROR_IF( dt2<0, "Common plane timestep vote for velocity projection of face 2 is negative.");
+
+      // update dt_temp2
+      dt_temp2 = axom::utilities::min(dt_temp2, 
+                 axom::utilities::min(dt1, dt2));
+
+      // end check 2
+
+      ++cpID;
    } // end loop over interface pairs
 
    // Can we output this message on root? SRW

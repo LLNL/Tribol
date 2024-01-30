@@ -110,7 +110,7 @@ std::vector<std::unique_ptr<RedecompMesh>> MultiRedecomp::createRedecompMeshes(
       break;
     }
     default:
-      SLIC_ERROR_ROOT_IF(false, "Only 2D and 3D meshes are supported.");
+      SLIC_ERROR_ROOT("Only 2D and 3D meshes are supported.");
   }
 
   // Compute the number of parts the redecomp mesh should have and the size of
