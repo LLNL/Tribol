@@ -9,7 +9,7 @@
 #include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 
-//MFEM includes
+// MFEM includes
 #include "mfem.hpp"
 
 #include "axom/config.hpp"

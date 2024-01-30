@@ -19,8 +19,8 @@ namespace redecomp
  * @tparam T Array data type
  * @tparam DIM Array dimension
  */
-template <typename T, int DIM = 1>
-class MPIArray : public axom::Array<axom::Array<T, DIM>>
+template <typename T, int DIM = 1, typename ArrayType = axom::Array<axom::Array<T, DIM>>>
+class MPIArray : public ArrayType
 {
 public:
   /**
@@ -29,8 +29,8 @@ public:
    * @param mpi MPIUtility to define MPI_Comm for MPI operations
    * @param array Array data
    */
-  MPIArray(const MPIUtility* mpi, const axom::Array<axom::Array<T, DIM>>& array)
-  : axom::Array<axom::Array<T, DIM>>(array),
+  MPIArray(const MPIUtility* mpi, const ArrayType& array)
+  : ArrayType(array),
     mpi_ { mpi }
   {
     this->reserve(mpi_->NRanks());
@@ -44,8 +44,8 @@ public:
    * @param mpi MPIUtility to define MPI_Comm for MPI operations
    * @param array Array data
    */
-  MPIArray(const MPIUtility* mpi, axom::Array<axom::Array<T, DIM>>&& array)
-  : axom::Array<axom::Array<T, DIM>>(std::move(array)),
+  MPIArray(const MPIUtility* mpi, ArrayType&& array)
+  : ArrayType(std::move(array)),
     mpi_ { mpi }
   {
     this->reserve(mpi_->NRanks());
@@ -59,7 +59,7 @@ public:
    * @param mpi MPIUtility to define MPI_Comm for MPI operations
    */
   MPIArray(const MPIUtility* mpi)
-  : MPIArray(mpi, axom::Array<axom::Array<T, DIM>>(0, 0)) {}
+  : MPIArray(mpi, ArrayType(0, 0)) {}
 
   /**
    * @brief Construct an empty MPIArray object (note: object cannot be used)

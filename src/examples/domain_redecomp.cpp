@@ -56,9 +56,11 @@
 
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
+
 #include "mfem.hpp"
 
 #include "redecomp/redecomp.hpp"
+
 #include "tribol/config.hpp"
 
 template <int NDIMS>
@@ -96,6 +98,8 @@ int main( int argc, char** argv )
   // very coarse meshes, though the decomposition can still fail with the simple
   // checks implemented.
   double max_out_of_balance = 0.05;
+  // device configuration string (see mfem::Device::Configure())
+  std::string device_config = "cpu";
 
   axom::CLI::App app { "domain_redecomp" };
   app.add_option("-m,--mesh", mesh_file, "Mesh file to use.")
@@ -110,13 +114,24 @@ int main( int argc, char** argv )
   app.add_option("-t,--tol", max_out_of_balance,
     "Max proportion of out-of-balance elements in RCB decomposition.")
     ->capture_default_str();
+  app.add_option("-d,--device", device_config, 
+    "Device configuration string, see mfem::Device::Configure().")
+    ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
   SLIC_INFO_ROOT("Running domain_redecomp with the following options:");
   SLIC_INFO_ROOT(axom::fmt::format("mesh:   {0}", mesh_file));
   SLIC_INFO_ROOT(axom::fmt::format("refine: {0}", ref_levels));
   SLIC_INFO_ROOT(axom::fmt::format("order:  {0}", order));
-  SLIC_INFO_ROOT(axom::fmt::format("tol:    {0}\n", max_out_of_balance));
+  SLIC_INFO_ROOT(axom::fmt::format("tol:    {0}", max_out_of_balance));
+  SLIC_INFO_ROOT(axom::fmt::format("device: {0}\n", device_config));
+
+  // enable devices such as GPUs
+  mfem::Device device(device_config);
+  if (rank == 0)
+  {
+    device.Print();
+  }
 
   // read serial mesh
   auto mesh = std::make_unique<mfem::Mesh>(mesh_file.c_str(), 1, 1);
@@ -186,6 +201,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   {
     pmesh.GetNodes(par_x_ref_elem);
   }
+  // move data to device (if device is available) and set host flag to stale
+  par_x_ref_elem.ReadWrite();
+
   // This is the grid function we are transferring. The "node" and "element"
   // suffixes refer to the transfer methods that will be used later
   // (node-by-node and element-by-element, respectively). See the note after
@@ -269,7 +287,11 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // redecomp does transfers on host, so par_x_ref_elem data will be copied to
+  // host and the device flag of redecomp_x_ref_elem will be stale
   elem_transfer.TransferToSerial(par_x_ref_elem, redecomp_x_ref_elem);
+  // copy redecomp data to device and set host flag to stale
+  redecomp_x_ref_elem.ReadWrite();
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to transfer vector field by element: {0:f}ms", 
@@ -297,7 +319,11 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // redecomp does transfers on host, so par_x_ref_node data will be copied to
+  // host and the device flag of redecomp_x_ref_node will be stale
   node_transfer.TransferToSerial(par_x_ref_node, redecomp_x_ref_node);
+  // copy redecomp data to device and set host flag to stale
+  redecomp_x_ref_node.ReadWrite();
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to transfer vector field by node: {0:f}ms", 
@@ -314,6 +340,8 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // redecomp does transfers on host, so redecomp_x_ref_elem data will be
+  // copied to host and the device flag of par_x_ref_elem will be stale
   elem_transfer.TransferToParallel(redecomp_x_ref_elem, par_x_ref_elem);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -327,6 +355,8 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // redecomp does transfers on host, so redecomp_x_ref_node data will be
+  // copied to host and the device flag of par_x_ref_node will be stale
   node_transfer.TransferToParallel(redecomp_x_ref_node, par_x_ref_node);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -351,6 +381,8 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
       quad_val[i] = static_cast<double>(pmesh.GetGlobalElementNum(e));
     }
   }
+  // move data to device (if device is available) and set host flag to stale
+  quad_fn.ReadWrite();
 
   /////////////////////////////////////////////////////////////////////////////
   // STEP 1: Create RedecompMesh
@@ -374,7 +406,11 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // redecomp does transfers on host, so quad_fn data will be copied to host
+  // and the device flag of redecomp_quad_fn will be stale
   elem_transfer.TransferToSerial(quad_fn, redecomp_quad_fn);
+  // copy redecomp data to device and set host flag to stale
+  redecomp_quad_fn.ReadWrite();
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to transfer quadrature function: {0:f}ms", 
@@ -391,6 +427,8 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // redecomp does transfers on host, so redecomp_quad_fn data will be copied
+  // to host and the device flag of quad_fn will be stale
   elem_transfer.TransferToParallel(redecomp_quad_fn, quad_fn);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
