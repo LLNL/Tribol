@@ -622,7 +622,8 @@ TEST_F( CommonPlaneTest, percent_rate_penetration )
    // check the gaps, pressures, and force sense
    //real gap = z_min2 - z_max1;
    real rate_gap = velZ2 - velZ1;
-   real pressure = (rate_gap < 0.) ? penalty * rate_gap : 0.;
+   real stiffness = tribol::ComputePenaltyStiffnessPerArea( penalty, penalty );
+   real pressure = (rate_gap < 0.) ? stiffness * rate_gap : 0.;
    compareGaps( couplingScheme, rate_gap, 1.E-8, "rate_penetration" );
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions are not separated
