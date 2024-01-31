@@ -230,11 +230,12 @@ void getMfemResponse( integer cs_id, mfem::Vector& r );
  *  ---------------
  *   dg/du | dg/dp
  *
- * Gap/pressure degrees of freedom which do not have a Lagrange multiplier contain empty rows of dg/du and empty columns
- * of df/dp and ones on the diagonal of the dg/dp block. Pressure degrees of freedom exist on the submesh holding the
- * contact surface. A pressure degree of freedom may not contain a Lagrange multiplier if, for instance, SINGLE_MORTAR
- * is used as the ContactMethod, since this method only has Lagrange multipliers on the nonmortar surface. Note, Tribol
- * does not track active constraints, so Lagrange multipliers will remain persistent regardless of the value of the gap.
+ * Note, for contact methods with Lagrange multiplier constraint enforcement, Tribol will have contact contribution
+ * placeholders for nodes on both contact surfaces. For instance, in a mortar method, both mortar and nonmortar nodes
+ * will have placeholders in the contact contribution data structures. If, however, SINGLE_MORTAR is used as the
+ * ContactMethod, the gap/pressure degrees of freedom are ONLY on the nonmortar surface. As a result, Tribol will return
+ * Jacobian blocks that have empty rows of dg/du and empty columns of df/dp and ones on the diagonal of the dg/dp block
+ * for all mortar node placeholders.
  *
  * @param csId Coupling scheme id with a registered MFEM mesh
  * @return Jacobian contributions as an mfem::BlockOperator
