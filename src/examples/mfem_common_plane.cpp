@@ -91,7 +91,7 @@ int main( int argc, char** argv )
   double mu = 100000.0;
   // kinematic penalty parameter (only for constant penalty)
   // the kinematic constant penalty is chosen here to match the kinematic element penalty
-  double p_kine = (lambda + 2.0 / 3.0 * mu) * std::pow(2.0, ref_levels - 1);
+  double p_kine = (lambda + 2.0 / 3.0 * mu) / (1.0 / std::pow(2.0, ref_levels));
 
   // parse command line options
   axom::CLI::App app { "mfem_common_plane" };
