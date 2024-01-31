@@ -194,6 +194,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    // loop over interface pairs //
    ///////////////////////////////
    int cpID = 0;
+   int err = 0;
+   bool neg_thickness {false};
    for (IndexType kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
@@ -253,6 +255,13 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
             // add tiny_length to element thickness to avoid division by zero
             auto t1 = mesh1.m_elemData.m_thickness[ index1 ] + pen_enfrc_options.tiny_length;
             auto t2 = mesh2.m_elemData.m_thickness[ index2 ] + pen_enfrc_options.tiny_length;
+
+            if (t1 < 0. || t2 < 0.)
+            {
+               neg_thickness = true;
+               err = 1;
+            }
+
             // compute each element spring stiffness. Pre-multiply the material modulus 
             // (i.e. material stiffness) by each mesh's penalty scale
             auto stiffness1 = pen_scale1 * mesh1.m_elemData.m_mat_mod[ index1 ] / t1;
@@ -441,7 +450,12 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 
    } // end loop over interface pairs
   
-   return 0;
+   if (neg_thickness)
+   {
+      SLIC_DEBUG("ApplyNormal<COMMON_PLANE, PENALTY>: negative element thicknesses encountered.");
+   }
+
+   return err;
 
 } // end ApplyNormal<COMMON_PLANE, PENALTY>()
 
