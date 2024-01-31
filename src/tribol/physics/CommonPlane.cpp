@@ -241,9 +241,10 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       {
          case KINEMATIC_CONSTANT: 
          {
-            // Average each mesh's penalty stiffness premultiplied by each mesh's penalty scale
+            // pre-multiply each spring stiffness by each mesh's penalty scale
             auto stiffness1 = pen_scale1 * mesh1.m_elemData.m_penalty_stiffness;
             auto stiffness2 = pen_scale2 * mesh2.m_elemData.m_penalty_stiffness;
+            // compute the equivalent contact penalty spring stiffness per area
             penalty_stiff_per_area  = ComputePenaltyStiffnessPerArea( stiffness1, stiffness2 );
             break;
          }

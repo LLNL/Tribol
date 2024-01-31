@@ -601,17 +601,6 @@ TEST_F( CommonPlaneTest, tied_contact_check )
    tribol::finalize();
 }
 
-//TEST_F( CommonPlaneTest, penalty_equivalence )
-//{
-//   auto bulk_mod1 = 1.0;
-//   auto bulk_mod2 = 1.0;
-//   auto t1 = 1.0;
-//   auto t2 = 1.0;
-//   auto const_pen1 = 1.0;
-//   auto const_pen2 = 1.0;
-//   auto tiny_length = 1.e-12;
-//}
-
 int main(int argc, char* argv[])
 {
   int result = 0;
