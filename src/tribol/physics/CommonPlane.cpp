@@ -450,10 +450,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 
    } // end loop over interface pairs
   
-   if (neg_thickness)
-   {
-      SLIC_DEBUG("ApplyNormal<COMMON_PLANE, PENALTY>: negative element thicknesses encountered.");
-   }
+   SLIC_DEBUG_IF(neg_thickness, "ApplyNormal<COMMON_PLANE, PENALTY>: negative element thicknesses encountered.");
 
    return err;
 
