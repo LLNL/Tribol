@@ -22,31 +22,25 @@
 namespace tribol
 {
 
-real ComputePenaltyStiffnessPerArea( const real K1,
-                                     const real t1,
-                                     const real K2,
-                                     const real t2,
-                                     const real tiny_length )
+real ComputePenaltyStiffnessPerArea( const real K1_over_t1,
+                                     const real K2_over_t2 )
 {
    // compute face-pair specific penalty stiffness per unit area.
    // Note: This assumes that each face has a spring stiffness 
    // equal to that side's material Bulk modulus, K, over the 
    // thickness of the volume element to which that face belongs, 
-   // times the overlap area. That is, K1/t1 * A and K2/t2 * A. We 
+   // times the overlap area. That is, K1_over_t1 * A and K2_over_t2 * A. We 
    // then assume the two springs are in series and compute an 
    // equivalent spring stiffness as, 
-   // k_eq = A*(K1/t1)*(K2/t2) / ((K1/t1)+(K2/t2). Note, the host 
-   // code registers each face's (K/t) as a penalty scale.
+   // k_eq = A*(K1_over_t1)*(K2_over_t2) / ((K1_over_t1)+(K2_over_t2). 
+   // Note, the host code registers each face's (K/t) as a penalty scale.
    //
    // UNITS: we multiply k_eq above by the overlap area A, to get a 
    // stiffness per unit area. This will make the force calculations 
    // commensurate with the previous calculations using only the 
    // constant registered penalty scale.
 
-   // add tiny length to thickness to avoid division by zero.
-   double t_1 = t1 + tiny_length;
-   double t_2 = t2 + tiny_length;
-   return K1/t_1 * K2/t_2 / (K1/t_1 + K2/t_2);
+   return K1_over_t1 * K2_over_t2 / (K1_over_t1 + K2_over_t2);
 
 } // end ComputePenaltyStiffnessPerArea
 
@@ -200,6 +194,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    // loop over interface pairs //
    ///////////////////////////////
    int cpID = 0;
+   int err = 0;
+   bool neg_thickness {false};
    for (IndexType kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
@@ -247,22 +243,31 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       {
          case KINEMATIC_CONSTANT: 
          {
-            // Average each mesh's penalty stiffness premultiplied by each mesh's penalty scale
-            penalty_stiff_per_area  = 0.5 * 
-                                      ( pen_scale1 * mesh1.m_elemData.m_penalty_stiffness +
-                                        pen_scale2 * mesh2.m_elemData.m_penalty_stiffness );
+            // pre-multiply each spring stiffness by each mesh's penalty scale
+            auto stiffness1 = pen_scale1 * mesh1.m_elemData.m_penalty_stiffness;
+            auto stiffness2 = pen_scale2 * mesh2.m_elemData.m_penalty_stiffness;
+            // compute the equivalent contact penalty spring stiffness per area
+            penalty_stiff_per_area  = ComputePenaltyStiffnessPerArea( stiffness1, stiffness2 );
             break;
          }
          case KINEMATIC_ELEMENT:
          {
-            // multiply the material modulus (i.e. material stiffness) by each mesh's penalty scale
-            penalty_stiff_per_area = ComputePenaltyStiffnessPerArea( 
-                                        pen_scale1 * mesh1.m_elemData.m_mat_mod[ index1 ],
-                                        mesh1.m_elemData.m_thickness[ index1 ],
-                                        pen_scale2 * mesh2.m_elemData.m_mat_mod[ index2 ],
-                                        mesh2.m_elemData.m_thickness[ index2 ],
-                                        pen_enfrc_options.tiny_length
-                                                                   );
+            // add tiny_length to element thickness to avoid division by zero
+            auto t1 = mesh1.m_elemData.m_thickness[ index1 ] + pen_enfrc_options.tiny_length;
+            auto t2 = mesh2.m_elemData.m_thickness[ index2 ] + pen_enfrc_options.tiny_length;
+
+            if (t1 < 0. || t2 < 0.)
+            {
+               neg_thickness = true;
+               err = 1;
+            }
+
+            // compute each element spring stiffness. Pre-multiply the material modulus 
+            // (i.e. material stiffness) by each mesh's penalty scale
+            auto stiffness1 = pen_scale1 * mesh1.m_elemData.m_mat_mod[ index1 ] / t1;
+            auto stiffness2 = pen_scale2 * mesh2.m_elemData.m_mat_mod[ index2 ] / t2;
+            // compute the equivalent contact penalty spring stiffness per area
+            penalty_stiff_per_area = ComputePenaltyStiffnessPerArea( stiffness1, stiffness2 );
             break;
          }
          default:
@@ -445,7 +450,9 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 
    } // end loop over interface pairs
   
-   return 0;
+   SLIC_DEBUG_IF(neg_thickness, "ApplyNormal<COMMON_PLANE, PENALTY>: negative element thicknesses encountered.");
+
+   return err;
 
 } // end ApplyNormal<COMMON_PLANE, PENALTY>()
 

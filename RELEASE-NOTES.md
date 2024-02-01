@@ -12,6 +12,8 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
 - Added coupling scheme tests with null pointer registration.
 - Multi-rank contact API using MFEM data structures.
 - New API calls for MFEM data structures (see `interface/mfem_tribol.hpp`).
+- Updated the penalty stiffness calculation using the `KINEMATIC_CONSTANT` option
+  to follow the `springs-in-serial` stiffness model used for `KINEMATIC_ELEMENT`.
 
 ### Changed
 - Return negative timestep vote for non-null meshes with null velocity pointers.
