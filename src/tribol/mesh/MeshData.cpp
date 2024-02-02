@@ -56,6 +56,7 @@ MeshElemData::~MeshElemData()
 //------------------------------------------------------------------------------
 bool MeshElemData::isValidKinematicPenalty( PenaltyEnforcementOptions& pen_options )
 {
+   // Note, this routine is, and should be called only for non-null meshes
    KinematicPenaltyCalculation kin_calc = pen_options.kinematic_calculation;
 
    // check kinematic penalty calculation data
@@ -142,6 +143,7 @@ bool MeshElemData::isValidKinematicPenalty( PenaltyEnforcementOptions& pen_optio
 //------------------------------------------------------------------------------
 bool MeshElemData::isValidRatePenalty( PenaltyEnforcementOptions& pen_options )
 {
+   // Note, this method is and should only be called for non-null meshes
    RatePenaltyCalculation rate_calc = pen_options.rate_calculation; 
 
    // check rate penalty calculation data
@@ -832,45 +834,61 @@ void MeshData::sortSurfaceNodeIds()
 } // end MeshData::sortSurfaceNodeIds()
 
 //------------------------------------------------------------------------------
+int MeshData::checkLagrangeMultiplierData()
+{
+   int err = 0;
+   if (this->m_numCells>0)
+   {
+      if (!this->m_nodalFields.m_is_node_gap_set ||
+          !this->m_nodalFields.m_is_node_pressure_set)
+      {
+         err = 1;
+      }
+   } // end if-non-null mesh
+   return err; 
+}
+//------------------------------------------------------------------------------
 int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
 {
    int err = 0;
-   PenaltyConstraintType constraint_type = p_enfrc_options.constraint_type;
-   
-   // switch over penalty enforcement options and check for required data
-   switch (constraint_type)
+   if (this->m_numCells>0)
    {
-      case KINEMATIC:
+      PenaltyConstraintType constraint_type = p_enfrc_options.constraint_type;
+      // switch over penalty enforcement options and check for required data
+      switch (constraint_type)
       {
-         if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
+         case KINEMATIC:
          {
-            err = 1;
-         }
-         break;
-      } // end KINEMATIC case
+            if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
+            {
+               err = 1;
+            }
+            break;
+         } // end KINEMATIC case
 
-      case KINEMATIC_AND_RATE:
-      {
-         if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
+         case KINEMATIC_AND_RATE:
          {
-            err = 1;
-         }
-         if (!this->m_elemData.isValidRatePenalty( p_enfrc_options ))
-         {
-            err = 1;
-         }
-         if (!this->m_nodalFields.m_is_velocity_set)
-         {
-            SLIC_WARNING("Nodal velocities not set or null pointers; please set for " << 
-                         "use with gap rate penalty enforcement.");
-            err = 1;
-         }
-         break;
-      } // end case KINEMATIC_AND_RATE
-      default:
-         // no-op, quiet compiler
-         break;
-   } // end switch over constraint types
+            if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
+            {
+               err = 1;
+            }
+            if (!this->m_elemData.isValidRatePenalty( p_enfrc_options ))
+            {
+               err = 1;
+            }
+            if (!this->m_nodalFields.m_is_velocity_set)
+            {
+               SLIC_WARNING("Nodal velocities not set or null pointers; please set for " << 
+                            "use with gap rate penalty enforcement.");
+               err = 1;
+            }
+            break;
+         } // end case KINEMATIC_AND_RATE
+         default:
+            // no-op, quiet compiler
+            break;
+      } // end switch over constraint types
+   } // end if-non-null mesh
 
    return err;
 } // end MeshData::checkPenaltyData()

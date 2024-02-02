@@ -797,56 +797,60 @@ int CouplingScheme::checkEnforcementData()
    this->m_couplingSchemeErrors.cs_enforcement_data_error 
       = NO_ENFORCEMENT_DATA_ERROR; 
 
-   // perform check for non-null meshes
    int err = 0;
-   if (!this->m_nullMeshes)
+   switch (this->m_contactMethod)
    {
-      switch (this->m_contactMethod)
+      case MORTAR_WEIGHTS:
+         // no-op for now
+         break;
+      case ALIGNED_MORTAR:
+         // don't break
+      case SINGLE_MORTAR:
       {
-         case MORTAR_WEIGHTS:
-            // no-op for now
-            break;
-         case ALIGNED_MORTAR:
-            // don't break
-         case SINGLE_MORTAR:
+         switch (this->m_enforcementMethod)
          {
-            if (!mesh2.m_nodalFields.m_is_node_gap_set) // nonmortar side only
+            case LAGRANGE_MULTIPLIER:
             {
-               this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
-               err = 1;
-            }
-            
-            if (!mesh2.m_nodalFields.m_is_node_pressure_set) // nonmortar side only
-            {
-               this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
-               err = 1;
-            }
-            break;
-         } 
-         case COMMON_PLANE:
-         {
-            switch (this->m_enforcementMethod)
-            {
-               case PENALTY:
+               // check LM data. Note, this routine is guarded against null-meshes
+               if (mesh2.checkLagrangeMultiplierData() != 0) // nonmortar side only
                {
-                  PenaltyEnforcementOptions& pen_enfrc_options = this->m_enforcementOptions.penalty_options;
-                  if (mesh1.checkPenaltyData( pen_enfrc_options ) != 0 ||
-                      mesh2.checkPenaltyData( pen_enfrc_options ) != 0)
-                  {
-                     this->m_couplingSchemeErrors.cs_enforcement_data_error 
-                        = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
-                     err = 1;
-                  }
-                  break;
-               } // end case PENALTY
-               default:
-                  break;
-            }  // end switch over enforcement method
-         } // end case COMMON_PLANE
-         default:
-            break;
-      } // end switch on method
-   } // end if-check on non-null meshes
+                  this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
+                  err = 1;
+               } 
+               break;
+            } // end case LAGRANGE_MULTIPLIER
+            default:
+               // no-op
+               break;
+         } // end switch over enforcement method
+         break;
+      } // end case SINGLE_MORTAR
+      case COMMON_PLANE:
+      {
+         switch (this->m_enforcementMethod)
+         {
+            case PENALTY:
+            {
+               // check penalty data. Note, this routine is guarded against null-meshes
+               PenaltyEnforcementOptions& pen_enfrc_options = this->m_enforcementOptions.penalty_options;
+               if (mesh1.checkPenaltyData( pen_enfrc_options ) != 0 ||
+                   mesh2.checkPenaltyData( pen_enfrc_options ) != 0)
+               {
+                  this->m_couplingSchemeErrors.cs_enforcement_data_error 
+                     = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
+                  err = 1;
+               }
+               break;
+            } // end case PENALTY
+            default:
+               // no-op
+               break;
+         }  // end switch over enforcement method
+      } // end case COMMON_PLANE
+      default:
+         // no-op
+         break;
+   } // end switch on method
 
    return err;
 
