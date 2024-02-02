@@ -629,64 +629,66 @@ void MeshData::getFaceNodalVelocities( int const faceId, real * nodalVel )
 //------------------------------------------------------------------------------
 void MeshData::computeNodalNormals( int const dim )
 {
-   // check to make sure face normals have been computed with 
-   // a call to computeFaceData
-   if (this->m_nX == nullptr || 
-       this->m_nY == nullptr)
-   {
-      SLIC_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
-   }
-
-   // allocate space for nodal normal array
-   int size = this->m_lengthNodalData; 
-   if (this->m_node_nX != nullptr)
-   {
-      delete[] m_node_nX;
-      m_node_nX = new real [size];
-   }
-   else
-   {
-      m_node_nX = new real [size];
-   }
-
-   if (this->m_node_nY != nullptr)
-   {
-      delete[] m_node_nY;
-      m_node_nY = new real [size];
-   }
-   else
-   {
-      m_node_nY = new real [size];
-   }
-
-   if (dim == 3)
-   {
-      if (this->m_node_nZ != nullptr)
-      {
-         delete[] m_node_nZ;
-         m_node_nZ = new real [size];
-      }
-      else 
-      {
-         m_node_nZ = new real [size];
-      }
-
-      // initialize z component
-      initRealArray( m_node_nZ, size, 0. );
-   }
-
-   // initialize x and y components 
-   initRealArray( m_node_nX, size, 0. );
-   initRealArray( m_node_nY, size, 0. );
-
-   // allocate scratch array to hold number of faces whose 
-   // normals contribute to a given node. Most of the time 
-   // this will be four face normals contributing to an 
-   // averaged nodal normal for linear quad elements, but 
-   // we want to handle arbitrary meshes and edge cases
    int * numFaceNrmlsToNodes;
-   allocIntArray( &numFaceNrmlsToNodes, size, 0 );
+   if (this->m_numCells > 0)
+   {
+      // check to make sure face normals have been computed with 
+      // a call to computeFaceData
+      if (this->m_nX == nullptr || 
+          this->m_nY == nullptr)
+      {
+         SLIC_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
+      }
 
+      // allocate space for nodal normal array
+      int size = this->m_lengthNodalData; 
+      if (this->m_node_nX != nullptr)
+      {
+         delete[] m_node_nX;
+         m_node_nX = new real [size];
+      }
+      else
+      {
+         m_node_nX = new real [size];
+      }
+
+      if (this->m_node_nY != nullptr)
+      {
+         delete[] m_node_nY;
+         m_node_nY = new real [size];
+      }
+      else
+      {
+         m_node_nY = new real [size];
+      }
+
+      if (dim == 3)
+      {
+         if (this->m_node_nZ != nullptr)
+         {
+            delete[] m_node_nZ;
+            m_node_nZ = new real [size];
+         }
+         else 
+         {
+            m_node_nZ = new real [size];
+         }
+
+         // initialize z component
+         initRealArray( m_node_nZ, size, 0. );
+      }
+
+      // initialize x and y components 
+      initRealArray( m_node_nX, size, 0. );
+      initRealArray( m_node_nY, size, 0. );
+
+      // allocate scratch array to hold number of faces whose 
+      // normals contribute to a given node. Most of the time 
+      // this will be four face normals contributing to an 
+      // averaged nodal normal for linear quad elements, but 
+      // we want to handle arbitrary meshes and edge cases
+      allocIntArray( &numFaceNrmlsToNodes, size, 0 );
+   } // end if-check on null mesh
 
    // loop over cells
    for (int i=0; i<this->m_numCells; ++i)
@@ -724,38 +726,44 @@ void MeshData::computeNodalNormals( int const dim )
    } // end loop over cells
 
    // average the nodal normals
-   for (int i=0; i<this->m_lengthNodalData; ++i)
+   if (this->m_numCells > 0)
    {
-      m_node_nX[i] /= numFaceNrmlsToNodes[i];
-      m_node_nY[i] /= numFaceNrmlsToNodes[i];
-      if (dim == 3)
+      for (int i=0; i<this->m_lengthNodalData; ++i)
       {
-         m_node_nZ[i] /= numFaceNrmlsToNodes[i];
-      }
-   } // end loop over nodes
+         m_node_nX[i] /= numFaceNrmlsToNodes[i];
+         m_node_nY[i] /= numFaceNrmlsToNodes[i];
+         if (dim == 3)
+         {
+            m_node_nZ[i] /= numFaceNrmlsToNodes[i];
+         }
+      } // end loop over nodes
+   }
 
    // normalize the nodal normals
-   if (dim == 3)
+   if (this->m_numCells > 0)
    {
-      for (int i=0; i<this->m_lengthNodalData; ++i)
+      if (dim == 3)
       {
-         real mag = magnitude( m_node_nX[i], m_node_nY[i], m_node_nZ[i] );
-         m_node_nX[ i ] /= mag;
-         m_node_nY[ i ] /= mag;
-         m_node_nZ[ i ] /= mag;
+         for (int i=0; i<this->m_lengthNodalData; ++i)
+         {
+            real mag = magnitude( m_node_nX[i], m_node_nY[i], m_node_nZ[i] );
+            m_node_nX[ i ] /= mag;
+            m_node_nY[ i ] /= mag;
+            m_node_nZ[ i ] /= mag;
+         }
       }
-   }
-   else 
-   {
-      for (int i=0; i<this->m_lengthNodalData; ++i)
+      else 
       {
-         real mag = magnitude( m_node_nX[i], m_node_nY[i] );
-         m_node_nX[ i ] /= mag;
-         m_node_nY[ i ] /= mag;
+         for (int i=0; i<this->m_lengthNodalData; ++i)
+         {
+            real mag = magnitude( m_node_nX[i], m_node_nY[i] );
+            m_node_nX[ i ] /= mag;
+            m_node_nY[ i ] /= mag;
+         }
       }
-   }
 
-   delete [] numFaceNrmlsToNodes;
+      delete [] numFaceNrmlsToNodes;
+   } // end if-check on null mesh
 
    return;
 } // end MeshData::computeNodalNormals()

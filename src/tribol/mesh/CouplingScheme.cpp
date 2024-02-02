@@ -402,7 +402,7 @@ bool CouplingScheme::isValidCouplingScheme()
    if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
       this->m_nullMeshes = true;
-      valid = false;
+      valid = true; // a null-mesh coupling scheme should still be valid
    }
 
    // check valid contact mode. Not all modes have an implementation
@@ -860,42 +860,43 @@ void CouplingScheme::performBinning()
 {
    // Find the interacting pairs for this coupling scheme. Will not use
    // binning if setInterfacePairs has been called.
-   if( !this->hasFixedBinning() ) 
+   if (!this->m_nullMeshes)
    {
-      m_interfacePairs->clear();
-
-      InterfacePairFinder finder(this);
-      finder.initialize();
-      finder.findInterfacePairs();
-
-      // For Cartesian binning, we only need to compute the binning once
-      if(this->getBinningMethod() == BINNING_CARTESIAN_PRODUCT)
+      if( !this->hasFixedBinning() ) 
       {
-         this->setFixedBinning(true);
-      }
+         m_interfacePairs->clear();
 
-      // set fixed binning depending on contact case, 
-      // e.g. NO_SLIDING
-      this->setFixedBinningPerCase();
-   }
+         InterfacePairFinder finder(this);
+         finder.initialize();
+         finder.findInterfacePairs();
+
+         // For Cartesian binning, we only need to compute the binning once
+         if(this->getBinningMethod() == BINNING_CARTESIAN_PRODUCT)
+         {
+            this->setFixedBinning(true);
+         }
+
+         // set fixed binning depending on contact case, 
+         // e.g. NO_SLIDING
+         this->setFixedBinningPerCase();
+      }
+   } // end if-non-null meshes
    return;
 }
 //------------------------------------------------------------------------------
 int CouplingScheme::apply( integer cycle, real t, real &dt ) 
 {
-  SLIC_ASSERT( m_interfacePairs != nullptr );
-
   // set dimension on the contact plane manager
   parameters_t& params = parameters_t::getInstance();
   ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
 
-  // delete contact plane manager for this coupling-scheme/cycle.
-  cpMgr.deleteCPManager();
-
+  // clear contact plane manager to be populated/allocated anew for this
+  // coupling-scheme/cycle.
+  cpMgr.clearCPManager();
   cpMgr.setSpaceDim( params.dimension );
 
   // loop over number of interface pairs
-  IndexType numPairs = m_interfacePairs->getNumPairs();
+  IndexType numPairs = (m_interfacePairs == nullptr) ? 0 : m_interfacePairs->getNumPairs();
 
   SLIC_DEBUG("Coupling scheme " << m_id << " has " << numPairs << " pairs.");
 
@@ -994,7 +995,8 @@ bool CouplingScheme::init()
    // check for valid coupling scheme only for non-null-meshes
    bool valid = false;
    valid = this->isValidCouplingScheme();
-   if (valid)
+   this->m_isValid = valid;
+   if (this->m_isValid)
    {
       // set individual coupling scheme logging level
       this->setSlicLoggingLevel();

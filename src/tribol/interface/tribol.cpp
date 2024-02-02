@@ -1028,33 +1028,21 @@ integer update( integer cycle, real t, real &dt )
 
       CouplingScheme* couplingScheme  = csManager.getCoupling(csIndex);
 
-      // TODO verify that all validity logging is called by all ranks
-      // initialize and check for valid coupling scheme
+      // initialize and check for valid coupling scheme. If not valid, the coupling 
+      // scheme will not be valid across all ranks and we will skip this coupling scheme
       if (!couplingScheme->init())
       {
-         // TODO figure out if we want to call couplingScheme->apply() for null meshes
-         if (couplingScheme->nullMeshes())
-         {
-            continue;
-         }
-         else
-         {
-            SLIC_WARNING_ROOT("tribol::update(): skipping invalid CouplingScheme " << 
-                              couplingScheme->getId() << "Please see warnings.");
-            continue;
-         }
-      }
-
-      // perform binning between meshes on the coupling scheme
-      couplingScheme->performBinning();
-
-      // check to make sure binning returns non-null pairs
-      auto pairs = couplingScheme->getInterfacePairs();
-      if (pairs == nullptr)
-      {
+         SLIC_WARNING_ROOT("tribol::update(): skipping invalid CouplingScheme " << 
+                           couplingScheme->getId() << "Please see warnings.");
          continue;
       }
 
+      // perform binning between meshes on the coupling scheme
+      // Note, this routine is guarded against null meshes
+      couplingScheme->performBinning();
+
+      // apply the coupling scheme. Note, there are appropriate guards against zero 
+      // element meshes, or null-mesh coupling schemes
       err_cs = couplingScheme->apply( cycle, t, dt );
 
       if ( err_cs != 0 )

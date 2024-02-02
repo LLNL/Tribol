@@ -180,7 +180,7 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 void ComputeSingleMortarGaps( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = pairs->getNumPairs();
+   IndexType const numPairs = (pairs == nullptr) ? 0 : pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
@@ -210,6 +210,7 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
    IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
 
    // compute nodal normals (do this outside the element loop)
+   // Note, this is guarded against zero element meshes
    nonmortarMesh.computeNodalNormals( dim );
 
    // declare local variables to hold face nodal coordinates
@@ -316,7 +317,7 @@ template< >
 int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = pairs->getNumPairs();
+   IndexType const numPairs = (pairs == nullptr) ? 0 :pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
@@ -356,33 +357,37 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    real nonmortarX_bar[ dim * numNodesPerFace ];
    real* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
 
-   ////////////////////////////////
-   //                            //
-   // compute single mortar gaps //
-   //                            //
-   ////////////////////////////////
+   ///////////////////////////////////////////////////////
+   //                                                   //
+   //            compute single mortar gaps             //
+   //                                                   //
+   // Note, this routine is guarded against null meshes //
+   ///////////////////////////////////////////////////////
    ComputeSingleMortarGaps( cs );
 
    int numTotalNodes = cs->getNumTotalNodes();
    int numRows = dim * numTotalNodes + numTotalNodes;
    const EnforcementOptions& enforcement_options = const_cast<EnforcementOptions&>(cs->getEnforcementOptions());
    const LagrangeMultiplierImplicitOptions& lm_options  = enforcement_options.lm_implicit_options;
-   if ( lm_options.sparse_mode == SparseMode::MFEM_ELEMENT_DENSE )
+   if (!cs->nullMeshes())
    {
-      static_cast<MortarData*>( cs->getMethodData() )->reserveBlockJ( 
-         {BlockSpace::MORTAR, BlockSpace::NONMORTAR, BlockSpace::LAGRANGE_MULTIPLIER},
-         numPairs
-      );
-   }
-   else if ( lm_options.sparse_mode == SparseMode::MFEM_INDEX_SET || 
-             lm_options.sparse_mode == SparseMode::MFEM_LINKED_LIST )
-   {
-      static_cast<MortarData*>( cs->getMethodData() )->allocateMfemSparseMatrix( numRows );
-   }
-   else
-   {
-      SLIC_WARNING("Unsupported Jacobian storage method.");
-      return 1;
+      if ( lm_options.sparse_mode == SparseMode::MFEM_ELEMENT_DENSE )
+      {
+         static_cast<MortarData*>( cs->getMethodData() )->reserveBlockJ( 
+            {BlockSpace::MORTAR, BlockSpace::NONMORTAR, BlockSpace::LAGRANGE_MULTIPLIER},
+            numPairs
+         );
+      }
+      else if ( lm_options.sparse_mode == SparseMode::MFEM_INDEX_SET || 
+                lm_options.sparse_mode == SparseMode::MFEM_LINKED_LIST )
+      {
+         static_cast<MortarData*>( cs->getMethodData() )->allocateMfemSparseMatrix( numRows );
+      }
+      else
+      {
+         SLIC_WARNING("Unsupported Jacobian storage method.");
+         return 1;
+      }
    }
 
    ////////////////////////////////////////////////////////////////

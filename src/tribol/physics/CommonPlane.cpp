@@ -160,7 +160,7 @@ template< >
 int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = pairs->getNumPairs();
+   IndexType const numPairs = (pairs == nullptr) ? 0 : pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
