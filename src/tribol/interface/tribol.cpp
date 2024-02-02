@@ -144,12 +144,7 @@ void setPenaltyOptions( int couplingSchemeIndex, PenaltyConstraintType pen_enfrc
 //------------------------------------------------------------------------------
 void setKinematicConstantPenalty( int meshId, double k )
 {
-   MeshManager & meshManager = MeshManager::getInstance();
-
-   SLIC_ERROR_ROOT_IF(!meshManager.hasMesh(meshId), 
-                      "tribol::setKinematicConstantPenalty(): " << 
-                      "no mesh with id, " << meshId << "exists.");
-
+   // note, error checking done in the following registration routine
    registerRealElementField( meshId, KINEMATIC_CONSTANT_STIFFNESS, &k ); 
 
 } // end setKinematicConstantPenalty()
@@ -159,16 +154,7 @@ void setKinematicElementPenalty( int meshId,
                                  const double *material_modulus,
                                  const double *element_thickness )
 {
-   MeshManager & meshManager = MeshManager::getInstance();
-
-   SLIC_ERROR_ROOT_IF(!meshManager.hasMesh(meshId), 
-                      "tribol::setKinematicElementPenalty(): " << 
-                      "no mesh with id, " << meshId << "exists.");
-
-   SLIC_ERROR_ROOT_IF(material_modulus == nullptr || element_thickness == nullptr, 
-                      "tribol::setKinematicElementPenalty() contains nullptrs for " << 
-                      "element_stiffness options.");
-
+   // note, error checking done in the following registration routine
    registerRealElementField( meshId, BULK_MODULUS, material_modulus ); 
    registerRealElementField( meshId, ELEMENT_THICKNESS, element_thickness ); 
 
@@ -177,11 +163,7 @@ void setKinematicElementPenalty( int meshId,
 //------------------------------------------------------------------------------
 void setRateConstantPenalty( int meshId, double r_k )
 {
-   MeshManager & meshManager = MeshManager::getInstance();
-
-   SLIC_ERROR_ROOT_IF(!meshManager.hasMesh(meshId), "tribol::setRateConstantPenalty(): " << 
-                      "no mesh with id, " << meshId << "exists.");
-
+   // note, error checking done in the following registration routine
    registerRealElementField( meshId, RATE_CONSTANT_STIFFNESS, &r_k );
 
 } // end setRateConstantPenalty()
@@ -189,11 +171,7 @@ void setRateConstantPenalty( int meshId, double r_k )
 //------------------------------------------------------------------------------
 void setRatePercentPenalty( int meshId, double r_p )
 {
-   MeshManager & meshManager = MeshManager::getInstance();
-
-   SLIC_ERROR_ROOT_IF(!meshManager.hasMesh(meshId), "tribol::setRatePercentPenalty(): " << 
-                      "no mesh with id, " << meshId << "exists.");
-
+   // note, error checking done in the following registration routine
    registerRealElementField( meshId, RATE_PERCENT_STIFFNESS, &r_p );
 
 } // end setRatePercentPenalty()
@@ -762,9 +740,16 @@ void registerRealElementField( integer meshId,
       {
          if (fieldVariable==nullptr)
          {
-            SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'KINEMATIC_CONSTANT_STIFFNESS' on mesh " << meshId << ".");
-            mesh.m_elemData.m_is_kinematic_constant_penalty_set = false;
+            if (mesh.m_numCells>0)
+            {
+               SLIC_ERROR( "tribol::registerRealElementField(): null pointer to data for " << 
+                           "'KINEMATIC_CONSTANT_STIFFNESS' on mesh " << meshId << ".");
+               mesh.m_elemData.m_is_kinematic_constant_penalty_set = false;
+            }
+            else
+            {
+               mesh.m_elemData.m_is_kinematic_constant_penalty_set = true;
+            }
          }
          else
          {
@@ -777,9 +762,16 @@ void registerRealElementField( integer meshId,
       {
          if (fieldVariable==nullptr)
          {
-            SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'RATE_CONSTANT_STIFFNESS' on mesh " << meshId << ".");
-            mesh.m_elemData.m_is_rate_constant_penalty_set = false;
+            if (mesh.m_numCells>0)
+            {
+               SLIC_ERROR( "tribol::registerRealElementField(): null pointer to data for " << 
+                           "'RATE_CONSTANT_STIFFNESS' on mesh " << meshId << ".");
+               mesh.m_elemData.m_is_rate_constant_penalty_set = false;
+            }
+            else
+            {
+               mesh.m_elemData.m_is_rate_constant_penalty_set = true;
+            }
          }
          else
          {
@@ -792,9 +784,16 @@ void registerRealElementField( integer meshId,
       {
          if (fieldVariable==nullptr)
          {
-            SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'RATE_PERCENT_STIFFNESS' on mesh " << meshId << ".");
-            mesh.m_elemData.m_is_rate_percent_penalty_set = false;
+            if (mesh.m_numCells>0)
+            {
+               SLIC_ERROR( "tribol::registerRealElementField(): null pointer to data for " << 
+                           "'RATE_PERCENT_STIFFNESS' on mesh " << meshId << ".");
+               mesh.m_elemData.m_is_rate_percent_penalty_set = false;
+            }
+            else
+            {
+               mesh.m_elemData.m_is_rate_percent_penalty_set = true;
+            }
          }
          else
          {
@@ -807,57 +806,93 @@ void registerRealElementField( integer meshId,
       {
          if (fieldVariable==nullptr)
          {
-            SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'BULK_MODULUS' on mesh " << meshId << ".");
-            mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
+            if (mesh.m_numCells>0)
+            {
+               SLIC_ERROR( "tribol::registerRealElementField(): null pointer to data for " << 
+                           "'BULK_MODULUS' on mesh " << meshId << ".");
+               mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
+            }
+            else
+            {
+               // set boolean to true for zero element meshes (acceptable registration)
+               mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
+            }
          }
          else
          {
             mesh.m_elemData.m_mat_mod = fieldVariable;
+
+            // Only set boolean to true if the element thickness has been registered 
+            // for nonzero element meshes. This will be true if the element thickness 
+            // was registered first (need both).
+            if (mesh.m_elemData.m_thickness != nullptr)
+            {
+               mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
+            }
          }
 
-         if (mesh.m_elemData.m_thickness != nullptr)
-         {
-            mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
-         }
          break;
       }
       case YOUNGS_MODULUS:
       {
          if (fieldVariable==nullptr)
          {
-            SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'YOUNGS_MODULUS' on mesh " << meshId << ".");
-            mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
+            if (mesh.m_numCells>0)
+            {
+               SLIC_ERROR( "tribol::registerRealElementField(): null pointer to data for " << 
+                           "'YOUNGS_MODULUS' on mesh " << meshId << ".");
+               mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
+            }
+            else
+            {
+               // set boolean to true for zero element meshes (acceptable registration)
+               mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
+            }
          }
          else
          {
             mesh.m_elemData.m_mat_mod = fieldVariable;
+
+            // Only set boolean to true if the element thickness has been registered 
+            // for nonzero element meshes. This will be true if the element thickness
+            // was registered first (need both).
+            if (mesh.m_elemData.m_thickness != nullptr)
+            {
+               mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
+            }
          }
 
-         if (mesh.m_elemData.m_thickness != nullptr)
-         {
-            mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
-         }
          break;
       }
       case ELEMENT_THICKNESS:
       {
          if (fieldVariable==nullptr)
          {
-            SLIC_WARNING( "tribol::registerRealElementField(): null pointer to data for " << 
-                          "'ELEMENT_THICKNESS' on mesh " << meshId << ".");
-            mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
+            if (mesh.m_numCells>0)
+            {
+               SLIC_ERROR( "tribol::registerRealElementField(): null pointer to data for " << 
+                           "'ELEMENT_THICKNESS' on mesh " << meshId << ".");
+               mesh.m_elemData.m_is_kinematic_element_penalty_set = false;
+            }
+            else
+            {
+               // set boolean to true for zero element meshes (acceptable registration)
+               mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
+            }
          }
          else
          {
             mesh.m_elemData.m_thickness = fieldVariable;
+
+            // Only set boolean to true if the material modulus has been registered for 
+            // nonzero element meshes. This will set to true if the material modulus was 
+            // registered first (need both).
+            if (mesh.m_elemData.m_mat_mod != nullptr)
+            {
+               mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
+            }
          }
 
-         if (mesh.m_elemData.m_mat_mod != nullptr)
-         {
-            mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
-         }
          break;
       }
       default:
