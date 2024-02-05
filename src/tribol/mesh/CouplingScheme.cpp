@@ -355,7 +355,7 @@ CouplingScheme::CouplingScheme( integer couplingSchemeId,
   m_couplingSchemeInfo.cs_case_info        = NO_CASE_INFO;
   m_couplingSchemeInfo.cs_enforcement_info = NO_ENFORCEMENT_INFO;
 
-  m_loggingLevel = UNDEFINED;
+  m_loggingLevel = TRIBOL_UNDEFINED;
 
   // STEP 0: create contact-pairs object associated with this coupling scheme
   m_interfacePairs = new InterfacePairs( );
@@ -1006,26 +1006,26 @@ bool CouplingScheme::init()
 void CouplingScheme::setSlicLoggingLevel()
 {
    // set slic logging level for coupling schemes that have API modified logging levels
-   if (this->m_loggingLevel != UNDEFINED)
+   if (this->m_loggingLevel != TRIBOL_UNDEFINED)
    {
       switch (this->m_loggingLevel)
       {
-         case DEBUG:
+         case TRIBOL_DEBUG:
          {
             axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
             break;
          } 
-         case INFO:
+         case TRIBOL_INFO:
          {
             axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
             break;
          } 
-         case WARNING:
+         case TRIBOL_WARNING:
          {
             axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
             break;
          } 
-         case ERROR:
+         case TRIBOL_ERROR:
          {
             axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
             break;
