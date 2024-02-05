@@ -33,7 +33,7 @@ constexpr integer ANY_MESH = -1;
 /*!
  * \brief Enumerates the logging level options
  */
-enum LoggingLevel
+enum class LoggingLevel
 {
    UNDEFINED, ///! Undefined 
    DEBUG,     ///! Debug and higher
