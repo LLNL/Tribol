@@ -180,7 +180,7 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 void ComputeSingleMortarGaps( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = (pairs == nullptr) ? 0 : pairs->getNumPairs();
+   IndexType const numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
@@ -317,7 +317,7 @@ template< >
 int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = (pairs == nullptr) ? 0 :pairs->getNumPairs();
+   IndexType const numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();

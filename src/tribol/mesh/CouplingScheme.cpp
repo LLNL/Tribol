@@ -896,7 +896,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
   cpMgr.setSpaceDim( params.dimension );
 
   // loop over number of interface pairs
-  IndexType numPairs = (m_interfacePairs == nullptr) ? 0 : m_interfacePairs->getNumPairs();
+  IndexType numPairs = m_interfacePairs->getNumPairs();
 
   SLIC_DEBUG("Coupling scheme " << m_id << " has " << numPairs << " pairs.");
 

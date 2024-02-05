@@ -167,7 +167,7 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 void ComputeAlignedMortarGaps( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = (pairs == nullptr) ? 0 : pairs->getNumPairs();
+   IndexType const numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
@@ -281,7 +281,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
 {
 
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = (pairs == nullptr) ? 0 : pairs->getNumPairs();
+   IndexType const numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
