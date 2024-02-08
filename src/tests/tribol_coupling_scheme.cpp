@@ -675,11 +675,24 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
  
    // check that the number of active pairs is zero from initialization and not 
    // carried over from previous coupling scheme registration with non-null meshes
-   EXPECT_EQ(cs_null->getNumActivePairs(), 0);
+   EXPECT_EQ( cs_null->getNumActivePairs(), 0 );
+
+   // call cs_null->init() to make sure the nullMeshes boolean is correctly set
+   cs_null->init();
+   EXPECT_EQ( cs_null->nullMeshes(), true );
 
    // call update() to make sure there is a no-op for this coupling scheme
    EXPECT_EQ(tribol::update(1, 1., dt), 0);
    EXPECT_EQ(cs_null->getNumActivePairs(), 0);
+
+   // check InterfacePairs data
+   bool isNullPtr {false};
+   if (cs_null->getInterfacePairs() == nullptr)
+   {
+      isNullPtr = true;
+   }
+   EXPECT_EQ( isNullPtr, false );
+   EXPECT_EQ( cs_null->getInterfacePairs()->getNumPairs(), 0 );
 
    tribol::finalize();
 }
@@ -1067,7 +1080,17 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
    tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
    bool isInit = scheme->init();
 
-   EXPECT_EQ( isInit, false );
+   EXPECT_EQ( isInit, true );
+   EXPECT_EQ( scheme->nullMeshes(), true );
+
+   // check the InterfacePairs member class on the coupling scheme
+   bool isNullPtr {false};
+   if (scheme->getInterfacePairs() == nullptr)
+   {
+      isNullPtr = true;
+   }
+   EXPECT_EQ( isNullPtr, false );
+   EXPECT_EQ( scheme->getInterfacePairs()->getNumPairs(), 0 );
 
    tribol::finalize();
 }
