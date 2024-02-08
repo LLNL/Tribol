@@ -162,6 +162,12 @@ public:
 public:
 
   /*!
+   * \brief Checks for valid Lagrange multiplier enforcement data
+   *
+   */
+   int checkLagrangeMultiplierData();
+
+  /*!
    * \brief Checks for valid penalty enforcement data 
    *
    * \param [in] p_enfrc_options penalty enforcement options guiding check
