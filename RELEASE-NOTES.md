@@ -24,8 +24,10 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
   interface.
 - Logging refactor using SLIC macros. Lots of warnings were demoted to DEBUG level.
 - Changed various computational geometry routines to return a FaceGeomError enum error handling
-- Changed LoggingLevel enum to be an enum class for clarity, and to avoid MACRO conflicts
+- Changed LoggingLevel enum names by appending a TRIBOL prefix to avoid MACRO conflicts
   with host codes.
+- Removed nullptr errors to allow more function call uniformity for ranks with null meshes. 
+  Also removed any `continue` statements for null meshes.
   
 ### Fixed
 - Allow null velocity and response pointers for various use cases
