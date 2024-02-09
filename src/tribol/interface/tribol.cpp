@@ -422,6 +422,24 @@ void registerMesh( integer meshId,
    }
 
    mesh.m_dim = dim;
+   mesh.deallocateArrays();
+
+   if (mesh.m_numCells > 0)
+   {
+      mesh.allocateArrays(dim);
+      initRealArray( mesh.m_nX,   mesh.m_numCells, 0. );
+      initRealArray( mesh.m_nY,   mesh.m_numCells, 0. );
+      initRealArray( mesh.m_cX,   mesh.m_numCells, 0. );
+      initRealArray( mesh.m_cY,   mesh.m_numCells, 0. );
+      initRealArray( mesh.m_area, mesh.m_numCells, 0. );
+   }
+
+   if (mesh.m_dim == 3 && mesh.m_numCells > 0)
+   {
+      initRealArray( mesh.m_nZ, mesh.m_numCells, 0. );
+      initRealArray( mesh.m_cZ, mesh.m_numCells, 0. );
+   }
+
 
 } // end of registerMesh()
 

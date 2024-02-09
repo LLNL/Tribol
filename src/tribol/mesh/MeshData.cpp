@@ -354,24 +354,6 @@ void MeshData::deallocateArrays()
 //------------------------------------------------------------------------------
 void MeshData::computeFaceData( int const dim )
 {
-   this->deallocateArrays();
-
-   if (this->m_numCells > 0)
-   {
-      this->allocateArrays(dim);
-      initRealArray( this->m_nX,   this->m_numCells, 0. );
-      initRealArray( this->m_nY,   this->m_numCells, 0. );
-      initRealArray( this->m_cX,   this->m_numCells, 0. );
-      initRealArray( this->m_cY,   this->m_numCells, 0. );
-      initRealArray( this->m_area, this->m_numCells, 0. );
-   }
-
-   if (this->m_dim == 3 && this->m_numCells > 0)
-   {
-      initRealArray( this->m_nZ, this->m_numCells, 0. );
-      initRealArray( this->m_cZ, this->m_numCells, 0. );
-   }
-
   int nodeId;
   int nextNodeId;
   int nodeIndex;
