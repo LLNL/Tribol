@@ -441,9 +441,6 @@ void registerMesh( integer meshId,
       initRealArray( mesh.m_cZ, mesh.m_numCells, 0. );
    }
 
-   // compute the face data
-   mesh.computeFaceData( dim );
-
 } // end of registerMesh()
 
 //------------------------------------------------------------------------------

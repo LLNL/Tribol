@@ -1001,6 +1001,17 @@ bool CouplingScheme::init()
       // set individual coupling scheme logging level
       this->setSlicLoggingLevel();
       this->allocateMethodData();
+
+      // compute the face data
+      MeshManager & meshManager = MeshManager::getInstance(); 
+      MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
+      mesh1.computeFaceData( mesh1.m_dim );
+      if (this->m_meshId2 != this->m_meshId1)
+      {
+         MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+         mesh2.computeFaceData( mesh2.m_dim );
+      }
+
       return true;
    }
    else
