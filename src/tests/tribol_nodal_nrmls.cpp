@@ -52,6 +52,9 @@ public:
       tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
       tribol::MeshData& mesh = meshManager.GetMeshInstance( meshId );
 
+      // compute the face data for this mesh
+      mesh.computeFaceData( dim );
+
       mesh.computeNodalNormals( dim );
 
       return;

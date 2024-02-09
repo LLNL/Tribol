@@ -101,7 +101,6 @@ public:
 private:
   std::unordered_map< integer, MeshData > m_meshInstances; ///< Unordered map of mesh instances
 
-
 };
 }
 #endif /* SRC_MESH_MESHMANAGER_HPP_ */

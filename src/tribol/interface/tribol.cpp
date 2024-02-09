@@ -375,6 +375,7 @@ void registerMesh( integer meshId,
    // since Tribol supports null meshes. This is not uncommon in parallel 
    // contact simulations
    mesh.m_meshId = meshId;
+   mesh.m_dim = dim;
    mesh.m_positionX = x;
    mesh.m_positionY = y;
    mesh.m_positionZ = z;
@@ -421,10 +422,6 @@ void registerMesh( integer meshId,
       mesh.sortSurfaceNodeIds();
    }
 
-   // allocate outward unit face normal arrays and centroid arrays and cell area array
-   mesh.m_dim = dim;
-   mesh.deallocateArrays();
-
    if (mesh.m_numCells > 0)
    {
       mesh.allocateArrays(dim);
@@ -435,14 +432,12 @@ void registerMesh( integer meshId,
       initRealArray( mesh.m_area, mesh.m_numCells, 0. );
    }
 
-   if (dim == 3 && mesh.m_numCells > 0)
+   if (mesh.m_dim == 3 && mesh.m_numCells > 0)
    {
       initRealArray( mesh.m_nZ, mesh.m_numCells, 0. );
       initRealArray( mesh.m_cZ, mesh.m_numCells, 0. );
    }
 
-   // compute the face data
-   mesh.computeFaceData( dim );
 
 } // end of registerMesh()
 
