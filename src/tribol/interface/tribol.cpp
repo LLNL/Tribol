@@ -375,6 +375,7 @@ void registerMesh( integer meshId,
    // since Tribol supports null meshes. This is not uncommon in parallel 
    // contact simulations
    mesh.m_meshId = meshId;
+   mesh.m_dim = dim;
    mesh.m_positionX = x;
    mesh.m_positionY = y;
    mesh.m_positionZ = z;
@@ -420,9 +421,6 @@ void registerMesh( integer meshId,
    {
       mesh.sortSurfaceNodeIds();
    }
-
-   mesh.m_dim = dim;
-   mesh.deallocateArrays();
 
    if (mesh.m_numCells > 0)
    {
