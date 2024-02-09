@@ -413,7 +413,7 @@ void MeshData::computeFaceData( int const dim )
         if (mag >= nrmlMagTol) {
            invMag = 1.0 / mag;
         } else {
-           SLIC_ERROR(axom::fmt::format("Magnitude of the normal is less than tolerance: {e} < {e}", mag, nrmlMagTol));
+           SLIC_ERROR(axom::fmt::format("Magnitude of the normal is less than tolerance: {:e} < {:e}", mag, nrmlMagTol));
         }
         m_nX[i] *= invMag;
         m_nY[i] *= invMag;
@@ -514,7 +514,7 @@ void MeshData::computeFaceData( int const dim )
         if (mag >= nrmlMagTol) {
            invMag = 1.0 / mag;
         } else {
-           SLIC_ERROR(axom::fmt::format("Magnitude of the normal is less than tolerance: {e} < {e}", mag, nrmlMagTol));
+           SLIC_ERROR(axom::fmt::format("Magnitude of the normal is less than tolerance: {:e} < {:e}", mag, nrmlMagTol));
         }
 
         // normalize the average normal
