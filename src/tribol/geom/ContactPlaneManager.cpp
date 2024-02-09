@@ -585,7 +585,7 @@ void ContactPlaneManager::addContactPlane( const ContactPlane2D& cp )
 }
 
 //------------------------------------------------------------------------------
-void ContactPlaneManager::deleteCPManager()
+void ContactPlaneManager::clearCPManager()
 {
 
    // delete allocated storage

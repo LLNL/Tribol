@@ -56,6 +56,7 @@ MeshElemData::~MeshElemData()
 //------------------------------------------------------------------------------
 bool MeshElemData::isValidKinematicPenalty( PenaltyEnforcementOptions& pen_options )
 {
+   // Note, this routine is, and should be called only for non-null meshes
    KinematicPenaltyCalculation kin_calc = pen_options.kinematic_calculation;
 
    // check kinematic penalty calculation data
@@ -142,6 +143,7 @@ bool MeshElemData::isValidKinematicPenalty( PenaltyEnforcementOptions& pen_optio
 //------------------------------------------------------------------------------
 bool MeshElemData::isValidRatePenalty( PenaltyEnforcementOptions& pen_options )
 {
+   // Note, this method is and should only be called for non-null meshes
    RatePenaltyCalculation rate_calc = pen_options.rate_calculation; 
 
    // check rate penalty calculation data
@@ -629,64 +631,66 @@ void MeshData::getFaceNodalVelocities( int const faceId, real * nodalVel )
 //------------------------------------------------------------------------------
 void MeshData::computeNodalNormals( int const dim )
 {
-   // check to make sure face normals have been computed with 
-   // a call to computeFaceData
-   if (this->m_nX == nullptr || 
-       this->m_nY == nullptr)
-   {
-      SLIC_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
-   }
-
-   // allocate space for nodal normal array
-   int size = this->m_lengthNodalData; 
-   if (this->m_node_nX != nullptr)
-   {
-      delete[] m_node_nX;
-      m_node_nX = new real [size];
-   }
-   else
-   {
-      m_node_nX = new real [size];
-   }
-
-   if (this->m_node_nY != nullptr)
-   {
-      delete[] m_node_nY;
-      m_node_nY = new real [size];
-   }
-   else
-   {
-      m_node_nY = new real [size];
-   }
-
-   if (dim == 3)
-   {
-      if (this->m_node_nZ != nullptr)
-      {
-         delete[] m_node_nZ;
-         m_node_nZ = new real [size];
-      }
-      else 
-      {
-         m_node_nZ = new real [size];
-      }
-
-      // initialize z component
-      initRealArray( m_node_nZ, size, 0. );
-   }
-
-   // initialize x and y components 
-   initRealArray( m_node_nX, size, 0. );
-   initRealArray( m_node_nY, size, 0. );
-
-   // allocate scratch array to hold number of faces whose 
-   // normals contribute to a given node. Most of the time 
-   // this will be four face normals contributing to an 
-   // averaged nodal normal for linear quad elements, but 
-   // we want to handle arbitrary meshes and edge cases
    int * numFaceNrmlsToNodes;
-   allocIntArray( &numFaceNrmlsToNodes, size, 0 );
+   if (this->m_numCells > 0)
+   {
+      // check to make sure face normals have been computed with 
+      // a call to computeFaceData
+      if (this->m_nX == nullptr || 
+          this->m_nY == nullptr)
+      {
+         SLIC_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
+      }
 
+      // allocate space for nodal normal array
+      int size = this->m_lengthNodalData; 
+      if (this->m_node_nX != nullptr)
+      {
+         delete[] m_node_nX;
+         m_node_nX = new real [size];
+      }
+      else
+      {
+         m_node_nX = new real [size];
+      }
+
+      if (this->m_node_nY != nullptr)
+      {
+         delete[] m_node_nY;
+         m_node_nY = new real [size];
+      }
+      else
+      {
+         m_node_nY = new real [size];
+      }
+
+      if (dim == 3)
+      {
+         if (this->m_node_nZ != nullptr)
+         {
+            delete[] m_node_nZ;
+            m_node_nZ = new real [size];
+         }
+         else 
+         {
+            m_node_nZ = new real [size];
+         }
+
+         // initialize z component
+         initRealArray( m_node_nZ, size, 0. );
+      }
+
+      // initialize x and y components 
+      initRealArray( m_node_nX, size, 0. );
+      initRealArray( m_node_nY, size, 0. );
+
+      // allocate scratch array to hold number of faces whose 
+      // normals contribute to a given node. Most of the time 
+      // this will be four face normals contributing to an 
+      // averaged nodal normal for linear quad elements, but 
+      // we want to handle arbitrary meshes and edge cases
+      allocIntArray( &numFaceNrmlsToNodes, size, 0 );
+   } // end if-check on null mesh
 
    // loop over cells
    for (int i=0; i<this->m_numCells; ++i)
@@ -724,38 +728,44 @@ void MeshData::computeNodalNormals( int const dim )
    } // end loop over cells
 
    // average the nodal normals
-   for (int i=0; i<this->m_lengthNodalData; ++i)
+   if (this->m_numCells > 0)
    {
-      m_node_nX[i] /= numFaceNrmlsToNodes[i];
-      m_node_nY[i] /= numFaceNrmlsToNodes[i];
-      if (dim == 3)
+      for (int i=0; i<this->m_lengthNodalData; ++i)
       {
-         m_node_nZ[i] /= numFaceNrmlsToNodes[i];
-      }
-   } // end loop over nodes
+         m_node_nX[i] /= numFaceNrmlsToNodes[i];
+         m_node_nY[i] /= numFaceNrmlsToNodes[i];
+         if (dim == 3)
+         {
+            m_node_nZ[i] /= numFaceNrmlsToNodes[i];
+         }
+      } // end loop over nodes
+   }
 
    // normalize the nodal normals
-   if (dim == 3)
+   if (this->m_numCells > 0)
    {
-      for (int i=0; i<this->m_lengthNodalData; ++i)
+      if (dim == 3)
       {
-         real mag = magnitude( m_node_nX[i], m_node_nY[i], m_node_nZ[i] );
-         m_node_nX[ i ] /= mag;
-         m_node_nY[ i ] /= mag;
-         m_node_nZ[ i ] /= mag;
+         for (int i=0; i<this->m_lengthNodalData; ++i)
+         {
+            real mag = magnitude( m_node_nX[i], m_node_nY[i], m_node_nZ[i] );
+            m_node_nX[ i ] /= mag;
+            m_node_nY[ i ] /= mag;
+            m_node_nZ[ i ] /= mag;
+         }
       }
-   }
-   else 
-   {
-      for (int i=0; i<this->m_lengthNodalData; ++i)
+      else 
       {
-         real mag = magnitude( m_node_nX[i], m_node_nY[i] );
-         m_node_nX[ i ] /= mag;
-         m_node_nY[ i ] /= mag;
+         for (int i=0; i<this->m_lengthNodalData; ++i)
+         {
+            real mag = magnitude( m_node_nX[i], m_node_nY[i] );
+            m_node_nX[ i ] /= mag;
+            m_node_nY[ i ] /= mag;
+         }
       }
-   }
 
-   delete [] numFaceNrmlsToNodes;
+      delete [] numFaceNrmlsToNodes;
+   } // end if-check on null mesh
 
    return;
 } // end MeshData::computeNodalNormals()
@@ -834,45 +844,61 @@ void MeshData::sortSurfaceNodeIds()
 } // end MeshData::sortSurfaceNodeIds()
 
 //------------------------------------------------------------------------------
+int MeshData::checkLagrangeMultiplierData()
+{
+   int err = 0;
+   if (this->m_numCells>0)
+   {
+      if (!this->m_nodalFields.m_is_node_gap_set ||
+          !this->m_nodalFields.m_is_node_pressure_set)
+      {
+         err = 1;
+      }
+   } // end if-non-null mesh
+   return err; 
+}
+//------------------------------------------------------------------------------
 int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
 {
    int err = 0;
-   PenaltyConstraintType constraint_type = p_enfrc_options.constraint_type;
-   
-   // switch over penalty enforcement options and check for required data
-   switch (constraint_type)
+   if (this->m_numCells>0)
    {
-      case KINEMATIC:
+      PenaltyConstraintType constraint_type = p_enfrc_options.constraint_type;
+      // switch over penalty enforcement options and check for required data
+      switch (constraint_type)
       {
-         if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
+         case KINEMATIC:
          {
-            err = 1;
-         }
-         break;
-      } // end KINEMATIC case
+            if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
+            {
+               err = 1;
+            }
+            break;
+         } // end KINEMATIC case
 
-      case KINEMATIC_AND_RATE:
-      {
-         if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
+         case KINEMATIC_AND_RATE:
          {
-            err = 1;
-         }
-         if (!this->m_elemData.isValidRatePenalty( p_enfrc_options ))
-         {
-            err = 1;
-         }
-         if (!this->m_nodalFields.m_is_velocity_set)
-         {
-            SLIC_WARNING("Nodal velocities not set or null pointers; please set for " << 
-                         "use with gap rate penalty enforcement.");
-            err = 1;
-         }
-         break;
-      } // end case KINEMATIC_AND_RATE
-      default:
-         // no-op, quiet compiler
-         break;
-   } // end switch over constraint types
+            if (!this->m_elemData.isValidKinematicPenalty( p_enfrc_options ))
+            {
+               err = 1;
+            }
+            if (!this->m_elemData.isValidRatePenalty( p_enfrc_options ))
+            {
+               err = 1;
+            }
+            if (!this->m_nodalFields.m_is_velocity_set)
+            {
+               SLIC_WARNING("Nodal velocities not set or null pointers; please set for " << 
+                            "use with gap rate penalty enforcement.");
+               err = 1;
+            }
+            break;
+         } // end case KINEMATIC_AND_RATE
+         default:
+            // no-op, quiet compiler
+            break;
+      } // end switch over constraint types
+   } // end if-non-null mesh
 
    return err;
 } // end MeshData::checkPenaltyData()

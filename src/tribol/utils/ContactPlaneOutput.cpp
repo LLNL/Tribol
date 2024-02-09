@@ -7,6 +7,8 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/mesh/MeshManager.hpp"
+#include "tribol/mesh/CouplingSchemeManager.hpp"
+#include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 
 // AXOM includes
@@ -60,6 +62,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
    MeshManager & meshManager = MeshManager::getInstance();
    MeshData& mesh1 = meshManager.GetMeshInstance(meshId1);
    MeshData& mesh2 = meshManager.GetMeshInstance(meshId2);
+   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
+   CouplingScheme* couplingScheme  = csManager.getCoupling(csId);
 
    int nranks = 1;
    int rank = -1;
@@ -74,6 +78,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
    // Write contact faces and/or overlaps //
    //                                     //
    /////////////////////////////////////////
+   if (!couplingScheme->nullMeshes())
    {
       int cpSize = cpMgr.size();
       bool overlaps { false };
@@ -356,13 +361,14 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
       } // end if-overlaps
 
-   } // end write faces and/or overlaps
+   } // end write faces and/or overlaps for non-null meshes
 
    //////////////////////////////////////////////////////////////
    //                                                          //
    // Write registered contact meshes for this coupling scheme //
    //                                                          //
    //////////////////////////////////////////////////////////////
+   if (!couplingScheme->nullMeshes())
    {
       switch( v_type ) {
         case VIS_MESH :
@@ -489,7 +495,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
 
       mesh.close();
-   } // end write mesh
+   } // end write mesh for non-null meshes
 
    return;
 
