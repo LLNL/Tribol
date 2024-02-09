@@ -352,8 +352,9 @@ void MeshData::deallocateArrays()
 }
 
 //------------------------------------------------------------------------------
-void MeshData::computeFaceData( int const dim )
+bool MeshData::computeFaceData( int const dim )
 {
+  bool faceDataOk = true;
   real fac = 1.0 / m_numNodesPerCell;
   constexpr real nrmlMagTol = 1.0e-15;
 
@@ -415,7 +416,7 @@ void MeshData::computeFaceData( int const dim )
         if (mag >= nrmlMagTol) {
            invMag = 1.0 / mag;
         } else {
-           SLIC_ERROR(axom::fmt::format("Magnitude of the normal is less than tolerance: {:e} < {:e}", mag, nrmlMagTol));
+           faceDataOk = false;
         }
         m_nX[i] *= invMag;
         m_nY[i] *= invMag;
@@ -516,7 +517,7 @@ void MeshData::computeFaceData( int const dim )
         if (mag >= nrmlMagTol) {
            invMag = 1.0 / mag;
         } else {
-           SLIC_ERROR(axom::fmt::format("Magnitude of the normal is less than tolerance: {:e} < {:e}", mag, nrmlMagTol));
+           faceDataOk = false;
         }
 
         // normalize the average normal
@@ -528,7 +529,10 @@ void MeshData::computeFaceData( int const dim )
 
   } // end cell loop
 
-  return; 
+  SLIC_WARNING_IF(!faceDataOk, 
+      axom::fmt::format("There are faces with a normal magnitude less than tolerance ({:e}).", nrmlMagTol));
+
+  return faceDataOk; 
 
 } // end MeshData::computeFaceData()
 
