@@ -92,9 +92,16 @@ protected:
          for (int i=0; i<m_lengthNodalData; ++i)
          {
             m_connectivity[i] = i;
-            m_x[i] = 0.;
-            m_y[i] = 0.;
          }
+         // unit square
+         m_x[0] = 0.;
+         m_y[0] = 0.;
+         m_x[1] = 1.;
+         m_y[1] = 0.;
+         m_x[2] = 1.;
+         m_y[2] = 1.;
+         m_x[3] = 0.;
+         m_y[3] = 1.;
 
          if (set_response)
          {
@@ -141,10 +148,32 @@ protected:
          for (int i=0; i<m_lengthNodalData; ++i)
          {
             m_connectivity[i] = i;
-            m_x[i] = 0.;
-            m_y[i] = 0.;
-            m_z[i] = 0.;
          }
+         // unit cube
+         m_x[0] = 0.;
+         m_y[0] = 0.;
+         m_z[0] = 0.;
+         m_x[1] = 1.;
+         m_y[1] = 0.;
+         m_z[1] = 0.;
+         m_x[2] = 1.;
+         m_y[2] = 1.;
+         m_z[2] = 0.;
+         m_x[3] = 0.;
+         m_y[3] = 1.;
+         m_z[3] = 0.;
+         m_x[4] = 0.;
+         m_y[4] = 0.;
+         m_z[4] = 1.;
+         m_x[5] = 1.;
+         m_y[5] = 0.;
+         m_z[5] = 1.;
+         m_x[6] = 1.;
+         m_y[6] = 1.;
+         m_z[6] = 1.;
+         m_x[7] = 0.;
+         m_y[7] = 1.;
+         m_z[7] = 1.;
 
          if (set_response)
          {

@@ -182,10 +182,11 @@ public:
    * \brief Computes the face normals and centroids for all faces in the mesh.
    *
    * \param [in] dim Dimension of the problem 
+   * \return true if face calculations do not encounter errors or warnings
    * 
    * This routine accounts for warped faces by computing an average normal.
    */
-  void computeFaceData( int const dim );
+  bool computeFaceData( int const dim );
   
   /*!
    * \brief Computes average nodal normals for use with mortar methods

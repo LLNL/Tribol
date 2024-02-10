@@ -352,14 +352,11 @@ void MeshData::deallocateArrays()
 }
 
 //------------------------------------------------------------------------------
-void MeshData::computeFaceData( int const dim )
+bool MeshData::computeFaceData( int const dim )
 {
-  int nodeId;
-  int nextNodeId;
-  int nodeIndex;
+  bool faceDataOk = true;
   real fac = 1.0 / m_numNodesPerCell;
-  real mag, invMag;
-  real nrmlMagTol = 1.E-6;
+  constexpr real nrmlMagTol = 1.0e-15;
 
   // loop over all cells in the mesh
   for (int i=0; i<m_numCells; ++i) {
@@ -370,8 +367,8 @@ void MeshData::computeFaceData( int const dim )
 
      // loop over the nodes per cell
      for (int j=0; j<m_numNodesPerCell; ++j) {
-        nodeIndex = m_numNodesPerCell * i + j;
-        nodeId = m_connectivity[ nodeIndex ];
+        auto nodeIndex = m_numNodesPerCell * i + j;
+        auto nodeId = m_connectivity[ nodeIndex ];
         // always compute the x and y components for 2D and 3D
         m_cX[i] += m_positionX[ nodeId ];
         m_cY[i] += m_positionY[ nodeId ];
@@ -382,8 +379,8 @@ void MeshData::computeFaceData( int const dim )
 
      if (dim == 3) {
         for (int j=0; j<m_numNodesPerCell; ++j) {
-           nodeIndex = m_numNodesPerCell * i + j;
-           nodeId = m_connectivity[ nodeIndex ];
+           auto nodeIndex = m_numNodesPerCell * i + j;
+           auto nodeId = m_connectivity[ nodeIndex ];
            m_cZ[i] += m_positionZ[ nodeId ];
         } // end loop over nodes
         m_cZ[i] = fac * m_cZ[i];
@@ -399,9 +396,9 @@ void MeshData::computeFaceData( int const dim )
         // counter-clockwise ordering of the quad4 area element
         // to which the 1D line segment belongs. This is to properly 
         // orient the normal outward
-        nodeIndex = m_numNodesPerCell * i;
-        nodeId = m_connectivity[ nodeIndex ];
-        nextNodeId = m_connectivity[ nodeIndex+1 ];
+        auto nodeIndex = m_numNodesPerCell * i;
+        auto nodeId = m_connectivity[ nodeIndex ];
+        auto nextNodeId = m_connectivity[ nodeIndex+1 ];
         real lambdaX = m_positionX[ nextNodeId ] - m_positionX[ nodeId ];
         real lambdaY = m_positionY[ nextNodeId ] - m_positionY[ nodeId ];
    
@@ -414,9 +411,12 @@ void MeshData::computeFaceData( int const dim )
         m_area[i] = magnitude( lambdaX, lambdaY );
 
         // normalize normal vector
-        mag = magnitude( m_nX[i], m_nY[i] );
+        auto mag = magnitude( m_nX[i], m_nY[i] );
+        auto invMag = nrmlMagTol;
         if (mag >= nrmlMagTol) {
            invMag = 1.0 / mag;
+        } else {
+           faceDataOk = false;
         }
         m_nX[i] *= invMag;
         m_nY[i] *= invMag;
@@ -447,9 +447,9 @@ void MeshData::computeFaceData( int const dim )
         // loop over m_numNodesPerCell-1 cell edges and compute pallet normal
         for (int j=0; j<(m_numNodesPerCell-1); ++j) 
         {
-           nodeIndex = m_numNodesPerCell * i + j;
-           nodeId = m_connectivity[ nodeIndex ];
-           nextNodeId = m_connectivity[ nodeIndex + 1 ];
+           auto nodeIndex = m_numNodesPerCell * i + j;
+           auto nodeId = m_connectivity[ nodeIndex ];
+           auto nextNodeId = m_connectivity[ nodeIndex + 1 ];
            // first triangle edge vector between the face's two 
            // edge nodes
            vX1 = m_positionX[ nextNodeId ] - m_positionX[ nodeId ];
@@ -481,9 +481,9 @@ void MeshData::computeFaceData( int const dim )
         }
 
         // compute the pallet normal contribution for the last pallet
-        nodeIndex = m_numNodesPerCell * i;
-        nodeId = m_connectivity[ nodeIndex ];
-        nextNodeId = m_connectivity[ nodeIndex + m_numNodesPerCell - 1 ];
+        auto nodeIndex = m_numNodesPerCell * i;
+        auto nodeId = m_connectivity[ nodeIndex ];
+        auto nextNodeId = m_connectivity[ nodeIndex + m_numNodesPerCell - 1 ];
         vX1 = m_positionX[ nodeId ] - m_positionX[ nextNodeId ];
         vY1 = m_positionY[ nodeId ] - m_positionY[ nextNodeId ];
         vZ1 = m_positionZ[ nodeId ] - m_positionZ[ nextNodeId ];
@@ -512,9 +512,12 @@ void MeshData::computeFaceData( int const dim )
         m_nZ[i] = fac * m_nZ[i];
 
         // compute the magnitude of the average pallet normal
-        mag = magnitude(m_nX[i], m_nY[i], m_nZ[i] );
+        auto mag = magnitude(m_nX[i], m_nY[i], m_nZ[i] );
+        auto invMag = nrmlMagTol;
         if (mag >= nrmlMagTol) {
            invMag = 1.0 / mag;
+        } else {
+           faceDataOk = false;
         }
 
         // normalize the average normal
@@ -526,7 +529,10 @@ void MeshData::computeFaceData( int const dim )
 
   } // end cell loop
 
-  return; 
+  SLIC_WARNING_IF(!faceDataOk, 
+      axom::fmt::format("There are faces with a normal magnitude less than tolerance ({:e}).", nrmlMagTol));
+
+  return faceDataOk; 
 
 } // end MeshData::computeFaceData()
 
