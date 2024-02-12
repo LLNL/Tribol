@@ -6,47 +6,7 @@
 /**
  * @file simple_submesh_redecomp.cpp
  *
- * @brief Demonstrates redecomp::RedecompMesh and redecomp transfer capability
- *
- * Demonstrates use of redecomp::RedecompMesh to build a RCB-based
- * redecomposition of an mfem::ParMesh, then transfers an mfem::ParGridFunction
- * and an mfem::QuadratureFunction to an mfem::GridFunction and an
- * mfem::QuadratureFunction on the redecomp::RedecompMesh and vice versa.
- *
- * Though redecomp::RedecompMesh contains pieces of the mesh spread across
- * ranks, it is a serial mesh which derives from mfem::Mesh. All coordination
- * with other ranks must be done by transferring data to the parent
- * mfem::ParMesh level. Beyond the decomposition method (RCB vs. typically metis
- * k-way), a redecomp::RedecompMesh differs from an mfem::ParMesh because it
- * includes a layer of ghost elements at the on-rank domain boundaries.
- * Quantities on ghost elements are typically transferred to fields on the
- * redecomp::RedecompMesh, but are not transferred back to the mfem::ParMesh.
- *
- * This example illustrates the envisioned typical workflow for using
- * redecomp::RedecompMesh: 
- *   1. Create a RedecompMesh by providing a parent ParMesh (and optionally a
- *      method of repartitioning the domain)
- *   2. Create fields on the RedecompMesh (mfem::GridFunction and/or
- *      mfem::QuadratureFunction)
- *   3. Creating a RedecompTransfer object which provides methods to transfer an
- *      mfem::ParGridFunction and an mfem::QuadratureFunction from the parent
- *      ParMesh to the RedecompMesh and vice versa
- *   4. Transferring the mfem::ParGridfunction and/or mfem::QuadratureFunction
- *      on the parent ParMesh to the mfem::GridFunction and/or
- *      mfem::QuadratureFunction on the RedecompMesh
- *   5. Performing an update on the mfem::GridFunction and/or
- *      mfem::QuadratureFunction at the RedecompMesh level
- *   6. Transferring the mfem::GridFunction and/or mfem::QuadratureFunction on
- *      the RedecompMesh back to the corresponding functions on the ParMesh
- *
- * Example runs (from repo root directory):
- *   - mpirun -np 4 {build_dir}/examples/domain_redecomp_ex -r 1 -m data/two_hex.mesh
- *   - mpirun -np 4 {build_dir}/examples/domain_redecomp_ex -r 1 -m data/star.mesh
- *   - mpirun -np 4 {build_dir}/examples/domain_redecomp_ex -r 1 -o 2 -m data/two_hex.mesh
- *   - mpirun -np 4 {build_dir}/examples/domain_redecomp_ex -r 1 -o 2 -m data/star.mesh
- *
- * Example output on both the RedecompMesh and the ParMesh can be viewed in
- * VisIt.
+ * @brief Demonstrates using redecomp on a surface mesh
  */
 
 #include <mpi.h>
