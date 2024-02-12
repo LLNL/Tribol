@@ -69,6 +69,7 @@ if ( BUILD_REDECOMP )
       domain_redecomp.cpp
       multidomain_redecomp.cpp
       element_matrix_redecomp.cpp
+      simple_submesh_redecomp.cpp
       sparse_matrix_redecomp.cpp
       )
 
