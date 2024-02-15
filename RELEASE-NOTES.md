@@ -12,6 +12,8 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
 - Added coupling scheme tests with null pointer registration.
 - Multi-rank contact API using MFEM data structures.
 - New API calls for MFEM data structures (see `interface/mfem_tribol.hpp`).
+- Updated the penalty stiffness calculation using the `KINEMATIC_CONSTANT` option
+  to follow the `springs-in-serial` stiffness model used for `KINEMATIC_ELEMENT`.
 
 ### Changed
 - Return negative timestep vote for non-null meshes with null velocity pointers.
@@ -22,6 +24,10 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
   interface.
 - Logging refactor using SLIC macros. Lots of warnings were demoted to DEBUG level.
 - Changed various computational geometry routines to return a FaceGeomError enum error handling
+- Changed LoggingLevel enum names by appending a TRIBOL prefix to avoid MACRO conflicts
+  with host codes.
+- Removed nullptr errors to allow more function call uniformity for ranks with null meshes. 
+  Also removed any `continue` statements for null meshes.
   
 ### Fixed
 - Allow null velocity and response pointers for various use cases

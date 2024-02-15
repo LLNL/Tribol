@@ -434,7 +434,7 @@ TEST_F( CommonPlaneTest, constant_penalty_check )
 
    // check the pressures
    real gap = z_min2 - z_max1;
-   real pressure = parameters.const_penalty * gap;
+   real pressure = tribol::ComputePenaltyStiffnessPerArea( parameters.const_penalty, parameters.const_penalty ) * gap;
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme );
 
@@ -594,7 +594,7 @@ TEST_F( CommonPlaneTest, tied_contact_check )
 
    // check the pressures
    real gap = z_min2 - z_max1;
-   real pressure = parameters.const_penalty * gap;
+   real pressure = tribol::ComputePenaltyStiffnessPerArea( parameters.const_penalty, parameters.const_penalty ) * gap;
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme, true );
 

@@ -355,7 +355,7 @@ CouplingScheme::CouplingScheme( integer couplingSchemeId,
   m_couplingSchemeInfo.cs_case_info        = NO_CASE_INFO;
   m_couplingSchemeInfo.cs_enforcement_info = NO_ENFORCEMENT_INFO;
 
-  m_loggingLevel = UNDEFINED;
+  m_loggingLevel = TRIBOL_UNDEFINED;
 
   // STEP 0: create contact-pairs object associated with this coupling scheme
   m_interfacePairs = new InterfacePairs( );
@@ -402,7 +402,7 @@ bool CouplingScheme::isValidCouplingScheme()
    if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
    {
       this->m_nullMeshes = true;
-      valid = false;
+      valid = true; // a null-mesh coupling scheme should still be valid
    }
 
    // check valid contact mode. Not all modes have an implementation
@@ -797,56 +797,60 @@ int CouplingScheme::checkEnforcementData()
    this->m_couplingSchemeErrors.cs_enforcement_data_error 
       = NO_ENFORCEMENT_DATA_ERROR; 
 
-   // perform check for non-null meshes
    int err = 0;
-   if (!this->m_nullMeshes)
+   switch (this->m_contactMethod)
    {
-      switch (this->m_contactMethod)
+      case MORTAR_WEIGHTS:
+         // no-op for now
+         break;
+      case ALIGNED_MORTAR:
+         // don't break
+      case SINGLE_MORTAR:
       {
-         case MORTAR_WEIGHTS:
-            // no-op for now
-            break;
-         case ALIGNED_MORTAR:
-            // don't break
-         case SINGLE_MORTAR:
+         switch (this->m_enforcementMethod)
          {
-            if (!mesh2.m_nodalFields.m_is_node_gap_set) // nonmortar side only
+            case LAGRANGE_MULTIPLIER:
             {
-               this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
-               err = 1;
-            }
-            
-            if (!mesh2.m_nodalFields.m_is_node_pressure_set) // nonmortar side only
-            {
-               this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
-               err = 1;
-            }
-            break;
-         } 
-         case COMMON_PLANE:
-         {
-            switch (this->m_enforcementMethod)
-            {
-               case PENALTY:
+               // check LM data. Note, this routine is guarded against null-meshes
+               if (mesh2.checkLagrangeMultiplierData() != 0) // nonmortar side only
                {
-                  PenaltyEnforcementOptions& pen_enfrc_options = this->m_enforcementOptions.penalty_options;
-                  if (mesh1.checkPenaltyData( pen_enfrc_options ) != 0 ||
-                      mesh2.checkPenaltyData( pen_enfrc_options ) != 0)
-                  {
-                     this->m_couplingSchemeErrors.cs_enforcement_data_error 
-                        = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
-                     err = 1;
-                  }
-                  break;
-               } // end case PENALTY
-               default:
-                  break;
-            }  // end switch over enforcement method
-         } // end case COMMON_PLANE
-         default:
-            break;
-      } // end switch on method
-   } // end if-check on non-null meshes
+                  this->m_couplingSchemeErrors.cs_enforcement_data_error = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
+                  err = 1;
+               } 
+               break;
+            } // end case LAGRANGE_MULTIPLIER
+            default:
+               // no-op
+               break;
+         } // end switch over enforcement method
+         break;
+      } // end case SINGLE_MORTAR
+      case COMMON_PLANE:
+      {
+         switch (this->m_enforcementMethod)
+         {
+            case PENALTY:
+            {
+               // check penalty data. Note, this routine is guarded against null-meshes
+               PenaltyEnforcementOptions& pen_enfrc_options = this->m_enforcementOptions.penalty_options;
+               if (mesh1.checkPenaltyData( pen_enfrc_options ) != 0 ||
+                   mesh2.checkPenaltyData( pen_enfrc_options ) != 0)
+               {
+                  this->m_couplingSchemeErrors.cs_enforcement_data_error 
+                     = ERROR_IN_REGISTERED_ENFORCEMENT_DATA;
+                  err = 1;
+               }
+               break;
+            } // end case PENALTY
+            default:
+               // no-op
+               break;
+         }  // end switch over enforcement method
+      } // end case COMMON_PLANE
+      default:
+         // no-op
+         break;
+   } // end switch on method
 
    return err;
 
@@ -856,38 +860,39 @@ void CouplingScheme::performBinning()
 {
    // Find the interacting pairs for this coupling scheme. Will not use
    // binning if setInterfacePairs has been called.
-   if( !this->hasFixedBinning() ) 
+   if (!this->m_nullMeshes)
    {
-      m_interfacePairs->clear();
-
-      InterfacePairFinder finder(this);
-      finder.initialize();
-      finder.findInterfacePairs();
-
-      // For Cartesian binning, we only need to compute the binning once
-      if(this->getBinningMethod() == BINNING_CARTESIAN_PRODUCT)
+      if( !this->hasFixedBinning() ) 
       {
-         this->setFixedBinning(true);
-      }
+         m_interfacePairs->clear();
 
-      // set fixed binning depending on contact case, 
-      // e.g. NO_SLIDING
-      this->setFixedBinningPerCase();
-   }
+         InterfacePairFinder finder(this);
+         finder.initialize();
+         finder.findInterfacePairs();
+
+         // For Cartesian binning, we only need to compute the binning once
+         if(this->getBinningMethod() == BINNING_CARTESIAN_PRODUCT)
+         {
+            this->setFixedBinning(true);
+         }
+
+         // set fixed binning depending on contact case, 
+         // e.g. NO_SLIDING
+         this->setFixedBinningPerCase();
+      }
+   } // end if-non-null meshes
    return;
 }
 //------------------------------------------------------------------------------
 int CouplingScheme::apply( integer cycle, real t, real &dt ) 
 {
-  SLIC_ASSERT( m_interfacePairs != nullptr );
-
   // set dimension on the contact plane manager
   parameters_t& params = parameters_t::getInstance();
   ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
 
-  // delete contact plane manager for this coupling-scheme/cycle.
-  cpMgr.deleteCPManager();
-
+  // clear contact plane manager to be populated/allocated anew for this
+  // coupling-scheme/cycle.
+  cpMgr.clearCPManager();
   cpMgr.setSpaceDim( params.dimension );
 
   // loop over number of interface pairs
@@ -990,11 +995,23 @@ bool CouplingScheme::init()
    // check for valid coupling scheme only for non-null-meshes
    bool valid = false;
    valid = this->isValidCouplingScheme();
-   if (valid)
+   this->m_isValid = valid;
+   if (this->m_isValid)
    {
       // set individual coupling scheme logging level
       this->setSlicLoggingLevel();
       this->allocateMethodData();
+
+      // compute the face data
+      MeshManager & meshManager = MeshManager::getInstance(); 
+      MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
+      mesh1.computeFaceData( mesh1.m_dim );
+      if (this->m_meshId2 != this->m_meshId1)
+      {
+         MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+         mesh2.computeFaceData( mesh2.m_dim );
+      }
+
       return true;
    }
    else
@@ -1006,26 +1023,26 @@ bool CouplingScheme::init()
 void CouplingScheme::setSlicLoggingLevel()
 {
    // set slic logging level for coupling schemes that have API modified logging levels
-   if (this->m_loggingLevel != UNDEFINED)
+   if (this->m_loggingLevel != TRIBOL_UNDEFINED)
    {
       switch (this->m_loggingLevel)
       {
-         case DEBUG:
+         case TRIBOL_DEBUG:
          {
             axom::slic::setLoggingMsgLevel( axom::slic::message::Debug );
             break;
          } 
-         case INFO:
+         case TRIBOL_INFO:
          {
             axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
             break;
          } 
-         case WARNING:
+         case TRIBOL_WARNING:
          {
             axom::slic::setLoggingMsgLevel( axom::slic::message::Warning );
             break;
          } 
-         case ERROR:
+         case TRIBOL_ERROR:
          {
             axom::slic::setLoggingMsgLevel( axom::slic::message::Error );
             break;

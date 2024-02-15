@@ -60,8 +60,9 @@ protected:
     double lambda = 100000.0;
     // lame parameter (shear modulus)
     double mu = 100000.0;
-    // kinematic penalty
-    double p_kine = (lambda + 2.0 / 3.0 * mu) * std::pow(2.0, ref_levels - 1);
+    // kinematic constant penalty stiffness equivalent to the element-wise calculation, 
+    // which is bulk-modulus over element thickness.
+    double p_kine = (lambda + 2.0 / 3.0 * mu) / (1.0 / std::pow(2.0, ref_levels));
 
     // fixed options
     // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp

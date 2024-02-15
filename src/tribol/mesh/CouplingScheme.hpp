@@ -239,6 +239,13 @@ public:
   bool nullMeshes() { return m_nullMeshes; }
 
   /*!
+   * \brief Returns true if one or both meshes are zero-element, null meshes 
+   *
+   * \return true if one or both null meshes in coupling scheme
+   */
+  bool nullMeshes() const { return m_nullMeshes; }
+
+  /*!
    * \brief Returns true if a valid mode is specified, otherwise false
    *
    * \return true indicating if the mode is valid;
@@ -529,6 +536,7 @@ private:
   integer m_meshId2; ///< Integer id for mesh 2
 
   bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
+  bool m_isValid {true}; ///< False if the coupling scheme is not valid per call to init()
 
   integer m_numTotalNodes; ///< Total number of nodes in the coupling scheme
 
