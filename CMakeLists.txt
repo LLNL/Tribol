@@ -41,7 +41,7 @@ endif()
 # Override a conflicting target name between blt and mfem's build systems
 SET(BLT_CODE_CHECK_TARGET_NAME "code_check" CACHE STRING "")
 
-if (“${PROJECT_SOURCE_DIR}” STREQUAL “${CMAKE_SOURCE_DIR}”)
+if ("${PROJECT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
     # Set some default BLT options before loading BLT only if not included in
     # another project
     if (NOT BLT_CXX_STD)
