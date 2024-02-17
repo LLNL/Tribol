@@ -2046,6 +2046,8 @@ ExplicitMechanics::ExplicitMechanics(
    inv_lumped_mass { ComputeInvMass(fespace, rho) }
 {
    // create elasticity stiffness matrix
+   // Note: not implemented for ElasticityIntegrator
+   // elasticity.SetAssemblyLevel(mfem::AssemblyLevel::PARTIAL);
    elasticity.AddDomainIntegrator(new mfem::ElasticityIntegrator(lambda, mu));
    elasticity.Assemble();
 }
@@ -2088,17 +2090,18 @@ mfem::Vector ExplicitMechanics::ComputeInvMass(mfem::ParFiniteElementSpace& fesp
 {
    mfem::Vector inv_lumped_mass(fespace.GetVSize());
    inv_lumped_mass.UseDevice(true);
-   mfem::ParBilinearForm mass(&fespace);
-   mass.AddDomainIntegrator(new mfem::VectorMassIntegrator(rho));
+   mfem::ParLinearForm mass(&fespace);
+   mfem::VectorArrayCoefficient rho_vector(fespace.GetVDim());
+   for (int d{0}; d < fespace.GetVDim(); ++d)
+   {
+      rho_vector.Set(d, &rho, false);
+   }
+   mass.AddDomainIntegrator(new mfem::VectorDomainLFIntegrator(rho_vector));
    mass.Assemble();
-   mfem::Vector ones {fespace.GetVSize()};
-   ones.UseDevice(true);
-   ones = 1.0;
-   mass.SpMat().Mult(ones, inv_lumped_mass);
    mfem::Vector mass_true(fespace.GetTrueVSize());
    mass_true.UseDevice(true);
    const Operator& P = *fespace.GetProlongationMatrix();
-   P.MultTranspose(inv_lumped_mass, mass_true);
+   P.MultTranspose(mass, mass_true);
    auto mass_true_ptr = mass_true.ReadWrite();
    mfem::forall(mass_true.Size(), [=] MFEM_HOST_DEVICE (int i)
    {

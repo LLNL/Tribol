@@ -98,7 +98,8 @@ int main( int argc, char** argv )
   // very coarse meshes, though the decomposition can still fail with the simple
   // checks implemented.
   double max_out_of_balance = 0.05;
-  // device configuration string (see mfem::Device::Configure())
+  // device configuration string (see mfem::Device::Configure() for valid
+  // options)
   std::string device_config = "cpu";
 
   axom::CLI::App app { "domain_redecomp" };
@@ -115,7 +116,7 @@ int main( int argc, char** argv )
     "Max proportion of out-of-balance elements in RCB decomposition.")
     ->capture_default_str();
   app.add_option("-d,--device", device_config, 
-    "Device configuration string, see mfem::Device::Configure().")
+    "Device configuration string, see mfem::Device::Configure() for valid options.")
     ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
@@ -201,7 +202,10 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   {
     pmesh.GetNodes(par_x_ref_elem);
   }
-  // move data to device (if device is available) and set host flag to stale
+  // Copy DOF data to device (if device is available), set host data as invalid,
+  // and set the device data as valid in the memory bit flags (see
+  // mfem::Memory::FlagMask for bit flag definitions). Now, DOF data must be
+  // copied from device before the host can access it.
   par_x_ref_elem.ReadWrite();
 
   // This is the grid function we are transferring. The "node" and "element"
@@ -287,10 +291,14 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
-  // redecomp does transfers on host, so par_x_ref_elem data will be copied to
-  // host and the device flag of redecomp_x_ref_elem will be stale
+  // Redecomp does transfers on host, so par_x_ref_elem DOF data will be copied
+  // to host and the device DOF data of redecomp_x_ref_elem will be marked as
+  // invalid.
   elem_transfer.TransferToSerial(par_x_ref_elem, redecomp_x_ref_elem);
-  // copy redecomp data to device and set host flag to stale
+  // Move redecomp DOF data to device (if device is available), set host data as
+  // invalid, and set the device data as valid in the memory bit flags (see
+  // mfem::Memory::FlagMask for bit flag definitions). Now, DOF data must be
+  // copied from device before the host can access it.
   redecomp_x_ref_elem.ReadWrite();
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -319,10 +327,14 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
-  // redecomp does transfers on host, so par_x_ref_node data will be copied to
-  // host and the device flag of redecomp_x_ref_node will be stale
+  // Redecomp does transfers on host, so par_x_ref_node DOF data will be copied
+  // to host and the device DOF data of redecomp_x_ref_node will be marked as
+  // invalid.
   node_transfer.TransferToSerial(par_x_ref_node, redecomp_x_ref_node);
-  // copy redecomp data to device and set host flag to stale
+  // Move redecomp DOF data to device (if device is available), set host data as
+  // invalid, and set the device data as valid in the memory bit flags (see
+  // mfem::Memory::FlagMask for bit flag definitions). Now, DOF data must be
+  // copied from device before the host can manipulate it.
   redecomp_x_ref_node.ReadWrite();
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -340,8 +352,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
-  // redecomp does transfers on host, so redecomp_x_ref_elem data will be
-  // copied to host and the device flag of par_x_ref_elem will be stale
+  // Redecomp does transfers on host, so redecomp_x_ref_elem DOF data will be
+  // copied to host and the device DOF data of par_x_ref_elem will be marked as
+  // invalid.
   elem_transfer.TransferToParallel(redecomp_x_ref_elem, par_x_ref_elem);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -355,8 +368,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
-  // redecomp does transfers on host, so redecomp_x_ref_node data will be
-  // copied to host and the device flag of par_x_ref_node will be stale
+  // Redecomp does transfers on host, so redecomp_x_ref_node DOF data will be
+  // copied to host and the device DOF data of par_x_ref_node will be marked as
+  // invalid.
   node_transfer.TransferToParallel(redecomp_x_ref_node, par_x_ref_node);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -381,7 +395,10 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
       quad_val[i] = static_cast<double>(pmesh.GetGlobalElementNum(e));
     }
   }
-  // move data to device (if device is available) and set host flag to stale
+  // Move quadrature point data to device (if device is available), set host
+  // data as invalid, and set the device data as valid in the memory bit flags
+  // (see mfem::Memory::FlagMask for bit flag definitions). Now, quadrature
+  // point data must be copied from device before the host can manipulate it.
   quad_fn.ReadWrite();
 
   /////////////////////////////////////////////////////////////////////////////
@@ -406,10 +423,15 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
-  // redecomp does transfers on host, so quad_fn data will be copied to host
-  // and the device flag of redecomp_quad_fn will be stale
+  // Redecomp does transfers on host, so quad_fn quadrature point data will be
+  // copied to host and the device quadrature point data in redecomp_quad_fn
+  // will be marked as invalid.
   elem_transfer.TransferToSerial(quad_fn, redecomp_quad_fn);
-  // copy redecomp data to device and set host flag to stale
+  // Move redecomp quadrature point data to device (if device is available), set
+  // host data as invalid, and set the device data as valid in the memory bit
+  // flags (see mfem::Memory::FlagMask for bit flag definitions). Now,
+  // quadrature point data must be copied from device before the host can
+  // manipulate it.
   redecomp_quad_fn.ReadWrite();
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -427,8 +449,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
-  // redecomp does transfers on host, so redecomp_quad_fn data will be copied
-  // to host and the device flag of quad_fn will be stale
+  // Redecomp does transfers on host, so redecomp_quad_fn quadrature point data
+  // will be copied to host and the device quadrature point data in quad_fn will
+  // be marked as invalid.
   elem_transfer.TransferToParallel(redecomp_quad_fn, quad_fn);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(

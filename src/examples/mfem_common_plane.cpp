@@ -87,7 +87,7 @@ int main( int argc, char** argv )
   // kinematic penalty parameter (only for constant penalty)
   // the kinematic constant penalty is chosen here to match the kinematic element penalty
   double p_kine = (lambda + 2.0 / 3.0 * mu) / (1.0 / std::pow(2.0, ref_levels));
-  // device configuration string (see mfem::Device::Configure())
+  // device configuration string (see mfem::Device::Configure() for valid options)
   std::string device_config = "cpu";
 
   // parse command line options
@@ -126,7 +126,7 @@ int main( int argc, char** argv )
     "Lame parameter mu (shear modulus).")
     ->capture_default_str();
   app.add_option("-d,--device", device_config, 
-    "Device configuration string, see mfem::Device::Configure().")
+    "Device configuration string, see mfem::Device::Configure() for valid options.")
     ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
@@ -285,7 +285,8 @@ int main( int argc, char** argv )
   ));
 
   // This block of code builds a small-deformation elasticity explicit, lumped mass update operator. Lumping is
-  // performed using row summation.
+  // performed using row summation. Elasticity and mass matrix contributions are computed on host (as implemented in
+  // MFEM), but mass inversion is done on device. These are only computed once, then stored on device.
   timer.start();
   mfem::ConstantCoefficient rho_coeff(rho);
   mfem::ConstantCoefficient lambda_coeff(lambda);
@@ -365,22 +366,20 @@ int main( int argc, char** argv )
       visit_datacoll.Save();
     }
 
-    // This updates the parallel adjacency-based mesh redecomposition based on
-    // the latest coordinates. It also constructs new Tribol meshes as
-    // subdomains of the redecomposed mesh.
+    // This updates the parallel adjacency-based mesh redecomposition based on the latest coordinates. It also
+    // constructs new Tribol meshes as subdomains of the redecomposed mesh.
     tribol::updateMfemParallelDecomposition();
-    // This API call computes the contact response given the current mesh
-    // configuration.
+    // This API call computes the contact response given the current mesh configuration.
     tribol::update(cycle, t, dt);
-    // Nodal forces are returned to an MFEM grid function using this API
-    // function. We set the contact nodal forces equal to the external forces in
-    // the explicit mechanics update operator.
+    // Nodal forces are returned to an MFEM grid function using this API function. We set the contact nodal forces equal
+    // to the external forces in the explicit mechanics update operator. Tribol returns the nodal forces on host.
     op.f_ext = 0.0;
     tribol::getMfemResponse(coupling_scheme_id, op.f_ext);
 
     // Update the time in the explicit mechanics update.
     op.SetTime(t);
-    // Take a step in time in the time integration scheme.
+    // Take a step in time in the time integration scheme. This update is done on device (note contact forces are copied
+    // from host to device in this method).
     solver.Step(displacement, velocity, t, dt);
 
     // Update the coordinates based on the new displacement.

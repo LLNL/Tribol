@@ -65,7 +65,7 @@ int main( int argc, char** argv )
   int ref_levels = 0;
   // polynomial order of the finite element discretization
   int order = 1;
-  // device configuration string (see mfem::Device::Configure())
+  // device configuration string (see mfem::Device::Configure() for valid options)
   std::string device_config = "cpu";
 
   axom::CLI::App app { "element_matrix_redecomp" };
@@ -79,7 +79,7 @@ int main( int argc, char** argv )
     "Finite element order (polynomial degree).")
     ->capture_default_str();
   app.add_option("-d,--device", device_config, 
-    "Device configuration string, see mfem::Device::Configure().")
+    "Device configuration string, see mfem::Device::Configure() for valid options.")
     ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 

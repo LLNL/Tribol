@@ -155,6 +155,7 @@ protected:
 
     // set up tribol
     tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
+    coords.ReadWrite();
     int coupling_scheme_id = 0;
     int mesh1_id = 0;
     int mesh2_id = 1;
@@ -173,6 +174,7 @@ protected:
       tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN
     );
 
+    coords.ReadWrite();
     // update tribol (compute contact contribution to force and stiffness)
     tribol::updateMfemParallelDecomposition();
     double dt {1.0};  // time is arbitrary here (no timesteps)
@@ -183,21 +185,49 @@ protected:
     A_blk->SetBlock(0, 0, A.release());
 
     // create block solution and RHS vectors
-    mfem::BlockVector B_blk { A_blk->ColOffsets() };
+    mfem::Vector B_blk { A_blk->Height() };
+    B_blk.UseDevice(true);
     B_blk = 0.0;
-    mfem::BlockVector X_blk { A_blk->RowOffsets() };
+    mfem::Vector X_blk { A_blk->Width() };
+    X_blk.UseDevice(true);
     X_blk = 0.0;
 
     // retrieve gap vector (RHS) from contact
-    mfem::ParGridFunction g;
+    mfem::Vector g;
+    g.UseDevice(true);
     tribol::getMfemGap(0, g);
 
-  // prolongation transpose operator on submesh: maps dofs stored in g to tdofs stored in G
+    // prolongation transpose operator on submesh: maps dofs stored in g to tdofs stored in G
+    int n_disp_dofs = par_fe_space.GetTrueVSize();
+    auto& pressure = tribol::getMfemPressure(coupling_scheme_id);
+    int n_lm_dofs = pressure.ParFESpace()->GetTrueVSize();
     {
-      auto& G = B_blk.GetBlock(1);
-      auto& P_submesh = *tribol::getMfemPressure(0).ParFESpace()->GetProlongationMatrix();
+      mfem::Vector G(B_blk, n_disp_dofs, n_lm_dofs);
+      auto& P_submesh = *pressure.ParFESpace()->GetProlongationMatrix();
       P_submesh.MultTranspose(g, G);
+      B_blk.SyncMemory(G);
     }
+
+    mfem::Array2D<mfem::HypreParMatrix*> hypre_blocks(2, 2);
+    for (int i{0}; i < 2; ++i)
+    {
+      for (int j{0}; j < 2; ++j)
+      {
+        if (A_blk->GetBlock(i, j).Height() != 0 && A_blk->GetBlock(i, j).Width() != 0)
+        {
+          hypre_blocks(i, j) = const_cast<mfem::HypreParMatrix*>(
+            dynamic_cast<const mfem::HypreParMatrix*>(&A_blk->GetBlock(i, j))
+          );
+        }
+        else
+        {
+          hypre_blocks(i, j) = nullptr;
+        }
+      }
+    }
+    auto A_merged = std::unique_ptr<mfem::HypreParMatrix>(
+      mfem::HypreParMatrixFromBlocks(hypre_blocks)
+    );
 
     // solve for X_blk
     mfem::MINRESSolver solver(MPI_COMM_WORLD);
@@ -205,12 +235,14 @@ protected:
     solver.SetAbsTol(1.0e-12);
     solver.SetMaxIter(5000);
     solver.SetPrintLevel(3);
-    solver.SetOperator(*A_blk);
+    solver.SetOperator(*A_merged);
+    mfem::HypreDiagScale prec(*A_merged);
+    solver.SetPreconditioner(prec);
     solver.Mult(B_blk, X_blk);
 
     // move block displacements to grid function
     {
-      auto& U = X_blk.GetBlock(0);
+      mfem::Vector U(X_blk, 0, n_disp_dofs);
       auto& P = *par_fe_space.GetProlongationMatrix();
       P.Mult(U, displacement);
     }
@@ -248,6 +280,10 @@ int main(int argc, char* argv[])
 
   axom::slic::SimpleLogger logger;  // create & initialize test logger, finalized when
                                     // exiting main scope
+
+#ifdef TRIBOL_ENABLE_CUDA
+  mfem::Device device("cuda");
+#endif
 
   result = RUN_ALL_TESTS();
 

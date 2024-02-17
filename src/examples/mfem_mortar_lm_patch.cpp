@@ -84,7 +84,7 @@ int main( int argc, char** argv )
   double lambda = 50.0;
   // Lame parameter mu (shear modulus)
   double mu = 50.0;
-  // device configuration string (see mfem::Device::Configure())
+  // device configuration string (see mfem::Device::Configure() for valid options)
   std::string device_config = "cpu";
 
   // parse command line options
@@ -103,7 +103,7 @@ int main( int argc, char** argv )
     "Lame parameter mu (shear modulus).")
     ->capture_default_str();
   app.add_option("-d,--device", device_config, 
-    "Device configuration string, see mfem::Device::Configure().")
+    "Device configuration string, see mfem::Device::Configure() for valid options.")
     ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
@@ -260,6 +260,9 @@ int main( int argc, char** argv )
   timer.start();
   // First, Tribol is initialized with the spatial dimension and the MPI communicator. These are stored globally.
   tribol::initialize(mesh.SpaceDimension(), MPI_COMM_WORLD);
+  // Copy the coords grid function DOF data to device (if available), set the host pointer flag as invalid, and set the
+  // device pointer to valid.
+  coords.ReadWrite();
   // Next, we create a Tribol coupling scheme between the contact surfaces on the MFEM mesh. To create the coupling
   // scheme requires several steps: 1) building a boundary submesh, 2) building a LOR mesh (if required), 3)
   // re-decomposing the domain to move spatially close surface element pairs on to the same rank, 4) creating Tribol
@@ -298,6 +301,9 @@ int main( int argc, char** argv )
   visit_datacoll.SetTime(time);
   visit_datacoll.SetTimeStep(dt);
 
+  // Copy the coords grid function DOF data to device (if available), set the host pointer flag as invalid, and set the
+  // device pointer to valid.
+  coords.ReadWrite();
   // This creates the parallel adjacency-based mesh redecomposition. It also constructs new Tribol meshes as subsets of
   // the redecomposed mesh.
   tribol::updateMfemParallelDecomposition();
@@ -342,6 +348,7 @@ int main( int argc, char** argv )
    // gap is a dual vector, so (gap tdof vector) = P^T * (gap ldof vector)
   auto& P_submesh = *pressure.ParFESpace()->GetProlongationMatrix();
   P_submesh.MultTranspose(gap, gap_true);
+  B_blk.SyncMemory(gap_true);
 
   // Create a solution vector storing displacement and pressures.
   mfem::Vector X_blk(A_blk->Width());
@@ -358,7 +365,9 @@ int main( int argc, char** argv )
     {
       if (A_blk->GetBlock(i, j).Height() != 0 && A_blk->GetBlock(i, j).Width() != 0)
       {
-        hypre_blocks(i, j) = dynamic_cast<mfem::HypreParMatrix*>(&A_blk->GetBlock(i, j));
+        hypre_blocks(i, j) = const_cast<mfem::HypreParMatrix*>(
+          dynamic_cast<const mfem::HypreParMatrix*>(&A_blk->GetBlock(i, j))
+        );
       }
       else
       {

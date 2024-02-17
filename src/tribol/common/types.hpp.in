@@ -16,6 +16,8 @@
 #cmakedefine TRIBOL_USE_64BIT_INDEXTYPE
 #cmakedefine TRIBOL_DATA_DIR "@TRIBOL_DATA_DIR@"
 #cmakedefine TRIBOL_USE_MPI
+#cmakedefine TRIBOL_ENABLE_CUDA
+#cmakedefine TRIBOL_ENABLE_HIP
 #cmakedefine TRIBOL_USE_UMPIRE
 #cmakedefine BUILD_REDECOMP
 
