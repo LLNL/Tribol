@@ -8,16 +8,13 @@
  *
  * @brief Demonstrates explicit contact using Tribol's common plane algorithm
  *
- * Demonstrates contact in an explicit finite element code through a simple two
- * block impact problem in three dimensions. The first block occupies [0, 1]^3
- * and the second block occupies [0, 1]x[0, 1]x[1.01, 2.01]. An initial velocity
- * is applied to the second block in the negative z-direction and fixed velocity
- * boundary conditions are applied to the first block at z = 0. Contact
- * constraints are enforced using the common plane algorithm.
+ * Demonstrates contact in an explicit finite element code through a simple two block impact problem in three
+ * dimensions. The first block occupies [0, 1]^3 and the second block occupies [0, 1]x[0, 1]x[1.01, 2.01]. An initial
+ * velocity is applied to the second block in the negative z-direction and fixed velocity boundary conditions are
+ * applied to the first block at z = 0. Contact constraints are enforced using the common plane algorithm.
  *
- * The example uses the Tribol MFEM interface, which supports decomposed (MPI)
- * meshes and has experimental support for higher order meshes using low-order
- * refinement of higher-order geometry representations. Comments in the main
+ * The example uses the Tribol MFEM interface, which supports decomposed (MPI) meshes and has experimental support for
+ * higher order meshes using low-order refinement of higher-order geometry representations. Comments in the main
  * function below give details on each step of the example code.
  *
  * Example runs (from repo root directory):
@@ -55,8 +52,7 @@ int main( int argc, char** argv )
 {
   // initialize MPI
   MPI_Init( &argc, &argv );
-  int np, rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &np);
+  int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 #ifdef TRIBOL_USE_UMPIRE
@@ -68,8 +64,7 @@ int main( int argc, char** argv )
   axom::slic::setIsRoot(rank == 0);
 
   // define command line options
-  // number of times to uniformly refine the serial mesh before constructing the
-  // parallel mesh
+  // number of times to uniformly refine the serial mesh before constructing the parallel mesh
   int ref_levels = 2;
   // polynomial order of the finite element discretization
   int order = 1;
@@ -92,6 +87,9 @@ int main( int argc, char** argv )
   // kinematic penalty parameter (only for constant penalty)
   // the kinematic constant penalty is chosen here to match the kinematic element penalty
   double p_kine = (lambda + 2.0 / 3.0 * mu) / (1.0 / std::pow(2.0, ref_levels));
+  // device configuration string (see mfem::Device::Configure() for valid options). This example has been tested on
+  // "cpu" and "cuda"
+  std::string device_config = "cpu";
 
   // parse command line options
   axom::CLI::App app { "mfem_common_plane" };
@@ -104,7 +102,7 @@ int main( int argc, char** argv )
   app.add_option("-v,--initialv", init_velocity, 
     "Initial velocity of the top block.")
     ->capture_default_str();
-  app.add_option("-d,--dt", dt, 
+  app.add_option("-D,--dt", dt, 
     "Timestep size (fixed).")
     ->capture_default_str();
   app.add_option("-e,--endtime", t_end, 
@@ -128,6 +126,9 @@ int main( int argc, char** argv )
   app.add_option("-m,--mu", mu, 
     "Lame parameter mu (shear modulus).")
     ->capture_default_str();
+  app.add_option("-d,--device", device_config, 
+    "Device configuration string, see mfem::Device::Configure() for valid options.")
+    ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
   SLIC_INFO_ROOT("Running mfem_common_plane with the following options:");
@@ -140,58 +141,51 @@ int main( int argc, char** argv )
   SLIC_INFO_ROOT(axom::fmt::format("output interval:   {0}", output_cycles));
   SLIC_INFO_ROOT(axom::fmt::format("density:           {0}", rho));
   SLIC_INFO_ROOT(axom::fmt::format("lambda:            {0}", lambda));
-  SLIC_INFO_ROOT(axom::fmt::format("mu:                {0}\n", mu));
+  SLIC_INFO_ROOT(axom::fmt::format("mu:                {0}", mu));
+  SLIC_INFO_ROOT(axom::fmt::format("device:            {0}\n", device_config));
+
+  // enable devices such as GPUs
+  mfem::Device device(device_config);
+  if (rank == 0)
+  {
+    device.Print();
+  }
 
   // fixed options
   // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
   std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_apart.mesh";
-  // boundary element attributes of contact surface 1, the z = 1 plane of the
-  // first block
+  // boundary element attributes of contact surface 1, the z = 1 plane of the first block
   auto contact_surf_1 = std::set<int>({4});
-  // boundary element attributes of contact surface 2, the z = 1.01 plane of the
-  // second block
+  // boundary element attributes of contact surface 2, the z = 1.01 plane of the second block
   auto contact_surf_2 = std::set<int>({5});
-  // boundary element attributes of fixed surface (z = 0 plane of the first
-  // block, all t)
+  // boundary element attributes of fixed surface (z = 0 plane of the first block, all t)
   auto fixed_attrs = std::set<int>({3});
-  // element attribute corresponding to volume elements where an initial
-  // velocity will be applied in the z-direction
+  // element attribute corresponding to volume elements where an initial velocity will be applied in the z-direction
   auto moving_attrs = std::set<int>({2});
 
   // create an axom timer to give wall times for each step
   axom::utilities::Timer timer { false };
 
-  // This block of code will read the mesh data given in two_hex_apart.mesh,
-  // create an mfem::Mesh, refine the mesh, then create an mfem::ParMesh.
-  // Optionally, the mfem::ParMesh can be refined further on each rank by
-  // setting par_ref_levels >= 1, though this is disabled below.
+  // This block of code will read the mesh data given in two_hex_apart.mesh, create an mfem::Mesh, refine the mesh, then
+  // create an mfem::ParMesh. Optionally, the mfem::ParMesh can be refined further on each rank by setting
+  // par_ref_levels >= 1, though this is disabled below.
   timer.start();
-  std::unique_ptr<mfem::ParMesh> pmesh { nullptr };
+  // read serial mesh
+  mfem::Mesh serial_mesh(mesh_file);
+  // refine serial mesh
+  for (int i{0}; i < ref_levels; ++i)
   {
-    // read serial mesh
-    auto mesh = std::make_unique<mfem::Mesh>(mesh_file.c_str(), 1, 1);
-
-    // refine serial mesh
-    if (ref_levels > 0)
+    serial_mesh.UniformRefinement();
+  }
+  mfem::ParMesh mesh(MPI_COMM_WORLD, serial_mesh);
+  serial_mesh.Clear();
+  // further refinement of parallel mesh
+  {
+    // set this to >= 1 to refine the mesh on each rank further
+    int par_ref_levels = 0;
+    for (int i{0}; i < par_ref_levels; ++i)
     {
-      for (int i{0}; i < ref_levels; ++i)
-      {
-        mesh->UniformRefinement();
-      }
-    }
-    
-    // create parallel mesh from serial
-    pmesh = std::make_unique<mfem::ParMesh>(MPI_COMM_WORLD, *mesh);
-    mesh.reset(nullptr);
-
-    // further refinement of parallel mesh
-    {
-      // set this to >= 1 to refine the mesh on each rank further
-      int par_ref_levels = 0;
-      for (int i{0}; i < par_ref_levels; ++i)
-      {
-        pmesh->UniformRefinement();
-      }
+      mesh.UniformRefinement();
     }
   }
   timer.stop();
@@ -199,48 +193,42 @@ int main( int argc, char** argv )
     "Time to create parallel mesh: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
   
-  // Set up an MFEM data collection for output. We output data in Paraview and
-  // VisIt formats.
-  auto paraview_datacoll = mfem::ParaViewDataCollection("common_plane_pv", pmesh.get());
-  auto visit_datacoll = mfem::VisItDataCollection("common_plane_vi", pmesh.get());
+  // Set up an MFEM data collection for output. We output data in Paraview and VisIt formats.
+  mfem::ParaViewDataCollection paraview_datacoll("common_plane_pv", &mesh);
+  mfem::VisItDataCollection visit_datacoll("common_plane_vi", &mesh);
 
-  // This block of code creates position, displacement, and velocity grid
-  // functions (and associated finite element collections and finite element
-  // spaces) on the mesh. The displacement and velocity grid functions are
-  // initialized to zero. The position grid function is initialized with the
-  // nodal coordinates. These grid functions are registered with the data
-  // collections for output.
+  // This block of code creates position, displacement, and velocity grid functions (and associated finite element
+  // collections and finite element spaces) on the mesh. The displacement and velocity grid functions are initialized to
+  // zero. The position grid function is initialized with the nodal coordinates. These grid functions are registered
+  // with the data collections for output.
   timer.start();
   // Finite element collection (shared between all grid functions).
-  mfem::H1_FECollection fe_coll { order, pmesh->SpaceDimension() };
+  mfem::H1_FECollection fec(order, mesh.SpaceDimension());
   // Finite element space (shared between all grid functions).
-  mfem::ParFiniteElementSpace par_fe_space {
-    pmesh.get(), &fe_coll, pmesh->SpaceDimension() };
+  mfem::ParFiniteElementSpace fespace(&mesh, &fec, mesh.SpaceDimension());
   // Create coordinate grid function
-  mfem::ParGridFunction coords { &par_fe_space };
-  // Set coordinate grid function based on nodal locations. In MFEM, nodal
-  // locations of higher order meshes are stored in a grid function. For linear
-  // MFEM meshes, nodal locations can be stored in a grid function or through
-  // the vertex coordinates. Since we track coordinates in a grid function even
-  // for linear meshes, it makes sense to create a nodes grid function so we
-  // don't have to manually update the vertices.
-  pmesh->SetNodalGridFunction(&coords, false);
-  paraview_datacoll.RegisterField("pos", &coords);
-  visit_datacoll.RegisterField("pos", &coords);
+  mfem::ParGridFunction coords(&fespace);
+  // Set coordinate grid function based on nodal locations. In MFEM, nodal locations of higher order meshes are stored
+  // in a grid function. For linear MFEM meshes, nodal locations can be stored in a grid function or through the vertex
+  // coordinates. Since we track coordinates in a grid function even for linear meshes, it makes sense to create a nodes
+  // grid function so we don't have to manually update the vertices.
+  mesh.SetNodalGridFunction(&coords);
+  paraview_datacoll.RegisterField("position", &coords);
+  visit_datacoll.RegisterField("position", &coords);
 
   // Save reference coordinates
-  mfem::ParGridFunction ref_coords { coords };
+  mfem::ParGridFunction ref_coords(coords);
 
   // Create a grid function for displacement
-  mfem::ParGridFunction displacement { &par_fe_space };
-  paraview_datacoll.RegisterField("disp", &displacement);
-  visit_datacoll.RegisterField("disp", &displacement);
+  mfem::ParGridFunction displacement(&fespace);
+  paraview_datacoll.RegisterField("displacement", &displacement);
+  visit_datacoll.RegisterField("displacement", &displacement);
   displacement = 0.0;
 
   // Create a grid function for velocity
-  mfem::ParGridFunction velocity { &par_fe_space };
-  paraview_datacoll.RegisterField("vel", &velocity);
-  visit_datacoll.RegisterField("vel", &velocity);
+  mfem::ParGridFunction velocity(&fespace);
+  paraview_datacoll.RegisterField("velocity", &velocity);
+  visit_datacoll.RegisterField("velocity", &velocity);
   velocity = 0.0;
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -249,14 +237,11 @@ int main( int argc, char** argv )
 
   timer.start();
   {
-    // This block of code sets initial conditions on the velocity grid function.
-    // We create a piecewise constant vector coefficient with an initial
-    // velocity in the z-component of the second block and zero elsewhere.
-    // First, we create a constant vector coefficient, then create arrays of the
-    // vector coefficient and the element attributes which belong to the second
-    // block to build the piecewise constant vector coefficient. In the
-    // PWVectorCoefficient class, zeros are assigned to missing attribute
-    // numbers. Finally, the velocity coefficient is projected onto the velocity
+    // This block of code sets initial conditions on the velocity grid function. We create a piecewise constant vector
+    // coefficient with an initial velocity in the z-component of the second block and zero elsewhere. First, we create
+    // a constant vector coefficient, then create arrays of the vector coefficient and the element attributes which
+    // belong to the second block to build the piecewise constant vector coefficient. In the PWVectorCoefficient class,
+    // zeros are assigned to missing attribute numbers. Finally, the velocity coefficient is projected onto the velocity
     // grid function.
     mfem::Vector init_velocity_vector({0.0, 0.0, -std::abs(init_velocity)});
     mfem::VectorConstantCoefficient init_velocity_coeff(init_velocity_vector);
@@ -270,31 +255,28 @@ int main( int argc, char** argv )
       init_velocity_coeff_array.Append(&init_velocity_coeff);
     }
     mfem::PWVectorCoefficient initial_v_coeff(
-      pmesh->SpaceDimension(), 
+      mesh.SpaceDimension(), 
       moving_attrs_array,
       init_velocity_coeff_array
     );
     velocity.ProjectCoefficient(initial_v_coeff);
   }
 
-  // This block of code builds a list of degrees of freedom in the x, y, and z
-  // directions in the first block along the z = 0 plane. A homogeneous velocity
-  // boundary condition is applied to these degrees of freedom.
+  // This block of code builds a list of degrees of freedom in the x, y, and z directions in the first block along the z
+  // = 0 plane. A homogeneous velocity boundary condition is applied to these degrees of freedom.
   mfem::Array<int> ess_vdof_list;
   {
-    // First, build an array of "markers" (i.e. booleans) to denote which vdofs
-    // are in the list.
+    // First, build an array of "markers" (i.e. booleans) to denote which vdofs are in the list.
     mfem::Array<int> ess_vdof_marker;
     // Also, convert active boundary attributes into markers.
-    mfem::Array<int> ess_bdr(pmesh->bdr_attributes.Max());
+    mfem::Array<int> ess_bdr(mesh.bdr_attributes.Max());
     ess_bdr = 0;
     for (auto fixed_attr : fixed_attrs)
     {
       ess_bdr[fixed_attr-1] = 1;
     }
-    // Note no component is given as an argument here, so all components (x, y,
-    // and z) are returned.
-    par_fe_space.GetEssentialVDofs(ess_bdr, ess_vdof_marker);
+    // Note no component is given as an argument here, so all components (x, y, and z) are returned.
+    fespace.GetEssentialVDofs(ess_bdr, ess_vdof_marker);
     // Convert the marker array to a list.
     mfem::FiniteElementSpace::MarkerToList(ess_vdof_marker, ess_vdof_list);
   }
@@ -303,43 +285,38 @@ int main( int argc, char** argv )
     "Time to set up boundary conditions: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
 
-  // This block of code builds a small-deformation elasticity explicit, lumped
-  // mass update operator. Lumping is performed using row summation.
+  // This block of code builds a small-deformation elasticity explicit, lumped mass update operator. Lumping is
+  // performed using row summation.
   timer.start();
-  mfem::ConstantCoefficient rho_coeff {rho};
-  mfem::ConstantCoefficient lambda_coeff {lambda};
-  mfem::ConstantCoefficient mu_coeff {mu};
-  mfem_ext::ExplicitMechanics op {par_fe_space, rho_coeff, lambda_coeff, mu_coeff};
+  mfem::ConstantCoefficient rho_coeff(rho);
+  mfem::ConstantCoefficient lambda_coeff(lambda);
+  mfem::ConstantCoefficient mu_coeff(mu);
+  mfem_ext::ExplicitMechanics op(fespace, rho_coeff, lambda_coeff, mu_coeff);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
     "Time to set up elasticity bilinear form: {0:f}ms", timer.elapsedTimeInMilliSec()
   ));
 
-  // This block of code sets up a central difference time integration scheme.
-  // The constructor takes a list of degrees of freedom in the velocity grid
-  // function that will have homogeneous boundary conditions applied to them.
-  mfem_ext::CentralDiffSolver solver { ess_vdof_list };
+  // This block of code sets up a central difference time integration scheme. The constructor takes a list of degrees of
+  // freedom in the velocity grid function that will have homogeneous boundary conditions applied to them.
+  mfem_ext::CentralDiffSolver solver(ess_vdof_list);
   solver.Init(op);
 
   // This block of code does initial setup of Tribol.
   timer.start();
-  // First, Tribol is initialized with the dimension of the space and the MPI
-  // communicator. These are stored globally.
-  tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
-  // Next, we create a Tribol coupling scheme between the contact surfaces on
-  // the MFEM mesh. To create the coupling scheme requires several steps: 1)
-  // building a boundary submesh, 2) building a LOR mesh (if required), 3)
-  // re-decomposing the domain to move spatially close surface element pairs on
-  // to the same rank, and 4) creating a Tribol mesh. Steps 1 and 2 are
-  // performed when this method is called. Steps 3 and 4 are accomplished via a
-  // call to updateMfemParallelDecomposition(), which is typically called before
-  // calling update().
+  // First, Tribol is initialized with the dimension of the space and the MPI communicator. These are stored globally.
+  tribol::initialize(mesh.SpaceDimension(), MPI_COMM_WORLD);
+  // Next, we create a Tribol coupling scheme between the contact surfaces on the MFEM mesh. To create the coupling
+  // scheme requires several steps: 1) building a boundary submesh, 2) building a LOR mesh (if required), 3)
+  // re-decomposing the domain to move spatially close surface element pairs on to the same rank, and 4) creating a
+  // Tribol mesh. Steps 1 and 2 are performed when this method is called. Steps 3 and 4 are accomplished via a call to
+  // updateMfemParallelDecomposition(), which is typically called before calling update().
   int coupling_scheme_id = 0;
   int mesh1_id = 0;
   int mesh2_id = 1;
   tribol::registerMfemCouplingScheme(
     coupling_scheme_id, mesh1_id, mesh2_id,
-    *pmesh, coords, contact_surf_1, contact_surf_2,
+    mesh, coords, contact_surf_1, contact_surf_2,
     tribol::SURFACE_TO_SURFACE, 
     tribol::NO_CASE, 
     tribol::COMMON_PLANE, 
@@ -347,9 +324,8 @@ int main( int argc, char** argv )
     tribol::PENALTY,
     tribol::BINNING_GRID
   );
-  // This API call adds a velocity field to the coupling scheme. This is used
-  // for computing the maximum common plane timestep and, if activated, gap rate
-  // penalty.
+  // This API call adds a velocity field to the coupling scheme. This is used for computing the maximum common plane
+  // timestep and, if activated, gap rate penalty.
   tribol::registerMfemVelocity(coupling_scheme_id, velocity);
   // The type of penalty enforcement and the penalty parameters are set here (i.e. rate vs. kinematic and the method of
   // setting the penalty value).
@@ -361,7 +337,7 @@ int main( int argc, char** argv )
   {
     // Any MFEM scalar coefficient can be used to set material moduli, but this example uses a constant bulk modulus for
     // each boundary attribute of the volume mesh.
-    mfem::Vector bulk_moduli_by_bdry_attrib(pmesh->bdr_attributes.Max());
+    mfem::Vector bulk_moduli_by_bdry_attrib(mesh.bdr_attributes.Max());
     bulk_moduli_by_bdry_attrib = lambda + 2.0 / 3.0 * mu;
     mfem::PWConstCoefficient mat_coeff(bulk_moduli_by_bdry_attrib);
     tribol::setMfemKinematicElementPenalty(coupling_scheme_id, mat_coeff);
@@ -390,22 +366,20 @@ int main( int argc, char** argv )
       visit_datacoll.Save();
     }
 
-    // This updates the parallel adjacency-based mesh redecomposition based on
-    // the latest coordinates. It also constructs new Tribol meshes as
-    // subdomains of the redecomposed mesh.
+    // This updates the parallel adjacency-based mesh redecomposition based on the latest coordinates. It also
+    // constructs new Tribol meshes as subdomains of the redecomposed mesh.
     tribol::updateMfemParallelDecomposition();
-    // This API call computes the contact response given the current mesh
-    // configuration.
+    // This API call computes the contact response given the current mesh configuration.
     tribol::update(cycle, t, dt);
-    // Nodal forces are returned to an MFEM grid function using this API
-    // function. We set the contact nodal forces equal to the external forces in
-    // the explicit mechanics update operator.
+    // Nodal forces are returned to an MFEM grid function using this API function. We set the contact nodal forces equal
+    // to the external forces in the explicit mechanics update operator. Tribol returns the nodal forces on host.
     op.f_ext = 0.0;
     tribol::getMfemResponse(coupling_scheme_id, op.f_ext);
 
     // Update the time in the explicit mechanics update.
     op.SetTime(t);
-    // Take a step in time in the time integration scheme.
+    // Take a step in time in the time integration scheme. This update is done on device (note contact forces are copied
+    // from host to device in this method).
     solver.Step(displacement, velocity, t, dt);
 
     // Update the coordinates based on the new displacement.

@@ -100,6 +100,7 @@ if (DEFINED UMPIRE_DIR)
   set(TRIBOL_USE_UMPIRE TRUE)
 else()
   message(STATUS "Umpire support is OFF")
+  set(TRIBOL_USE_UMPIRE FALSE)
 endif()
 
 #------------------------------------------------------------------------------

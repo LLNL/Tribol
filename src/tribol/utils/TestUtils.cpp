@@ -16,6 +16,8 @@
 // AXOM includes
 #include "axom/slic.hpp" 
 
+#include "mfem/general/forall.hpp"
+
 
 namespace tribol
 {
@@ -2013,7 +2015,12 @@ void CentralDiffSolver::Step(mfem::Vector& x, mfem::Vector& dxdt, double& t, dou
    dxdt.Add(0.5*dt, accel);
 
    // set homogeneous velocity BC at t + dt/2
-   SetHomogeneousBC(dxdt);
+   auto bc_vdofs_ptr = bc_vdofs.Read();
+   auto dxdt_ptr = dxdt.Write();
+   mfem::forall(bc_vdofs.Size(), [=] MFEM_HOST_DEVICE (int i)
+   {
+      dxdt_ptr[bc_vdofs_ptr[i]] = 0.0;
+   });
 
    // set displacement at t + dt
    x.Add(dt, dxdt);
@@ -2028,14 +2035,6 @@ void CentralDiffSolver::Step(mfem::Vector& x, mfem::Vector& dxdt, double& t, dou
    dxdt.Add(0.5*dt, accel);
 }
 
-void CentralDiffSolver::SetHomogeneousBC(mfem::Vector& dxdt) const
-{
-   for (auto bc_vdof : bc_vdofs)
-   {
-      dxdt[bc_vdof] = 0.0;
-   }
-}
-
 ExplicitMechanics::ExplicitMechanics(
    mfem::ParFiniteElementSpace& fespace, 
    mfem::Coefficient& rho,
@@ -2044,25 +2043,11 @@ ExplicitMechanics::ExplicitMechanics(
 )
 :  f_ext { &fespace },
    elasticity { &fespace },
-   inv_lumped_mass { fespace.GetVSize() }
+   inv_lumped_mass { ComputeInvMass(fespace, rho) }
 {
-   // create inverse lumped mass matrix; store as a vector
-   mfem::ParBilinearForm mass { &fespace };
-   mass.AddDomainIntegrator(new mfem::VectorMassIntegrator(rho));
-   mass.Assemble();
-   mfem::Vector ones {fespace.GetVSize()};
-   ones = 1.0;
-   mass.SpMat().Mult(ones, inv_lumped_mass);
-   mfem::Vector mass_true(fespace.GetTrueVSize());
-   const Operator& P = *fespace.GetProlongationMatrix();
-   P.MultTranspose(inv_lumped_mass, mass_true);
-   for (int i {0}; i < mass_true.Size(); ++i)
-   {
-      mass_true[i] = 1.0 / mass_true[i];
-   }
-   P.Mult(mass_true, inv_lumped_mass);
-
    // create elasticity stiffness matrix
+   // Note: not implemented for ElasticityIntegrator
+   // elasticity.SetAssemblyLevel(mfem::AssemblyLevel::PARTIAL);
    elasticity.AddDomainIntegrator(new mfem::ElasticityIntegrator(lambda, mu));
    elasticity.Assemble();
 }
@@ -2073,10 +2058,12 @@ void ExplicitMechanics::Mult(
    mfem::Vector& a
 ) const
 {
-   mfem::Vector f { u.Size() };
+   mfem::Vector f(u.Size());
+   f.UseDevice(true);
    f = 0.0;
 
-   mfem::Vector f_int { f.Size() };
+   mfem::Vector f_int(f.Size());
+   f_int.UseDevice(true);
    elasticity.Mult(u, f_int);
    f.Add(-1.0, f_int);
 
@@ -2085,14 +2072,43 @@ void ExplicitMechanics::Mult(
    // sum forces over ranks
    auto& fespace = *elasticity.ParFESpace();
    const Operator& P = *fespace.GetProlongationMatrix();
-   mfem::Vector f_true {fespace.GetTrueVSize()};
+   mfem::Vector f_true(fespace.GetTrueVSize());
+   f_true.UseDevice(true);
    P.MultTranspose(f, f_true);
    P.Mult(f_true, f);
 
-   for (int i {0}; i < inv_lumped_mass.Size(); ++i)
+   auto a_ptr = a.Write();
+   auto inv_lumped_mass_ptr = inv_lumped_mass.Read();
+   auto f_ptr = f.Read();
+   mfem::forall(inv_lumped_mass.Size(), [=] MFEM_HOST_DEVICE (int i)
    {
-      a[i] = inv_lumped_mass[i] * f[i];
+      a_ptr[i] = inv_lumped_mass_ptr[i] * f_ptr[i];
+   });
+}
+
+mfem::Vector ExplicitMechanics::ComputeInvMass(mfem::ParFiniteElementSpace& fespace, mfem::Coefficient& rho)
+{
+   mfem::Vector inv_lumped_mass(fespace.GetVSize());
+   inv_lumped_mass.UseDevice(true);
+   mfem::ParLinearForm mass(&fespace);
+   mfem::VectorArrayCoefficient rho_vector(fespace.GetVDim());
+   for (int d{0}; d < fespace.GetVDim(); ++d)
+   {
+      rho_vector.Set(d, &rho, false);
    }
+   mass.AddDomainIntegrator(new mfem::VectorDomainLFIntegrator(rho_vector));
+   mass.Assemble();
+   mfem::Vector mass_true(fespace.GetTrueVSize());
+   mass_true.UseDevice(true);
+   const Operator& P = *fespace.GetProlongationMatrix();
+   P.MultTranspose(mass, mass_true);
+   auto mass_true_ptr = mass_true.ReadWrite();
+   mfem::forall(mass_true.Size(), [=] MFEM_HOST_DEVICE (int i)
+   {
+      mass_true_ptr[i] = 1.0 / mass_true_ptr[i];
+   });
+   P.Mult(mass_true, inv_lumped_mass);
+   return inv_lumped_mass;
 }
 
 } // end of namespace "mfem_ext"

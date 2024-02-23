@@ -127,6 +127,7 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   // transfer data from redecomp mesh
   mfem::ParGridFunction dst_gridfn(dst_fespace_ptr, *dst_ptr);
   redecomp_xfer_.TransferToParallel(redecomp_src, dst_gridfn);
+  dst_ptr->SyncMemory(dst_gridfn);
 
   // using redecomp, shared dof values are set equal (i.e. a ParGridFunction), but we want the sum of shared dof values
   // to equal the actual dof value when transferring dual fields (i.e. force and gap) back to the parallel mesh
@@ -134,8 +135,10 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
   
   // P_I is the row index vector on the MFEM prolongation matrix. If there are no column entries for the row, then the
   // DOF is owned by another rank.
-  auto P_I = dst_fespace_ptr->Dof_TrueDof_Matrix()->GetDiagMemoryI();
+  auto dst_data = dst_ptr->HostWrite();
+  auto P_I = mfem::Read(dst_fespace_ptr->Dof_TrueDof_Matrix()->GetDiagMemoryI(), dst_fespace_ptr->GetVSize() + 1, false);
   HYPRE_Int tdof_ct {0};
+  // TODO: Convert to mfem::forall() once tribol is on GPU (dst_data is always on host now so not needed yet)
   for (int i{0}; i < dst_fespace_ptr->GetVSize(); ++i)
   {
     if (P_I[i+1] != tdof_ct)
@@ -144,7 +147,7 @@ void SubmeshRedecompTransfer::RedecompToSubmesh(
     }
     else
     {
-      (*dst_ptr)[i] = 0.0;
+      dst_data[i] = 0.0;
     }
   }
   // if using LOR, transfer data from LOR mesh to submesh
@@ -212,6 +215,7 @@ void ParentRedecompTransfer::RedecompToParent(
   // submesh transfer requires a grid function.  create one using parent_dst's data
   mfem::ParGridFunction parent_gridfn(&parent_fes_, parent_dst);
   submesh_redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, parent_gridfn);
+  parent_dst.SyncMemory(parent_gridfn);
 }
 
 ParentField::ParentField(
@@ -236,9 +240,11 @@ std::vector<const real*> ParentField::GetRedecompFieldPtrs() const
   auto data_ptrs = std::vector<const real*>(3, nullptr);
   if (GetRedecompGridFn().FESpace()->GetNDofs() > 0)
   {
+    // Tribol only computes on host
+    auto data = GetRedecompGridFn().HostRead();
     for (size_t i{}; i < static_cast<size_t>(GetRedecompGridFn().FESpace()->GetVDim()); ++i)
     {
-      data_ptrs[i] = &GetRedecompGridFn()(GetRedecompGridFn().FESpace()->DofToVDof(0, i));
+      data_ptrs[i] = &data[GetRedecompGridFn().FESpace()->DofToVDof(0, i)];
     }
   }
   return data_ptrs;
@@ -249,9 +255,11 @@ std::vector<real*> ParentField::GetRedecompFieldPtrs(mfem::GridFunction& redecom
   auto data_ptrs = std::vector<real*>(3, nullptr);
   if (redecomp_gridfn.FESpace()->GetNDofs() > 0)
   {
+    // Tribol only computes on host
+    auto data = redecomp_gridfn.HostReadWrite();
     for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
     {
-      data_ptrs[i] = &redecomp_gridfn(redecomp_gridfn.FESpace()->DofToVDof(0, i));
+      data_ptrs[i] = &data[redecomp_gridfn.FESpace()->DofToVDof(0, i)];
     }
   }
   return data_ptrs;
@@ -282,6 +290,8 @@ ParentField::UpdateData::UpdateData(
 : parent_redecomp_xfer_ { parent_redecomp_xfer },
   redecomp_gridfn_ { &parent_redecomp_xfer.GetRedecompFESpace() }
 {
+  // keep on host since tribol does computations there
+  redecomp_gridfn_.UseDevice(false);
   redecomp_gridfn_ = 0.0;
   parent_redecomp_xfer_.ParentToRedecomp(parent_gridfn, redecomp_gridfn_);
 }
@@ -308,9 +318,11 @@ std::vector<const real*> PressureField::GetRedecompFieldPtrs() const
   auto data_ptrs = std::vector<const real*>(3, nullptr);
   if (GetRedecompGridFn().FESpace()->GetNDofs() > 0)
   {
+    // Tribol only computes on host
+    auto data = GetRedecompGridFn().HostRead();
     for (size_t i{}; i < static_cast<size_t>(GetRedecompGridFn().FESpace()->GetVDim()); ++i)
     {
-      data_ptrs[i] = &GetRedecompGridFn()(GetRedecompGridFn().FESpace()->DofToVDof(0, i));
+      data_ptrs[i] = &data[GetRedecompGridFn().FESpace()->DofToVDof(0, i)];
     }
   }
   return data_ptrs;
@@ -321,9 +333,11 @@ std::vector<real*> PressureField::GetRedecompFieldPtrs(mfem::GridFunction& redec
   auto data_ptrs = std::vector<real*>(3, nullptr);
   if (redecomp_gridfn.FESpace()->GetNDofs() > 0)
   {
+    // Tribol only computes on host
+    auto data = redecomp_gridfn.HostReadWrite();
     for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
     {
-      data_ptrs[i] = &redecomp_gridfn(redecomp_gridfn.FESpace()->DofToVDof(0, i));
+      data_ptrs[i] = &data[redecomp_gridfn.FESpace()->DofToVDof(0, i)];
     }
   }
   return data_ptrs;
@@ -354,6 +368,8 @@ PressureField::UpdateData::UpdateData(
 : submesh_redecomp_xfer_ { submesh_redecomp_xfer },
   redecomp_gridfn_ { &submesh_redecomp_xfer.GetRedecompFESpace() }
 {
+  // keep on host since tribol does computations there
+  redecomp_gridfn_.UseDevice(false);
   redecomp_gridfn_ = 0.0;
   submesh_redecomp_xfer_.SubmeshToRedecomp(submesh_gridfn, redecomp_gridfn_);
 }
@@ -399,6 +415,9 @@ MfemMeshData::MfemMeshData(
   {
     SetLORFactor(current_coords.FESpace()->FEColl()->GetOrder());
   }
+
+  // keep response grid function on host since tribol does computations there
+  redecomp_response_.UseDevice(false);
 }
 
 void MfemMeshData::SetParentCoords(const mfem::ParGridFunction& current_coords)
@@ -447,30 +466,36 @@ void MfemMeshData::UpdateMfemMeshData()
       new mfem::QuadratureSpace(&GetRedecompMesh(), 0)
     );
     redecomp_elem_thickness_->SetOwnsSpace(true);
+    // keep redecomp thickness on host since tribol does computations there
+    redecomp_elem_thickness_->UseDevice(false);
     *redecomp_elem_thickness_ = 0.0;
     redecomp_xfer.TransferToSerial(*elem_thickness_, *redecomp_elem_thickness_);
     // set element thickness on tribol mesh
     tribol_elem_thickness_1_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
+    mfem::Vector quad_val;
+    quad_val.UseDevice(true);
     for (auto redecomp_e : GetElemMap1())
     {
-      mfem::Vector quad_val;
       redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
-      tribol_elem_thickness_1_->push_back(quad_val[0]);
+      auto quad_val_ptr = quad_val.HostRead();
+      tribol_elem_thickness_1_->push_back(quad_val_ptr[0]);
     }
     tribol_elem_thickness_2_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
-      mfem::Vector quad_val;
       redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
-      tribol_elem_thickness_2_->push_back(quad_val[0]);
+      auto quad_val_ptr = quad_val.HostRead();
+      tribol_elem_thickness_2_->push_back(quad_val_ptr[0]);
     }
     // set material modulus on redecomp mesh
     redecomp_material_modulus_ = std::make_unique<mfem::QuadratureFunction>(
       new mfem::QuadratureSpace(&GetRedecompMesh(), 0)
     );
     redecomp_material_modulus_->SetOwnsSpace(true);
+    // keep redecomp material modulus on host since tribol does computations there
+    redecomp_material_modulus_->UseDevice(false);
     *redecomp_material_modulus_ = 0.0;
     redecomp_xfer.TransferToSerial(*material_modulus_, *redecomp_material_modulus_);
     // set material modulus on tribol mesh
@@ -478,17 +503,17 @@ void MfemMeshData::UpdateMfemMeshData()
       0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
     for (auto redecomp_e : GetElemMap1())
     {
-      mfem::Vector quad_val;
       redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
-      tribol_material_modulus_1_->push_back(quad_val[0]);
+      auto quad_val_ptr = quad_val.HostRead();
+      tribol_material_modulus_1_->push_back(quad_val_ptr[0]);
     }
     tribol_material_modulus_2_ = std::make_unique<axom::Array<double>>(
       0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
-      mfem::Vector quad_val;
       redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
-      tribol_material_modulus_2_->push_back(quad_val[0]);
+      auto quad_val_ptr = quad_val.HostRead();
+      tribol_material_modulus_2_->push_back(quad_val_ptr[0]);
     }
   }
 }
@@ -1156,11 +1181,12 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
     J_true->GetComm(), J_true->GetGlobalNumRows(), J_true->GetRowStarts(), &inactive_sm
   );
   // Have the mfem::HypreParMatrix manage the data pointers
-  rows.GetMemory().SetHostPtrOwner(false);
-  mortar_tdofs.GetMemory().SetHostPtrOwner(false);
-  ones.GetMemory().SetHostPtrOwner(false);
-  inactive_sm.SetDataOwner(false);
-  inactive_hpm->SetOwnerFlags(3, 3, 1);
+  rows.GetMemory().ClearOwnerFlags();
+  mortar_tdofs.GetMemory().ClearOwnerFlags();
+  ones.GetMemory().ClearOwnerFlags();
+  inactive_sm.GetMemoryI().ClearOwnerFlags();
+  inactive_sm.GetMemoryJ().ClearOwnerFlags();
+  inactive_sm.GetMemoryData().ClearOwnerFlags();
 
   block_J->SetBlock(0, 1, J_true->Transpose());
   block_J->SetBlock(1, 0, J_true.release());

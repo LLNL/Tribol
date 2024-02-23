@@ -7,7 +7,14 @@
 
 #include "mfem.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 #include "tribol/config.hpp"
+#include "tribol/types.hpp"
+
 #include "redecomp/redecomp.hpp"
 
 namespace redecomp {
@@ -85,7 +92,9 @@ TEST_P(TransferTest, element_gridfn_transfer)
 {
   // test grid function transfer
   auto transfer_map = RedecompTransfer();
+  orig_->ReadWrite();
   transfer_map.TransferToSerial(*orig_, *xfer_);
+  xfer_->ReadWrite();
   transfer_map.TransferToParallel(*xfer_, *final_);
   EXPECT_LT(Calcl2Error(*orig_, *final_), 1.0e-13);
 
@@ -96,7 +105,10 @@ TEST_P(TransferTest, element_quadfn_transfer)
 {
   // test quadrature function transfer
   auto transfer_map = RedecompTransfer();
+  orig_quad_fn_->ReadWrite();
+  xfer_quad_fn_->Read();
   transfer_map.TransferToSerial(*orig_quad_fn_, *xfer_quad_fn_);
+  xfer_quad_fn_->ReadWrite();
   transfer_map.TransferToParallel(*xfer_quad_fn_, *final_quad_fn_);
   EXPECT_LT(Calcl2Error(*orig_quad_fn_, *final_quad_fn_), 1.0e-13);
 
@@ -106,7 +118,9 @@ TEST_P(TransferTest, element_quadfn_transfer)
 TEST_P(TransferTest, node_gridfn_transfer)
 {
   auto transfer_map = RedecompTransfer(*par_vector_space_, *redecomp_vector_space_);
+  orig_->ReadWrite();
   transfer_map.TransferToSerial(*orig_, *xfer_);
+  xfer_->ReadWrite();
   transfer_map.TransferToParallel(*xfer_, *final_);
   EXPECT_LT(Calcl2Error(*orig_, *final_), 1.0e-13);
 
@@ -133,8 +147,16 @@ int main(int argc, char* argv[])
 
   ::testing::InitGoogleTest(&argc, argv);
 
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
+#endif
+
   axom::slic::SimpleLogger logger;  // create & initialize test logger, finalized when
                                     // exiting main scope
+
+#ifdef TRIBOL_ENABLE_CUDA
+  mfem::Device device("cuda");
+#endif
 
   result = RUN_ALL_TESTS();
 

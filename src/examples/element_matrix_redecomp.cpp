@@ -37,10 +37,12 @@
 
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
+
 #include "mfem.hpp"
 
 #include "redecomp/redecomp.hpp"
 #include "redecomp/utils/ArrayUtility.hpp"
+
 #include "tribol/config.hpp"
 
 int main( int argc, char** argv )
@@ -63,6 +65,8 @@ int main( int argc, char** argv )
   int ref_levels = 0;
   // polynomial order of the finite element discretization
   int order = 1;
+  // device configuration string (see mfem::Device::Configure() for valid options)
+  std::string device_config = "cpu";
 
   axom::CLI::App app { "element_matrix_redecomp" };
   app.add_option("-m,--mesh", mesh_file, "Mesh file to use.")
@@ -74,12 +78,23 @@ int main( int argc, char** argv )
   app.add_option("-o,--order", order, 
     "Finite element order (polynomial degree).")
     ->capture_default_str();
+  app.add_option("-d,--device", device_config, 
+    "Device configuration string, see mfem::Device::Configure() for valid options.")
+    ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
   SLIC_INFO_ROOT("Running element_matrix_redecomp with the following options:");
   SLIC_INFO_ROOT(axom::fmt::format("mesh:   {0}", mesh_file));
   SLIC_INFO_ROOT(axom::fmt::format("refine: {0}", ref_levels));
-  SLIC_INFO_ROOT(axom::fmt::format("order:  {0}\n", order));
+  SLIC_INFO_ROOT(axom::fmt::format("order:  {0}", order));
+  SLIC_INFO_ROOT(axom::fmt::format("device: {0}\n", device_config));
+
+  // enable devices such as GPUs
+  mfem::Device device(device_config);
+  if (rank == 0)
+  {
+    device.Print();
+  }
 
   SLIC_INFO_ROOT("Creating mfem::ParMesh...");
   // read serial mesh

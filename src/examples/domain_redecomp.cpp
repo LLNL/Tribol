@@ -56,9 +56,11 @@
 
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
+
 #include "mfem.hpp"
 
 #include "redecomp/redecomp.hpp"
+
 #include "tribol/config.hpp"
 
 template <int NDIMS>
@@ -96,6 +98,9 @@ int main( int argc, char** argv )
   // very coarse meshes, though the decomposition can still fail with the simple
   // checks implemented.
   double max_out_of_balance = 0.05;
+  // device configuration string (see mfem::Device::Configure() for valid
+  // options). This example has been tested on "cpu" and "cuda"
+  std::string device_config = "cpu";
 
   axom::CLI::App app { "domain_redecomp" };
   app.add_option("-m,--mesh", mesh_file, "Mesh file to use.")
@@ -110,13 +115,24 @@ int main( int argc, char** argv )
   app.add_option("-t,--tol", max_out_of_balance,
     "Max proportion of out-of-balance elements in RCB decomposition.")
     ->capture_default_str();
+  app.add_option("-d,--device", device_config, 
+    "Device configuration string, see mfem::Device::Configure() for valid options.")
+    ->capture_default_str();
   CLI11_PARSE(app, argc, argv);
 
   SLIC_INFO_ROOT("Running domain_redecomp with the following options:");
   SLIC_INFO_ROOT(axom::fmt::format("mesh:   {0}", mesh_file));
   SLIC_INFO_ROOT(axom::fmt::format("refine: {0}", ref_levels));
   SLIC_INFO_ROOT(axom::fmt::format("order:  {0}", order));
-  SLIC_INFO_ROOT(axom::fmt::format("tol:    {0}\n", max_out_of_balance));
+  SLIC_INFO_ROOT(axom::fmt::format("tol:    {0}", max_out_of_balance));
+  SLIC_INFO_ROOT(axom::fmt::format("device: {0}\n", device_config));
+
+  // enable devices such as GPUs
+  mfem::Device device(device_config);
+  if (rank == 0)
+  {
+    device.Print();
+  }
 
   // read serial mesh
   auto mesh = std::make_unique<mfem::Mesh>(mesh_file.c_str(), 1, 1);
@@ -269,6 +285,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // Redecomp does transfers on host, so if par_x_ref_elem DOF data is on
+  // device, it will be copied to host and the device DOF data of
+  // redecomp_x_ref_elem will be marked as invalid.
   elem_transfer.TransferToSerial(par_x_ref_elem, redecomp_x_ref_elem);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -297,6 +316,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // Redecomp does transfers on host, so if par_x_ref_node DOF data is on
+  // device, it will be copied to host and the device DOF data of
+  // redecomp_x_ref_node will be marked as invalid.
   node_transfer.TransferToSerial(par_x_ref_node, redecomp_x_ref_node);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -314,6 +336,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // Redecomp does transfers on host, so if redecomp_x_ref_elem DOF data is on
+  // device, it will be copied to host and the device DOF data of par_x_ref_elem
+  // will be marked as invalid.
   elem_transfer.TransferToParallel(redecomp_x_ref_elem, par_x_ref_elem);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -327,6 +352,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // Redecomp does transfers on host, so if redecomp_x_ref_node DOF data is on
+  // device, it will be copied to host and the device DOF data of par_x_ref_node
+  // will be marked as invalid.
   node_transfer.TransferToParallel(redecomp_x_ref_node, par_x_ref_node);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -374,6 +402,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // Redecomp does transfers on host, so if quad_fn quadrature point data is on
+  // device, it will be copied to host and the device quadrature point data in
+  // redecomp_quad_fn will be marked as invalid.
   elem_transfer.TransferToSerial(quad_fn, redecomp_quad_fn);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(
@@ -391,6 +422,9 @@ void RedecompExample(mfem::ParMesh& pmesh, int order, double max_out_of_balance)
   /////////////////////////////////////////////////////////////////////////////
 
   timer.start();
+  // Redecomp does transfers on host, so if redecomp_quad_fn quadrature point
+  // data is on device, it will be copied to host and the device quadrature
+  // point data in quad_fn will be marked as invalid.
   elem_transfer.TransferToParallel(redecomp_quad_fn, quad_fn);
   timer.stop();
   SLIC_INFO_ROOT(axom::fmt::format(

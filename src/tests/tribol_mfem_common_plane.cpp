@@ -131,36 +131,23 @@ protected:
     v = 0.0;
 
     // set initial velocity
+    mfem::Vector init_velocity_vector({0.0, 0.0, -std::abs(initial_v)});
+    mfem::VectorConstantCoefficient init_velocity_coeff(init_velocity_vector);
+    mfem::Array<int> moving_attrs_array;
+    mfem::Array<mfem::VectorCoefficient*> init_velocity_coeff_array;
+    moving_attrs_array.Reserve(moving_attrs.size());
+    init_velocity_coeff_array.Reserve(moving_attrs.size());
+    for (auto moving_attr : moving_attrs)
     {
-      mfem::Array<int> attrib_marker(pmesh->attributes.Max());
-      attrib_marker = 0;
-      for (auto moving_attr : moving_attrs)
-      {
-        attrib_marker[moving_attr-1] = 1;
-      }
-      mfem::Array<int> vdof_marker(par_fe_space.GetVSize());
-      vdof_marker = 0;
-      for (int e{0}; e < pmesh->GetNE(); ++e)
-      {
-        if (attrib_marker[pmesh->GetElement(e)->GetAttribute()-1])
-        {
-          mfem::Array<int> vdofs;
-          par_fe_space.GetElementDofs(e, vdofs);
-          par_fe_space.DofsToVDofs(2, vdofs);
-          for (auto vdof : vdofs)
-          {
-            vdof_marker[vdof] = 1;
-          }
-        }
-      }
-      for (int i{0}; i < vdof_marker.Size(); ++i)
-      {
-        if (vdof_marker[i])
-        {
-          v[i] = -std::abs(initial_v);
-        }
-      }
+      moving_attrs_array.Append(moving_attr);
+      init_velocity_coeff_array.Append(&init_velocity_coeff);
     }
+    mfem::PWVectorCoefficient initial_v_coeff(
+      pmesh->SpaceDimension(), 
+      moving_attrs_array,
+      init_velocity_coeff_array
+    );
+    v.ProjectCoefficient(initial_v_coeff);
 
     // recover dirichlet bc tdof list
     mfem::Array<int> ess_vdof_list;
@@ -231,6 +218,7 @@ protected:
       coords += displacement;
       if (order == 1)
       {
+        coords.HostRead();
         pmesh->SetVertices(coords);
       }
 
@@ -269,6 +257,10 @@ int main(int argc, char* argv[])
 
   axom::slic::SimpleLogger logger;  // create & initialize test logger, finalized when
                                     // exiting main scope
+
+#ifdef TRIBOL_ENABLE_CUDA
+  mfem::Device device("cuda");
+#endif
 
   result = RUN_ALL_TESTS();
 
