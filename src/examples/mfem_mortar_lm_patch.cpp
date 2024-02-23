@@ -84,7 +84,8 @@ int main( int argc, char** argv )
   double lambda = 50.0;
   // Lame parameter mu (shear modulus)
   double mu = 50.0;
-  // device configuration string (see mfem::Device::Configure() for valid options)
+  // device configuration string (see mfem::Device::Configure() for valid options). This example has been tested on
+  // "cpu" and "cuda".
   std::string device_config = "cpu";
 
   // parse command line options
@@ -260,9 +261,6 @@ int main( int argc, char** argv )
   timer.start();
   // First, Tribol is initialized with the spatial dimension and the MPI communicator. These are stored globally.
   tribol::initialize(mesh.SpaceDimension(), MPI_COMM_WORLD);
-  // Copy the coords grid function DOF data to device (if available), set the host pointer flag as invalid, and set the
-  // device pointer to valid.
-  coords.ReadWrite();
   // Next, we create a Tribol coupling scheme between the contact surfaces on the MFEM mesh. To create the coupling
   // scheme requires several steps: 1) building a boundary submesh, 2) building a LOR mesh (if required), 3)
   // re-decomposing the domain to move spatially close surface element pairs on to the same rank, 4) creating Tribol
@@ -301,9 +299,6 @@ int main( int argc, char** argv )
   visit_datacoll.SetTime(time);
   visit_datacoll.SetTimeStep(dt);
 
-  // Copy the coords grid function DOF data to device (if available), set the host pointer flag as invalid, and set the
-  // device pointer to valid.
-  coords.ReadWrite();
   // This creates the parallel adjacency-based mesh redecomposition. It also constructs new Tribol meshes as subsets of
   // the redecomposed mesh.
   tribol::updateMfemParallelDecomposition();

@@ -87,7 +87,8 @@ int main( int argc, char** argv )
   // kinematic penalty parameter (only for constant penalty)
   // the kinematic constant penalty is chosen here to match the kinematic element penalty
   double p_kine = (lambda + 2.0 / 3.0 * mu) / (1.0 / std::pow(2.0, ref_levels));
-  // device configuration string (see mfem::Device::Configure() for valid options)
+  // device configuration string (see mfem::Device::Configure() for valid options). This example has been tested on
+  // "cpu" and "cuda"
   std::string device_config = "cpu";
 
   // parse command line options
@@ -285,8 +286,7 @@ int main( int argc, char** argv )
   ));
 
   // This block of code builds a small-deformation elasticity explicit, lumped mass update operator. Lumping is
-  // performed using row summation. Elasticity and mass matrix contributions are computed on host (as implemented in
-  // MFEM), but mass inversion is done on device. These are only computed once, then stored on device.
+  // performed using row summation.
   timer.start();
   mfem::ConstantCoefficient rho_coeff(rho);
   mfem::ConstantCoefficient lambda_coeff(lambda);
