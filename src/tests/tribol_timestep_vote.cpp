@@ -133,6 +133,7 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
    parameters.penalty_ratio = true;
    parameters.const_penalty = 0.75;
    parameters.dt = dt;
+   parameters.enable_timestep_vote = true;
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
@@ -216,6 +217,7 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
    parameters.penalty_ratio = true;
    parameters.const_penalty = 0.75;
    parameters.dt = dt;
+   parameters.enable_timestep_vote = true;
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
@@ -302,6 +304,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
    parameters.penalty_ratio = true;
    parameters.const_penalty = 0.75;
    parameters.dt = dt;
+   parameters.enable_timestep_vote = true;
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
@@ -389,6 +392,7 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
    parameters.penalty_ratio = true;
    parameters.const_penalty = 0.75;
    parameters.dt = dt;
+   parameters.enable_timestep_vote = true;
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
@@ -476,6 +480,7 @@ TEST_F( CommonPlaneTest, separation_velocity_small_gap )
    parameters.penalty_ratio = true;
    parameters.const_penalty = 0.75;
    parameters.dt = dt;
+   parameters.enable_timestep_vote = true;
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
@@ -562,6 +567,7 @@ TEST_F( CommonPlaneTest, large_velocity_separation )
    parameters.penalty_ratio = true;
    parameters.const_penalty = 0.75;
    parameters.dt = dt;
+   parameters.enable_timestep_vote = true;
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
@@ -649,6 +655,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
    parameters.penalty_ratio = true;
    parameters.const_penalty = 0.75;
    parameters.dt = dt;
+   parameters.enable_timestep_vote = true;
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
