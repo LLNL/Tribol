@@ -1217,7 +1217,11 @@ void CouplingScheme::computeTimeStep(real &dt)
       case COMMON_PLANE : 
          if ( m_enforcementMethod == PENALTY )
          {
-            this->computeCommonPlaneTimeStep( dt ); 
+            parameters_t & parameters = parameters_t::getInstance();
+            if (parameters.enable_timestep_vote)
+            {
+               this->computeCommonPlaneTimeStep( dt ); 
+            }
          }
          break;
       default :
