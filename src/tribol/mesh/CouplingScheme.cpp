@@ -1232,7 +1232,6 @@ void CouplingScheme::computeTimeStep(real &dt)
 //------------------------------------------------------------------------------
 void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 {
-   SLIC_DEBUG("Inside computeCommonPlaneTimeStep");
    // note: the timestep vote is based on a velocity projection 
    // and does not account for the spring stiffness in a CFL-like 
    // timestep constraint. A constant penalty everywhere is not necessarily 
@@ -1515,14 +1514,16 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
       dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
 
-      SLIC_DEBUG("dt1: " << dt1);
-      SLIC_DEBUG("dt2: " << dt2);
-      SLIC_ERROR_IF( dt1<0, "Common plane timestep vote for velocity projection of face 1 is negative.");
-      SLIC_ERROR_IF( dt2<0, "Common plane timestep vote for velocity projection of face 2 is negative.");
+      // TODO SRW figure out under what conditions a negative dt vote would be returned.
+      SLIC_DEBUG_IF( dt1<0, "Common plane timestep vote for velocity projection of face 1 is negative.");
+      SLIC_DEBUG_IF( dt2<0, "Common plane timestep vote for velocity projection of face 2 is negative.");
 
       // update dt_temp2
-      dt_temp2 = axom::utilities::min(dt_temp2, 
-                 axom::utilities::min(dt1, dt2));
+      if (dt1 > 0. && dt2 > 0.)
+      {
+         dt_temp2 = axom::utilities::min(dt_temp2, 
+                    axom::utilities::min(dt1, dt2));
+      }
 
       // end check 2
 
