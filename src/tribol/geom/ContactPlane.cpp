@@ -31,6 +31,7 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
                                   ContactCase const TRIBOL_UNUSED_PARAM(cCase),
                                   bool& isInteracting )
 {
+   SLIC_DEBUG("Inside CheckInterfacePair.");
    isInteracting = false;
 
    // note: will likely need the ContactCase for specialized 
@@ -62,6 +63,8 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
 
            ContactPlane3D cpTemp( pair, areaFrac, interpenOverlap, intermediatePlane, 3 );
            FaceGeomError face_err = CheckFacePair( pair, full, cpTemp );
+
+           SLIC_DEBUG("face_err: " << face_err );
 
            if (face_err != NO_FACE_GEOM_ERROR)
            {
