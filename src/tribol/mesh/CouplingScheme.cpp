@@ -1451,11 +1451,20 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
          dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
 
-         SLIC_ERROR_IF( dt1<0., "Common plane timestep vote for gap-check of face 1 is negative.");
-         SLIC_ERROR_IF( dt2<0., "Common plane timestep vote for gap-check of face 2 is negative.");
+         SLIC_DEBUG_IF( dt1<0., "Common plane timestep vote for gap-check of face 1 is negative.");
+         SLIC_DEBUG_IF( dt2<0., "Common plane timestep vote for gap-check of face 2 is negative.");
 
-         dt_temp1 = axom::utilities::min(dt_temp1, 
-                    axom::utilities::min(dt1, dt2));
+         // update dt_temp1 only for positive dt1 and/or dt2
+         if (dt1 > 0 )
+         {
+            dt_temp1 = axom::utilities::min(dt_temp1, 
+                       axom::utilities::min(dt1, 1.e6));
+         }
+         if (dt2 > 0)
+         {
+            dt_temp1 = axom::utilities::min(dt_temp1, 
+                       axom::utilities::min(1.e6, dt2));
+         }
 
       } // end case 1
 
@@ -1518,11 +1527,16 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       SLIC_DEBUG_IF( dt1<0, "Common plane timestep vote for velocity projection of face 1 is negative.");
       SLIC_DEBUG_IF( dt2<0, "Common plane timestep vote for velocity projection of face 2 is negative.");
 
-      // update dt_temp2
-      if (dt1 > 0. && dt2 > 0.)
+      // update dt_temp2 only for positive dt1 and/or dt2
+      if (dt1 > 0 )
       {
-         dt_temp2 = axom::utilities::min(dt_temp2, 
-                    axom::utilities::min(dt1, dt2));
+         dt_temp2 = axom::utilities::min(dt_temp2,
+                    axom::utilities::min(dt1, 1.e6));
+      }
+      if (dt2 > 0)
+      {
+         dt_temp2 = axom::utilities::min(dt_temp2,
+                    axom::utilities::min(1.e6, dt2));
       }
 
       // end check 2
