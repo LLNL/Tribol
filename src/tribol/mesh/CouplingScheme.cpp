@@ -915,7 +915,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      FaceGeomError interact_err = CheckInterfacePair( pair, m_contactMethod, 
                                                       m_contactCase, interact );
 
-     std::cout << "FaceGeomError: " << static_cast<int>(interact_err) << std::endl;
+     //std::cout << "FaceGeomError: " << static_cast<int>(interact_err) << std::endl;
 
      // TODO refine how these errors are handled. Here we skip over face-pairs with errors. That is, 
      // they are not registered for contact, but we don't error out.
@@ -1482,9 +1482,9 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
          dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
 
-         std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << delta1 << ", " << v1_dot_n1 << std::endl;
-         std::cout << "dt2_check1, delta2 and v2_dot_n2: " << dt2_check1 << ", " << delta2 << ", " << v2_dot_n2 << std::endl;
-         std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
+         //std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << delta1 << ", " << v1_dot_n1 << std::endl;
+         //std::cout << "dt2_check1, delta2 and v2_dot_n2: " << dt2_check1 << ", " << delta2 << ", " << v2_dot_n2 << std::endl;
+         //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
          // update dt_temp1 only for positive dt1 and/or dt2
          if (dt1 > 0.)
@@ -1582,9 +1582,9 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
          dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
 
-         std::cout << "dt1_vel_check, (proj_delta_n_1+max_delta1), v1_dot_n1: " << dt1_vel_check << ", " << proj_delta_n_1+max_delta1 << ", " << v1_dot_n1 << std::endl;
-         std::cout << "dt2_vel_check, (proj_delta_n_2+max_delta2), v2_dot_n2: " << dt2_vel_check << ", " << proj_delta_n_2+max_delta2 << ", " << v2_dot_n2 << std::endl;
-         std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
+         //std::cout << "dt1_vel_check, (proj_delta_n_1+max_delta1), v1_dot_n1: " << dt1_vel_check << ", " << proj_delta_n_1+max_delta1 << ", " << v1_dot_n1 << std::endl;
+         //std::cout << "dt2_vel_check, (proj_delta_n_2+max_delta2), v2_dot_n2: " << dt2_vel_check << ", " << proj_delta_n_2+max_delta2 << ", " << v2_dot_n2 << std::endl;
+         //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
          // update dt_temp2 only for positive dt1 and/or dt2
          if (dt1 > 0.)
