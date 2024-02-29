@@ -508,6 +508,7 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    int numVerts = 4;
    int numCells = 2;
    int lengthNodalData = numCells * numVerts;
+   real element_thickness = 1.;
    real x[lengthNodalData];
    real y[lengthNodalData];
    real z[lengthNodalData];
@@ -539,10 +540,11 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    y[6] = 1.; 
    y[7] = 1.; 
 
-   z[4] = -.05; 
-   z[5] = -.05; 
-   z[6] = -.05; 
-   z[7] = -.05; 
+   // amount of interpenetration in the z-direction
+   z[4] = -0.300001*element_thickness; 
+   z[5] = -0.300001*element_thickness; 
+   z[6] = -0.300001*element_thickness; 
+   z[7] = -0.300001*element_thickness; 
 
    // initialize tribol
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
@@ -567,31 +569,30 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    real *vx;
    real *vy;
    real *vz; 
-   real vel0 = -600.;
+   real vel0 = -1.e-15;
    tribol::allocRealArray( &vx, lengthNodalData, 0. );
    tribol::allocRealArray( &vy, lengthNodalData, 0. );
    tribol::allocRealArray( &vz, lengthNodalData, vel0 );
 
    // set first face to small velocity
-   real vel1 = 0.;
-   vz[0] = vel1;
-   vz[1] = vel1;
-   vz[2] = vel1;
-   vz[3] = vel1;
+   //real vel1 = -1.;
+   //vz[0] = vel1;
+   //vz[1] = vel1;
+   //vz[2] = vel1;
+   //vz[3] = vel1;
 
    // set second face to impacting velocity
-   //real vel2 = -600.;
-   //vz[4] = vel2;
-   //vz[5] = vel2;
-   //vz[6] = vel2;
-   //vz[7] = vel2;
+   real vel2 = 1.e-15;
+   vz[4] = vel2;
+   vz[5] = vel2;
+   vz[6] = vel2;
+   vz[7] = vel2;
 
    tribol::registerNodalVelocities( meshId, vx, vy, vz );
 
    real bulk_mod = 1.;
-   real elem_thick = 1.;
    tribol::registerRealElementField( meshId, tribol::BULK_MODULUS, &bulk_mod );
-   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &elem_thick );
+   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thickness );
 
    int csIndex = 0;
    tribol::registerCouplingScheme( csIndex, meshId, meshId,

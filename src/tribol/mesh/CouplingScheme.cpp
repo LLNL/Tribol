@@ -1362,7 +1362,18 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       v1_dot_n1 = dotProd( &vel_f1[0], &fn1[0], dim );
       v2_dot_n2 = dotProd( &vel_f2[0], &fn2[0], dim );
 
-      // add tiny amount to velocity-normal projections to avoid
+      //std::cout << "face 1 normal: " << fn1[0] << ", " << fn1[1] << ", " << fn1[2] << std::endl;
+      //std::cout << "face 2 normal: " << fn2[0] << ", " << fn2[1] << ", " << fn2[2] << std::endl;
+      //std::cout << " " << std::endl;
+      //std::cout << "face 1 vel: " << vel_f1[0] << ", " << vel_f1[1] << ", " << vel_f1[2] << std::endl;
+      //std::cout << "face 2 vel: " << vel_f2[0] << ", " << vel_f2[1] << ", " << vel_f2[2] << std::endl;
+      //std::cout << " " << std::endl;
+      //std::cout << "First v1_dot_n1 calc: " << v1_dot_n1 << std::endl;
+      //std::cout << "First v2_dot_n2 calc: " << v2_dot_n2 << std::endl;
+      //std::cout << "First v1_dot_n: " << v1_dot_n << std::endl;
+      //std::cout << "First v2_dot_n: " << v2_dot_n << std::endl;
+
+      // add tiny amount to velocity-cp_normal projections to avoid
       // division by zero. Note that if these projections are close to 
       // zero, there may stationary interactions or tangential motion. 
       // In this case, any timestep estimate will be very large, and 
@@ -1372,8 +1383,17 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       real tiny2 = (v2_dot_n >= 0.) ? tiny : -1.*tiny;
       v1_dot_n  += tiny1;
       v2_dot_n  += tiny2;
+      // add tiny amount to velocity-face_normal projections to avoid
+      // division by zero
+      tiny1 = (v1_dot_n1 >= 0.) ? tiny : -1.*tiny;
+      tiny2 = (v2_dot_n2 >= 0.) ? tiny : -1.*tiny;
       v1_dot_n1 += tiny1;
       v2_dot_n2 += tiny2;
+
+      //std::cout << "Second v1_dot_n1 calc: " << v1_dot_n1 << std::endl;
+      //std::cout << "Second v2_dot_n2 calc: " << v2_dot_n2 << std::endl;
+      //std::cout << "Second v1_dot_n: " << v1_dot_n << std::endl;
+      //std::cout << "Second v2_dot_n: " << v2_dot_n << std::endl;
 
       // get volume element thicknesses associated with each 
       // face in this pair and find minimum
@@ -1412,10 +1432,15 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
       // Trigger for check 1 and 2:
       // check if there is further interpen or separation based on the 
-      // velocity projection in the direction of the common-plane normal. 
+      // velocity projection in the direction of the common-plane normal,
+      // which is in the direction of face-2 normal.
       // The two cases are:
       // if v1*n < 0 there is interpen
       // if v2*n > 0 there is interpen 
+      //
+      // Note: we compare strictly to 0. here since a 'tiny' value was 
+      // appropriately added to the velocity projections, which is akin 
+      // to some tolerancing effect
       dt1_vel_check = (v1_dot_n < 0.) ? true : false; 
       dt2_vel_check = (v2_dot_n > 0.) ? true : false; 
 
@@ -1440,19 +1465,26 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          }
 
          // if velocity projection indicates further interpenetration, and the gaps
-         // don't exceed max allowable, then compute time step estimates
+         // EXCEED max allowable, then compute time step estimates to reduce overlap
          dt1_check1 = (dt1_vel_check) ? (delta1 < 0.) : false;
          dt2_check1 = (dt2_vel_check) ? (delta2 < 0.) : false;
 
          // compute dt for face 1 and 2 based on the velocity projection in the 
          // direction of that face's outward unit normal
-         // Note, this calculation takes a fraction 
-         // of the computed dt to reduce the amount of face-displacement in a given 
-         // cycle.
+         // Note, this calculation takes a fraction of the computed dt to reduce 
+         // the amount of face-displacement in a given cycle.
+         //
+         // if dt[i]_check[i] is true, then delta[i] is < 0. per check above. Furthermore,
+         // if the velocity projection indicates further interpenetration, the velocity 
+         // projected onto that face's outward unit normal is always positive. Thus,
+         // dt[i] should never be negative unless the face-normal is flipped based on 
+         // vertex ordering.
          dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
          dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
 
-         //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
+         std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << delta1 << ", " << v1_dot_n1 << std::endl;
+         std::cout << "dt2_check1, delta2 and v2_dot_n2: " << dt2_check1 << ", " << delta2 << ", " << v2_dot_n2 << std::endl;
+         std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
          // update dt_temp1 only for positive dt1 and/or dt2
          if (dt1 > 0.)
@@ -1486,8 +1518,14 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       real tiny_vel_tol = 1.e-6; // make larger than tiny_vel_proj
       real tiny_vel_diff1 = std::abs(v1_dot_n - tiny_vel_proj);
       real tiny_vel_diff2 = std::abs(v2_dot_n - tiny_vel_proj);
-      if (tiny_vel_diff1 < tiny_vel_tol && tiny_vel_diff2 < tiny_vel_tol)
+      if (tiny_vel_diff1 < tiny_vel_tol)
       {
+         dt1_vel_check = false;
+         tiny_vel = true;
+      }
+      if (tiny_vel_diff2 < tiny_vel_tol)
+      {
+         dt2_vel_check = false;
          tiny_vel = true;
       }
 
@@ -1538,10 +1576,15 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          // check the sign of the delta-projections to determine if interpen 
          // is occuring. If so, check against maximum allowable interpen. 
          // In both cases if delta_n_i (i=1,2) < 0 there is interpen
+         //
+         // Note, this check is predicated on (proj_delta_n_1 + max_delta1 > 0). If this is not true,
+         // the dt[i]_vel_check would be false; 
          dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
          dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
 
-         //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
+         std::cout << "dt1_vel_check, (proj_delta_n_1+max_delta1), v1_dot_n1: " << dt1_vel_check << ", " << proj_delta_n_1+max_delta1 << ", " << v1_dot_n1 << std::endl;
+         std::cout << "dt2_vel_check, (proj_delta_n_2+max_delta2), v2_dot_n2: " << dt2_vel_check << ", " << proj_delta_n_2+max_delta2 << ", " << v2_dot_n2 << std::endl;
+         std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
          // update dt_temp2 only for positive dt1 and/or dt2
          if (dt1 > 0.)
