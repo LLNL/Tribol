@@ -1425,15 +1425,6 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       // contact plane, which is in the direction of the overlap normal
       if (cpMgr.m_inContact[cpID]) // gap < gap_tol
       {
-         // check for nearly zero velocity and a gap that's too large.
-         real tiny_vel_proj = 1.e-8;
-         real tiny_vel_tol = 1.e-6; // make larger than tiny_vel_proj
-         real tiny_vel_diff1 = std::abs(v1_dot_n - tiny_vel_proj);
-         real tiny_vel_diff2 = std::abs(v2_dot_n - tiny_vel_proj);
-         if (tiny_vel_diff1 < tiny_vel_tol || tiny_vel_diff2 < tiny_vel_tol)
-         {
-            tiny_vel_msg = true;
-         }
 
          // compute the difference between the 'face-gaps' and the max allowable 
          // interpen as a function of element thickness. 
@@ -1453,6 +1444,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
          SLIC_DEBUG_IF( dt1<0., "Common plane timestep vote for gap-check of face 1 is negative.");
          SLIC_DEBUG_IF( dt2<0., "Common plane timestep vote for gap-check of face 2 is negative.");
+
+         std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
          // update dt_temp1 only for positive dt1 and/or dt2
          if (dt1 > 0 )
@@ -1475,83 +1468,99 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       //          common-plane method                          //
       ///////////////////////////////////////////////////////////
 
-      // compute delta between velocity projection of face-projected 
-      // overlap centroid and the OTHER face's face-projected overlap 
-      // centroid
-      real proj_delta_x1 = cpMgr.m_cXf1[cpID] + dt * vel_f1[0] - cpMgr.m_cXf2[cpID];
-      real proj_delta_y1 = cpMgr.m_cYf1[cpID] + dt * vel_f1[1] - cpMgr.m_cYf2[cpID];
-      real proj_delta_z1 = 0.;
-
-      real proj_delta_x2 = cpMgr.m_cXf2[cpID] + dt * vel_f2[0] - cpMgr.m_cXf1[cpID]; 
-      real proj_delta_y2 = cpMgr.m_cYf2[cpID] + dt * vel_f2[1] - cpMgr.m_cYf1[cpID];
-      real proj_delta_z2 = 0.;
-
-      // compute the dot product between each face's delta and the OTHER 
-      // face's outward unit normal. This is the magnitude of interpenetration 
-      // of one face's projected overlap-centroid in the 'thickness-direction' 
-      // of the other face (with whom in may be in contact currently, or in 
-      // a velocity projected sense).
-      real proj_delta_n_1 = proj_delta_x1 * fn2[0] + proj_delta_y1 * fn2[1];
-      real proj_delta_n_2 = proj_delta_x2 * fn1[0] + proj_delta_y2 * fn1[1];
-
-      if (dim == 3)
+      // check for nearly zero velocity and a gap that's too large. Check for 
+      // both faces. Even if one face has a small velocity and the other some 
+      // finite velocity, we can compute a timestep for that larger velocity
+      real tiny_vel_proj = 1.e-8;
+      real tiny_vel_tol = 1.e-6; // make larger than tiny_vel_proj
+      real tiny_vel_diff1 = std::abs(v1_dot_n - tiny_vel_proj);
+      real tiny_vel_diff2 = std::abs(v2_dot_n - tiny_vel_proj);
+      if (tiny_vel_diff1 < tiny_vel_tol && tiny_vel_diff2 < tiny_vel_tol)
       {
-         proj_delta_z1 = cpMgr.m_cZf1[cpID] + dt * vel_f1[2] - cpMgr.m_cZf2[cpID];
-         proj_delta_z2 = cpMgr.m_cZf2[cpID] + dt * vel_f2[2] - cpMgr.m_cZf1[cpID];
-
-         proj_delta_n_1 += proj_delta_z1 * fn2[2];
-         proj_delta_n_2 += proj_delta_z2 * fn1[2];
+         tiny_vel_msg = true;
       }
 
-      // If delta_n_i < 0, (i=1,2) there is interpen. Check this interpen 
-      // against the maximum allowable to determine if a velocity projection 
-      // timestep estimate is still required.
-      if (dt1_vel_check)
+      if (!tiny_vel_msg)
       {
-         dt1_vel_check = (proj_delta_n_1 < 0.) ? ((std::abs(proj_delta_n_1) > max_delta1) ? true : false) : false;
-      }
-      
-      if (dt2_vel_check)
+         // compute delta between velocity projection of face-projected 
+         // overlap centroid and the OTHER face's face-projected overlap 
+         // centroid
+         real proj_delta_x1 = cpMgr.m_cXf1[cpID] + dt * vel_f1[0] - cpMgr.m_cXf2[cpID];
+         real proj_delta_y1 = cpMgr.m_cYf1[cpID] + dt * vel_f1[1] - cpMgr.m_cYf2[cpID];
+         real proj_delta_z1 = 0.;
+
+         real proj_delta_x2 = cpMgr.m_cXf2[cpID] + dt * vel_f2[0] - cpMgr.m_cXf1[cpID]; 
+         real proj_delta_y2 = cpMgr.m_cYf2[cpID] + dt * vel_f2[1] - cpMgr.m_cYf1[cpID];
+         real proj_delta_z2 = 0.;
+
+         // compute the dot product between each face's delta and the OTHER 
+         // face's outward unit normal. This is the magnitude of interpenetration 
+         // of one face's projected overlap-centroid in the 'thickness-direction' 
+         // of the other face (with whom in may be in contact currently, or in 
+         // a velocity projected sense).
+         real proj_delta_n_1 = proj_delta_x1 * fn2[0] + proj_delta_y1 * fn2[1];
+         real proj_delta_n_2 = proj_delta_x2 * fn1[0] + proj_delta_y2 * fn1[1];
+
+         if (dim == 3)
+         {
+            proj_delta_z1 = cpMgr.m_cZf1[cpID] + dt * vel_f1[2] - cpMgr.m_cZf2[cpID];
+            proj_delta_z2 = cpMgr.m_cZf2[cpID] + dt * vel_f2[2] - cpMgr.m_cZf1[cpID];
+
+            proj_delta_n_1 += proj_delta_z1 * fn2[2];
+            proj_delta_n_2 += proj_delta_z2 * fn1[2];
+         }
+
+         // If delta_n_i < 0, (i=1,2) there is interpen. Check this interpen 
+         // against the maximum allowable to determine if a velocity projection 
+         // timestep estimate is still required.
+         if (dt1_vel_check)
+         {
+            dt1_vel_check = (proj_delta_n_1 < 0.) ? ((std::abs(proj_delta_n_1) > max_delta1) ? true : false) : false;
+         }
+         
+         if (dt2_vel_check)
+         {
+            dt2_vel_check = (proj_delta_n_2 < 0.) ? ((std::abs(proj_delta_n_2) > max_delta2) ? true : false) : false;
+         }
+
+         // if the 'case 1' check was not triggered for face 1 or 2, then
+         // check the sign of the delta-projections to determine if interpen 
+         // is occuring. If so, check against maximum allowable interpen. 
+         // In both cases if delta_n_i (i=1,2) < 0 there is interpen
+         dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
+         dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
+
+         // TODO SRW figure out under what conditions a negative dt vote would be returned.
+         SLIC_DEBUG_IF( dt1<0, "Common plane timestep vote for velocity projection of face 1 is negative.");
+         SLIC_DEBUG_IF( dt2<0, "Common plane timestep vote for velocity projection of face 2 is negative.");
+
+         std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
+
+         // update dt_temp2 only for positive dt1 and/or dt2
+         if (dt1 > 0 )
+         {
+            dt_temp2 = axom::utilities::min(dt_temp2,
+                       axom::utilities::min(dt1, 1.e6));
+         }
+         if (dt2 > 0)
+         {
+            dt_temp2 = axom::utilities::min(dt_temp2,
+                       axom::utilities::min(1.e6, dt2));
+         }
+
+      } // end check 2
+
+      // Can we output this message on root? SRW
+      if (tiny_vel_msg)
       {
-         dt2_vel_check = (proj_delta_n_2 < 0.) ? ((std::abs(proj_delta_n_2) > max_delta2) ? true : false) : false;
+         SLIC_INFO( "tribol::computeCommonPlaneTimeStep(): initial mesh overlap is too large " <<
+                    "with very small velocity. Cannot provide timestep vote. "                 <<
+                    "Reduce overlap in initial configuration, otherwise penalty "              <<
+                    "instability may result." );
       }
-
-      // if the 'case 1' check was not triggered for face 1 or 2, then
-      // check the sign of the delta-projections to determine if interpen 
-      // is occuring. If so, check against maximum allowable interpen. 
-      // In both cases if delta_n_i (i=1,2) < 0 there is interpen
-      dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
-      dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
-
-      // TODO SRW figure out under what conditions a negative dt vote would be returned.
-      SLIC_DEBUG_IF( dt1<0, "Common plane timestep vote for velocity projection of face 1 is negative.");
-      SLIC_DEBUG_IF( dt2<0, "Common plane timestep vote for velocity projection of face 2 is negative.");
-
-      // update dt_temp2 only for positive dt1 and/or dt2
-      if (dt1 > 0 )
-      {
-         dt_temp2 = axom::utilities::min(dt_temp2,
-                    axom::utilities::min(dt1, 1.e6));
-      }
-      if (dt2 > 0)
-      {
-         dt_temp2 = axom::utilities::min(dt_temp2,
-                    axom::utilities::min(1.e6, dt2));
-      }
-
-      // end check 2
 
       ++cpID;
    } // end loop over interface pairs
-
-   // Can we output this message on root? SRW
-   if (tiny_vel_msg)
-   {
-      SLIC_INFO( "tribol::computeCommonPlaneTimeStep(): initial mesh overlap is too large " <<
-                 "with very small velocity. Cannot provide timestep vote. "                 <<
-                 "Reduce overlap in initial configuration, otherwise penalty "              <<
-                 "instability may result." );
-   }
 
    dt = axom::utilities::min(dt_temp1, dt_temp2);
 }
