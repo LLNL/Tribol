@@ -539,10 +539,10 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    y[6] = 1.; 
    y[7] = 1.; 
 
-   z[4] = -.5; 
-   z[5] = -.5; 
-   z[6] = -.5; 
-   z[7] = -.5; 
+   z[4] = -.05; 
+   z[5] = -.05; 
+   z[6] = -.05; 
+   z[7] = -.05; 
 
    // initialize tribol
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
@@ -567,16 +567,24 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    real *vx;
    real *vy;
    real *vz; 
+   real vel0 = -600.;
    tribol::allocRealArray( &vx, lengthNodalData, 0. );
    tribol::allocRealArray( &vy, lengthNodalData, 0. );
-   tribol::allocRealArray( &vz, lengthNodalData, 0. );
+   tribol::allocRealArray( &vz, lengthNodalData, vel0 );
+
+   // set first face to small velocity
+   real vel1 = 0.;
+   vz[0] = vel1;
+   vz[1] = vel1;
+   vz[2] = vel1;
+   vz[3] = vel1;
 
    // set second face to impacting velocity
-   real vel = -600.;
-   vz[4] = vel;
-   vz[5] = vel;
-   vz[6] = vel;
-   vz[7] = vel;
+   //real vel2 = -600.;
+   //vz[4] = vel2;
+   //vz[5] = vel2;
+   //vz[6] = vel2;
+   //vz[7] = vel2;
 
    tribol::registerNodalVelocities( meshId, vx, vy, vz );
 

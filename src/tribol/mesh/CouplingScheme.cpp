@@ -1277,7 +1277,10 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    real dt_temp1 = dt;
    real dt_temp2 = dt;
    int cpID = 0; 
-   bool tiny_vel_msg = false;
+   bool max_gap_msg = false;
+   bool tiny_vel = false;
+   bool neg_dt_gap_msg = false;
+   bool neg_dt_vel_proj_msg = false;
    for (IndexType kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = m_interfacePairs->getInterfacePair(kp);
@@ -1431,6 +1434,13 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          real delta1 = max_delta1 - gap_f1_n1; // >0 not exceeding max allowable
          real delta2 = max_delta2 + gap_f2_n2; // >0 not exceeding max allowable
 
+         if (delta1 < 0 || delta2 < 0)
+         {
+            max_gap_msg = true;
+         }
+
+         // if velocity projection indicates further interpenetration, and the gaps
+         // don't exceed max allowable, then compute time step estimates
          dt1_check1 = (dt1_vel_check) ? (delta1 < 0.) : false;
          dt2_check1 = (dt2_vel_check) ? (delta2 < 0.) : false;
 
@@ -1442,21 +1452,23 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
          dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
 
-         SLIC_DEBUG_IF( dt1<0., "Common plane timestep vote for gap-check of face 1 is negative.");
-         SLIC_DEBUG_IF( dt2<0., "Common plane timestep vote for gap-check of face 2 is negative.");
-
-         std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
+         //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
          // update dt_temp1 only for positive dt1 and/or dt2
-         if (dt1 > 0 )
+         if (dt1 > 0.)
          {
             dt_temp1 = axom::utilities::min(dt_temp1, 
                        axom::utilities::min(dt1, 1.e6));
          }
-         if (dt2 > 0)
+         if (dt2 > 0.)
          {
             dt_temp1 = axom::utilities::min(dt_temp1, 
                        axom::utilities::min(1.e6, dt2));
+         }
+
+         if (dt1 < 0. || dt2 < 0.)
+         {
+            neg_dt_gap_msg = true;
          }
 
       } // end case 1
@@ -1468,19 +1480,18 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       //          common-plane method                          //
       ///////////////////////////////////////////////////////////
 
-      // check for nearly zero velocity and a gap that's too large. Check for 
-      // both faces. Even if one face has a small velocity and the other some 
-      // finite velocity, we can compute a timestep for that larger velocity
+      // check for case where both faces have nearly zero velocity. If so,
+      // don't compute a velocity projection dt estimate
       real tiny_vel_proj = 1.e-8;
       real tiny_vel_tol = 1.e-6; // make larger than tiny_vel_proj
       real tiny_vel_diff1 = std::abs(v1_dot_n - tiny_vel_proj);
       real tiny_vel_diff2 = std::abs(v2_dot_n - tiny_vel_proj);
       if (tiny_vel_diff1 < tiny_vel_tol && tiny_vel_diff2 < tiny_vel_tol)
       {
-         tiny_vel_msg = true;
+         tiny_vel = true;
       }
 
-      if (!tiny_vel_msg)
+      if (!tiny_vel)
       {
          // compute delta between velocity projection of face-projected 
          // overlap centroid and the OTHER face's face-projected overlap 
@@ -1510,8 +1521,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
             proj_delta_n_2 += proj_delta_z2 * fn1[2];
          }
 
-         // If delta_n_i < 0, (i=1,2) there is interpen. Check this interpen 
-         // against the maximum allowable to determine if a velocity projection 
+         // If proj_delta_n_i < 0, (i=1,2) there is interpen from the velocity projection. 
+         // Check this interpen against the maximum allowable to determine if a velocity projection 
          // timestep estimate is still required.
          if (dt1_vel_check)
          {
@@ -1530,37 +1541,43 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
          dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
 
-         // TODO SRW figure out under what conditions a negative dt vote would be returned.
-         SLIC_DEBUG_IF( dt1<0, "Common plane timestep vote for velocity projection of face 1 is negative.");
-         SLIC_DEBUG_IF( dt2<0, "Common plane timestep vote for velocity projection of face 2 is negative.");
-
-         std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
+         //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
          // update dt_temp2 only for positive dt1 and/or dt2
-         if (dt1 > 0 )
+         if (dt1 > 0.)
          {
             dt_temp2 = axom::utilities::min(dt_temp2,
                        axom::utilities::min(dt1, 1.e6));
          }
-         if (dt2 > 0)
+         if (dt2 > 0.)
          {
             dt_temp2 = axom::utilities::min(dt_temp2,
                        axom::utilities::min(1.e6, dt2));
          }
+         if (dt1 < 0. || dt2 < 0.)
+         {
+            neg_dt_vel_proj_msg = true;
+         }
 
       } // end check 2
 
-      // Can we output this message on root? SRW
-      if (tiny_vel_msg)
-      {
-         SLIC_INFO( "tribol::computeCommonPlaneTimeStep(): initial mesh overlap is too large " <<
-                    "with very small velocity. Cannot provide timestep vote. "                 <<
-                    "Reduce overlap in initial configuration, otherwise penalty "              <<
-                    "instability may result." );
-      }
-
       ++cpID;
    } // end loop over interface pairs
+
+   // print general messages once
+   // Can we output this message on root? SRW
+   SLIC_DEBUG_IF(max_gap_msg, "tribol::computeCommonPlaneTimeStep(): there are "  <<
+                 "locations where mesh overlap may be too large. "                <<
+                 "Cannot provide timestep vote. Reduce timestep and/or increase " << 
+                 "penalty.");
+
+   SLIC_DEBUG_IF(neg_dt_gap_msg, "tribol::computeCommonPlaneTimeStep():  "        <<
+                 "one or more face-pairs have a negative timestep vote based on " << 
+                 "maximum gap check." );
+
+   SLIC_DEBUG_IF(neg_dt_vel_proj_msg, "tribol::computeCommonPlaneTimeStep(): "    <<
+                 "one or more face-pairs have a negative timestep vote based on " << 
+                 "velocity projection calculation." );                 
 
    dt = axom::utilities::min(dt_temp1, dt_temp2);
 }
