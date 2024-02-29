@@ -552,7 +552,7 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
 
    // register contact mesh
    int meshId = 0;
-   tribol::IndexType conn[lengthNodalData] = {0,1,2,3,4,5,6,7};
+   tribol::IndexType conn[8] = {0,1,2,3,4,5,6,7}; // hard coded for a two face problem
    tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
