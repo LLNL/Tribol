@@ -147,6 +147,9 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
 
 TEST_F( CommonPlaneTest, numerically_zero_velocity_small_gap )
 {
+   // this test is meant to test tolerancing in the timestep calculation 
+   // when numerically zero velocities are present. This test caught a 
+   // negative dt estimate bug that has since been fixed.
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 

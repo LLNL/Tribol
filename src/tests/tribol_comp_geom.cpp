@@ -504,6 +504,8 @@ TEST_F( CompGeomTest, 2d_projections_2 )
 
 TEST_F( CompGeomTest, codirectional_normals_3d )
 {
+   // this test ensures that faces in a given face-pair with nearly co-directional 
+   // normals is not actually included as a contact candidate
    int dim = 3;
    int numVerts = 4;
    int numCells = 2;
