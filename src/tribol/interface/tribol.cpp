@@ -69,6 +69,15 @@ void set_defaults()
    parameters.projection_ratio             = 1.E-10;
    parameters.contact_pen_frac             = 3.e-1;  // allows for up to 30% penetration used in timestep vote calculation
    parameters.enable_timestep_vote         = false;  // true if host-code wants to receive tribol timestep vote
+   
+   
+   // Interpenetration check for auto-contact. If true, this will check a full-overlap 
+   // face-pair configuration in the computational geoemtry routines to preclude 
+   // auto-contact of opposite sides of thin structures/plates. If the full-overlap 
+   // interpenetration kinematic gap is more than the smallest thickness of the 
+   // constituent face elements, then we don't consider the face-pair a contact candidate.
+   // Note, auto-contact will require registration of element thicknesses.
+   parameters.auto_interpen_check          = false; // true if the auto-contact interpenetration check is used for interpenetrating face-pairs.
 
 }
 

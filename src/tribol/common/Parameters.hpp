@@ -494,6 +494,7 @@ struct parameters_t
   VisType vis_type;              ///! Type of interface physics visualization output
   std::string output_directory;  ///! Output directory for visualization dumps
   bool enable_timestep_vote;     ///! True if host-code desires the timestep vote to be calculated and returned
+  bool auto_interpen_check;      ///! True if the auto-contact interpenetration check is used for full-overlap pairs
 
 private:
 
