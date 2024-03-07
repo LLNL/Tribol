@@ -1291,7 +1291,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    }
 
    parameters_t & parameters = parameters_t::getInstance();
-   real proj_ratio = parameters.contact_pen_frac;
+   real proj_ratio = parameters.timestep_pen_frac;
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    //int num_sides = 2; // always 2 sides in a single coupling scheme
    int dim = this->spatialDimension();
