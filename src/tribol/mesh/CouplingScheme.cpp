@@ -87,6 +87,12 @@ void CouplingSchemeErrors::printCaseErrors()
          SLIC_WARNING_ROOT("The specified ContactCase has no implementation.");
          break;
       }
+      case INVALID_CASE_DATA:
+      {
+         SLIC_WARNING_ROOT("The specified ContactCase has invalid data. " <<
+                           "AUTO contact requires element thickness registration.");
+         break;
+      }
       case NO_CASE_ERROR:
       {
          break;
@@ -412,6 +418,9 @@ bool CouplingScheme::isValidCouplingScheme()
       valid = false;
    }
 
+   // TODO check whether info should be printed before 
+   // errors in case AUTO needs to be change to NO_CASE
+   // and the check on element thickness needs to be modified
    if (!this->isValidCase())
    {
       this->m_couplingSchemeErrors.printCaseErrors();

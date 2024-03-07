@@ -1124,6 +1124,32 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
    tribol::finalize();
 }
 
+TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   registerDummy3DMesh( 0 );
+   registerDummy3DMesh( 0 );
+
+   tribol::registerCouplingScheme(0, 0, 0,
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::LAGRANGE_MULTIPLIER,
+                                  tribol::BINNING_GRID );
+
+   tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, false );
+}
+
 int main(int argc, char* argv[])
 {
   int result = 0;
