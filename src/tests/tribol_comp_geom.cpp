@@ -620,6 +620,13 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
       couplingSchemeManager.getCoupling( csIndex );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 0 );
+
+   delete [] fx;
+   delete [] fy;
+   delete [] fz;
+   delete [] vx;
+   delete [] vy;
+   delete [] vz;
 }
 
 TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
@@ -743,6 +750,13 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
       couplingSchemeManager.getCoupling( csIndex );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 1 );
+
+   delete [] fx;
+   delete [] fy;
+   delete [] fz;
+   delete [] vx;
+   delete [] vy;
+   delete [] vz;
 }
 
 TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
@@ -866,6 +880,13 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
       couplingSchemeManager.getCoupling( csIndex );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 0 );
+
+   delete [] fx;
+   delete [] fy;
+   delete [] fz;
+   delete [] vx;
+   delete [] vy;
+   delete [] vz;
 }
 
 int main(int argc, char* argv[])
