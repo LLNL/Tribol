@@ -924,7 +924,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
         pair_err = 1;
         pair.isContactCandidate = false;
         // TODO consider printing offending face(s) coordinates for debugging
-        SLIC_DEBUG("Face geometry error, " << static_cast<int>(interact_err) << "for pair, " << kp << ".");
+        // SLIC_DEBUG("Face geometry error, " << static_cast<int>(interact_err) << "for pair, " << kp << ".");
         // continue; // TODO SRW why do we need this? Seems like we want to update interface pair below if-statements
      }
      else if (!interact)
@@ -1289,12 +1289,9 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       // the pair is not a contact candidate
       if (!pair.isContactCandidate)
       {
-         SLIC_DEBUG("The pair is NOT a contact candidate");
          continue;
       }
    
-      SLIC_DEBUG("The pair IS a contact candidate");
-
       real x1[dim * numNodesPerCell1];
       real v1[dim * numNodesPerCell1];
       mesh1.getFaceCoords( pair.pairIndex1, &x1[0] );
