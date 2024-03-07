@@ -75,6 +75,8 @@ struct MeshElemData
    bool m_is_rate_constant_penalty_set      {false}; ///< True if the constant rate penalty is set
    bool m_is_rate_percent_penalty_set       {false}; ///< True if the rate percent penalty is set
 
+   bool m_is_element_thickness_set          {false}; ///< True if element thickness is set
+
   /*!
    * \brief Checks if the kinematic penalty data is valid
    *

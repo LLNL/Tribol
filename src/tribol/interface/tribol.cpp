@@ -890,13 +890,15 @@ void registerRealElementField( integer meshId,
             }
             else
             {
-               // set boolean to true for zero element meshes (acceptable registration)
+               // set booleans to true for zero element meshes (acceptable registration)
                mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
+               mesh.m_elemData.m_is_element_thickness_set = true;
             }
          }
          else
          {
             mesh.m_elemData.m_thickness = fieldVariable;
+            mesh.m_elemData.m_is_element_thickness_set = true;
 
             // Only set boolean to true if the material modulus has been registered for 
             // nonzero element meshes. This will set to true if the material modulus was 

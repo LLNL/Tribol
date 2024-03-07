@@ -515,6 +515,25 @@ bool CouplingScheme::isValidCase()
       this->m_couplingSchemeInfo.cs_case_info = SPECIFYING_NONE_WITH_TWO_REGISTERED_MESHES;
       this->m_contactCase = NO_CASE;
    }
+
+   // specify auto-contact specific interpenetration check and verify 
+   // element thicknesses have been registered
+   if (this->m_contactCase == AUTO)
+   { 
+      parameters_t& params = parameters_t::getInstance();
+      params.auto_interpen_check = true;
+
+      MeshManager & meshManager = MeshManager::getInstance(); 
+      MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
+      MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+
+      if (!mesh1.m_elemData.m_is_element_thickness_set ||
+          !mesh2.m_elemData.m_is_element_thickness_set)
+      {
+         this->m_couplingSchemeErrors.cs_case_error = INVALID_CASE_DATA;
+         return false;
+      }
+   }
    
    // if we are here we have modified the case with no error.
    this->m_couplingSchemeErrors.cs_case_error = NO_CASE_ERROR;
