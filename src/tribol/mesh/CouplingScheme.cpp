@@ -193,7 +193,7 @@ void CouplingSchemeErrors::printEnforcementErrors()
       }
       case INVALID_ENFORCEMENT_FOR_REGISTERED_METHOD:
       {
-         SLIC_WARNING_ROOT("The specified EnforcementMethod is invalid for the registered METHOD.");
+         SLIC_WARNING_ROOT("The specified EnforcementMethod is invalid for the registered ContactMethod.");
          break;
       }
       case INVALID_ENFORCEMENT_OPTION:

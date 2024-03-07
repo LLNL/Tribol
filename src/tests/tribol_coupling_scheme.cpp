@@ -1018,6 +1018,12 @@ TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
    registerDummy3DMesh( 0, numCells, setResponse );
    registerDummy3DMesh( 1, numCells, setResponse );
 
+   real gaps[this->m_lengthNodalData];
+   real pressures[this->m_lengthNodalData];
+
+   tribol::registerMortarGaps( 1, &gaps[0] );
+   tribol::registerMortarPressures( 1, &pressures[0] );
+
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
                                   tribol::NO_CASE,
@@ -1129,25 +1135,61 @@ TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
    tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   registerDummy3DMesh( 0 );
-   registerDummy3DMesh( 0 );
+   int meshId = 0;
+   int csId = 0;
+   registerDummy3DMesh( meshId );
 
-   tribol::registerCouplingScheme(0, 0, 0,
+   tribol::registerCouplingScheme(csId, meshId, meshId,
                                   tribol::SURFACE_TO_SURFACE,
                                   tribol::AUTO,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
-                                  tribol::LAGRANGE_MULTIPLIER,
+                                  tribol::PENALTY,
                                   tribol::BINNING_GRID );
+ 
+   tribol::setKinematicConstantPenalty( meshId, 1.0 );
 
-   tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
+   tribol::setPenaltyOptions( csId, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csId);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
+}
+
+TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
+{
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( 3, problem_comm );
+
+   int meshId = 0;
+   int numElements = 1;
+   int csId = 0;
+   registerDummy3DMesh( meshId, numElements );
+
+   tribol::registerCouplingScheme(csId, meshId, meshId,
+                                  tribol::SURFACE_TO_SURFACE,
+                                  tribol::AUTO,
+                                  tribol::COMMON_PLANE,
+                                  tribol::FRICTIONLESS,
+                                  tribol::PENALTY,
+                                  tribol::BINNING_GRID );
+
+   tribol::setKinematicConstantPenalty( meshId, 1.0 );
+
+   tribol::setPenaltyOptions( csId, tribol::KINEMATIC,
+                              tribol::KINEMATIC_CONSTANT ); 
+
+   real element_thick = 1.0;
+   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thick );
+
+   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
+   tribol::CouplingScheme* scheme  = csManager.getCoupling(csId);
+   bool isInit = scheme->init();
+
+   EXPECT_EQ( isInit, true );
 }
 
 int main(int argc, char* argv[])
