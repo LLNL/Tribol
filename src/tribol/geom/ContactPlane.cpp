@@ -31,7 +31,6 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
                                   ContactCase const TRIBOL_UNUSED_PARAM(cCase),
                                   bool& isInteracting )
 {
-   SLIC_DEBUG("Inside CheckInterfacePair.");
    isInteracting = false;
 
    // note: will likely need the ContactCase for specialized 
