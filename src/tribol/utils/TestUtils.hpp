@@ -93,6 +93,7 @@ public:
    int tribolSetupAndUpdate( ContactMethod method,           ///< contact method
                              EnforcementMethod enforcement,  ///< constraint enforcement method
                              ContactModel model,             ///< contact model 
+                             ContactCase contact_case,       ///< contact case
                              bool visualization,             ///< true if visualization
                              TestControlParameters & params  ///< control parameters struct
                            );
@@ -101,6 +102,7 @@ public:
    int simpleTribolSetupAndUpdate( ContactMethod method,           ///< contact method
                                    EnforcementMethod enforcement,  ///< constraint enforcement method
                                    ContactModel model,             ///< contact model 
+                                   ContactCase contact_case,       ///< contact case
                                    bool visualization,             ///< true if visualization
                                    TestControlParameters & params  ///< control parameters struct
                                  );

@@ -141,7 +141,7 @@ protected:
       const int csIndex = 0;
       tribol::registerCouplingScheme(csIndex, 0, 1, 
                                      tribol::SURFACE_TO_SURFACE,
-                                     tribol::AUTO,
+                                     tribol::NO_CASE,
                                      tribol::COMMON_PLANE,
                                      tribol::FRICTIONLESS,
                                      tribol::PENALTY,

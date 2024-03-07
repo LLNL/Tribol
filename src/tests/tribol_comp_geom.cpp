@@ -111,7 +111,7 @@ TEST_F( CompGeomTest, common_plane_check )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, true, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, true, parameters );
  
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -168,7 +168,7 @@ TEST_F( CompGeomTest, single_mortar_check )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::SINGLE_MORTAR, tribol::LAGRANGE_MULTIPLIER, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -419,7 +419,7 @@ TEST_F( CompGeomTest, 2d_projections_1 )
 
    tribol::registerCouplingScheme( 0, 0, 1,
                                    tribol::SURFACE_TO_SURFACE,
-                                   tribol::AUTO,
+                                   tribol::NO_CASE,
                                    tribol::COMMON_PLANE,
                                    tribol::FRICTIONLESS,
                                    tribol::PENALTY,

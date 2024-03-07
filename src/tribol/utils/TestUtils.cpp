@@ -921,6 +921,7 @@ void TestMesh::allocateAndSetElementThickness( int meshId, real t )
 int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
                                           EnforcementMethod TRIBOL_UNUSED_PARAM(enforcement),
                                           ContactModel TRIBOL_UNUSED_PARAM(model),
+                                          ContactCase TRIBOL_UNUSED_PARAM(contact_case),
                                           bool TRIBOL_UNUSED_PARAM(visualization),
                                           TestControlParameters& params )
 {
@@ -983,6 +984,7 @@ int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
 int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                                     EnforcementMethod enforcement,
                                     ContactModel model,
+                                    ContactCase contact_case,
                                     bool visualization,
                                     TestControlParameters& params )
 {
@@ -1170,7 +1172,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                            this->mortarMeshId,
                            this->nonmortarMeshId,
                            SURFACE_TO_SURFACE,
-                           AUTO,
+                           contact_case,
                            method,
                            model,
                            enforcement,

@@ -621,7 +621,8 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
  
       // assuming each face's vertices are ordered WRT that face's outward unit normal,
       // reorder face 2 vertices to be consistent with face 1. DO NOT CALL POLYREORDER() 
-      // to do this.
+      // to do this. // TODO debug this; this may affect calculations later on. We may 
+      // have to unreverse the ordering.
       PolyReverse( X2, Y2, mesh2.m_numNodesPerCell );
 
       // compute intersection polygon and area. Note, the polygon centroid 
@@ -792,10 +793,27 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
    cp.m_gapTol = params.gap_separation_ratio * 
                  axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                                        mesh2.m_faceRadius[ faceId2 ] );
+
    if (cp.m_gap > cp.m_gapTol)
    {
       cp.m_inContact = false;
       return NO_FACE_GEOM_ERROR;
+   }
+
+   // for auto-contact, remove contact candidacy for face-pairs with 
+   // interpenetration exceeding contact penetration fraction. 
+   // Recall that interpen gaps are negative
+   if (params.auto_interpen_check)
+   {
+      real max_interpen = -1. * params.contact_pen_frac * 
+                          axom::utilities::min( mesh1.m_elemData.m_thickness[ faceId1 ],
+                                                mesh2.m_elemData.m_thickness[ faceId2 ] );
+
+      if (cp.m_gap < max_interpen)
+      {
+         cp.m_inContact = false;
+         return NO_FACE_GEOM_ERROR;
+      }
    }
    
    // if fullOverlap is used, REPROJECT the overlapping polygon 
