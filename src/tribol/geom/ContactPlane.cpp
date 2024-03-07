@@ -304,6 +304,25 @@ bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
 } // end EdgeInterCheck()
 
 //------------------------------------------------------------------------------
+bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
+                             const int faceId1, const int faceId2, const real gap )
+{
+   parameters_t& params = parameters_t::getInstance();
+   if (params.auto_interpen_check)
+   {
+      real max_interpen = -1. * params.contact_pen_frac * 
+                          axom::utilities::min( meshDat1.m_elemData.m_thickness[ faceId1 ],
+                                                meshDat2.m_elemData.m_thickness[ faceId2 ] );
+
+      if (gap < max_interpen)
+      {
+         return true;
+      }
+   }
+   return false;
+}
+
+//------------------------------------------------------------------------------
 void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId, 
                               real nrmlX, real nrmlY, real nrmlZ,
                               real cX, real cY, real cZ,
@@ -800,16 +819,15 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
       return NO_FACE_GEOM_ERROR;
    }
 
-   // for auto-contact, remove contact candidacy for face-pairs with 
-   // interpenetration exceeding contact penetration fraction. 
+   // for auto-contact, remove contact candidacy for full-overlap 
+   // face-pairs with interpenetration exceeding contact penetration fraction. 
+   // Note, this check is solely meant to exclude face-pairs composed of faces 
+   // on opposite sides of thin structures/plates
+   //
    // Recall that interpen gaps are negative
-   if (params.auto_interpen_check)
+   if (fullOverlap)
    {
-      real max_interpen = -1. * params.contact_pen_frac * 
-                          axom::utilities::min( mesh1.m_elemData.m_thickness[ faceId1 ],
-                                                mesh2.m_elemData.m_thickness[ faceId2 ] );
-
-      if (cp.m_gap < max_interpen)
+      if (ExceedsMaxAutoInterpen( mesh1, mesh2, faceId1, faceId2, cp.m_gap ))
       {
          cp.m_inContact = false;
          return NO_FACE_GEOM_ERROR;
@@ -913,6 +931,18 @@ ContactPlane3D CheckAlignedFacePair( InterfacePair& pair )
 
    // perform gap check
    if (scalarGap > cp.m_gapTol)
+   {
+      cp.m_inContact = false;
+      return cp;
+   }
+
+   // for auto-contact, remove contact candidacy for face-pairs with 
+   // interpenetration exceeding contact penetration fraction. 
+   // Note, this check is solely meant to exclude face-pairs composed of faces 
+   // on opposite sides of thin structures/plates
+   //
+   // Recall that interpen gaps are negative
+   if (ExceedsMaxAutoInterpen( mesh1, mesh2, faceId1, faceId2, scalarGap ))
    {
       cp.m_inContact = false;
       return cp;
@@ -2068,6 +2098,21 @@ FaceGeomError CheckEdgePair( InterfacePair& pair,
    {
       cp.m_inContact = false;
       return NO_FACE_GEOM_ERROR;
+   }
+
+   // for auto-contact, remove contact candidacy for full-overlap 
+   // face-pairs with interpenetration exceeding contact penetration fraction. 
+   // Note, this check is solely meant to exclude face-pairs composed of faces 
+   // on opposite sides of thin structures/plates
+   //
+   // Recall that interpen gaps are negative
+   if (fullOverlap)
+   {
+      if (ExceedsMaxAutoInterpen( mesh1, mesh2, edgeId1, edgeId2, cp.m_gap ))
+      {
+         cp.m_inContact = false;
+         return NO_FACE_GEOM_ERROR;
+      }
    }
 
    // for the full overlap case we need to project the overlap segment
