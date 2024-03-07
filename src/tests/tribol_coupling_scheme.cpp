@@ -257,7 +257,7 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::SINGLE_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
@@ -293,7 +293,7 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::ALIGNED_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
@@ -321,7 +321,7 @@ TEST_F( CouplingSchemeTest, mortar_weights_2D )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::MORTAR_WEIGHTS,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
@@ -357,7 +357,7 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::SINGLE_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
@@ -385,7 +385,7 @@ TEST_F( CouplingSchemeTest, common_plane_lagrange_multiplier )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
@@ -411,7 +411,7 @@ TEST_F( CouplingSchemeTest, mortar_no_nodal_gaps_or_pressures )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::SINGLE_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
@@ -447,7 +447,7 @@ TEST_F( CouplingSchemeTest, mortar_tied )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::SINGLE_MORTAR,
                                   tribol::TIED,
                                   tribol::LAGRANGE_MULTIPLIER,
@@ -483,7 +483,7 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::SINGLE_MORTAR,
                                   tribol::COULOMB,
                                   tribol::LAGRANGE_MULTIPLIER,
@@ -515,7 +515,7 @@ TEST_F( CouplingSchemeTest, common_plane_tied )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::TIED,
                                   tribol::PENALTY,
@@ -547,7 +547,7 @@ TEST_F( CouplingSchemeTest, common_plane_coulomb )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::COULOMB,
                                   tribol::PENALTY,
@@ -646,7 +646,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    const int csIndex = 0;
    tribol::registerCouplingScheme(csIndex, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
@@ -688,7 +688,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    //RE-register coupling scheme 0 with null-meshes with same IDs as before
    tribol::registerCouplingScheme(csIndex, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
@@ -778,7 +778,7 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
    const int csIndex = 0;
    tribol::registerCouplingScheme(csIndex, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
@@ -877,7 +877,7 @@ TEST_F( CouplingSchemeTest, finalize )
    const int csIndex = 0;
    tribol::registerCouplingScheme(csIndex, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
@@ -912,7 +912,7 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
@@ -952,7 +952,7 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
@@ -990,7 +990,7 @@ TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::MORTAR_WEIGHTS,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
@@ -1020,7 +1020,7 @@ TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::SINGLE_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
@@ -1054,7 +1054,7 @@ TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
@@ -1088,7 +1088,7 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
+                                  tribol::NO_CASE,
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
