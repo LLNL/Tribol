@@ -527,9 +527,9 @@ bool CouplingScheme::isValidCase()
 
    // specify auto-contact specific interpenetration check and verify 
    // element thicknesses have been registered
+   parameters_t& params = parameters_t::getInstance();
    if (this->m_contactCase == AUTO)
    { 
-      parameters_t& params = parameters_t::getInstance();
       params.auto_interpen_check = true;
 
       MeshManager & meshManager = MeshManager::getInstance(); 
@@ -542,6 +542,10 @@ bool CouplingScheme::isValidCase()
          this->m_couplingSchemeErrors.cs_case_error = INVALID_CASE_DATA;
          return false;
       }
+   }
+   else // reset params.auto_interpen_check if true from previous coupling scheme
+   {
+      params.auto_interpen_check = false;
    }
    
    // if we are here we have modified the case with no error.
