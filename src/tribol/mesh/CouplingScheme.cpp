@@ -1310,7 +1310,6 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    real dt_temp2 = dt;
    int cpID = 0; 
    bool max_gap_msg = false;
-   bool tiny_vel = false;
    bool neg_dt_gap_msg = false;
    bool neg_dt_vel_proj_msg = false;
    for (IndexType kp = 0; kp < numPairs; ++kp)
@@ -1407,7 +1406,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       // zero, there may stationary interactions or tangential motion. 
       // In this case, any timestep estimate will be very large, and 
       // not control the simulation
-      real tiny = 1.e-10;
+      real tiny = 1.e-12;
       real tiny1 = (v1_dot_n >= 0.) ? tiny : -1.*tiny;
       real tiny2 = (v2_dot_n >= 0.) ? tiny : -1.*tiny;
       v1_dot_n  += tiny1;
@@ -1541,24 +1540,6 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       //          common-plane method                          //
       ///////////////////////////////////////////////////////////
 
-      // check for case where both faces have nearly zero velocity. If so,
-      // don't compute a velocity projection dt estimate
-      real tiny_vel_proj = 1.e-8;
-      real tiny_vel_tol = 1.e-6; // make larger than tiny_vel_proj
-      real tiny_vel_diff1 = std::abs(v1_dot_n - tiny_vel_proj);
-      real tiny_vel_diff2 = std::abs(v2_dot_n - tiny_vel_proj);
-      if (tiny_vel_diff1 < tiny_vel_tol)
-      {
-         dt1_vel_check = false;
-         tiny_vel = true;
-      }
-      if (tiny_vel_diff2 < tiny_vel_tol)
-      {
-         dt2_vel_check = false;
-         tiny_vel = true;
-      }
-
-      if (!tiny_vel)
       {
          // compute delta between velocity projection of face-projected 
          // overlap centroid and the OTHER face's face-projected overlap 
