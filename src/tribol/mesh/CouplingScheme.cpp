@@ -942,12 +942,18 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
 
    } // end loop over pairs
 
-   // TODO refine how this logging is handled. This just detects an issue with a face-pair geometry
-   // (which has been skipped over for contact eligibility) and reports this warning. Do we want to 
-   // error out, or let a user detect bad contact behavior, but with a contact interaction that still
-   // runs?
-   SLIC_WARNING_IF( pair_err!=0, "CouplingScheme::apply(): error with orientation, input, " << 
-                    "or invalid overlaps in CheckInterfacePair()." );
+   // Here, the pair_err is checked, which detects an issue with a face-pair geometry
+   // (which has been skipped over for contact eligibility) and reports this warning.
+   // This is intended to indicate to a user that there may be bad geometry, or issues with 
+   // complex cg calculations that need debugging.
+   //
+   // This is complex because a host-code may have unavoidable 'bad' geometry and wish 
+   // to continue the simulation. In this case, we may 'punt' on those face-pairs, which 
+   // may be reasonable and not an error. Alternatively, this warning may indicate a bug 
+   // or issue in the cg that a host-code does desire to have resolved. For this reason, this
+   // message is kept at the warning level.
+   SLIC_WARNING_IF( pair_err!=0, "CouplingScheme::apply(): possible issues with orientation, " << 
+                    "input, or invalid overlaps in CheckInterfacePair()." );
 
    this->m_numActivePairs = numActivePairs;
 
@@ -978,7 +984,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
                          params.vis_type, 
                          cycle, t );
 
-   if (err != 0 || pair_err != 0)
+   if (err != 0)
    {
       return 1;
    }
