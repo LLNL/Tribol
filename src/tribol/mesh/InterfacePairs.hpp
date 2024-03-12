@@ -69,6 +69,11 @@ struct InterfacePair
    // to a particular contact method and its enforced contstraints. Rather, the CG filter
    // identifies contact candidacy, or face-pairs likely in contact.
    bool isContactCandidate;
+
+   // TODO clean this up
+   bool badOrientation  {false};
+   bool badOverlap      {false};
+   bool badFaceGeometry {false};
 };
 
 class InterfacePairs

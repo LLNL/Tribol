@@ -15,6 +15,18 @@
 
 namespace tribol
 {
+// Struct to hold on-rank coupling scheme face-pair reporting data
+// generated from computational geometry issues
+struct PairReportingData
+{
+public:
+   PairReportingData() {};
+   ~PairReportingData() {};
+
+   int numBadOrientation  {-1};
+   int numBadOverlaps     {-1};
+   int numBadFaceGeometry {-1};
+};
 
 // Helper struct to handle coupling scheme errors
 struct CouplingSchemeErrors
@@ -139,6 +151,8 @@ public:
 
   CouplingSchemeErrors& getCouplingSchemeErrors() { return m_couplingSchemeErrors; }
   CouplingSchemeInfo&   getCouplingSchemeInfo()   { return m_couplingSchemeInfo; }
+
+  PairReportingData& getPairReportingData() {return m_pairReportingData; }
 
   integer spatialDimension() const 
   { 
@@ -562,6 +576,8 @@ private:
   EnforcementOptions   m_enforcementOptions;   ///< struct with options underneath chosen enforcement
   CouplingSchemeErrors m_couplingSchemeErrors; ///< struct handling coupling scheme errors
   CouplingSchemeInfo   m_couplingSchemeInfo;   ///< struct handling info to be printed
+
+  PairReportingData    m_pairReportingData;    ///< struct handling on-rank pair reporting data from computational geometry
 
 #ifdef BUILD_REDECOMP
 
