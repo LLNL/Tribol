@@ -293,11 +293,11 @@ enum BasisEvalType
  */
 enum FaceGeomError
 {
-   NO_FACE_GEOM_ERROR,
-   FACE_ORIENTATION,
-   INVALID_INPUT,
-   DEGENERATE_OVERLAP,
-   FACE_INDEX_EXCEEDS_OVERLAP_VERTICES, 
+   NO_FACE_GEOM_ERROR,                         ///! No face geometry error
+   FACE_ORIENTATION,                           ///! Face vertices not ordered consistent with outward unit normal
+   INVALID_FACE_INPUT,                         ///! Invalid input
+   DEGENERATE_OVERLAP,                         ///! Issues with overlap calculation resulting in degenerate overlap
+   FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES, ///! Very specific debug indexing error where face vertex count exceeds overlap vertex count in cg routine
    NUM_FACE_GEOM_ERRORS
 };
 

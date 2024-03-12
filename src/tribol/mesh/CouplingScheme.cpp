@@ -915,6 +915,8 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      FaceGeomError interact_err = CheckInterfacePair( pair, m_contactMethod, 
                                                       m_contactCase, interact );
 
+     // Update pair reporting data for this coupling scheme
+     this->updatePairReportingData( interact_err );
 
      // TODO refine how these errors are handled. Here we skip over face-pairs with errors. That is, 
      // they are not registered for contact, but we don't error out.
@@ -1565,6 +1567,40 @@ void CouplingScheme::writeInterfaceOutput( const std::string& dir,
    return;
 }
 
+//------------------------------------------------------------------------------
+void CouplingScheme::updatePairReportingData( const FaceGeomError face_error )
+{
+   switch (face_error)
+   {
+      case NO_FACE_GEOM_ERROR:
+      {
+         // no-op
+         break;
+      } 
+      case FACE_ORIENTATION:
+      {
+         ++this->m_pairReportingData.numBadOrientation;
+         break;
+      }
+      case INVALID_FACE_INPUT:
+      {
+         ++this->m_pairReportingData.numBadFaceGeometry;
+         break;
+      }
+      case DEGENERATE_OVERLAP:
+      {
+         ++this->m_pairReportingData.numBadOverlaps;
+         break;
+      }
+      case FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES:
+      {
+         // no-op; this is a very specific, in-the-weeds computational geometry
+         // debug print and does not indicate an issue with the host-code mesh
+         break;
+      }
+      default: break;
+   } // end switch
+}
 //------------------------------------------------------------------------------
 
 } /* namespace tribol */
