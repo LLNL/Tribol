@@ -1415,9 +1415,9 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       real gap_f1_n1 = dotProd( &gapVec[0], &fn1[0], dim );
       real gap_f2_n2 = dotProd( &gapVec[0], &fn2[0], dim );
 
-      real dt1 = 1.e6; // initialize as large number
-      real dt2 = 1.e6; // initialize as large number
-      real alpha = 0.75; // multiplier on timestep estimate
+      real dt1 = 1.e6;  // initialize as large number
+      real dt2 = 1.e6;  // initialize as large number
+      real alpha = 1.0; // multiplier on timestep estimate
       bool dt1_check1 = false;
       bool dt2_check1 = false;
       bool dt1_vel_check = false;

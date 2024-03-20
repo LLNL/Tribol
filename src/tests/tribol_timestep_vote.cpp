@@ -484,7 +484,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
-   real dt_diff = std::abs(parameters.dt - 0.000747973);
+   real dt_diff = std::abs(parameters.dt - 0.000997297);
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
@@ -572,7 +572,7 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
-   real dt_diff = std::abs(parameters.dt - 2.02381e-06);
+   real dt_diff = std::abs(parameters.dt - 2.69841e-06);
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
@@ -834,7 +834,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
                                          tribol::FRICTIONLESS, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
-   real dt_diff = std::abs(parameters.dt -0.000749999);
+   real dt_diff = std::abs(parameters.dt -0.00099999);
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
