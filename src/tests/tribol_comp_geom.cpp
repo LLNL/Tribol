@@ -189,8 +189,8 @@ TEST_F( CompGeomTest, poly_area_centroid_1 )
    // vs. the vertex average centroid calculation for a 
    // rectangular quadrilateral. The expectation is that 
    // the results are the same
-   int dim = 3;
-   int numVerts = 4;
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
    real x[ dim * numVerts ];
 
    for (int i=0; i<dim*numVerts; ++i)
@@ -237,8 +237,8 @@ TEST_F( CompGeomTest, poly_area_centroid_2 )
    // This test checks the area centroid calculation 
    // the centroid calculation for a non-self-intersecting, 
    // closed polygon
-   int dim = 3;
-   int numVerts = 4;
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
    real x[ numVerts ];
    real y[ numVerts ];
    real z[ numVerts ];
@@ -297,11 +297,10 @@ TEST_F( CompGeomTest, poly_area_centroid_2 )
 
 TEST_F( CompGeomTest, 2d_projections_1 )
 {
-   int dim = 2;
-   int numVerts = 2;
+   constexpr int dim = 2;
+   constexpr int numVerts = 2;
    real xy1[dim*numVerts];
    real xy2[dim*numVerts];
-
 
 // Notice how the face vertices are flipped between register mesh and the segment basis eval!
 
@@ -440,8 +439,8 @@ TEST_F( CompGeomTest, 2d_projections_1 )
 
 TEST_F( CompGeomTest, 2d_projections_2 )
 {
-   int dim = 2;
-   int numVerts = 2;
+   constexpr int dim = 2;
+   constexpr int numVerts = 2;
    real xy1[dim*numVerts];
    real xy2[dim*numVerts];
 
@@ -506,10 +505,10 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
 {
    // this test ensures that faces in a given face-pair with nearly co-directional 
    // normals is not actually included as a contact candidate
-   int dim = 3;
-   int numVerts = 4;
-   int numCells = 2;
-   int lengthNodalData = numCells * numVerts;
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
+   constexpr int numCells = 2;
+   constexpr int lengthNodalData = numCells * numVerts;
    real element_thickness[numCells];
    real x[lengthNodalData];
    real y[lengthNodalData];
@@ -635,10 +634,10 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
    // is included as a conatct candidate, and is in fact in contact 
    // when the interpenetration is less than the maximum allowable
    // for auto contact
-   int dim = 3;
-   int numVerts = 4;
-   int numCells = 2;
-   int lengthNodalData = numCells * numVerts;
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
+   constexpr int numCells = 2;
+   constexpr int lengthNodalData = numCells * numVerts;
    real element_thickness[numCells];
    real x[lengthNodalData];
    real y[lengthNodalData];
@@ -765,10 +764,10 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
    // is included as a conatct candidate, and is in fact in contact 
    // when the interpenetration is less than the maximum allowable
    // for auto contact
-   int dim = 3;
-   int numVerts = 4;
-   int numCells = 2;
-   int lengthNodalData = numCells * numVerts;
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
+   constexpr int numCells = 2;
+   constexpr int lengthNodalData = numCells * numVerts;
    real element_thickness[numCells];
    real x[lengthNodalData];
    real y[lengthNodalData];
