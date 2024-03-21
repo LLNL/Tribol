@@ -144,8 +144,6 @@ public:
   CouplingSchemeErrors& getCouplingSchemeErrors() { return m_couplingSchemeErrors; }
   CouplingSchemeInfo&   getCouplingSchemeInfo()   { return m_couplingSchemeInfo; }
 
-  const PairReportingData& getPairReportingData() const {return m_pairReportingData; }
-
   integer spatialDimension() const 
   { 
      parameters_t & params = parameters_t::getInstance();
