@@ -68,6 +68,7 @@ void set_defaults()
    parameters.len_collapse_ratio           = 1.E-8;
    parameters.projection_ratio             = 1.E-10;
    parameters.contact_pen_frac             = 3.e-1;  // allows for up to 30% penetration used in timestep vote calculation
+   parameters.enable_timestep_vote         = false;  // true if host-code wants to receive tribol timestep vote
 
 }
 
@@ -324,6 +325,14 @@ void setLoggingLevel( int csId, LoggingLevel log_level )
       couplingScheme->setLoggingLevel( log_level );
    }
 }
+
+//------------------------------------------------------------------------------
+void enableTimestepVote( const bool enable )
+{
+   parameters_t & parameters = parameters_t::getInstance();
+   parameters.enable_timestep_vote= enable;
+}
+
 //------------------------------------------------------------------------------
 void registerMesh( integer meshId,
                    integer numCells,

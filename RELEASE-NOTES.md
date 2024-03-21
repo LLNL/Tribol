@@ -14,6 +14,8 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
 - New API calls for MFEM data structures (see `interface/mfem_tribol.hpp`).
 - Updated the penalty stiffness calculation using the `KINEMATIC_CONSTANT` option
   to follow the `springs-in-serial` stiffness model used for `KINEMATIC_ELEMENT`.
+- API function to support turning on or off the timestep calculation for 
+  the common plane method.
 
 ### Changed
 - Return negative timestep vote for non-null meshes with null velocity pointers.
@@ -28,9 +30,15 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
   with host codes.
 - Removed nullptr errors to allow more function call uniformity for ranks with null meshes. 
   Also removed any `continue` statements for null meshes.
+- Updated logging in timestep vote by removing logging macro calls inside the interface pairs 
+  loop; don't error out in the presence of a bad dt vote, but issue debug print.
+- Updated logging of face geometry issues to `SLIC_INFO()` and don't error out in presence of
+  geometry issue.
   
 ### Fixed
 - Allow null velocity and response pointers for various use cases
+- Tolerancing bug that produced negative timestep estimates in the presence of numerically
+  zero face velocities.
 
 ## [Version 0.1.0] - Release date 2023-04-21
 

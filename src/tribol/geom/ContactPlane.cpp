@@ -63,6 +63,8 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
            ContactPlane3D cpTemp( pair, areaFrac, interpenOverlap, intermediatePlane, 3 );
            FaceGeomError face_err = CheckFacePair( pair, full, cpTemp );
 
+           SLIC_DEBUG("face_err: " << face_err );
+
            if (face_err != NO_FACE_GEOM_ERROR)
            {
               isInteracting = false;

@@ -153,6 +153,16 @@ void setOutputDirectory( const std::string& dir );
  */
 void setLoggingLevel( int csId, LoggingLevel log_level );
 
+/*!
+ * \brief Enable the contact timestep vote 
+ *
+ * \param [in] enable the timestep vote will be calculated and returned if true
+ *
+ * \note default behavior is to not enable timestep calculation
+ *
+ */
+void enableTimestepVote( const bool enable );
+
 /// @}
 
 /// \name Contact Surface Registration Methods

@@ -97,10 +97,15 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
 
    // check normal projection against tolerance
    if (nrmlCheck > nrmlTol) {
+      SLIC_DEBUG("Face does not pass normal tolerance");
       iPair.isContactCandidate = false;
       return iPair.isContactCandidate;
    }
 
+   // TODO this may still add faces on opposing sides of thin-walled structures when using
+   // auto-contact, which is not correct. Consider comparing against element thicknesses; thus,
+   // requiring element thickness for auto contact
+   //
    /// CHECK #4 (3D): Perform radius check, which involves seeing if
    ///                the distance between the two face vertex averaged
    ///                centroid is less than the sum of the two face radii.
@@ -530,9 +535,15 @@ private:
        }
     }
 
-    SLIC_DEBUG("Coupling scheme has " << contactPairs->getNumPairs()
-          << " pairs." << " Expected " << numPairs
-          << " = " << mesh1NumElems << " * " << mesh2NumElems << ".");
+    // print current number of pairs vs. expected for all contact cases other than auto. 
+    // the cartesian product will erroneously count a face against itself or faces that share 
+    // nodes for auto-contact
+    if (cs->getContactCase() != AUTO)
+    {
+       SLIC_DEBUG("Coupling scheme has " << contactPairs->getNumPairs()
+             << " pairs." << " Expected " << numPairs
+             << " = " << mesh1NumElems << " * " << mesh2NumElems << ".");
+    }
 
  }
 
