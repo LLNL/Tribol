@@ -956,8 +956,8 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    // may be reasonable and not an error. Alternatively, this warning may indicate a bug 
    // or issue in the cg that a host-code does desire to have resolved. For this reason, this
    // message is kept at the warning level.
-   SLIC_WARNING_IF( pair_err!=0, "CouplingScheme::apply(): possible issues with orientation, " << 
-                    "input, or invalid overlaps in CheckInterfacePair()." );
+   SLIC_INFO_IF( pair_err!=0, "CouplingScheme::apply(): possible issues with orientation, " << 
+                 "input, or invalid overlaps in CheckInterfacePair()." );
 
    SLIC_ERROR_IF( numActivePairs != cpMgr.size(), "CouplingScheme::apply(): " << 
                   "number of active pairs does not match number of contact planes." );
