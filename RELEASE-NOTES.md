@@ -16,6 +16,12 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
   to follow the `springs-in-serial` stiffness model used for `KINEMATIC_ELEMENT`.
 - API function to support turning on or off the timestep calculation for 
   the common plane method.
+- Added a `timestep_pen_frac` separate from the `contact_pen_frac` for the purposes 
+  of triggering a timestep vote calculation when the gap is beyond a fixed percentage of the element thickness
+- Added use of `contact_pen_frac` to determine maximum allowable interpen as a fraction
+  of element thickness when using auto contact.
+- Added coupling scheme tests testing auto contact
+- Added computational geometry tests testing the maximum allowable interpen when using auto contact.
 
 ### Changed
 - Return negative timestep vote for non-null meshes with null velocity pointers.

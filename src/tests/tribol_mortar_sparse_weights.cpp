@@ -225,7 +225,7 @@ TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
    tribol::TestControlParameters parameters; // struct does not hold info right now
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::MORTAR_WEIGHTS, tribol::NULL_ENFORCEMENT, 
-                                         tribol::NULL_MODEL, false, parameters );
+                                         tribol::NULL_MODEL, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -293,7 +293,7 @@ TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
    tribol::TestControlParameters parameters; // struct does not hold info right now
    int test_mesh_simple_update_err = 
       this->m_mesh.simpleTribolSetupAndUpdate( tribol::MORTAR_WEIGHTS, tribol::NULL_ENFORCEMENT, 
-                                               tribol::NULL_MODEL, false, parameters );
+                                               tribol::NULL_MODEL, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_simple_update_err, 0 );
 
@@ -362,7 +362,7 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_mortar_fine )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::MORTAR_WEIGHTS, tribol::NULL_ENFORCEMENT, 
-                                         tribol::NULL_MODEL, false, parameters );
+                                         tribol::NULL_MODEL, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -431,7 +431,7 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_nonmortar_fine )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::MORTAR_WEIGHTS, tribol::NULL_ENFORCEMENT, 
-                                         tribol::NULL_MODEL, false, parameters );
+                                         tribol::NULL_MODEL, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 

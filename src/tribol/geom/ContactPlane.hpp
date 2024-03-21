@@ -130,6 +130,25 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
 bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2, 
                      int eId1, int eId2, real tol, bool& allVerts );
 
+/*!
+ *
+ * \brief checks the contact plane gap against the maximum allowable interpenetration 
+ *
+ * \param [in] meshDat1 MeshData object for mesh 1
+ * \param [in] meshDat2 MeshData object for mesh 2
+ * \param [in] faceId1 face id for face belonging to mesh 1
+ * \param [in] faceId2 face id for face belonging to mesh 2
+ * \param [in] gap the contact plane gap
+ *
+ * \return true if the gap exceeds the max allowable interpenetration
+ *
+ * \pre this function is for use with ContactCase = AUTO to preclude face-pairs on opposite
+ *      sides of thin structures/plates
+ *
+ */
+bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
+                             const int faceId1, const int faceId2, const real gap );
+
 //-----------------------------------------------------------------------------
 // Contact Plane base class
 //-----------------------------------------------------------------------------

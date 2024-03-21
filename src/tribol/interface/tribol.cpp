@@ -67,8 +67,17 @@ void set_defaults()
    parameters.gap_tied_tol                 = 0.1;    // tolerance for how much separation can occur before opposing faces are let go
    parameters.len_collapse_ratio           = 1.E-8;
    parameters.projection_ratio             = 1.E-10;
-   parameters.contact_pen_frac             = 3.e-1;  // allows for up to 30% penetration used in timestep vote calculation
+   parameters.contact_pen_frac             = 1.0;    // max allowable interpenetration as percent of element thickness for contact candidacy 
+   parameters.timestep_pen_frac            = 3.e-1;  // max allowable interpenetration as percent of element thickness prior to triggering timestep vote (not exposed to API) 
    parameters.enable_timestep_vote         = false;  // true if host-code wants to receive tribol timestep vote
+   
+   // Interpenetration check for auto-contact. If true, this will check a full-overlap 
+   // face-pair configuration in the computational geoemtry routines to preclude 
+   // auto-contact of opposite sides of thin structures/plates. If the full-overlap 
+   // interpenetration kinematic gap is more than the smallest thickness of the 
+   // constituent face elements, then we don't consider the face-pair a contact candidate.
+   // Note, auto-contact will require registration of element thicknesses.
+   parameters.auto_interpen_check          = false; // true if the auto-contact interpenetration check is used for interpenetrating face-pairs.
 
 }
 
@@ -183,7 +192,7 @@ void setContactPenFrac( double frac )
    parameters_t & parameters = parameters_t::getInstance();
    if (frac <= 0.)
    {
-      // Don't set the contact_pen_frac. This will use default of 30%
+      // Don't set the contact_pen_frac. This will use default
       return;
    }
 
@@ -881,13 +890,15 @@ void registerRealElementField( integer meshId,
             }
             else
             {
-               // set boolean to true for zero element meshes (acceptable registration)
+               // set booleans to true for zero element meshes (acceptable registration)
                mesh.m_elemData.m_is_kinematic_element_penalty_set = true;
+               mesh.m_elemData.m_is_element_thickness_set = true;
             }
          }
          else
          {
             mesh.m_elemData.m_thickness = fieldVariable;
+            mesh.m_elemData.m_is_element_thickness_set = true;
 
             // Only set boolean to true if the material modulus has been registered for 
             // nonzero element meshes. This will set to true if the material modulus was 

@@ -87,6 +87,12 @@ void CouplingSchemeErrors::printCaseErrors()
          SLIC_WARNING_ROOT("The specified ContactCase has no implementation.");
          break;
       }
+      case INVALID_CASE_DATA:
+      {
+         SLIC_WARNING_ROOT("The specified ContactCase has invalid data. " <<
+                           "AUTO contact requires element thickness registration.");
+         break;
+      }
       case NO_CASE_ERROR:
       {
          break;
@@ -187,7 +193,7 @@ void CouplingSchemeErrors::printEnforcementErrors()
       }
       case INVALID_ENFORCEMENT_FOR_REGISTERED_METHOD:
       {
-         SLIC_WARNING_ROOT("The specified EnforcementMethod is invalid for the registered METHOD.");
+         SLIC_WARNING_ROOT("The specified EnforcementMethod is invalid for the registered ContactMethod.");
          break;
       }
       case INVALID_ENFORCEMENT_OPTION:
@@ -412,6 +418,9 @@ bool CouplingScheme::isValidCouplingScheme()
       valid = false;
    }
 
+   // TODO check whether info should be printed before 
+   // errors in case AUTO needs to be change to NO_CASE
+   // and the check on element thickness needs to be modified
    if (!this->isValidCase())
    {
       this->m_couplingSchemeErrors.printCaseErrors();
@@ -514,6 +523,29 @@ bool CouplingScheme::isValidCase()
    {
       this->m_couplingSchemeInfo.cs_case_info = SPECIFYING_NONE_WITH_TWO_REGISTERED_MESHES;
       this->m_contactCase = NO_CASE;
+   }
+
+   // specify auto-contact specific interpenetration check and verify 
+   // element thicknesses have been registered
+   parameters_t& params = parameters_t::getInstance();
+   if (this->m_contactCase == AUTO)
+   { 
+      params.auto_interpen_check = true;
+
+      MeshManager & meshManager = MeshManager::getInstance(); 
+      MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
+      MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+
+      if (!mesh1.m_elemData.m_is_element_thickness_set ||
+          !mesh2.m_elemData.m_is_element_thickness_set)
+      {
+         this->m_couplingSchemeErrors.cs_case_error = INVALID_CASE_DATA;
+         return false;
+      }
+   }
+   else // reset params.auto_interpen_check if true from previous coupling scheme
+   {
+      params.auto_interpen_check = false;
    }
    
    // if we are here we have modified the case with no error.
@@ -1273,7 +1305,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    }
 
    parameters_t & parameters = parameters_t::getInstance();
-   real proj_ratio = parameters.contact_pen_frac;
+   real proj_ratio = parameters.timestep_pen_frac;
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    //int num_sides = 2; // always 2 sides in a single coupling scheme
    int dim = this->spatialDimension();

@@ -175,7 +175,7 @@ public:
                                       mortarMeshId,
                                       nonmortarMeshId,
                                       tribol::SURFACE_TO_SURFACE,
-                                      tribol::AUTO,
+                                      tribol::NO_CASE,
                                       method,
                                       tribol::FRICTIONLESS,
                                       tribol::LAGRANGE_MULTIPLIER );

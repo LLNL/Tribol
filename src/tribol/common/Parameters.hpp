@@ -319,6 +319,7 @@ enum CaseError
 {
    INVALID_CASE,
    NO_CASE_IMPLEMENTATION,
+   INVALID_CASE_DATA,
    NO_CASE_ERROR,
    NUM_CASE_ERRORS
 };
@@ -488,12 +489,14 @@ struct parameters_t
   double gap_tied_tol;           ///! Ratio for determining max separation tied contact can support
   double len_collapse_ratio;     ///! Ratio of face length providing topology collapse length tolerance
   double projection_ratio;       ///! Ratio for defining nonzero projections
-  double contact_pen_frac;       ///! Ratio for amount of allowable interpen in a cycle
+  double contact_pen_frac;       ///! Max allowable interpenetration as percent of element thickness for contact candidacy
+  double timestep_pen_frac;      ///! Max allowable interpenetration as percent of element thickness prior to triggering timestep vote
 
   int vis_cycle_incr;            ///! Frequency for visualizations dumps
   VisType vis_type;              ///! Type of interface physics visualization output
   std::string output_directory;  ///! Output directory for visualization dumps
   bool enable_timestep_vote;     ///! True if host-code desires the timestep vote to be calculated and returned
+  bool auto_interpen_check;      ///! True if the auto-contact interpenetration check is used for full-overlap pairs
 
 private:
 
