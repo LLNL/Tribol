@@ -30,9 +30,6 @@ public:
 struct CouplingSchemeErrors
 {
 public:
-   CouplingSchemeErrors() {};
-
-   ~CouplingSchemeErrors() {};
 
    ModeError             cs_mode_error;
    CaseError             cs_case_error;
@@ -52,9 +49,6 @@ public:
 struct CouplingSchemeInfo
 {
 public:
-   CouplingSchemeInfo() {};
-  
-   ~CouplingSchemeInfo() {};
 
    void printCaseInfo();
    void printEnforcementInfo();
