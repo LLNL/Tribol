@@ -102,7 +102,8 @@ void setContactPenFrac( double frac );
  *
  * \param [in] frac the maximum allowable interpenetration factor triggering a timestep vote
  *
- * \note this is only used for common-plane with penalty enforcement
+ * \note this is only used for common-plane with penalty enforcement. This is the 
+ * fraction of the element thickness that is allowed prior to triggering a timestep vote.
  *
  */
 void setTimestepPenFrac( double frac );

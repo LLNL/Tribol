@@ -22,6 +22,8 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
   of element thickness when using auto contact.
 - Added coupling scheme tests testing auto contact
 - Added computational geometry tests testing the maximum allowable interpen when using auto contact.
+- API function to set the timestep interpenetration factor as percentage of element thickness used
+  to trigger a timestep vote.
 
 ### Changed
 - Return negative timestep vote for non-null meshes with null velocity pointers.
