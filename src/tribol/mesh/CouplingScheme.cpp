@@ -947,7 +947,8 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
      FaceGeomError interact_err = CheckInterfacePair( pair, m_contactMethod, 
                                                       m_contactCase, interact );
 
-     //std::cout << "FaceGeomError: " << static_cast<int>(interact_err) << std::endl;
+     // Update pair reporting data for this coupling scheme
+     this->updatePairReportingData( interact_err );
 
      // TODO refine how these errors are handled. Here we skip over face-pairs with errors. That is, 
      // they are not registered for contact, but we don't error out.
@@ -975,14 +976,20 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
 
    } // end loop over pairs
 
-   // TODO refine how this logging is handled. This just detects an issue with a face-pair geometry
-   // (which has been skipped over for contact eligibility) and reports this warning. Do we want to 
-   // error out, or let a user detect bad contact behavior, but with a contact interaction that still
-   // runs?
-   SLIC_WARNING_IF( pair_err!=0, "CouplingScheme::apply(): error with orientation, input, " << 
-                    "or invalid overlaps in CheckInterfacePair()." );
-
    this->m_numActivePairs = numActivePairs;
+
+   // Here, the pair_err is checked, which detects an issue with a face-pair geometry
+   // (which has been skipped over for contact eligibility) and reports this warning.
+   // This is intended to indicate to a user that there may be bad geometry, or issues with 
+   // complex cg calculations that need debugging.
+   //
+   // This is complex because a host-code may have unavoidable 'bad' geometry and wish 
+   // to continue the simulation. In this case, we may 'punt' on those face-pairs, which 
+   // may be reasonable and not an error. Alternatively, this warning may indicate a bug 
+   // or issue in the cg that a host-code does desire to have resolved. For this reason, this
+   // message is kept at the warning level.
+   SLIC_INFO_IF( pair_err!=0, "CouplingScheme::apply(): possible issues with orientation, " << 
+                 "input, or invalid overlaps in CheckInterfacePair()." );
 
    SLIC_ERROR_IF( numActivePairs != cpMgr.size(), "CouplingScheme::apply(): " << 
                   "number of active pairs does not match number of contact planes." );
@@ -1011,12 +1018,15 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
                          params.vis_type, 
                          cycle, t );
 
-   if (err != 0 || pair_err != 0)
+   if (err != 0)
    {
       return 1;
    }
    else
    {
+      // here we don't have any error in the application of interface physics, 
+      // but may have face-pair data reporting skipped pair statistics for debug print
+      this->printPairReportingData();
       return 0;
    }
   
@@ -1664,6 +1674,63 @@ void CouplingScheme::writeInterfaceOutput( const std::string& dir,
    return;
 }
 
+//------------------------------------------------------------------------------
+void CouplingScheme::updatePairReportingData( const FaceGeomError face_error )
+{
+   switch (face_error)
+   {
+      case NO_FACE_GEOM_ERROR:
+      {
+         // no-op
+         break;
+      } 
+      case FACE_ORIENTATION:
+      {
+         ++this->m_pairReportingData.numBadOrientation;
+         break;
+      }
+      case INVALID_FACE_INPUT:
+      {
+         ++this->m_pairReportingData.numBadFaceGeometry;
+         break;
+      }
+      case DEGENERATE_OVERLAP:
+      {
+         ++this->m_pairReportingData.numBadOverlaps;
+         break;
+      }
+      case FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES:
+      {
+         // no-op; this is a very specific, in-the-weeds computational geometry
+         // debug print and does not indicate an issue with the host-code mesh
+         break;
+      }
+      default: break;
+   } // end switch
+}
+//------------------------------------------------------------------------------
+void CouplingScheme::printPairReportingData()
+{
+   int numInterfacePairs = this->m_interfacePairs->getNumPairs();
+
+   SLIC_DEBUG(this->m_numActivePairs*100./numInterfacePairs << "% of binned interface " <<
+              "pairs are active contact candidates.");
+
+   SLIC_DEBUG_IF(this->m_pairReportingData.numBadOrientation>0,
+                 "Number of bad orientations is " << this->m_pairReportingData.numBadOrientation <<
+                 " equaling " << this->m_pairReportingData.numBadOrientation*100./numInterfacePairs <<
+                 "% of total number of binned interface pairs.");
+
+   SLIC_DEBUG_IF(this->m_pairReportingData.numBadFaceGeometry>0,
+                 "Number of bad face geometries is " << this->m_pairReportingData.numBadFaceGeometry <<
+                 " equaling " << this->m_pairReportingData.numBadFaceGeometry*100./numInterfacePairs <<
+                 "% of total number of binned interface pairs.");
+
+   SLIC_DEBUG_IF(this->m_pairReportingData.numBadOverlaps>0,
+                 "Number of bad contact overlaps is " << this->m_pairReportingData.numBadOverlaps <<
+                 " equaling " << this->m_pairReportingData.numBadOverlaps*100./numInterfacePairs <<
+                 "% of total number of binned interface pairs.");
+}
 //------------------------------------------------------------------------------
 
 } /* namespace tribol */

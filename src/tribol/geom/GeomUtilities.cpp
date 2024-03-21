@@ -559,7 +559,7 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
    {
       SLIC_DEBUG( "Intersection2DPolygon(): one or more degenerate faces with < 3 vertices." );
       area = 0.0;
-      return INVALID_INPUT; 
+      return INVALID_FACE_INPUT; 
    }
 
    // check right hand rule ordering of polygon vertices. 
@@ -800,7 +800,7 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
          {
             SLIC_DEBUG("Intersection2DPolygon(): number of A vertices interior to B " << 
                        "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
-            return FACE_INDEX_EXCEEDS_OVERLAP_VERTICES;
+            return FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
          polyXTemp[k] = xA[i];
@@ -818,7 +818,7 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
          {
             SLIC_DEBUG("Intersection2DPolygon(): number of B vertices interior to A " << 
                        "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
-            return FACE_INDEX_EXCEEDS_OVERLAP_VERTICES;
+            return FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
          polyXTemp[k] = xB[i];
@@ -1252,7 +1252,7 @@ FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RES
          if (k > numNewPoints)
          {
             SLIC_DEBUG("checkPolySegs(): index into polyX/polyY exceeds allocated space");
-            return FACE_INDEX_EXCEEDS_OVERLAP_VERTICES;
+            return FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
          (*xnew)[k] = x[i];
