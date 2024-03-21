@@ -38,6 +38,8 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
   Also removed any `continue` statements for null meshes.
 - Updated logging in timestep vote by removing logging macro calls inside the interface pairs 
   loop; don't error out in the presence of a bad dt vote, but issue debug print.
+- Updated logging of face geometry issues to `SLIC_INFO()` and don't error out in presence of
+  geometry issue.
   
 ### Fixed
 - Allow null velocity and response pointers for various use cases
