@@ -20,8 +20,6 @@ namespace tribol
 struct PairReportingData
 {
 public:
-   PairReportingData() {};
-   ~PairReportingData() {};
 
    int numBadOrientation  {0};
    int numBadOverlaps     {0};
@@ -152,7 +150,7 @@ public:
   CouplingSchemeErrors& getCouplingSchemeErrors() { return m_couplingSchemeErrors; }
   CouplingSchemeInfo&   getCouplingSchemeInfo()   { return m_couplingSchemeInfo; }
 
-  PairReportingData& getPairReportingData() {return m_pairReportingData; }
+  const PairReportingData& getPairReportingData() const {return m_pairReportingData; }
 
   integer spatialDimension() const 
   { 
