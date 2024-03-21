@@ -380,6 +380,12 @@ public:
    */
   void updatePairReportingData( const FaceGeomError face_error );
 
+  /*!
+   * \brief This debug prints the total number of types of face geometry errors 
+   *
+   */
+  void printPairReportingData();
+
 #ifdef BUILD_REDECOMP
 
   /**

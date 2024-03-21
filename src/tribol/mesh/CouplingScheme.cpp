@@ -944,6 +944,8 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
 
    } // end loop over pairs
 
+   this->m_numActivePairs = numActivePairs;
+
    // Here, the pair_err is checked, which detects an issue with a face-pair geometry
    // (which has been skipped over for contact eligibility) and reports this warning.
    // This is intended to indicate to a user that there may be bad geometry, or issues with 
@@ -956,8 +958,6 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    // message is kept at the warning level.
    SLIC_WARNING_IF( pair_err!=0, "CouplingScheme::apply(): possible issues with orientation, " << 
                     "input, or invalid overlaps in CheckInterfacePair()." );
-
-   this->m_numActivePairs = numActivePairs;
 
    SLIC_ERROR_IF( numActivePairs != cpMgr.size(), "CouplingScheme::apply(): " << 
                   "number of active pairs does not match number of contact planes." );
@@ -992,6 +992,9 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
    }
    else
    {
+      // here we don't have any error in the application of interface physics, 
+      // but may have face-pair data reporting skipped pair statistics for debug print
+      this->printPairReportingData();
       return 0;
    }
   
@@ -1600,6 +1603,29 @@ void CouplingScheme::updatePairReportingData( const FaceGeomError face_error )
       }
       default: break;
    } // end switch
+}
+//------------------------------------------------------------------------------
+void CouplingScheme::printPairReportingData()
+{
+   int numInterfacePairs = this->m_interfacePairs->getNumPairs();
+
+   SLIC_DEBUG(this->m_numActivePairs*100./numInterfacePairs << "% of binned interface " <<
+              "pairs are active contact candidates.");
+
+   SLIC_DEBUG_IF(this->m_pairReportingData.numBadOrientation>0,
+                 "Number of bad orientations is " << this->m_pairReportingData.numBadOrientation <<
+                 " equaling " << this->m_pairReportingData.numBadOrientation*100./numInterfacePairs <<
+                 "% of total number of binned interface pairs.");
+
+   SLIC_DEBUG_IF(this->m_pairReportingData.numBadFaceGeometry>0,
+                 "Number of bad face geometries is " << this->m_pairReportingData.numBadFaceGeometry <<
+                 " equaling " << this->m_pairReportingData.numBadFaceGeometry*100./numInterfacePairs <<
+                 "% of total number of binned interface pairs.");
+
+   SLIC_DEBUG_IF(this->m_pairReportingData.numBadOverlaps>0,
+                 "Number of bad contact overlaps is " << this->m_pairReportingData.numBadOverlaps <<
+                 " equaling " << this->m_pairReportingData.numBadOverlaps*100./numInterfacePairs <<
+                 "% of total number of binned interface pairs.");
 }
 //------------------------------------------------------------------------------
 
