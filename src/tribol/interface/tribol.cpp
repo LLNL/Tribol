@@ -201,6 +201,20 @@ void setContactPenFrac( double frac )
 } // end setContactPenFrac()
 
 //------------------------------------------------------------------------------
+void setTimestepPenFrac( double frac )
+{
+   parameters_t & parameters = parameters_t::getInstance();
+   if (frac <= 0.)
+   {
+      // Don't set the timestep_pen_frac. This will use default
+      return;
+   }
+
+   parameters.timestep_pen_frac = frac;
+
+} // end setTimestepPenFrac()
+
+//------------------------------------------------------------------------------
 void setContactAreaFrac( double frac )
 {
    parameters_t & parameters = parameters_t::getInstance();

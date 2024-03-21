@@ -97,6 +97,17 @@ void setRatePercentPenalty( int meshId, double r_p );
 void setContactPenFrac( double frac );
 
 /*!
+ *
+ * \brief sets the timestep interpen fraction on the parameters struct
+ *
+ * \param [in] frac the maximum allowable interpenetration factor triggering a timestep vote
+ *
+ * \note this is only used for common-plane with penalty enforcement
+ *
+ */
+void setTimestepPenFrac( double frac );
+
+/*!
  * \brief Sets the area fraction for inclusion of a contact overlap 
  * \param [in] frac area fraction tolerance
  *
