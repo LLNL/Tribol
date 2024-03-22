@@ -77,7 +77,8 @@ void set_defaults()
    // interpenetration kinematic gap is more than the smallest thickness of the 
    // constituent face elements, then we don't consider the face-pair a contact candidate.
    // Note, auto-contact will require registration of element thicknesses.
-   parameters.auto_interpen_check          = false; // true if the auto-contact interpenetration check is used for interpenetrating face-pairs.
+   parameters.auto_interpen_check           = false; // true if the auto-contact interpenetration check is used for interpenetrating face-pairs.
+   parameters.auto_contact_len_scale_factor = 1.0;   // sacle factor applied to element thickness for auto contact length scale
 
 }
 
