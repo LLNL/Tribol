@@ -61,7 +61,7 @@ struct TestControlParameters
    }
 
    real dt {0.};
-   real contact_pen_frac {1.0};
+   real auto_contact_pen_frac {0.95};
 
    // penalty control parameters
    bool penalty_ratio;

@@ -489,7 +489,7 @@ struct parameters_t
   double gap_tied_tol;           ///! Ratio for determining max separation tied contact can support
   double len_collapse_ratio;     ///! Ratio of face length providing topology collapse length tolerance
   double projection_ratio;       ///! Ratio for defining nonzero projections
-  double contact_pen_frac;       ///! Max allowable interpenetration as percent of element thickness for contact candidacy
+  double auto_contact_pen_frac;  ///! Max allowable interpenetration as percent of element thickness for contact candidacy
   double timestep_pen_frac;      ///! Max allowable interpenetration as percent of element thickness prior to triggering timestep vote
 
   int vis_cycle_incr;            ///! Frequency for visualizations dumps

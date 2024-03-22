@@ -425,7 +425,6 @@ TEST_F( CompGeomTest, 2d_projections_1 )
                                    tribol::BINNING_GRID );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT );
-   tribol::setContactPenFrac(0.5);
    tribol::setContactAreaFrac(1.e-4);
 
    // TODO check penetration and overlap tolerance with what is being used in host-code
@@ -677,7 +676,7 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
 
    // amount of interpenetration in the z-direction
    real max_interpen_frac = 1.0;
-   tribol::setContactPenFrac( max_interpen_frac );
+   tribol::setAutoContactPenScale( max_interpen_frac );
    real test_ratio = 0.90; // fraction of max interpen frac used for this test
    z[4] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[5] = -test_ratio * max_interpen_frac * element_thickness[1]; 
@@ -807,7 +806,7 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
 
    // amount of interpenetration in the z-direction
    real max_interpen_frac = 1.0;
-   tribol::setContactPenFrac( max_interpen_frac );
+   tribol::setAutoContactPenScale( max_interpen_frac );
    real test_ratio = 1.01; // fraction of max interpen frac used for this test
    z[4] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[5] = -test_ratio * max_interpen_frac * element_thickness[1]; 

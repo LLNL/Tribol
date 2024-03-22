@@ -310,7 +310,7 @@ bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
    parameters_t& params = parameters_t::getInstance();
    if (params.auto_interpen_check)
    {
-      real max_interpen = -1. * params.contact_pen_frac * 
+      real max_interpen = -1. * params.auto_contact_pen_frac * 
                           axom::utilities::min( meshDat1.m_elemData.m_thickness[ faceId1 ],
                                                 meshDat2.m_elemData.m_thickness[ faceId2 ] );
 
@@ -542,9 +542,7 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
    // CHECK #5: check if the nodes of face2 interpenetrate the 
    // plane defined by face1 AND vice-versa. For proximate faces 
    // that pass check #3 this check may easily indicate that the faces 
-   // do in fact intersect. Note, the separation tolerance is 1/2 the longest 
-   // dimension of the face element. A larger tolerance allowing for separation 
-   // is per testing of the mortar method.
+   // do in fact intersect. 
    real separationTol = params.gap_separation_ratio * 
                         axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                                               mesh2.m_faceRadius[ faceId2 ] );
@@ -806,9 +804,9 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
       axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                             mesh2.m_faceRadius[ faceId2 ] ));
 
-   // The gap tolerance allows separation up to 50% the largest face-radius.
-   // This is conservative and allows for possible over-inclusion. This is done 
-   // for the mortar method per testing.
+   // The gap tolerance allows separation up to the separation ratio of the 
+   // largest face-radius. This is conservative and allows for possible 
+   // over-inclusion. This is done for the mortar method per testing.
    cp.m_gapTol = params.gap_separation_ratio * 
                  axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                                        mesh2.m_faceRadius[ faceId2 ] );
@@ -1999,7 +1997,7 @@ FaceGeomError CheckEdgePair( InterfacePair& pair,
    // a fullOverlap computation, but we don't know if there is a positive 
    // length of overlap and will have to construct the contact plane 
    // (contact segment) and perform this check. Note, this tolerance is 
-   // inclusive up to a separation of the edge-radius.
+   // inclusive up to a separation of a fraction of the edge-radius.
    // This is done for the mortar method per 3D testing.
    real separationTol = params.gap_separation_ratio * 
                         axom::utilities::max( mesh1.m_faceRadius[ edgeId1 ], 
