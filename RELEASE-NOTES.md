@@ -42,6 +42,8 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
   loop; don't error out in the presence of a bad dt vote, but issue debug print.
 - Updated logging of face geometry issues to `SLIC_INFO()` and don't error out in presence of
   geometry issue.
+- Changed `setContactPenFrac()` to `setAutoContactPenScale()`, which better describes when and
+  how this scale factor is used.
   
 ### Fixed
 - Allow null velocity and response pointers for various use cases
