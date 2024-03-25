@@ -190,11 +190,10 @@ void setRatePercentPenalty( int meshId, double r_p )
 void setAutoContactPenScale( double scale )
 {
    parameters_t & parameters = parameters_t::getInstance();
-   if (scale <= .95)
-   {
-      parameters.auto_contact_pen_frac = 0.95;
-      return;
-   }
+
+   // check for strict positivity of the input parameter
+   SLIC_WARNING_ROOT_IF(scale<0., "tribol::setAutoContactPenScale(): " << 
+                        "input for the auto-contact length scale factor must be positive.");
 
    parameters.auto_contact_pen_frac = scale;
 
