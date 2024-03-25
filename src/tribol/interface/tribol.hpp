@@ -91,9 +91,9 @@ void setRatePercentPenalty( int meshId, double r_p );
  *
  * \param [in] scale the scale applied to the element thickness to determine the auto-contact length scale 
  *
- * \note this is only used for common-plane with penalty enforcement
- *
- * \pre scale < 0.95 will be reset to use the default of scale = 0.95
+ * \note this is only used for common-plane with penalty enforcement. A sacle < 1.0 may 
+ * result in missed contact face-pairs in softer contact responses
+ *     
  *
  */
 void setAutoContactPenScale( double scale );
