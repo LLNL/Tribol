@@ -1155,7 +1155,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
       }
 
       // set the penetration fraction for timestep votes computed with penalty enforcements
-      setContactPenFrac( params.contact_pen_frac );
+      setAutoContactPenScale( params.auto_contact_pen_frac );
 
    } // end if-penalty
 

@@ -504,7 +504,6 @@ TEST_F( CommonPlaneTest, element_penalty_check )
 
    // call tribol setup and update
    tribol::TestControlParameters parameters; 
-   parameters.contact_pen_frac = 0.29;
    parameters.penalty_ratio = true;
    parameters.const_penalty = 0.75;
    parameters.dt = dt;

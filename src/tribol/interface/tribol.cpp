@@ -67,7 +67,7 @@ void set_defaults()
    parameters.gap_tied_tol                 = 0.1;    // tolerance for how much separation can occur before opposing faces are let go
    parameters.len_collapse_ratio           = 1.E-8;
    parameters.projection_ratio             = 1.E-10;
-   parameters.contact_pen_frac             = 1.0;    // max allowable interpenetration as percent of element thickness for contact candidacy 
+   parameters.auto_contact_pen_frac        = 0.95;   // max allowable interpenetration as percent of element thickness for contact candidacy 
    parameters.timestep_pen_frac            = 3.e-1;  // max allowable interpenetration as percent of element thickness prior to triggering timestep vote (not exposed to API) 
    parameters.enable_timestep_vote         = false;  // true if host-code wants to receive tribol timestep vote
    
@@ -77,7 +77,7 @@ void set_defaults()
    // interpenetration kinematic gap is more than the smallest thickness of the 
    // constituent face elements, then we don't consider the face-pair a contact candidate.
    // Note, auto-contact will require registration of element thicknesses.
-   parameters.auto_interpen_check          = false; // true if the auto-contact interpenetration check is used for interpenetrating face-pairs.
+   parameters.auto_interpen_check           = false; // true if the auto-contact interpenetration check is used for interpenetrating face-pairs.
 
 }
 
@@ -187,18 +187,17 @@ void setRatePercentPenalty( int meshId, double r_p )
 } // end setRatePercentPenalty()
 
 //------------------------------------------------------------------------------
-void setContactPenFrac( double frac )
+void setAutoContactPenScale( double scale )
 {
    parameters_t & parameters = parameters_t::getInstance();
-   if (frac <= 0.)
-   {
-      // Don't set the contact_pen_frac. This will use default
-      return;
-   }
 
-   parameters.contact_pen_frac = frac;
+   // check for strict positivity of the input parameter
+   SLIC_WARNING_ROOT_IF(scale<0., "tribol::setAutoContactPenScale(): " << 
+                        "input for the auto-contact length scale factor must be positive.");
 
-} // end setContactPenFrac()
+   parameters.auto_contact_pen_frac = scale;
+
+} // end setAutoContactPenScale()
 
 //------------------------------------------------------------------------------
 void setTimestepPenFrac( double frac )

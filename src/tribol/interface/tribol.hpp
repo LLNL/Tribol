@@ -87,14 +87,16 @@ void setRatePercentPenalty( int meshId, double r_p );
 
 /*!
  *
- * \brief sets the contact interpen fraction on the parameters struct
+ * \brief sets the auto-contact interpen fraction on the parameters struct
  *
- * \param [in] frac the maximum allowable interpenetration factor
+ * \param [in] scale the scale applied to the element thickness to determine the auto-contact length scale 
  *
- * \note this is only used for common-plane with penalty enforcement
+ * \note this is only used for common-plane with penalty enforcement. A sacle < 1.0 may 
+ * result in missed contact face-pairs in softer contact responses
+ *     
  *
  */
-void setContactPenFrac( double frac );
+void setAutoContactPenScale( double scale );
 
 /*!
  *
