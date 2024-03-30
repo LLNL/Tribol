@@ -27,7 +27,6 @@
 namespace primal    = axom::primal;
 namespace slic      = axom::slic;
 namespace utilities = axom::utilities;
-namespace fmt       = axom::fmt;
 namespace CLI       = axom::CLI;
 
 using real = tribol::real;
@@ -53,7 +52,7 @@ enum BLOCK_EX_BCS
 class NumberAtLeast : public CLI::Validator 
 {
   public:
-    NumberAtLeast(int n) : Validator(fmt::format(">={} ",n)) 
+    NumberAtLeast(int n) : Validator(axom::fmt::format(">={} ",n)) 
     {
         func_ = [=](std::string &number_str) {
             int number;
@@ -63,7 +62,7 @@ class NumberAtLeast : public CLI::Validator
             }
             if(number < n)
             {
-                return fmt::format("Number ({}) must be at least {} ", number, n);
+                return axom::fmt::format("Number ({}) must be at least {} ", number, n);
             }
             return std::string();
         };
