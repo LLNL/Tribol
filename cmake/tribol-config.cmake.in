@@ -43,6 +43,11 @@ if(NOT TRIBOL_FOUND)
   #----------------------------------------------------------------------------
   include(CMakeFindDependencyMacro)
 
+  # Enable various find commands to look in non-default paths
+  set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB32_PATHS TRUE)
+  set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
+  set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIBX32_PATHS TRUE)
+
   # Tribol is optional
   if(TRIBOL_USE_UMPIRE)
     set(TRIBOL_UMPIRE_DIR  "@UMPIRE_DIR@")
