@@ -49,8 +49,7 @@ if(NOT TRIBOL_FOUND)
     if(NOT UMPIRE_DIR) 
       set(UMPIRE_DIR "${TRIBOL_UMPIRE_DIR}")
     endif()
-    set(umpire_DIR "${UMPIRE_DIR}")
-    find_dependency(umpire REQUIRED)
+    find_dependency(umpire REQUIRED PATHS "${UMPIRE_DIR}")
   endif()
 
   # axom is a required TPL. It is either external, or built-in
@@ -58,12 +57,12 @@ if(NOT TRIBOL_FOUND)
   if(NOT AXOM_DIR) 
     set(AXOM_DIR "${TRIBOL_AXOM_DIR}")
   endif()
-  find_dependency(axom REQUIRED NO_DEFAULT_PATH PATHS "${TRIBOL_AXOM_DIR}/lib/cmake")
+  find_dependency(axom REQUIRED PATHS "${AXOM_DIR}/lib/cmake")
 
   # mfem is also a required TPL
   set(TRIBOL_MFEM_DIR  "@MFEM_DIR@")
   if(NOT MFEM_DIR) 
-    set(MFEM_DIR "${TRIBOL_MFEM_DIR}")
+    set(MFEM_DIR "${MFEM_DIR}")
   endif()
   set(TRIBOL_MFEM_BUILT_WITH_CMAKE @MFEM_BUILT_WITH_CMAKE@)
 
@@ -72,7 +71,7 @@ if(NOT TRIBOL_FOUND)
     if(NOT MFEM_DIR)
       set(MFEM_DIR ${TRIBOL_MFEM_DIR}) 
     endif()
-    find_dependency(mfem REQUIRED NO_DEFAULT_PATH PATHS "${MFEM_DIR}/lib/cmake/mfem" NAMES MFEM)
+    find_dependency(mfem REQUIRED PATHS "${MFEM_DIR}/lib/cmake/mfem" NAMES MFEM)
   else()
     # Makefile case handled by exporting `tribol::mfem`
   endif()

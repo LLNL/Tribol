@@ -32,7 +32,7 @@ if (DEFINED UMPIRE_DIR)
   message(STATUS "Setting up external Umpire TPL...")
 
   set(umpire_DIR ${UMPIRE_DIR})
-  find_dependency(umpire REQUIRED)
+  find_dependency(umpire REQUIRED PATHS "${UMPIRE_DIR}")
 
   set(TRIBOL_USE_UMPIRE TRUE)
 else()
@@ -60,7 +60,8 @@ if (TARGET axom)
 
 elseif (DEFINED AXOM_DIR)
   message(STATUS "Setting up external Axom TPL...")
-  include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupAxom.cmake)
+  tribol_assert_path_exists( ${AXOM_DIR} )
+  find_dependency(axom REQUIRED PATHS "${AXOM_DIR}/lib/cmake")
 else()
   message(FATAL_ERROR 
      "Axom is a required dependency for tribol. "
