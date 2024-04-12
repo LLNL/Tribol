@@ -17,7 +17,6 @@
 #include "axom/fmt.hpp"
 
 // C++ includes
-#include <axom/slic/interface/slic_macros.hpp>
 #include <iomanip>
 #include <sstream>
 #include <fstream>
