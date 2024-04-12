@@ -8,7 +8,6 @@
 #include "tribol/interface/tribol.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/physics/Mortar.hpp"
 #include "tribol/physics/AlignedMortar.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
@@ -185,8 +184,8 @@ public:
 
       // diagnostics
       tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-      tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarMeshId );
-      tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarMeshId );
+      tribol::MeshData& mortarMesh = meshManager.at( mortarMeshId );
+      tribol::MeshData& nonmortarMesh = meshManager.at( nonmortarMeshId );
 
       // compute the sum of the nodal forces
       RealT fx1Sum = 0.;

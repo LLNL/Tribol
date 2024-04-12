@@ -6,7 +6,6 @@
 #include "AlignedMortar.hpp"
 
 #include "tribol/types.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
@@ -87,8 +86,8 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 {
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = meshManager.GetMeshInstance( elem.meshId2 );
-   IndexT const * const nonmortarConn = nonmortarMesh.m_connectivity;
+   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
+   const IndexT * const nonmortarConn = nonmortarMesh.m_connectivity;
 
    SLIC_ERROR_IF(nonmortarMesh.m_nodalFields.m_node_gap == nullptr, 
                  "ComputeNodalGap< ALIGNED_MORTAR >: allocate gaps on mesh data object.");
@@ -166,7 +165,7 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 void ComputeAlignedMortarGaps( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexT const numPairs = pairs->getNumPairs();
+   const IndexT numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
@@ -178,22 +177,22 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   IndexT const mortarId = cs->getMeshId1();
-   IndexT const nonmortarId =  cs->getMeshId2();
+   const IndexT mortarId = cs->getMeshId1();
+   const IndexT nonmortarId =  cs->getMeshId2();
 
-   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
-   MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
-   IndexT const numNodesPerFace = mortarMesh.m_numNodesPerCell;
+   MeshData& mortarMesh = meshManager.at( mortarId );
+   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
+   const IndexT numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    RealT const * const x1 = mortarMesh.m_positionX;
    RealT const * const y1 = mortarMesh.m_positionY; 
    RealT const * const z1 = mortarMesh.m_positionZ; 
-   IndexT const * const mortarConn= mortarMesh.m_connectivity;
+   const IndexT * const mortarConn= mortarMesh.m_connectivity;
 
    RealT const * const x2 = nonmortarMesh.m_positionX; 
    RealT const * const y2 = nonmortarMesh.m_positionY;
    RealT const * const z2 = nonmortarMesh.m_positionZ;
-   IndexT const * nonmortarConn = nonmortarMesh.m_connectivity;
+   const IndexT * nonmortarConn = nonmortarMesh.m_connectivity;
 
    // compute nodal normals (do this outside the element loop)
    // This routine is guarded against a null mesh
@@ -280,7 +279,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
 {
 
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexT const numPairs = pairs->getNumPairs();
+   const IndexT numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
@@ -292,12 +291,12 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   IndexT const mortarId = cs->getMeshId1();
-   IndexT const nonmortarId =  cs->getMeshId2();
+   const IndexT mortarId = cs->getMeshId1();
+   const IndexT nonmortarId =  cs->getMeshId2();
 
-   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
-   MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
-   IndexT const numNodesPerFace = mortarMesh.m_numNodesPerCell;
+   MeshData& mortarMesh = meshManager.at( mortarId );
+   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
+   const IndexT numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    RealT const * const x1 = mortarMesh.m_positionX;
    RealT const * const y1 = mortarMesh.m_positionY; 
@@ -305,7 +304,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    RealT * const fx1 = mortarMesh.m_forceX;
    RealT * const fy1 = mortarMesh.m_forceY; 
    RealT * const fz1 = mortarMesh.m_forceZ; 
-   IndexT const * const mortarConn= mortarMesh.m_connectivity;
+   const IndexT * const mortarConn= mortarMesh.m_connectivity;
 
    RealT const * const x2 = nonmortarMesh.m_positionX; 
    RealT const * const y2 = nonmortarMesh.m_positionY;
@@ -313,7 +312,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    RealT * const fx2 = nonmortarMesh.m_forceX; 
    RealT * const fy2 = nonmortarMesh.m_forceY;
    RealT * const fz2 = nonmortarMesh.m_forceZ;
-   IndexT const * nonmortarConn = nonmortarMesh.m_connectivity;
+   const IndexT * nonmortarConn = nonmortarMesh.m_connectivity;
 
    ///////////////////////////////////////////////////////
    //                                                   //

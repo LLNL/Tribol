@@ -14,7 +14,6 @@
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/physics/CommonPlane.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 

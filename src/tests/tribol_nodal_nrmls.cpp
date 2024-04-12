@@ -7,7 +7,6 @@
 #include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 #include "tribol/utils/Math.hpp"
 
@@ -43,14 +42,14 @@ public:
                              int const dim )
    {
       // register the mesh with tribol
-      const int meshId = 0;
-      tribol::registerMesh( meshId, numCells, numNodes, 
+      const tribol::IndexT mesh_id = 0;
+      tribol::registerMesh( mesh_id, numCells, numNodes, 
                             conn, cell_type, x, y, z );
 
 
       // get instance of mesh in order to compute nodally averaged normals
       tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-      tribol::MeshData& mesh = meshManager.GetMeshInstance( meshId );
+      tribol::MeshData& mesh = meshManager.at( mesh_id );
 
       // compute the face data for this mesh
       mesh.computeFaceData( dim );
@@ -132,7 +131,7 @@ TEST_F( NodalNormalTest, two_quad_inverted_v )
                         numFaces, 6, 3 );
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mesh = meshManager.GetMeshInstance( 0 );
+   tribol::MeshData& mesh = meshManager.at( 0 );
 
    // check each normal...hard coded
    RealT n1check = tribol::magnitude( mesh.m_node_nX[0] - 0., 

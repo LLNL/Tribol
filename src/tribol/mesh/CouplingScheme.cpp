@@ -8,7 +8,6 @@
 // Tribol includes
 #include "tribol/types.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 #include "tribol/utils/Math.hpp"
@@ -38,10 +37,10 @@ namespace
 {
 
 //------------------------------------------------------------------------------
-inline bool validMeshID( int meshID )
+inline bool validMeshID( IndexT mesh_id )
 {
   MeshManager & meshManager = MeshManager::getInstance();
-  return (meshID==ANY_MESH) || meshManager.hasMesh( meshID );
+  return (mesh_id==ANY_MESH) || meshManager.findData( mesh_id );
 }
 
 } /* end anonymous namespace */
@@ -311,8 +310,8 @@ void CouplingSchemeInfo::printEnforcementInfo()
 
 //------------------------------------------------------------------------------
 CouplingScheme::CouplingScheme( IndexT cs_id, 
-                                int meshId1,
-                                int meshId2,
+                                IndexT mesh_id1,
+                                IndexT mesh_id2,
                                 int contact_mode,
                                 int contact_case,
                                 int contact_method,
@@ -320,8 +319,8 @@ CouplingScheme::CouplingScheme( IndexT cs_id,
                                 int enforcement_method,
                                 int binning_method )
    : m_id                   ( cs_id ) 
-   , m_meshId1              ( meshId1 )
-   , m_meshId2              ( meshId2 )
+   , m_mesh_id1             ( mesh_id1 )
+   , m_mesh_id2             ( mesh_id2 )
    , m_numTotalNodes        ( 0 )
    , m_fixedBinning         ( false )
    , m_isBinned             ( false )
@@ -330,9 +329,9 @@ CouplingScheme::CouplingScheme( IndexT cs_id,
    , m_methodData           ( nullptr )
 {
   // error sanity checks
-  SLIC_ERROR_ROOT_IF( meshId1==ANY_MESH, "meshId1 cannot be set to ANY_MESH" );
-  SLIC_ERROR_ROOT_IF( !validMeshID( m_meshId1 ), "invalid meshId1=" << meshId1 );
-  SLIC_ERROR_ROOT_IF( !validMeshID( m_meshId2 ), "invalid meshId2=" << meshId2 );
+  SLIC_ERROR_ROOT_IF( mesh_id1==ANY_MESH, "mesh_id1 cannot be set to ANY_MESH" );
+  SLIC_ERROR_ROOT_IF( !validMeshID( m_mesh_id1 ), "invalid mesh_id1=" << mesh_id1 );
+  SLIC_ERROR_ROOT_IF( !validMeshID( m_mesh_id2 ), "invalid mesh_id2=" << mesh_id2 );
 
   SLIC_ERROR_ROOT_IF( !in_range( contact_mode, NUM_CONTACT_MODES ),
                       "invalid contact_mode=" << contact_mode );
@@ -373,14 +372,14 @@ bool CouplingScheme::isValidCouplingScheme()
 {
    bool valid {true};
    MeshManager & meshManager = MeshManager::getInstance(); 
-   if (!meshManager.hasMesh(this->m_meshId1) || !meshManager.hasMesh(this->m_meshId2))
+   if (!meshManager.findData(this->m_mesh_id1) || !meshManager.findData(this->m_mesh_id2))
    {
       SLIC_WARNING_ROOT("Please register meshes for coupling scheme, " << this->m_id << ".");
       return false;
    }
 
-   MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
-   MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
 
    // check for invalid mesh topology matches in a coupling scheme
    if (mesh1.m_elementType != mesh2.m_elementType)
@@ -512,7 +511,7 @@ bool CouplingScheme::isValidCase()
 
    // catch incorrectly specified AUTO contact case
    if (this->m_contactCase == AUTO &&
-       (this->m_meshId1 != this->m_meshId2))
+       (this->m_mesh_id1 != this->m_mesh_id2))
    {
       this->m_couplingSchemeInfo.cs_case_info = SPECIFYING_NONE_WITH_TWO_REGISTERED_MESHES;
       this->m_contactCase = NO_CASE;
@@ -526,8 +525,8 @@ bool CouplingScheme::isValidCase()
       params.auto_interpen_check = true;
 
       MeshManager & meshManager = MeshManager::getInstance(); 
-      MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
-      MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+      MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+      MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
 
       if (!mesh1.m_elemData.m_is_element_thickness_set ||
           !mesh2.m_elemData.m_is_element_thickness_set)
@@ -565,8 +564,8 @@ bool CouplingScheme::isValidMethod()
    }
 
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
-   MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
    int dim = this->spatialDimension();
 
    // check all methods for basic validity issues for non-null meshes
@@ -581,7 +580,7 @@ bool CouplingScheme::isValidMethod()
             this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
             return false;
          }
-         if( this->m_meshId1 == this->m_meshId2 )
+         if( this->m_mesh_id1 == this->m_mesh_id2 )
          {
             this->m_couplingSchemeErrors.cs_method_error = SAME_MESH_IDS;
             if (dim != 3)
@@ -817,8 +816,8 @@ int CouplingScheme::checkEnforcementData()
 {
    
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
-   MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
    this->m_couplingSchemeErrors.cs_enforcement_data_error 
       = NO_ENFORCEMENT_DATA_ERROR; 
 
@@ -880,6 +879,7 @@ int CouplingScheme::checkEnforcementData()
    return err;
 
 } // end CouplingScheme::checkEnforcementData()
+
 //------------------------------------------------------------------------------
 void CouplingScheme::performBinning()
 {
@@ -908,6 +908,7 @@ void CouplingScheme::performBinning()
    } // end if-non-null meshes
    return;
 }
+
 //------------------------------------------------------------------------------
 int CouplingScheme::apply( int cycle, RealT t, RealT &dt ) 
 {
@@ -1040,11 +1041,11 @@ bool CouplingScheme::init()
 
       // compute the face data
       MeshManager & meshManager = MeshManager::getInstance(); 
-      MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
+      MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
       mesh1.computeFaceData( mesh1.m_dim );
-      if (this->m_meshId2 != this->m_meshId1)
+      if (this->m_mesh_id2 != this->m_mesh_id1)
       {
-         MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+         MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
          mesh2.computeFaceData( mesh2.m_dim );
       }
 
@@ -1055,6 +1056,7 @@ bool CouplingScheme::init()
       return false;
    }
 }
+
 //------------------------------------------------------------------------------
 void CouplingScheme::setSlicLoggingLevel()
 {
@@ -1091,6 +1093,7 @@ void CouplingScheme::setSlicLoggingLevel()
       } // end switch
    } // end if
 }
+
 //------------------------------------------------------------------------------
 void CouplingScheme::allocateMethodData()
 {
@@ -1098,8 +1101,8 @@ void CouplingScheme::allocateMethodData()
    // Note: keep if-block for non-null meshes here. A valid coupling scheme 
    // may have null meshes, but we don't want to allocate unnecessary memory here.
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
-   MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
    if (mesh1.m_numCells > 0 && mesh2.m_numCells > 0)
    {
       this->m_numTotalNodes = mesh1.m_lengthNodalData;
@@ -1130,8 +1133,8 @@ void CouplingScheme::allocateMethodData()
 RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 {
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.GetMeshInstance( m_meshId1 );
-   MeshData & mesh2 = meshManager.GetMeshInstance( m_meshId2 );
+   MeshData & mesh1 = meshManager.at( m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( m_mesh_id2 );
    parameters_t& params = parameters_t::getInstance();
    RealT gap_tol = 0.;
 
@@ -1185,8 +1188,8 @@ void CouplingScheme::computeTimeStep(RealT &dt)
 {
    // make sure velocities are registered
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.GetMeshInstance( m_meshId1 );
-   MeshData & mesh2 = meshManager.GetMeshInstance( m_meshId2 );
+   MeshData & mesh1 = meshManager.at( m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( m_mesh_id2 );
 
    if (dt < 1.e-8)
    {
@@ -1264,6 +1267,7 @@ void CouplingScheme::computeTimeStep(RealT &dt)
          break;
    } // end-switch
 }
+
 //------------------------------------------------------------------------------
 void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 {
@@ -1281,8 +1285,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
    // instabilities.
    
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.GetMeshInstance( m_meshId1 );
-   MeshData & mesh2 = meshManager.GetMeshInstance( m_meshId2 );
+   MeshData & mesh1 = meshManager.at( m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( m_mesh_id2 );
 
    // issue warning that this timestep vote does not address 
    // contact instabilities that may present themselves with the use 
@@ -1654,7 +1658,7 @@ void CouplingScheme::writeInterfaceOutput( const std::string& dir,
          case ALIGNED_MORTAR :
          case MORTAR_WEIGHTS :
          case COMMON_PLANE : 
-            WriteContactPlaneMeshToVtk( dir, v_type, m_id, m_meshId1, m_meshId2, 
+            WriteContactPlaneMeshToVtk( dir, v_type, m_id, m_mesh_id1, m_mesh_id2, 
                                         dim, cycle, t ); 
             break;
          default :
@@ -1701,6 +1705,7 @@ void CouplingScheme::updatePairReportingData( const FaceGeomError face_error )
       default: break;
    } // end switch
 }
+
 //------------------------------------------------------------------------------
 void CouplingScheme::printPairReportingData()
 {
@@ -1724,8 +1729,8 @@ void CouplingScheme::printPairReportingData()
                  " equaling " << this->m_pairReportingData.numBadOverlaps*100./numInterfacePairs <<
                  "% of total number of binned interface pairs.");
 }
+
 //------------------------------------------------------------------------------
 template class DataManager<CouplingScheme>;
-
 
 } /* namespace tribol */

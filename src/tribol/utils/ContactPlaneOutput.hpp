@@ -36,8 +36,8 @@ class ContactPlaneManager;
  *
  */
 void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type, 
-                                 const IndexT cs_id, const int meshId1, 
-                                 const int meshId2, const int dim,
+                                 const IndexT cs_id, const IndexT mesh_id1, 
+                                 const IndexT mesh_id2, const int dim,
                                  const int cycle, const RealT t );
 
 

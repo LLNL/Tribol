@@ -7,7 +7,6 @@
 
 #include "tribol/types.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/common/Parameters.hpp"
@@ -32,14 +31,14 @@ namespace tribol
 bool geomFilter( InterfacePair & iPair, ContactMode const mode )
 {
    // alias variables off the InterfacePair
-   int const & meshId1 = iPair.meshId1;
-   int const & meshId2 = iPair.meshId2;
+   const IndexT& mesh_id1 = iPair.mesh_id1;
+   const IndexT& mesh_id2 = iPair.mesh_id2;
    int const & faceId1 = iPair.pairIndex1;
    int const & faceId2 = iPair.pairIndex2;
 
    /// CHECK #1: Check to make sure the two face ids are not the same
    ///           and the two mesh ids are not the same.
-   if ((meshId1 == meshId2) && (faceId1 == faceId2))
+   if ((mesh_id1 == mesh_id2) && (faceId1 == faceId2))
    {
       iPair.isContactCandidate = false;
       return iPair.isContactCandidate;
@@ -49,14 +48,14 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    MeshManager & meshManager = MeshManager::getInstance();
 
    // get instance of mesh data
-   MeshData& mesh1 = meshManager.GetMeshInstance(meshId1);
-   MeshData& mesh2 = meshManager.GetMeshInstance(meshId2);
+   MeshData& mesh1 = meshManager.at(mesh_id1);
+   MeshData& mesh2 = meshManager.at(mesh_id2);
    int dim = mesh1.m_dim;
 
    /// CHECK #2: Check to make sure faces don't share a common
-   ///           node for the case where meshId1 = meshId2.
+   ///           node for the case where mesh_id1 = mesh_id2.
    ///           We want to preclude two adjacent faces from interacting.
-   if (meshId1 == meshId2)
+   if (mesh_id1 == mesh_id2)
    {
       for (int i=0; i<mesh1.m_numNodesPerCell; ++i)
       {
@@ -300,12 +299,12 @@ public:
    {
       MeshManager & meshManager = MeshManager::getInstance();
 
-      int meshId1 = m_couplingScheme->getMeshId1();
-      MeshData const & meshData1 = meshManager.GetMeshInstance(meshId1);
+      IndexT mesh_id1 = m_couplingScheme->getMeshId1();
+      MeshData const & meshData1 = meshManager.at(mesh_id1);
       m_meshWrapper1 = MeshWrapper<D>(&meshData1);
 
-      int meshId2 = m_couplingScheme->getMeshId2();
-      MeshData const & meshData2 = meshManager.GetMeshInstance(meshId2);
+      IndexT mesh_id2 = m_couplingScheme->getMeshId2();
+      MeshData const & meshData2 = meshManager.at(mesh_id2);
       m_meshWrapper2 = MeshWrapper<D>(&meshData2);
 
       m_couplingScheme->getInterfacePairs()->clear();
@@ -403,12 +402,12 @@ public:
       // Extract some mesh metadata from coupling scheme / mesh manageer
       MeshManager & meshManager = MeshManager::getInstance();
 
-      int meshId1 = m_couplingScheme->getMeshId1();
-      MeshData const & meshData1 = meshManager.GetMeshInstance(meshId1);
+      IndexT mesh_id1 = m_couplingScheme->getMeshId1();
+      MeshData const & meshData1 = meshManager.at(mesh_id1);
       int cellType1 = static_cast<int>(meshData1.m_elementType);
 
-      int meshId2 = m_couplingScheme->getMeshId2();
-      MeshData const & meshData2 = meshManager.GetMeshInstance(meshId2);
+      IndexT mesh_id2 = m_couplingScheme->getMeshId2();
+      MeshData const & meshData2 = meshManager.at(mesh_id2);
       int cellType2 = static_cast<int>(meshData2.m_elementType);
 
       InterfacePairs* contactPairs = m_couplingScheme->getInterfacePairs();
@@ -430,17 +429,17 @@ public:
              fromIdx != BitsetType::npos ;
              fromIdx = candidateBits.find_next( fromIdx) )
          {
-            // if meshId1 = meshId2, then check to make sure fromIdx < toIdx
+            // if mesh_id1 = mesh_id2, then check to make sure fromIdx < toIdx
             // so we don't double count
-            if ( (meshId1 == meshId2) && (fromIdx < toIdx) )
+            if ( (mesh_id1 == mesh_id2) && (fromIdx < toIdx) )
             {
                continue;
             }
 
             // TODO: Add extra filter by bbox
 
-            InterfacePair pair( meshId1, cellType1, fromIdx,
-                                meshId2, cellType2, toIdx );
+            InterfacePair pair( mesh_id1, cellType1, fromIdx,
+                                mesh_id2, cellType2, toIdx );
 
             // perform initial geometry or validity checks to identify initially valid face-pairs
             bool isContactCandidate = geomFilter( pair, m_couplingScheme->getContactMode() );
@@ -492,12 +491,12 @@ private:
  {
     MeshManager & meshManager = MeshManager::getInstance();
 
-    int meshId1 = cs->getMeshId1();
-    MeshData const & meshData1 = meshManager.GetMeshInstance(meshId1);
+    IndexT mesh_id1 = cs->getMeshId1();
+    MeshData const & meshData1 = meshManager.at(mesh_id1);
     int mesh1NumElems = meshData1.m_numCells;
 
-    int meshId2 = cs->getMeshId2();
-    MeshData const & meshData2 = meshManager.GetMeshInstance(meshId2);
+    IndexT mesh_id2 = cs->getMeshId2();
+    MeshData const & meshData2 = meshManager.at(mesh_id2);
     int mesh2NumElems = meshData2.m_numCells;
 
     int numPairs = mesh1NumElems * mesh2NumElems;
@@ -513,12 +512,12 @@ private:
     for(int fromIdx = 0; fromIdx < mesh1NumElems; ++fromIdx)
     {
        // set starting index for inner loop
-       int startIdx = (meshId1 == meshId2) ? fromIdx : 0;
+       int startIdx = (mesh_id1 == mesh_id2) ? fromIdx : 0;
 
        for(int toIdx = startIdx; toIdx < mesh2NumElems; ++toIdx)
        {
-          InterfacePair pair( meshId1, cellType1, fromIdx,
-                              meshId2, cellType2, toIdx );
+          InterfacePair pair( mesh_id1, cellType1, fromIdx,
+                              mesh_id2, cellType2, toIdx );
           //
           // perform initial geometry or validity checks to identify initially valid face-pairs
           bool isContactCandidate = geomFilter( pair, cs->getContactMode() );

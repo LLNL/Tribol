@@ -27,8 +27,8 @@ void InterfacePairs::addInterfacePair( InterfacePair const& pair )
 {
    // set mesh ids and pair types. This is redundant since these 
    // only need to be set once.
-   m_meshId1 = pair.meshId1;
-   m_meshId2 = pair.meshId2;
+   m_mesh_id1 = pair.mesh_id1;
+   m_mesh_id2 = pair.mesh_id2;
    m_pairType1 = pair.pairType1;
    m_pairType2 = pair.pairType2;
 
@@ -51,8 +51,8 @@ InterfacePair InterfacePairs::getInterfacePair(IndexT idx) const
    SLIC_ERROR_IF(idx >= getNumPairs(), "Index out of range.");
 
    return InterfacePair {
-      m_meshId1, m_pairType1, m_pairIndex1[idx],
-      m_meshId2, m_pairType2, m_pairIndex2[idx], 
+      m_mesh_id1, m_pairType1, m_pairIndex1[idx],
+      m_mesh_id2, m_pairType2, m_pairIndex2[idx], 
       m_isContactCandidate[idx], idx };
 }
 

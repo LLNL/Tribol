@@ -6,7 +6,6 @@
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 
 // Axom includes
@@ -269,11 +268,11 @@ void MortarData::assembleJacobian( SurfaceContactElem & elem, SparseMode s_mode 
    // grab the two meshes in this coupling scheme
    MeshManager& meshManager = MeshManager::getInstance();
 
-   IndexT const mortarId = elem.meshId1;
-   IndexT const nonmortarId  = elem.meshId2;
+   IndexT const mortarId = elem.mesh_id1;
+   IndexT const nonmortarId  = elem.mesh_id2;
 
-   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
-   MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
+   MeshData& mortarMesh = meshManager.at( mortarId );
+   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
 
    // compute the pressure dof offset. 
    // Recall that the "equilibrium" 
@@ -426,11 +425,11 @@ void MortarData::assembleMortarWts( SurfaceContactElem & elem, SparseMode s_mode
    // grab the two meshes in this coupling scheme
    MeshManager& meshManager = MeshManager::getInstance();
 
-   IndexT const mortarId = elem.meshId1;
-   IndexT const nonmortarId  = elem.meshId2; 
+   IndexT const mortarId = elem.mesh_id1;
+   IndexT const nonmortarId  = elem.mesh_id2; 
 
-   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
-   MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
+   MeshData& mortarMesh = meshManager.at( mortarId );
+   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
 
    // Note: The node ids between the two are assumed to 
    // be unique and contiguous using the int ids in the 

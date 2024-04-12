@@ -13,7 +13,6 @@
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 
 // Axom includes
@@ -1134,11 +1133,11 @@ TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
    tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   int meshId = 0;
+   tribol::IndexT mesh_id = 0;
    int csId = 0;
-   registerDummy3DMesh( meshId );
+   registerDummy3DMesh( mesh_id );
 
-   tribol::registerCouplingScheme(csId, meshId, meshId,
+   tribol::registerCouplingScheme(csId, mesh_id, mesh_id,
                                   tribol::SURFACE_TO_SURFACE,
                                   tribol::AUTO,
                                   tribol::COMMON_PLANE,
@@ -1146,7 +1145,7 @@ TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
                                   tribol::PENALTY,
                                   tribol::BINNING_GRID );
  
-   tribol::setKinematicConstantPenalty( meshId, 1.0 );
+   tribol::setKinematicConstantPenalty( mesh_id, 1.0 );
 
    tribol::setPenaltyOptions( csId, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -1163,12 +1162,12 @@ TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
    tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   int meshId = 0;
+   tribol::IndexT mesh_id = 0;
    int numElements = 1;
    int csId = 0;
-   registerDummy3DMesh( meshId, numElements );
+   registerDummy3DMesh( mesh_id, numElements );
 
-   tribol::registerCouplingScheme(csId, meshId, meshId,
+   tribol::registerCouplingScheme(csId, mesh_id, mesh_id,
                                   tribol::SURFACE_TO_SURFACE,
                                   tribol::AUTO,
                                   tribol::COMMON_PLANE,
@@ -1176,13 +1175,13 @@ TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
                                   tribol::PENALTY,
                                   tribol::BINNING_GRID );
 
-   tribol::setKinematicConstantPenalty( meshId, 1.0 );
+   tribol::setKinematicConstantPenalty( mesh_id, 1.0 );
 
    tribol::setPenaltyOptions( csId, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
 
    RealT element_thick = 1.0;
-   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thick );
+   tribol::registerRealElementField( mesh_id, tribol::ELEMENT_THICKNESS, &element_thick );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
    tribol::CouplingScheme* scheme  = &csManager.at(csId);
@@ -1196,14 +1195,14 @@ TEST_F( CouplingSchemeTest, two_meshes_with_auto_case )
    tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
-   int meshId1 = 0;
-   int meshId2 = 1;
+   tribol::IndexT mesh_id1 = 0;
+   tribol::IndexT mesh_id2 = 1;
    int numElements = 1;
    int csId = 0;
-   registerDummy3DMesh( meshId1, numElements );
-   registerDummy3DMesh( meshId2, numElements );
+   registerDummy3DMesh( mesh_id1, numElements );
+   registerDummy3DMesh( mesh_id2, numElements );
 
-   tribol::registerCouplingScheme(csId, meshId1, meshId2,
+   tribol::registerCouplingScheme(csId, mesh_id1, mesh_id2,
                                   tribol::SURFACE_TO_SURFACE,
                                   tribol::AUTO,
                                   tribol::COMMON_PLANE,
@@ -1211,8 +1210,8 @@ TEST_F( CouplingSchemeTest, two_meshes_with_auto_case )
                                   tribol::PENALTY,
                                   tribol::BINNING_GRID );
 
-   tribol::setKinematicConstantPenalty( meshId1, 1.0 );
-   tribol::setKinematicConstantPenalty( meshId2, 1.0 );
+   tribol::setKinematicConstantPenalty( mesh_id1, 1.0 );
+   tribol::setKinematicConstantPenalty( mesh_id2, 1.0 );
 
    tribol::setPenaltyOptions( csId, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 

@@ -7,7 +7,7 @@
 #define SRC_GEOM_CONTACTPLANE_HPP_
 
 #include "tribol/types.hpp"
-#include "tribol/mesh/MeshManager.hpp"
+#include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/common/Parameters.hpp"
@@ -267,32 +267,32 @@ public:
    /*!
     * \brief Get mesh data associated with a particular mesh id
     *
-    * \param [in] meshId Integer id for mesh
+    * \param [in] mesh_id Integer id for mesh
     * \return MeshData object
     */
-   MeshData& getCpMeshData(int meshId)
+   MeshData& getCpMeshData(IndexT mesh_id)
       { MeshManager & meshManager = MeshManager::getInstance();
-        MeshData& mesh = meshManager.GetMeshInstance( meshId );
+        MeshData& mesh = meshManager.getData( mesh_id );
         return mesh; }
    
    /*!
     * \brief Get the mesh id of one of the two faces used to form the contact plane
     *
-    * \param [in] meshID Integer id for mesh
+    * \param [in] i Integer id for mesh
     * \return Mesh id
     */
-   int getCpMeshId( int meshID ) const 
+   int getCpMeshId( int i ) const 
    {
-     if (meshID != 1 && meshID != 2)
+     if (i != 1 && i != 2)
      {
         SLIC_ERROR("getCpMeshId input mesh ID value must be 1 or 2.");
      }
 
-     int id = -1;
-     if (meshID == 1) id = m_pair.meshId1;
-     if (meshID == 2) id = m_pair.meshId2;
+     int mesh_id = -1;
+     if (i == 1) mesh_id = m_pair.mesh_id1;
+     if (i == 2) mesh_id = m_pair.mesh_id2;
     
-     return id;
+     return mesh_id;
    }
    
    /*!
@@ -340,16 +340,16 @@ public:
     * \brief Set the contact plane mesh id for a given face id 
     *
     * \param [in] i Face id 
-    * \param [in] meshID Integer Id of the mesh
+    * \param [in] mesh_id Integer Id of the mesh
     */
-   void setCpMeshId( int i, int meshID )
+   void setCpMeshId( int i, IndexT mesh_id )
    {
      if (i != 1 && i != 2)
      {
         SLIC_ERROR("setCpMeshId input argument _i_ value must be 1 or 2.");
      }
-     if (i == 1) m_pair.meshId1 = meshID;
-     if (i == 2) m_pair.meshId2 = meshID;
+     if (i == 1) m_pair.mesh_id1 = mesh_id;
+     if (i == 2) m_pair.mesh_id2 = mesh_id;
    }
    
    /*!

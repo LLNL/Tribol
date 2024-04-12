@@ -93,8 +93,8 @@ public:
    * \brief Creates a CouplingSchmeme instance between a pair of meshes
    *
    * \param [in] cs_id coupling scheme id
-   * \param [in] meshId1 ID of the mortar surface
-   * \param [in] meshId2 ID of the nonmortar surface, or ANY_MESH for multiple meshes
+   * \param [in] mesh_id1 ID of the mortar surface
+   * \param [in] mesh_id2 ID of the nonmortar surface, or ANY_MESH for multiple meshes
    * \param [in] contact_mode the type of contact, e.g. SURFACE_TO_SURFACE
    * \param [in] contact_case the specific case of contact application, e.g. auto
    * \param [in] contact_method the contact method, e.g. SINGLE_MORTAR
@@ -105,8 +105,8 @@ public:
    * Per-cycle rebinning is enabled by default.
    */
   CouplingScheme( IndexT cs_id, 
-                  int meshId1,
-                  int meshId2,
+                  IndexT mesh_id1,
+                  IndexT mesh_id2,
                   int contact_mode,
                   int contact_case,
                   int contact_method,
@@ -124,8 +124,8 @@ public:
   /// \name Getters
   /// @{
 
-  int getMeshId1() const { return m_meshId1; }
-  int getMeshId2() const { return m_meshId2; }
+  int getMeshId1() const { return m_mesh_id1; }
+  int getMeshId2() const { return m_mesh_id2; }
 
   int getId() const { return m_id; }
 
@@ -553,8 +553,8 @@ private:
 
   IndexT m_id; ///< Coupling Scheme id
 
-  int m_meshId1; ///< Integer id for mesh 1
-  int m_meshId2; ///< Integer id for mesh 2
+  IndexT m_mesh_id1; ///< Integer id for mesh 1
+  IndexT m_mesh_id2; ///< Integer id for mesh 2
 
   bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
   bool m_isValid {true}; ///< False if the coupling scheme is not valid per call to init()

@@ -768,7 +768,7 @@ void TestMesh::setupContactMeshTet( int numElemsX1, int numElemsY1, int numElems
 
 } // end setupContactMeshTet()
 //------------------------------------------------------------------------------
-void TestMesh::allocateAndSetVelocities( int meshId, RealT valX, RealT valY, RealT valZ )
+void TestMesh::allocateAndSetVelocities( IndexT mesh_id, RealT valX, RealT valY, RealT valZ )
 {
    // Check that mesh ids are not the same. The TestMesh class was built around 
    // testing the mortar method with Lagrange multiplier enforcement, which does not 
@@ -779,7 +779,7 @@ void TestMesh::allocateAndSetVelocities( int meshId, RealT valX, RealT valY, Rea
 
    // check to see if pointers have been set
    bool deleteVels = false;
-   if (meshId == this->mortarMeshId)
+   if (mesh_id == this->mortarMeshId)
    {
       if (this->vx1 != nullptr)
       {
@@ -803,7 +803,7 @@ void TestMesh::allocateAndSetVelocities( int meshId, RealT valX, RealT valY, Rea
 
       registered_velocities1 = true;
    }
-   else if (meshId == this->nonmortarMeshId)
+   else if (mesh_id == this->nonmortarMeshId)
    {
       if (this->vx2 != nullptr)
       {
@@ -839,7 +839,7 @@ void TestMesh::allocateAndSetVelocities( int meshId, RealT valX, RealT valY, Rea
 } // end TestMesh::allocateAndSetVelocities()
 
 //------------------------------------------------------------------------------
-void TestMesh::allocateAndSetBulkModulus( int meshId, RealT val )
+void TestMesh::allocateAndSetBulkModulus( IndexT mesh_id, RealT val )
 {
    // Check that mesh ids are the same. The TestMesh class was built around 
    // testing the mortar method with Lagrange multiplier enforcement, which does 
@@ -850,7 +850,7 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, RealT val )
 
    // check to see if pointers have been set
    bool deleteData = false;
-   if (meshId == this->mortarMeshId)
+   if (mesh_id == this->mortarMeshId)
    {
       if (this->mortar_bulk_mod != nullptr)
       {
@@ -860,7 +860,7 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, RealT val )
 
       allocRealArray( &this->mortar_bulk_mod, this->numMortarFaces, val );
    }
-   else if (meshId == this->nonmortarMeshId)
+   else if (mesh_id == this->nonmortarMeshId)
    {
       if (this->nonmortar_bulk_mod != nullptr)
       {
@@ -882,11 +882,11 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, RealT val )
 } // end TestMesh::allocateAndSetBulkModulus()
 
 //------------------------------------------------------------------------------
-void TestMesh::allocateAndSetElementThickness( int meshId, RealT t )
+void TestMesh::allocateAndSetElementThickness( IndexT mesh_id, RealT t )
 {
    // check to see if pointers have been set
    bool deleteData = false; 
-   if (meshId == this->mortarMeshId)
+   if (mesh_id == this->mortarMeshId)
    {
       if (this->mortar_element_thickness != nullptr)
       {
@@ -896,7 +896,7 @@ void TestMesh::allocateAndSetElementThickness( int meshId, RealT t )
 
       allocRealArray( &this->mortar_element_thickness, this->numMortarFaces, t );
    }
-   else if (meshId == this->nonmortarMeshId)
+   else if (mesh_id == this->nonmortarMeshId)
    {
       if (this->nonmortar_element_thickness != nullptr)
       {
@@ -1228,7 +1228,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 } // end tribolSetupAndUpdate()
       
 //------------------------------------------------------------------------------
-void TestMesh::setupPatchTestDirichletBCs( int meshId, 
+void TestMesh::setupPatchTestDirichletBCs( IndexT mesh_id, 
                                            int numElemsX, 
                                            int numElemsY, 
                                            int numElemsZ, 
@@ -1240,7 +1240,7 @@ void TestMesh::setupPatchTestDirichletBCs( int meshId,
                   "mesh must be constructed prior to calling this routine." );
 
    bool mortar = false;
-   if (meshId == this->mortarMeshId)
+   if (mesh_id == this->mortarMeshId)
    {
       mortar = true;
    }
@@ -1419,7 +1419,7 @@ void TestMesh::setupPatchTestDirichletBCs( int meshId,
 } // end setupPatchTestDirichletBCs()
 
 //------------------------------------------------------------------------------
-void TestMesh::setupPatchTestPressureDofs( int meshId,
+void TestMesh::setupPatchTestPressureDofs( IndexT mesh_id,
                                            int numElemsX,
                                            int numElemsY,
                                            int numElemsZ,
@@ -1430,7 +1430,7 @@ void TestMesh::setupPatchTestPressureDofs( int meshId,
                   "mesh must be constructed prior to calling this routine." );
 
    bool mortar = false;
-   if (meshId == this->mortarMeshId)
+   if (mesh_id == this->mortarMeshId)
    {
       mortar = true;
    }

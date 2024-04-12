@@ -972,6 +972,8 @@ void MeshData::print(std::ostream& os) const
 }
 
 //------------------------------------------------------------------------------
+template class DataManager<MeshData>;
+
 } // end tribol namespace
 
 std::ostream& operator<<(std::ostream& os, const tribol::MeshData& md)

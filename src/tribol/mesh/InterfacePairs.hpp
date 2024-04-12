@@ -19,8 +19,8 @@ struct InterfacePair
    InterfacePair( int m1, int t1, int i1,
                   int m2, int t2, int i2 )
       : pairId(-1)
-      , meshId1(m1), pairType1(t1), pairIndex1(i1)
-      , meshId2(m2), pairType2(t2), pairIndex2(i2) 
+      , mesh_id1(m1), pairType1(t1), pairIndex1(i1)
+      , mesh_id2(m2), pairType2(t2), pairIndex2(i2) 
       , isContactCandidate(true) {}
 
    // overload constructor with pair id
@@ -28,8 +28,8 @@ struct InterfacePair
                   int m2, int t2, int i2,
                   int id )
       : pairId(id)
-      , meshId1(m1), pairType1(t1), pairIndex1(i1)
-      , meshId2(m2), pairType2(t2), pairIndex2(i2) 
+      , mesh_id1(m1), pairType1(t1), pairIndex1(i1)
+      , mesh_id2(m2), pairType2(t2), pairIndex2(i2) 
       , isContactCandidate(true) {}
 
    // overload constructor with boolean indicating contact candidacy
@@ -37,26 +37,26 @@ struct InterfacePair
                   int m2, int t2, int i2,
                   bool isCandidate, int id )
       : pairId(id)
-      , meshId1(m1), pairType1(t1), pairIndex1(i1)
-      , meshId2(m2), pairType2(t2), pairIndex2(i2) 
+      , mesh_id1(m1), pairType1(t1), pairIndex1(i1)
+      , mesh_id2(m2), pairType2(t2), pairIndex2(i2) 
       , isContactCandidate(isCandidate) {}
 
    // overload constructor to handle zero input arguments
    InterfacePair() : pairId(-1)
-                   , meshId1(-1), pairType1(-1), pairIndex1(-1)
-                   , meshId2(-1), pairType2(-1), pairIndex2(-1)
+                   , mesh_id1(-1), pairType1(-1), pairIndex1(-1)
+                   , mesh_id2(-1), pairType2(-1), pairIndex2(-1)
                    , isContactCandidate(true) {}
 
    // pair id
    int pairId;
 
    // mesh id, face type, and face id for face 1
-   int meshId1;
+   IndexT mesh_id1;
    int pairType1;
    int pairIndex1;
 
    // mesh id, face type and face id for face 2
-   int meshId2;
+   IndexT mesh_id2;
    int pairType2;
    int pairIndex2;
 
@@ -88,8 +88,8 @@ public:
   void setMeshId( int side, int id )
   {
      SLIC_ERROR_IF( side !=1 && side !=2, "mesh side not 1 or 2.");
-     if (side == 1) m_meshId1 = id;
-     if (side == 2) m_meshId2 = id;
+     if (side == 1) m_mesh_id1 = id;
+     if (side == 2) m_mesh_id2 = id;
   }
 
   void setPairType( int side, int type )
@@ -107,8 +107,8 @@ private:
 
   // A list of interface pairs is defined to be between 
   // two meshes with the same elements type on each mesh
-  int m_meshId1;
-  int m_meshId2;
+  IndexT m_mesh_id1;
+  IndexT m_mesh_id2;
   int m_pairType1;
   int m_pairType2;
 

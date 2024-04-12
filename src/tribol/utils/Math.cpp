@@ -40,8 +40,8 @@ RealT magnitude( RealT const vx, RealT const vy )
 
 //------------------------------------------------------------------------------
 RealT dotProd( RealT const * const v, 
-              RealT const * const w, 
-              int const dim )
+               RealT const * const w, 
+               int const dim )
 {
    RealT z = 0;
    for (int i=0; i<dim; ++i)
@@ -54,7 +54,7 @@ RealT dotProd( RealT const * const v,
 
 //------------------------------------------------------------------------------
 RealT dotProd( RealT const aX, RealT const aY, RealT const aZ,
-              RealT const bX, RealT const bY, RealT const bZ )
+               RealT const bX, RealT const bY, RealT const bZ )
 {
    return aX*bX + aY*bY + aZ*bZ;
 }

@@ -6,7 +6,6 @@
 #include "Mortar.hpp"
 
 #include "tribol/types.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
@@ -121,7 +120,7 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = meshManager.GetMeshInstance( elem.meshId2 );
+   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
    IndexT const * const nonmortarConn = nonmortarMesh.m_connectivity;
 
    // will populate local gaps on nonmortar face on nonmortar mesh data object
@@ -194,8 +193,8 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
    IndexT const mortarId = cs->getMeshId1();
    IndexT const nonmortarId = cs->getMeshId2();
 
-   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
-   MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+   MeshData& mortarMesh = meshManager.at( mortarId );
+   MeshData& nonmortarMesh = meshManager.at( nonmortarId );
    IndexT const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    RealT const * const x1 = mortarMesh.m_positionX;
@@ -331,8 +330,8 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    IndexT const mortarId = cs->getMeshId1();
    IndexT const nonmortarId = cs->getMeshId2();
 
-   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
-   MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+   MeshData& mortarMesh = meshManager.at( mortarId );
+   MeshData& nonmortarMesh = meshManager.at( nonmortarId );
    IndexT const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    RealT const * const x1 = mortarMesh.m_positionX;
@@ -544,7 +543,7 @@ template< >
 void ComputeResidualJacobian< SINGLE_MORTAR, DUAL >( SurfaceContactElem & elem )
 {
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = meshManager.GetMeshInstance( elem.meshId2 );
+   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
    IndexT const * const nonmortarConn = nonmortarMesh.m_connectivity;
 
    // loop over "a" nodes accumulating sums of mortar/nonmortar 
@@ -620,7 +619,7 @@ template< >
 void ComputeConstraintJacobian< SINGLE_MORTAR, PRIMAL >( SurfaceContactElem & elem )
 {
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = meshManager.GetMeshInstance( elem.meshId2 );
+   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
    IndexT const * const nonmortarConn = nonmortarMesh.m_connectivity;
 
    // loop over nonmortar nodes for which we are accumulating Jacobian 
@@ -734,7 +733,7 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
    IndexT const mortarId = cs->getMeshId1();
    IndexT const nonmortarId = cs->getMeshId2();
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
+   MeshData& mortarMesh = meshManager.at( mortarId );
    IndexT const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    ////////////////////////////////

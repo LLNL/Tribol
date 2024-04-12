@@ -201,7 +201,7 @@ public:
    *       contact enforcement. This is used in tribol/tests/tribol_mortar_pressure_sol.cpp
    *
    */
-   void setupPatchTestDirichletBCs( int meshId, int numElemsX, int numElemsY, int numElemsZ, 
+   void setupPatchTestDirichletBCs( IndexT mesh_id, int numElemsX, int numElemsY, int numElemsZ, 
                                     int nodeIdOffset, bool inHomogeneousGap, 
                                     RealT inHomogeneousZVal = 0. );
 
@@ -216,7 +216,7 @@ public:
    * \param [in] contact true if enforcing zero gap using contact enforcement
    *
    */
-   void setupPatchTestPressureDofs( int meshId, int numElemsX, int numElemsY, int numElemsZ, 
+   void setupPatchTestPressureDofs( IndexT mesh_id, int numElemsX, int numElemsY, int numElemsZ, 
                                     int nodeIdOffset, bool contact );
 
   /*!
@@ -229,7 +229,7 @@ public:
    * \note in the future we should handle an array of velocity values
    *
    */
-   void allocateAndSetVelocities( int meshId, RealT valX, RealT valY, RealT valZ=0. );
+   void allocateAndSetVelocities( IndexT mesh_id, RealT valX, RealT valY, RealT valZ=0. );
 
   /*!
    * \brief allocates and sets bulk modulus arrays on mesh
@@ -239,7 +239,7 @@ public:
    * \note in the future we should handle an array of values
    *
    */
-   void allocateAndSetBulkModulus( int meshId, RealT val );
+   void allocateAndSetBulkModulus( IndexT mesh_id, RealT val );
 
   /*!
    * \brief allocates and sets element thickness arrays on mesh
@@ -250,7 +250,7 @@ public:
    *       should handle an array of values
    *
    */
-   void allocateAndSetElementThickness( int meshId, RealT t );
+   void allocateAndSetElementThickness( IndexT mesh_id, RealT t );
 
   /*!
    * \brief wraps element Jacobian calculations for linear elasticity
@@ -355,8 +355,8 @@ public:
    mfem::Mesh* mfem_mesh; 
 
    // Basic info about the mesh
-   int mortarMeshId;         ///< Mesh id for mortar portion of mesh
-   int nonmortarMeshId;      ///< Mesh id for nonmortar portion of mesh
+   IndexT mortarMeshId;         ///< Mesh id for mortar portion of mesh
+   IndexT nonmortarMeshId;      ///< Mesh id for nonmortar portion of mesh
    int cellType;             ///< Type of contact surface cell in mesh
    int numTotalNodes;        ///< Total number of nodes in the mesh
    int numMortarNodes;       ///< Number of mortar nodes (not just surface nodes)

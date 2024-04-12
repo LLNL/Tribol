@@ -13,7 +13,6 @@
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/physics/CommonPlane.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 
@@ -96,12 +95,12 @@ void checkMeshPenalties( tribol::CouplingScheme const * cs,
                          const RealT penalty, const RealT tol, 
                          const char * penaltyType )
 {
-   tribol::IndexT const meshId1 = cs->getMeshId1();
-   tribol::IndexT const meshId2 = cs->getMeshId2();
+   const tribol::IndexT mesh_id1 = cs->getMeshId1();
+   const tribol::IndexT mesh_id2 = cs->getMeshId2();
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mesh1 = meshManager.GetMeshInstance( meshId1 );
-   tribol::MeshData& mesh2 = meshManager.GetMeshInstance( meshId2 );
+   tribol::MeshData& mesh1 = meshManager.at( mesh_id1 );
+   tribol::MeshData& mesh2 = meshManager.at( mesh_id2 );
 
    if ( std::strcmp( penaltyType, "constant" ) == 0 )
    {
@@ -189,8 +188,8 @@ void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
    tribol::IndexT const meshId2 = cs->getMeshId2();
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mesh1 = meshManager.GetMeshInstance( meshId1 );
-   tribol::MeshData& mesh2 = meshManager.GetMeshInstance( meshId2 );
+   tribol::MeshData& mesh1 = meshManager.at( meshId1 );
+   tribol::MeshData& mesh2 = meshManager.at( meshId2 );
 
    for (int i=0; i<2; ++i) // loop over meshes
    { 

@@ -48,8 +48,8 @@ struct SurfaceContactElem
                        int fId2       ///< [in] Id for face 2
                      )
      : dim(dimension)
-     , meshId1(mId1)
-     , meshId2(mId2)
+     , mesh_id1(mId1)
+     , mesh_id2(mId2)
      , faceId1(fId1)
      , faceId2(fId2)
      , faceCoords1(x1)
@@ -74,8 +74,8 @@ struct SurfaceContactElem
    }
 
    int dim;          ///< Problem dimension
-   int meshId1;      ///< Mesh Id for face 1 (mortar)
-   int meshId2;      ///< Mesh Id for face 2 (nonmortar)
+   IndexT mesh_id1;      ///< Mesh Id for face 1 (mortar)
+   IndexT mesh_id2;      ///< Mesh Id for face 2 (nonmortar)
    int faceId1;      ///< Face Id for face 1 (mortar)
    int faceId2;      ///< Face Id for face 2 (nonmortar)
    RealT * faceCoords1;   ///< Coordinates of face 1 in 3D

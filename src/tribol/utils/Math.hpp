@@ -13,34 +13,34 @@ namespace tribol
 
 /// returns the magnitude of a 3-vector
 RealT magnitude( RealT const vx,  ///< [in] x-component of the input vector
-                RealT const vy,  ///< [in] y-component of the input vector
-                RealT const vz   ///< [in] z-component of the input vector
-              );
+                 RealT const vy,  ///< [in] y-component of the input vector
+                 RealT const vz   ///< [in] z-component of the input vector
+               );
 
 /// returns the magnitude of a 2-vector
 RealT magnitude( RealT const vx,  ///< [in] x-component of the input vector
-                RealT const vy   ///< [in] y-component of the input vector
-              );
+                 RealT const vy   ///< [in] y-component of the input vector
+               );
 
 /// returns the dot product of two vectors
 RealT dotProd( RealT const * const v,  ///< [in] first vector
-              RealT const * const w,  ///< [in] second vector 
-              int const dim          ///< [in] dimension of the vectors
-            );
+               RealT const * const w,  ///< [in] second vector 
+               int const dim          ///< [in] dimension of the vectors
+             );
 
 /// returns the dot product of two 3-vectors with component-wise input
 RealT dotProd( RealT const aX,  ///< [in] x-component of first vector
-              RealT const aY,  ///< [in] y-component of first vector
-              RealT const aZ,  ///< [in] z-component of first vector
-              RealT const bX,  ///< [in] x-component of second vector
-              RealT const bY,  ///< [in] y-component of second vector
-              RealT const bZ   ///< [in] z-component of second vector
-            );
+               RealT const aY,  ///< [in] y-component of first vector
+               RealT const aZ,  ///< [in] z-component of first vector
+               RealT const bX,  ///< [in] x-component of second vector
+               RealT const bY,  ///< [in] y-component of second vector
+               RealT const bZ   ///< [in] z-component of second vector
+             );
               
 /// returns the magnitude of the cross product of two 3-vectors
 RealT magCrossProd( RealT const a[3],  ///< [in] array of components of first 3-vector
-                   RealT const b[3]   ///< [in] array of components of second 3-vector
-                 );
+                    RealT const b[3]   ///< [in] array of components of second 3-vector
+                  );
 
 /// computes and returns the constituent cross product terms of two 3-vectors with component-wise input
 void crossProd( RealT const aX,  ///< [in] x-component of first vector

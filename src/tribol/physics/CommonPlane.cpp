@@ -5,7 +5,6 @@
 
 #include "CommonPlane.hpp"
 
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
@@ -45,13 +44,13 @@ RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
 
 //------------------------------------------------------------------------------
 RealT ComputeGapRatePressure( ContactPlaneManager& cpMgr, 
-                             int cpID, int meshId1, int meshId2, 
+                             int cpID, IndexT mesh_id1, IndexT mesh_id2, 
                              int fId1, int fId2, RealT element_penalty,
                              int dim, RatePenaltyCalculation rate_calc )
 {
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& m1 = meshManager.GetMeshInstance( meshId1 );
-   MeshData& m2 = meshManager.GetMeshInstance( meshId2 );
+   MeshData& m1 = meshManager.at( mesh_id1 );
+   MeshData& m2 = meshManager.at( mesh_id2 );
 
    // compute the correct rate_penalty
    RealT rate_penalty = 0.;
@@ -159,7 +158,7 @@ template< >
 int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexT const numPairs = pairs->getNumPairs();
+   const IndexT numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
@@ -171,22 +170,22 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    ////////////////////////////////
    // Grab pointers to mesh data //
    ////////////////////////////////
-   IndexT const meshId1 = cs->getMeshId1();
-   IndexT const meshId2 = cs->getMeshId2();
+   const IndexT mesh_id1 = cs->getMeshId1();
+   const IndexT mesh_id2 = cs->getMeshId2();
 
-   MeshData& mesh1 = meshManager.GetMeshInstance( meshId1 );
-   MeshData& mesh2 = meshManager.GetMeshInstance( meshId2 );
-   IndexT const numNodesPerFace = mesh1.m_numNodesPerCell;
+   MeshData& mesh1 = meshManager.at( mesh_id1 );
+   MeshData& mesh2 = meshManager.at( mesh_id2 );
+   const IndexT numNodesPerFace = mesh1.m_numNodesPerCell;
 
    RealT * const fx1 = mesh1.m_forceX;
    RealT * const fy1 = mesh1.m_forceY; 
    RealT * const fz1 = mesh1.m_forceZ; 
-   IndexT const * const nodalConnectivity1 = mesh1.m_connectivity;
+   const IndexT * const nodalConnectivity1 = mesh1.m_connectivity;
 
    RealT * const fx2 = mesh2.m_forceX; 
    RealT * const fy2 = mesh2.m_forceY;
    RealT * const fz2 = mesh2.m_forceZ;
-   IndexT const * nodalConnectivity2 = mesh2.m_connectivity;
+   const IndexT * nodalConnectivity2 = mesh2.m_connectivity;
 
 
    ///////////////////////////////
@@ -289,7 +288,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
             totalPressure += cpManager.m_pressure[ cpID ];
             // add gap-rate contribution
             totalPressure += 
-               ComputeGapRatePressure( cpManager, cpID, meshId1, meshId2, 
+               ComputeGapRatePressure( cpManager, cpID, mesh_id1, mesh_id2, 
                                        index1, index2, penalty_stiff_per_area, dim,
                                        pen_enfrc_options.rate_calculation );
             break;
@@ -342,7 +341,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       SurfaceContactElem cntctElem( dim, &xf1[0], &xf2[0], &xVert[0],
                                     numNodesPerFace, 
                                     cpManager.m_numPolyVert[cpID],
-                                    meshId1, meshId2, index1, index2 );
+                                    mesh_id1, mesh_id2, index1, index2 );
 
       // set SurfaceContactElem face normals and overlap normal
       RealT faceNormal1[dim];

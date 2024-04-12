@@ -28,7 +28,6 @@ set(tribol_headers
     mesh/InterfacePairs.hpp
     mesh/MethodCouplingData.hpp 
     mesh/CouplingScheme.hpp
-    mesh/MeshManager.hpp
     mesh/MeshData.hpp
     mesh/MfemData.hpp
 
@@ -62,7 +61,6 @@ set(tribol_sources
     mesh/InterfacePairs.cpp
     mesh/MethodCouplingData.cpp
     mesh/CouplingScheme.cpp
-    mesh/MeshManager.cpp
     mesh/MeshData.cpp
     mesh/MfemData.cpp
      

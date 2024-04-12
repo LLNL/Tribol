@@ -13,7 +13,6 @@
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 
 // Axom includes
@@ -555,9 +554,9 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    tribol::initialize( dim, problem_comm );
 
    // register contact mesh
-   int meshId = 0;
+   tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,5,6,7}; // hard coded for a two face problem
-   tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+   tribol::registerMesh( mesh_id, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
 
@@ -568,7 +567,7 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    tribol::allocRealArray( &fy, lengthNodalData, 0. );
    tribol::allocRealArray( &fz, lengthNodalData, 0. );
 
-   tribol::registerNodalResponse( meshId, fx, fy, fz );
+   tribol::registerNodalResponse( mesh_id, fx, fy, fz );
 
    RealT *vx;
    RealT *vy;
@@ -585,14 +584,14 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    vz[6] = vel2;
    vz[7] = vel2;
 
-   tribol::registerNodalVelocities( meshId, vx, vy, vz );
+   tribol::registerNodalVelocities( mesh_id, vx, vy, vz );
 
    RealT bulk_mod = 1.;
-   tribol::registerRealElementField( meshId, tribol::BULK_MODULUS, &bulk_mod );
-   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
+   tribol::registerRealElementField( mesh_id, tribol::BULK_MODULUS, &bulk_mod );
+   tribol::registerRealElementField( mesh_id, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
 
    int csIndex = 0;
-   tribol::registerCouplingScheme( csIndex, meshId, meshId,
+   tribol::registerCouplingScheme( csIndex, mesh_id, mesh_id,
                                    tribol::SURFACE_TO_SURFACE,
                                    tribol::AUTO,
                                    tribol::COMMON_PLANE,
@@ -687,9 +686,9 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
    tribol::initialize( dim, problem_comm );
 
    // register contact mesh
-   int meshId = 0;
+   tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
-   tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+   tribol::registerMesh( mesh_id, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
 
@@ -700,7 +699,7 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
    tribol::allocRealArray( &fy, lengthNodalData, 0. );
    tribol::allocRealArray( &fz, lengthNodalData, 0. );
 
-   tribol::registerNodalResponse( meshId, fx, fy, fz );
+   tribol::registerNodalResponse( mesh_id, fx, fy, fz );
 
    RealT *vx;
    RealT *vy;
@@ -717,13 +716,13 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
    vz[6] = vel2;
    vz[7] = vel2;
 
-   tribol::registerNodalVelocities( meshId, vx, vy, vz );
+   tribol::registerNodalVelocities( mesh_id, vx, vy, vz );
 
    // register element thickness for use with auto contact
-   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
+   tribol::registerRealElementField( mesh_id, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
 
    int csIndex = 0;
-   tribol::registerCouplingScheme( csIndex, meshId, meshId,
+   tribol::registerCouplingScheme( csIndex, mesh_id, mesh_id,
                                    tribol::SURFACE_TO_SURFACE,
                                    tribol::AUTO,
                                    tribol::COMMON_PLANE,
@@ -733,7 +732,7 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
 
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT, tribol::NO_RATE_PENALTY );
 
-   tribol::setKinematicConstantPenalty( meshId, 1.0 );
+   tribol::setKinematicConstantPenalty( mesh_id, 1.0 );
 
    RealT dt = 1.0;
    int err = tribol::update( 1, 1., dt );
@@ -817,9 +816,9 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
    tribol::initialize( dim, problem_comm );
 
    // register contact mesh
-   int meshId = 0;
+   tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
-   tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+   tribol::registerMesh( mesh_id, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
 
@@ -830,7 +829,7 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
    tribol::allocRealArray( &fy, lengthNodalData, 0. );
    tribol::allocRealArray( &fz, lengthNodalData, 0. );
 
-   tribol::registerNodalResponse( meshId, fx, fy, fz );
+   tribol::registerNodalResponse( mesh_id, fx, fy, fz );
 
    RealT *vx;
    RealT *vy;
@@ -847,13 +846,13 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
    vz[6] = vel2;
    vz[7] = vel2;
 
-   tribol::registerNodalVelocities( meshId, vx, vy, vz );
+   tribol::registerNodalVelocities( mesh_id, vx, vy, vz );
 
    // register element thickness for use with auto contact
-   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
+   tribol::registerRealElementField( mesh_id, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
 
    int csIndex = 0;
-   tribol::registerCouplingScheme( csIndex, meshId, meshId,
+   tribol::registerCouplingScheme( csIndex, mesh_id, mesh_id,
                                    tribol::SURFACE_TO_SURFACE,
                                    tribol::AUTO,
                                    tribol::COMMON_PLANE,
@@ -863,7 +862,7 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
 
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT, tribol::NO_RATE_PENALTY );
 
-   tribol::setKinematicConstantPenalty( meshId, 1.0 );
+   tribol::setKinematicConstantPenalty( mesh_id, 1.0 );
 
    RealT dt = 1.0;
    int err = tribol::update( 1, 1., dt );

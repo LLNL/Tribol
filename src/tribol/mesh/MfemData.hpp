@@ -648,8 +648,8 @@ public:
    * in the second Tribol registered mesh
    */
   MfemMeshData(
-    int mesh_id_1,
-    int mesh_id_2,
+    IndexT mesh_id_1,
+    IndexT mesh_id_2,
     const mfem::ParMesh& parent_mesh,
     const mfem::ParGridFunction& current_coords,
     std::set<int>&& attributes_1,
@@ -687,14 +687,14 @@ public:
    *
    * @return int 
    */
-  int GetMesh1ID() const { return mesh_id_1_; }
+  IndexT GetMesh1ID() const { return mesh_id_1_; }
 
   /**
    * @brief Get the integer identifier for the second Tribol registered mesh
    *
    * @return int 
    */
-  int GetMesh2ID() const { return mesh_id_2_; }
+  IndexT GetMesh2ID() const { return mesh_id_2_; }
 
   /**
    * @brief Get the number of elements in the first Tribol registered mesh
@@ -1273,12 +1273,12 @@ private:
   /**
    * @brief First mesh identifier
    */
-  int mesh_id_1_;
+  IndexT mesh_id_1_;
 
   /**
    * @brief Second mesh identifier
    */
-  int mesh_id_2_;
+  IndexT mesh_id_2_;
 
   /**
    * @brief Volume mesh of parent domain

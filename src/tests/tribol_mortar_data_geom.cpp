@@ -14,7 +14,6 @@
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/physics/Mortar.hpp"
 #include "tribol/physics/AlignedMortar.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
@@ -429,7 +428,7 @@ TEST_F( MortarGeomTest, mortar_ironing )
    tribol::IndexT const mortarId = couplingScheme->getMeshId1();
    //tribol::IndexT const nonmortarId = couplingScheme->getMeshId2();
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
+   tribol::MeshData& mortarMesh = meshManager.at( mortarId );
 
    if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
    {

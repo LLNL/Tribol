@@ -359,8 +359,8 @@ PressureField::UpdateData::UpdateData(
 }
 
 MfemMeshData::MfemMeshData(
-  int mesh_id_1,
-  int mesh_id_2,
+  IndexT mesh_id_1,
+  IndexT mesh_id_2,
   const mfem::ParMesh& parent_mesh,
   const mfem::ParGridFunction& current_coords,
   std::set<int>&& attributes_1,

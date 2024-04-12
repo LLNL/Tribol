@@ -8,6 +8,7 @@
 
 #include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
+#include "tribol/utils/DataManager.hpp"
 
 #include <ostream>
 
@@ -119,7 +120,7 @@ public:
   int m_numCells;                     ///< Total number of SURFACE cells in the mesh
   int m_numNodesPerCell;                 ///< Number of nodes per SURFACE cell based on cell type
   int m_dim;                          ///< Dimension of mesh
-  int m_meshId;                       ///< Mesh Id associated with this data
+  int m_mesh_id;                       ///< Mesh Id associated with this data
   bool m_isValid;                     ///< True if the mesh is valid
 
   const RealT* m_positionX; ///< X-coordinates of nodes in mesh 
@@ -291,6 +292,8 @@ public:
   /// Prints information associated with this mesh to \a os
   void print(std::ostream& os) const;
 };
+
+using MeshManager = DataManager<MeshData>;
 
 } // end namespace tribol
 

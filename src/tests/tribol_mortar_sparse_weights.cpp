@@ -14,7 +14,6 @@
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/physics/Mortar.hpp"
 #include "tribol/physics/AlignedMortar.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
@@ -56,8 +55,8 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, RealT * gaps )
    tribol::IndexT const mortarId = cs->getMeshId1();
    tribol::IndexT const nonmortarId = cs->getMeshId2();
 
-   tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
-   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+   tribol::MeshData& mortarMesh = meshManager.at( mortarId );
+   tribol::MeshData& nonmortarMesh = meshManager.at( nonmortarId );
 
    // get mortar weights in CSR format. Note this simple API function 
    // calls tribol::getCSRMatrix() so this API function in the Tribol 
@@ -147,7 +146,7 @@ void compareGaps( tribol::CouplingScheme const * cs, RealT * gaps, const RealT t
 {
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
    tribol::IndexT const nonmortarId = cs->getMeshId2();
-   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+   tribol::MeshData& nonmortarMesh = meshManager.at( nonmortarId );
 
    int numTotalNodes = cs->getNumTotalNodes();
 

@@ -53,37 +53,37 @@ void setPenaltyOptions( IndexT cs_id,
 
 /*!
  * \brief Sets the constant kinematic penalty stiffness
- * \param [in] meshId mesh id for penalty stiffness  
+ * \param [in] mesh_id mesh id for penalty stiffness  
  * \param [in] k constant kinematic penalty stiffness
  */
-void setKinematicConstantPenalty( int meshId, RealT k );
+void setKinematicConstantPenalty( IndexT mesh_id, RealT k );
 
 /*!
  * \brief Sets the kinematic element penalty stiffness data
- * \param [in] meshId mesh id for penalty stiffness  
+ * \param [in] mesh_id mesh id for penalty stiffness  
  * \param [in] material_modulus pointer to element array of bulk or Young's moduli
  * \param [in] element_thickness pointer to element array of through element thicknesses
  *
  * \note the length of the arrays that material_modulus and element_thickness point to
- *       is the number of contact faces registered for mesh with id, \p meshId.
+ *       is the number of contact faces registered for mesh with id, \p mesh_id.
  */
-void setKinematicElementPenalty( int meshId, 
+void setKinematicElementPenalty( IndexT mesh_id, 
                                  const RealT *material_modulus, 
                                  const RealT *element_thickness );
 
 /*!
  * \brief Sets the constant rate penalty stiffness
- * \param [in] meshId mesh id for penalty stiffness  
+ * \param [in] mesh_id mesh id for penalty stiffness  
  * \param [in] r_k constant rate penalty stiffness
  */
-void setRateConstantPenalty( int meshId, RealT r_k );
+void setRateConstantPenalty( IndexT mesh_id, RealT r_k );
 
 /*!
  * \brief Sets the percent rate penalty stiffness
- * \param [in] meshId mesh id for penalty stiffness  
+ * \param [in] mesh_id mesh id for penalty stiffness  
  * \param [in] r_p rate penalty as percent of kinematic penalty
  */
-void setRatePercentPenalty( int meshId, RealT r_p );
+void setRatePercentPenalty( IndexT mesh_id, RealT r_p );
 
 /*!
  *
@@ -123,10 +123,10 @@ void setContactAreaFrac( RealT frac );
 /*!
  * \brief Sets the penalty scale
  *
- * \param [in] meshId ID for the mesh the penalty scale will be applied to
+ * \param [in] mesh_id ID for the mesh the penalty scale will be applied to
  * \param [in] scale the penalty scale
  */
-void setPenaltyScale( int meshId, RealT scale );
+void setPenaltyScale( IndexT mesh_id, RealT scale );
 
 /*!
  * \brief Sets the Lagrange multiplier enforcement options
@@ -185,7 +185,7 @@ void enableTimestepVote( const bool enable );
 /*!
  * \brief Registers the mesh description for a contact surface.
  *
- * \param [in] meshId the ID of the contact surface.
+ * \param [in] mesh_id the ID of the contact surface.
  * \param [in] numCells the number of cells on the contact surface.
  * \param [in] lengthNodalData length of the data arrays being registered.
  * \param [in] connectivity mesh connectivity array for the contact surface.
@@ -204,7 +204,7 @@ void enableTimestepVote( const bool enable );
  * \pre y != nullptr
  * \pre z != nullptr (3D only)
  */
-void registerMesh( int meshId,
+void registerMesh( IndexT mesh_id,
                    int numCells,
                    int lengthNodalData,
                    const IndexT* connectivity,
@@ -216,7 +216,7 @@ void registerMesh( int meshId,
 /*!
  * \brief Registers nodal displacements on the contact surface.
  *
- * \param [in] meshId the ID of the contact surface.
+ * \param [in] mesh_id the ID of the contact surface.
  * \param [in] dx array consisting of the x-component displacements
  * \param [in] dy array consisting of the y-component displacements
  * \param [in] dz array consisting of the z-component displacements
@@ -228,7 +228,7 @@ void registerMesh( int meshId,
  * \note A mesh for the given contact surface must have already been registered
  *  prior to calling this method via registerMesh()
  */
-void registerNodalDisplacements( int meshId,
+void registerNodalDisplacements( IndexT mesh_id,
                                  const RealT* dx,
                                  const RealT* dy,
                                  const RealT* dz=nullptr );
@@ -236,7 +236,7 @@ void registerNodalDisplacements( int meshId,
 /*!
  * \brief Registers nodal velocities on the contact surface.
  *
- * \param [in] meshId the ID of the contact surface.
+ * \param [in] mesh_id the ID of the contact surface.
  * \param [in] vx array consisting of the velocity x-components
  * \param [in] vy array consisting of the velocity y-components
  * \param [in] vz array consisting of the velocity z-components
@@ -248,7 +248,7 @@ void registerNodalDisplacements( int meshId,
  *  \note A mesh for the given contact surface must have already been registered
  *   prior to calling this method] via registerMesh()
  */
-void registerNodalVelocities( int meshId,
+void registerNodalVelocities( IndexT mesh_id,
                               const RealT* vx,
                               const RealT* vy,
                               const RealT* vz=nullptr );
@@ -256,7 +256,7 @@ void registerNodalVelocities( int meshId,
 /*!
  * \brief Registers nodal response buffers.
  *
- * \param [in] meshId the ID of the contact surface.
+ * \param [in] mesh_id the ID of the contact surface.
  * \param [in,out] rx buffer of the x-component of the contact response
  * \param [in,out] ry buffer of the y-component of the contact response
  * \param [in,out] rz buffer of the z-component of the contact response
@@ -268,7 +268,7 @@ void registerNodalVelocities( int meshId,
  * \note A mesh for the given contact surface must have already been registered
  *  prior to calling this method.
  */
-void registerNodalResponse( int meshId,
+void registerNodalResponse( IndexT mesh_id,
                             RealT* rx,
                             RealT* ry,
                             RealT* rz=nullptr );
@@ -376,36 +376,36 @@ int getElementBlockJacobians( IndexT cs_id,
  * \brief Register gap field on a nonmortar surface mesh associated with the
  * mortar method
  *
- * \param meshId Mesh id
+ * \param mesh_id Mesh id
  * \param gaps Array of degree-of-freedom values on the nodes of the mesh
  * representing the scalar gap field
  */
-void registerMortarGaps( int meshId,
+void registerMortarGaps( IndexT mesh_id,
                          RealT * gaps );
 
 /*!
  * \brief Register pressure field on a nonmortar surface mesh associated with
  * the mortar method
  *
- * \param meshId Mesh id
+ * \param mesh_id Mesh id
  * \param gaps Array of degree-of-freedom values on the nodes of the mesh
  * representing the scalar pressure field
  */
-void registerMortarPressures( int meshId,
+void registerMortarPressures( IndexT mesh_id,
                               const RealT * pressures );
 
 /// register an integer nodal field
-void registerIntNodalField( int meshId,
+void registerIntNodalField( IndexT mesh_id,
                             const IntNodalFields field,
                             int * fieldVariable );
 
 /// register a real element field or parameter 
-void registerRealElementField( int meshId,
+void registerRealElementField( IndexT mesh_id,
                                const RealElementFields field,
                                const RealT * fieldVariable );
 
 /// register an integer element field
-void registerIntElementField( int meshId,
+void registerIntElementField( IndexT mesh_id,
                               const IntElementFields field,
                               int * fieldVariable );
 
@@ -418,8 +418,8 @@ void registerIntElementField( int meshId,
  * \brief Registers a contact coupling scheme between two contact surfaces.
  *
  * \param [in] cs_id   coupling scheme id
- * \param [in] meshId1 Id of the first contact surface.
- * \param [in] meshId2 Id of the second contact surface.
+ * \param [in] mesh_id1 Id of the first contact surface.
+ * \param [in] mesh_id2 Id of the second contact surface.
  * \param [in] contact_mode
  * \param [in] contact_case
  * \param [in] contact_method
@@ -431,8 +431,8 @@ void registerIntElementField( int meshId,
  *  prior to calling this method.
  */
 void registerCouplingScheme( IndexT cs_id,
-                             IndexT meshId1,
-                             IndexT meshId2,
+                             IndexT mesh_id1,
+                             IndexT mesh_id2,
                              int contact_mode,
                              int contact_case,
                              int contact_method,
@@ -447,20 +447,20 @@ void registerCouplingScheme( IndexT cs_id,
  *
  * \param [in] cs_id      coupling scheme id
  * \param [in] numPairs   number of cell-pairs to be registered 
- * \param [in] meshId1    meshId of the first cell in the pair list
+ * \param [in] mesh_id1   mesh id of the first cell in the pair list
  * \param [in] pairType1  cell type of the first cell in the pair list
  * \param [in] pairIndex1 index of the first cell in the pair list
- * \param [in] meshId2    meshId of the second cell in the pair list
+ * \param [in] mesh_id2    mesh id of the second cell in the pair list
  * \param [in] pairType2  cell type of the second cell in the pair list
  * \param [in] pairIndex2 index of the second cell in the pair list
  *
  */
 void setInterfacePairs( IndexT cs_id,
                         IndexT numPairs,
-                        IndexT const * meshId1,
+                        IndexT const * mesh_id1,
                         IndexT const * pairType1,
                         IndexT const * pairIndex1,
-                        IndexT const * meshId2,
+                        IndexT const * mesh_id2,
                         IndexT const * pairType2,
                         IndexT const * pairIndex2 );
 

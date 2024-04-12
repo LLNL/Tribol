@@ -6,7 +6,6 @@
 #include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/geom/ContactPlaneManager.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 
@@ -53,14 +52,14 @@ int GetVtkElementId( const InterfaceElementType type )
 
 //------------------------------------------------------------------------------
 void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
-                                 const IndexT cs_id, const int meshId1,
-                                 const int meshId2, const int dim,
+                                 const IndexT cs_id, const IndexT mesh_id1,
+                                 const IndexT mesh_id2, const int dim,
                                  const int cycle, const RealT time )
 {
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    MeshManager & meshManager = MeshManager::getInstance();
-   MeshData& mesh1 = meshManager.GetMeshInstance(meshId1);
-   MeshData& mesh2 = meshManager.GetMeshInstance(meshId2);
+   MeshData& mesh1 = meshManager.at(mesh_id1);
+   MeshData& mesh2 = meshManager.at(mesh_id2);
    CouplingScheme* couplingScheme  = CouplingSchemeManager::getInstance().findData(cs_id);
    SLIC_ERROR_ROOT_IF(!couplingScheme, "No coupling scheme registered with given cs_id.");
 
@@ -134,7 +133,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          faces << "CYCLE 1 1 int\n";
          faces << cycle << "\n";
          faces << "COUPLING_SCHEME 1 1 int\n";
-         faces << csId << "\n";
+         faces << cs_id << "\n";
 
          // count the number of face points for all contact planes
          int numPoints = 0;
@@ -270,7 +269,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          overlap << "CYCLE 1 1 int\n";
          overlap << cycle << "\n";
          overlap << "COUPLING_SCHEME 1 1 int\n";
-         overlap << csId << "\n";
+         overlap << cs_id << "\n";
 
          // count the total number of vertices for all contact plane instances.
          int numPoints = 0;
@@ -383,8 +382,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
 
       std::string name = (nranks > 1)
-            ? fmt::format("mesh_intrfc_cs{:02}_r{:04}_{:07}.vtk", csId, rank, cycle)
-            : fmt::format("mesh_intrfc_cs{:02}_{:07}.vtk", csId, cycle);
+            ? fmt::format("mesh_intrfc_cs{:02}_r{:04}_{:07}.vtk", cs_id, rank, cycle)
+            : fmt::format("mesh_intrfc_cs{:02}_{:07}.vtk", cs_id, cycle);
       std::string f_name = axom::utilities::filesystem::joinPath(dir,name);
 
       std::ofstream mesh;
@@ -403,7 +402,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       mesh << "CYCLE 1 1 int\n";
       mesh << cycle << "\n";
       mesh << "COUPLING_SCHEME 1 1 int\n";
-      mesh << csId << "\n";
+      mesh << cs_id << "\n";
 
       int numTotalNodes = mesh1.m_lengthNodalData +
                           mesh2.m_lengthNodalData;
@@ -483,12 +482,12 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       mesh << "LOOKUP_TABLE default" << std::endl;
       for (int i=0; i<mesh1.m_numCells; ++i)
       {
-         fmt::print(mesh,  "{} ", meshId1);
+         fmt::print(mesh,  "{} ", mesh_id1);
       }
 
       for (int i=0; i<mesh2.m_numCells; ++i)
       {
-         fmt::print(mesh,  "{} ", meshId2);
+         fmt::print(mesh,  "{} ", mesh_id2);
       }
       mesh << std::endl;
 

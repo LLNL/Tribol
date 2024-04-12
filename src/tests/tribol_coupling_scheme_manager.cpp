@@ -33,7 +33,7 @@ public:
       // Note: We are not testing anything about coupling schemes in this file.
       //       Contact parameters don't matter for this setup either.
       return tribol::CouplingScheme(
-            0, meshId[0], meshId[1], 0,
+            0, mesh_id[0], mesh_id[1], 0,
             0,0,0,0,tribol::DEFAULT_BINNING_METHOD);
    }
 
@@ -44,12 +44,12 @@ protected:
    {
       // Register two "dummy" meshes to be used by coupling scheme
 
-      meshId[0] = 0;
-      tribol::registerMesh(meshId[0], 1, 4, &connectivity[0], 
+      mesh_id[0] = 0;
+      tribol::registerMesh(mesh_id[0], 1, 4, &connectivity[0], 
             3, &x[0], &y[0], &z[0]);
 
-      meshId[1] = 1;
-      tribol::registerMesh(meshId[1], 1, 4, &connectivity[0],
+      mesh_id[1] = 1;
+      tribol::registerMesh(mesh_id[1], 1, 4, &connectivity[0],
             3, &x[0], &y[0], &z[0]);
    }
 
@@ -65,7 +65,7 @@ protected:
 
 protected:
 
-   int meshId[2];
+   tribol::IndexT mesh_id[2];
 
    tribol::RealT x[4] { 0., 1., 1., 0. };
    tribol::RealT y[4] { 0., 0., 1., 1. };

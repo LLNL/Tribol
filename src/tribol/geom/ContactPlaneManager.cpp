@@ -5,7 +5,6 @@
 
 #include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/geom/ContactPlane.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/utils/Math.hpp"
 #include "axom/slic.hpp"
 
@@ -813,7 +812,7 @@ void ContactPlaneManager::getProjectedFaceCoords( int const id,
    }
 
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& mesh = meshManager.GetMeshInstance( meshId );
+   MeshData& mesh = meshManager.at( meshId );
 
    if ( faceId == 0 )
    {

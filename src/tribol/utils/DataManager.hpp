@@ -13,6 +13,10 @@
 // Tribol includes
 #include "tribol/types.hpp"
 
+// Axom includes
+#include "axom/fmt.hpp"
+#include "axom/slic.hpp"
+
 namespace tribol
 {
 
@@ -25,27 +29,12 @@ public:
   void operator=(const DataManager& other) = delete;
   void operator=(DataManager&& other) = delete;
 
-  /*!
-   * \brief Get instance 
-   *
-   * \return DataManager instance
-   */
   static DataManager& getInstance()
   {
-    if (instance_ == nullptr)
-    {
-      instance_ = std::make_unique<DataManager>();
-    }
-    return *instance_;
+    static DataManager instance_;
+    return instance_;
   }
 
-  /*!
-   * \brief Get data
-   *
-   * \param [in] id Data identifier
-   *
-   * \return Data
-   */
   T& at(IndexT id)
   {
     return data_map_.at(id);
@@ -76,28 +65,14 @@ public:
     return data_map_.size();
   }
 
-  /*!
-   * \brief Deletes existing data with given id and adds new data
-   *
-   * \param [in] meshID New mesh id
-   *
-   * \return MeshData object
-   */
   T& addData(IndexT id, T&& data)
   {
     data_map_.erase(id);
     auto data_it = data_map_.emplace(id, std::move(data));
-    return *data_it.first;
+    return data_it.first->second;
   }
 
-  /*!
-   * \brief Returns pointer to data if found, nullptr otherwise
-   *
-   * \param [in] id Id of mesh
-   *
-   * \return True if mesh exists
-   */
-  T* findData(IndexT id) const
+  T* findData(IndexT id)
   {
     auto data_it = data_map_.find(id);
     if (data_it == data_map_.end())
@@ -106,18 +81,23 @@ public:
     } 
     else
     {
-      return &(*data_it);
+      return &data_it->second;
     }
+  }
+
+  T& getData(IndexT id)
+  {
+    auto data_it = data_map_.find(id);
+    SLIC_ERROR_ROOT_IF(data_it == data_map_.end(),
+      axom::fmt::format("No data exists for id = {}.", id));
+    return data_it->second;
   }
 
 private:
   DataManager() = default;
   ~DataManager() = default;
 
-  std::unordered_map<IndexT, T> data_map_; ///< Unordered map of mesh instances
-
-  static std::unique_ptr<DataManager> instance_;
-
+  std::unordered_map<IndexT, T> data_map_;
 };
 
 } // end namespace tribol
