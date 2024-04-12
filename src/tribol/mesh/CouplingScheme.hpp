@@ -103,15 +103,15 @@ public:
    *
    * Per-cycle rebinning is enabled by default.
    */
-  CouplingScheme( integer couplingSchemeId, 
-                  integer meshId1,
-                  integer meshId2,
-                  integer contact_mode,
-                  integer contact_case,
-                  integer contact_method,
-                  integer contact_model,
-                  integer enforcement_method,
-                  integer binning_method);
+  CouplingScheme( int couplingSchemeId, 
+                  int meshId1,
+                  int meshId2,
+                  int contact_mode,
+                  int contact_case,
+                  int contact_method,
+                  int contact_model,
+                  int enforcement_method,
+                  int binning_method);
 
   /*!
    * \brief Destructor.
@@ -121,12 +121,12 @@ public:
   /// \name Getters
   /// @{
 
-  integer getMeshId1() const { return m_meshId1; }
-  integer getMeshId2() const { return m_meshId2; }
+  int getMeshId1() const { return m_meshId1; }
+  int getMeshId2() const { return m_meshId2; }
 
-  integer getId() const { return m_id; }
+  int getId() const { return m_id; }
 
-  integer getNumTotalNodes() const { return m_numTotalNodes; }
+  int getNumTotalNodes() const { return m_numTotalNodes; }
 
   ContactMode getContactMode() const  { return m_contactMode; }
   ContactCase getContactCase() const  { return m_contactCase; }
@@ -144,7 +144,7 @@ public:
   CouplingSchemeErrors& getCouplingSchemeErrors() { return m_couplingSchemeErrors; }
   CouplingSchemeInfo&   getCouplingSchemeInfo()   { return m_couplingSchemeInfo; }
 
-  integer spatialDimension() const 
+  int spatialDimension() const 
   { 
      parameters_t & params = parameters_t::getInstance();
      return params.dimension; 
@@ -210,7 +210,7 @@ public:
    *
    * \return number of active interface pairs
    */
-  integer getNumActivePairs( ) const { return m_numActivePairs; }
+  int getNumActivePairs( ) const { return m_numActivePairs; }
 
   /*!
    * Get the gap tolerance that determines in contact face-pairs 
@@ -218,7 +218,7 @@ public:
    *
    * \return the gap tolerance based on the method
    */
-  real getGapTol( int fid1, int fid2 ) const;
+  RealT getGapTol( int fid1, int fid2 ) const;
 
   /*!
    * Set whether the coupling scheme has been binned
@@ -320,7 +320,7 @@ public:
    * \return 0 if successful apply
    *
    */
-  int apply( integer cycle, real t, real &dt );
+  int apply( int cycle, RealT t, RealT &dt );
 
   /*!
    * \brief Wrapper around method specific calculation of the Tribol timestep vote 
@@ -328,7 +328,7 @@ public:
    * \param [in/out] dt simulation timestep at given cycle
    *
    */
-  void computeTimeStep( real &dt );
+  void computeTimeStep( RealT &dt );
 
   /*!
    * \brief Wrapper to call method specific visualization output routines
@@ -341,8 +341,8 @@ public:
    */
   void writeInterfaceOutput( const std::string& dir,
                              const VisType v_type, 
-                             const integer cycle, 
-                             const real t );
+                             const int cycle, 
+                             const RealT t );
 
   /*!
    * \brief Sets the coupling scheme logging level member variable 
@@ -544,19 +544,19 @@ private:
    * \param [in/out] dt simulation timestep at given cycle
    *
    */
-  void computeCommonPlaneTimeStep( real &dt );
+  void computeCommonPlaneTimeStep( RealT &dt );
 
 private:
 
-  integer m_id; ///< Coupling Scheme id
+  int m_id; ///< Coupling Scheme id
 
-  integer m_meshId1; ///< Integer id for mesh 1
-  integer m_meshId2; ///< Integer id for mesh 2
+  int m_meshId1; ///< Integer id for mesh 1
+  int m_meshId2; ///< Integer id for mesh 2
 
   bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
   bool m_isValid {true}; ///< False if the coupling scheme is not valid per call to init()
 
-  integer m_numTotalNodes; ///< Total number of nodes in the coupling scheme
+  int m_numTotalNodes; ///< Total number of nodes in the coupling scheme
 
   ContactMode m_contactMode;             ///< Contact mode
   ContactCase m_contactCase;             ///< Contact case
@@ -573,7 +573,7 @@ private:
 
   InterfacePairs* m_interfacePairs; ///< List of interface pairs
 
-  integer m_numActivePairs; ///< number of active interface pairs from InterfacePairs list
+  int m_numActivePairs; ///< number of active interface pairs from InterfacePairs list
 
   MethodData* m_methodData; ///< method object holding required interface method data
 

@@ -31,7 +31,7 @@
 #include <iomanip>
 #include <fstream>
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class with some setup necessary to test 
@@ -77,23 +77,23 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 'small' (0.055) interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.005;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.005;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    // setup mesh
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
@@ -109,15 +109,15 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0; // something simple
-   real bulk_mod2 = 1.0; 
-   real velX1 = 0.;
-   real velY1 = 0.;
-   real velZ1 = 0.; 
-   real velX2 = 0.;
-   real velY2 = 0.;
-   real velZ2 = 0.; 
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0; // something simple
+   RealT bulk_mod2 = 1.0; 
+   RealT velX1 = 0.;
+   RealT velY1 = 0.;
+   RealT velZ1 = 0.; 
+   RealT velX2 = 0.;
+   RealT velY2 = 0.;
+   RealT velZ2 = 0.; 
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
@@ -160,23 +160,23 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap_no_api_call )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 'small' (0.055) interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.005;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.005;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    // setup mesh
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
@@ -192,16 +192,16 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap_no_api_call )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0;
-   real bulk_mod2 = 1.0;
-   real vel_factor = 100.;
-   real velX1 = 0.;
-   real velY1 = 0.;
-   real velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
-   real velX2 = 0.;
-   real velY2 = 0.;
-   real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0;
+   RealT bulk_mod2 = 1.0;
+   RealT vel_factor = 100.;
+   RealT velX1 = 0.;
+   RealT velY1 = 0.;
+   RealT velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
+   RealT velX2 = 0.;
+   RealT velY2 = 0.;
+   RealT velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
@@ -249,23 +249,23 @@ TEST_F( CommonPlaneTest, numerically_zero_velocity_small_gap )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 'small' (0.055) interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.005;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.005;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    // setup mesh
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
@@ -281,15 +281,15 @@ TEST_F( CommonPlaneTest, numerically_zero_velocity_small_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0; // something simple
-   real bulk_mod2 = 1.0; 
-   real velX1 = 1.e-12;
-   real velY1 = 1.e-12;
-   real velZ1 = 1.e-12; 
-   real velX2 = -1.e-12;
-   real velY2 = -1.e-12;
-   real velZ2 = -1.e-12; 
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0; // something simple
+   RealT bulk_mod2 = 1.0; 
+   RealT velX1 = 1.e-12;
+   RealT velY1 = 1.e-12;
+   RealT velZ1 = 1.e-12; 
+   RealT velX2 = -1.e-12;
+   RealT velY2 = -1.e-12;
+   RealT velZ2 = -1.e-12; 
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
@@ -333,23 +333,23 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    // setup mesh
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
@@ -365,15 +365,15 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0;
-   real bulk_mod2 = 1.0;
-   real velX1 = 0.;
-   real velY1 = 0.;
-   real velZ1 = 0.; 
-   real velX2 = 0.;
-   real velY2 = 0.;
-   real velZ2 = 0.; 
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0;
+   RealT bulk_mod2 = 1.0;
+   RealT velX1 = 0.;
+   RealT velY1 = 0.;
+   RealT velZ1 = 0.; 
+   RealT velX2 = 0.;
+   RealT velY2 = 0.;
+   RealT velZ2 = 0.; 
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
@@ -419,23 +419,23 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 'small' (0.055) interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.005;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.005;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    // setup mesh
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
@@ -451,16 +451,16 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0;
-   real bulk_mod2 = 1.0;
-   real vel_factor = 100.;
-   real velX1 = 0.;
-   real velY1 = 0.;
-   real velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
-   real velX2 = 0.;
-   real velY2 = 0.;
-   real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0;
+   RealT bulk_mod2 = 1.0;
+   RealT vel_factor = 100.;
+   RealT velX1 = 0.;
+   RealT velY1 = 0.;
+   RealT velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
+   RealT velX2 = 0.;
+   RealT velY2 = 0.;
+   RealT velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
@@ -484,8 +484,8 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
-   real dt_diff = std::abs(parameters.dt - 0.000997297);
-   real dt_tol = 1.e-8;
+   RealT dt_diff = std::abs(parameters.dt - 0.000997297);
+   RealT dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
    tribol::finalize();
@@ -507,23 +507,23 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    // setup mesh
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
@@ -539,16 +539,16 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0;
-   real bulk_mod2 = 1.0;
-   real vel_factor = 100.;
-   real velX1 = 0.;
-   real velY1 = 0.;
-   real velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
-   real velX2 = 0.;
-   real velY2 = 0.;
-   real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0;
+   RealT bulk_mod2 = 1.0;
+   RealT vel_factor = 100.;
+   RealT velX1 = 0.;
+   RealT velY1 = 0.;
+   RealT velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
+   RealT velX2 = 0.;
+   RealT velY2 = 0.;
+   RealT velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
@@ -572,8 +572,8 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
-   real dt_diff = std::abs(parameters.dt - 2.69841e-06);
-   real dt_tol = 1.e-8;
+   RealT dt_diff = std::abs(parameters.dt - 2.69841e-06);
+   RealT dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
    tribol::finalize();
@@ -595,23 +595,23 @@ TEST_F( CommonPlaneTest, separation_velocity_small_gap )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.055 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.005;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.005;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    // setup mesh
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
@@ -627,16 +627,16 @@ TEST_F( CommonPlaneTest, separation_velocity_small_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0;
-   real bulk_mod2 = 1.0;
-   real vel_factor = 100.;
-   real velX1 = 0.;
-   real velY1 = 0.;
-   real velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
-   real velX2 = 0.;
-   real velY2 = 0.;
-   real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0;
+   RealT bulk_mod2 = 1.0;
+   RealT vel_factor = 100.;
+   RealT velX1 = 0.;
+   RealT velY1 = 0.;
+   RealT velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
+   RealT velX2 = 0.;
+   RealT velY2 = 0.;
+   RealT velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, -velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, velZ2 ); 
@@ -682,23 +682,23 @@ TEST_F( CommonPlaneTest, large_velocity_separation )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with initial separation
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 2.1;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 3.1;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 2.1;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 3.1;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    // setup mesh
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
@@ -714,16 +714,16 @@ TEST_F( CommonPlaneTest, large_velocity_separation )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0;
-   real bulk_mod2 = 1.0;
-   real vel_factor = 10.;
-   real velX1 = 0.;
-   real velY1 = 0.;
-   real velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
-   real velX2 = 0.;
-   real velY2 = 0.;
-   real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0;
+   RealT bulk_mod2 = 1.0;
+   RealT vel_factor = 10.;
+   RealT velX1 = 0.;
+   RealT velY1 = 0.;
+   RealT velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
+   RealT velX2 = 0.;
+   RealT velY2 = 0.;
+   RealT velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
@@ -770,23 +770,23 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with initial separation
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 1.0001;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.0001;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 1.0001;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.0001;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    // setup mesh
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
@@ -802,16 +802,16 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0;
-   real bulk_mod2 = 1.0;
-   real vel_factor = 1.e6;
-   real velX1 = 0.;
-   real velY1 = 0.;
-   real velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
-   real velX2 = 0.;
-   real velY2 = 0.;
-   real velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0;
+   RealT bulk_mod2 = 1.0;
+   RealT vel_factor = 1.e6;
+   RealT velX1 = 0.;
+   RealT velY1 = 0.;
+   RealT velZ1 = vel_factor * 0.3 * element_thickness1 / dt;
+   RealT velX2 = 0.;
+   RealT velY2 = 0.;
+   RealT velZ2 = vel_factor * 0.3 * element_thickness2 / dt;
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
@@ -834,8 +834,8 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
                                          tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
-   real dt_diff = std::abs(parameters.dt -0.00099999);
-   real dt_tol = 1.e-8;
+   RealT dt_diff = std::abs(parameters.dt -0.00099999);
+   RealT dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
    tribol::finalize();

@@ -19,8 +19,8 @@ namespace tribol
 {
 
 int ApplyInterfacePhysics( CouplingScheme const * cs,
-                           integer TRIBOL_UNUSED_PARAM(cycle),
-                           real TRIBOL_UNUSED_PARAM(t) )
+                           int TRIBOL_UNUSED_PARAM(cycle),
+                           RealT TRIBOL_UNUSED_PARAM(t) )
 {
    // call the appropriate normal and tangential interface physics
    // routines based on method, enforcement strategy, and interface

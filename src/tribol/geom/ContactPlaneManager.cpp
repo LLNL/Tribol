@@ -31,13 +31,13 @@ ContactPlaneManager & ContactPlaneManager::getInstance()
 }
 
 //------------------------------------------------------------------------------
-void ContactPlaneManager::resize( IndexType const newSize )
+void ContactPlaneManager::resize( IndexT const newSize )
 {
   m_numContactPlanes = newSize;
 
   if( m_numContactPlanes > m_allocatedNumContactPlanes )
   {
-    reserve( static_cast<IndexType>( m_numContactPlanes * 1.1 ) );
+    reserve( static_cast<IndexT>( m_numContactPlanes * 1.1 ) );
   }
 
   switch(m_spaceDim)
@@ -194,7 +194,7 @@ void ContactPlaneManager::resize2D( )
 }
 
 //------------------------------------------------------------------------------
-void ContactPlaneManager::reserve( IndexType const newSize )
+void ContactPlaneManager::reserve( IndexT const newSize )
 {
   if (m_spaceDim == 3)
   {
@@ -213,7 +213,7 @@ void ContactPlaneManager::reserve( IndexType const newSize )
 }
 
 //------------------------------------------------------------------------------
-void ContactPlaneManager::reserve3D( IndexType const newSize )
+void ContactPlaneManager::reserve3D( IndexT const newSize )
 {
   m_allocatedNumContactPlanes = newSize;
 
@@ -297,7 +297,7 @@ void ContactPlaneManager::reserve3D( IndexType const newSize )
 }
 
 //------------------------------------------------------------------------------
-void ContactPlaneManager::reserve2D( IndexType const newSize )
+void ContactPlaneManager::reserve2D( IndexT const newSize )
 {
   m_allocatedNumContactPlanes = newSize;
 
@@ -739,7 +739,7 @@ void ContactPlaneManager::clearCPManager()
 //------------------------------------------------------------------------------
 void ContactPlaneManager::getContactPlaneOverlapVerts( int const id,
                                                      int const numVerts,
-                                                     real * coords )
+                                                     RealT * coords )
 {
    if (numVerts != m_numPolyVert[id])
    {
@@ -749,9 +749,9 @@ void ContactPlaneManager::getContactPlaneOverlapVerts( int const id,
 
    // point to the appropriate overlap vertex coordinate
    // data structure
-   real const * vertCoordsX = nullptr;
-   real const * vertCoordsY = nullptr;
-   real const * vertCoordsZ = nullptr;
+   RealT const * vertCoordsX = nullptr;
+   RealT const * vertCoordsY = nullptr;
+   RealT const * vertCoordsZ = nullptr;
    if (m_spaceDim == 3)
    {
       vertCoordsX = m_polyX[id];
@@ -764,7 +764,7 @@ void ContactPlaneManager::getContactPlaneOverlapVerts( int const id,
       vertCoordsY = m_segY[id];
    }
 
-   for (IndexType ivert=0; ivert<numVerts; ++ivert)
+   for (IndexT ivert=0; ivert<numVerts; ++ivert)
    {
       coords[m_spaceDim * ivert]     = vertCoordsX[ivert];
       coords[m_spaceDim * ivert + 1] = vertCoordsY[ivert];
@@ -781,7 +781,7 @@ void ContactPlaneManager::getContactPlaneOverlapVerts( int const id,
 //------------------------------------------------------------------------------
 void ContactPlaneManager::getContactPlaneNormal( int const id,
                                                  int const dim,
-                                                 real * nrml )
+                                                 RealT * nrml )
 {
    nrml[0] = this->m_nX[ id ];
    nrml[1] = this->m_nY[ id ];
@@ -795,13 +795,13 @@ void ContactPlaneManager::getContactPlaneNormal( int const id,
 //------------------------------------------------------------------------------
 void ContactPlaneManager::getProjectedFaceCoords( int const id,
                                                   int const faceId,
-                                                  real * coords )
+                                                  RealT * coords )
 {
    // Note: at the moment there is no bounds check for coords.
    // Doxygen comments in the function prototype have been added
    // to note the expected length of the coords array.
-   IndexType const numNodesPerFace = (m_spaceDim == 3) ? 4 : 2;
-   IndexType meshId, fId;
+   IndexT const numNodesPerFace = (m_spaceDim == 3) ? 4 : 2;
+   IndexT meshId, fId;
 
    if ( faceId == 0 )
    {
@@ -824,9 +824,9 @@ void ContactPlaneManager::getProjectedFaceCoords( int const id,
       fId = m_fId2[ id ];
    }
 
-   real projX[ numNodesPerFace ];
-   real projY[ numNodesPerFace ];
-   real projZ[ numNodesPerFace ];
+   RealT projX[ numNodesPerFace ];
+   RealT projY[ numNodesPerFace ];
+   RealT projZ[ numNodesPerFace ];
 
    for (int i=0; i<numNodesPerFace; ++i)
    {

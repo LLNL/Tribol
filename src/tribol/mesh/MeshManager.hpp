@@ -43,7 +43,7 @@ public:
    *
    * \return MeshData object
    */
-  MeshData & GetMeshInstance( integer meshID )
+  MeshData & GetMeshInstance( int meshID )
   {
     return m_meshInstances.at(meshID);
   }
@@ -55,7 +55,7 @@ public:
    *
    * \return MeshData object
    */
-  MeshData const & GetMeshInstance( integer meshID ) const
+  MeshData const & GetMeshInstance( int meshID ) const
   {
     return m_meshInstances.at(meshID);
   }
@@ -67,7 +67,7 @@ public:
    *
    * \return MeshData object
    */
-  MeshData & CreateMesh( integer meshID )
+  MeshData & CreateMesh( int meshID )
   {
     if ( hasMesh( meshID ) )
     {
@@ -81,7 +81,7 @@ public:
    *
    * \return Mesh instance
    */
-  std::unordered_map< integer, MeshData >& GetMeshInstances()
+  std::unordered_map< int, MeshData >& GetMeshInstances()
   {
     return m_meshInstances;
   }
@@ -93,13 +93,13 @@ public:
    *
    * \return True if mesh exists
    */
-  bool hasMesh( integer meshID) const
+  bool hasMesh( int meshID) const
   {
      return m_meshInstances.find(meshID) != m_meshInstances.end();
   }
 
 private:
-  std::unordered_map< integer, MeshData > m_meshInstances; ///< Unordered map of mesh instances
+  std::unordered_map< int, MeshData > m_meshInstances; ///< Unordered map of mesh instances
 
 };
 }

@@ -22,8 +22,8 @@
 namespace tribol
 {
 
-real ComputePenaltyStiffnessPerArea( const real K1_over_t1,
-                                     const real K2_over_t2 )
+RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
+                                     const RealT K2_over_t2 )
 {
    // compute face-pair specific penalty stiffness per unit area.
    // Note: This assumes that each face has a spring stiffness 
@@ -45,9 +45,9 @@ real ComputePenaltyStiffnessPerArea( const real K1_over_t1,
 } // end ComputePenaltyStiffnessPerArea
 
 //------------------------------------------------------------------------------
-real ComputeGapRatePressure( ContactPlaneManager& cpMgr, 
+RealT ComputeGapRatePressure( ContactPlaneManager& cpMgr, 
                              int cpID, int meshId1, int meshId2, 
-                             int fId1, int fId2, double element_penalty,
+                             int fId1, int fId2, RealT element_penalty,
                              int dim, RatePenaltyCalculation rate_calc )
 {
    MeshManager& meshManager = MeshManager::getInstance();
@@ -55,7 +55,7 @@ real ComputeGapRatePressure( ContactPlaneManager& cpMgr,
    MeshData& m2 = meshManager.GetMeshInstance( meshId2 );
 
    // compute the correct rate_penalty
-   double rate_penalty = 0.;
+   RealT rate_penalty = 0.;
    switch (rate_calc)
    {
       case NO_RATE_PENALTY:
@@ -84,13 +84,13 @@ real ComputeGapRatePressure( ContactPlaneManager& cpMgr,
    int numNodesPerCell1 = m1.m_numNodesPerCell;
    int numNodesPerCell2 = m2.m_numNodesPerCell;
 
-   double x1[dim * numNodesPerCell1];
-   double v1[dim * numNodesPerCell1];
+   RealT x1[dim * numNodesPerCell1];
+   RealT v1[dim * numNodesPerCell1];
    m1.getFaceCoords( fId1, &x1[0] );
    m1.getFaceNodalVelocities( fId1, &v1[0] );
 
-   double x2[dim * numNodesPerCell2];
-   double v2[dim * numNodesPerCell2];
+   RealT x2[dim * numNodesPerCell2];
+   RealT v2[dim * numNodesPerCell2];
    m2.getFaceCoords( fId2, &x2[0] );
    m2.getFaceNodalVelocities( fId2, &v2[0] );
 
@@ -98,31 +98,31 @@ real ComputeGapRatePressure( ContactPlaneManager& cpMgr,
    // compute velocity Galerkin approximation at projected // 
    // overlap centroid                                     //
    //////////////////////////////////////////////////////////
-   real vel_f1[dim];
-   real vel_f2[dim];
+   RealT vel_f1[dim];
+   RealT vel_f2[dim];
    initRealArray( &vel_f1[0], dim, 0. );
    initRealArray( &vel_f2[0], dim, 0. );
 
    // interpolate nodal velocity at overlap centroid as projected 
    // onto face 1
-   double cXf1 = cpMgr.m_cXf1[cpID];
-   double cYf1 = cpMgr.m_cYf1[cpID];
-   double cZf1 = (dim == 3) ? cpMgr.m_cZf1[cpID] : 0.;
+   RealT cXf1 = cpMgr.m_cXf1[cpID];
+   RealT cYf1 = cpMgr.m_cYf1[cpID];
+   RealT cZf1 = (dim == 3) ? cpMgr.m_cZf1[cpID] : 0.;
    GalerkinEval( &x1[0], cXf1, cYf1, cZf1,
                  LINEAR, PHYSICAL, dim, dim, 
                  &v1[0], &vel_f1[0] );
 
    // interpolate nodal velocity at overlap centroid as projected 
    // onto face 2
-   double cXf2 = cpMgr.m_cXf2[cpID];
-   double cYf2 = cpMgr.m_cYf2[cpID];
-   double cZf2 = (dim == 3) ? cpMgr.m_cZf2[cpID] : 0.;
+   RealT cXf2 = cpMgr.m_cXf2[cpID];
+   RealT cYf2 = cpMgr.m_cYf2[cpID];
+   RealT cZf2 = (dim == 3) ? cpMgr.m_cZf2[cpID] : 0.;
    GalerkinEval( &x2[0], cXf2, cYf2, cZf2,
                  LINEAR, PHYSICAL, dim, dim, 
                  &v2[0], &vel_f2[0] );
 
    // compute velocity gap vector
-   double velGap[dim];
+   RealT velGap[dim];
    velGap[0] = vel_f1[0] - vel_f2[0];
    velGap[1] = vel_f1[1] - vel_f2[1];
    if (dim == 3)
@@ -160,34 +160,34 @@ template< >
 int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = pairs->getNumPairs();
+   IndexT const numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
-   integer const dim = parameters.dimension;
+   int const dim = parameters.dimension;
 
    LoggingLevel logLevel = cs->getLoggingLevel(); 
 
    ////////////////////////////////
    // Grab pointers to mesh data //
    ////////////////////////////////
-   IndexType const meshId1 = cs->getMeshId1();
-   IndexType const meshId2 = cs->getMeshId2();
+   IndexT const meshId1 = cs->getMeshId1();
+   IndexT const meshId2 = cs->getMeshId2();
 
    MeshData& mesh1 = meshManager.GetMeshInstance( meshId1 );
    MeshData& mesh2 = meshManager.GetMeshInstance( meshId2 );
-   IndexType const numNodesPerFace = mesh1.m_numNodesPerCell;
+   IndexT const numNodesPerFace = mesh1.m_numNodesPerCell;
 
-   real * const fx1 = mesh1.m_forceX;
-   real * const fy1 = mesh1.m_forceY; 
-   real * const fz1 = mesh1.m_forceZ; 
-   IndexType const * const nodalConnectivity1 = mesh1.m_connectivity;
+   RealT * const fx1 = mesh1.m_forceX;
+   RealT * const fy1 = mesh1.m_forceY; 
+   RealT * const fz1 = mesh1.m_forceZ; 
+   IndexT const * const nodalConnectivity1 = mesh1.m_connectivity;
 
-   real * const fx2 = mesh2.m_forceX; 
-   real * const fy2 = mesh2.m_forceY;
-   real * const fz2 = mesh2.m_forceZ;
-   IndexType const * nodalConnectivity2 = mesh2.m_connectivity;
+   RealT * const fx2 = mesh2.m_forceX; 
+   RealT * const fy2 = mesh2.m_forceY;
+   RealT * const fz2 = mesh2.m_forceZ;
+   IndexT const * nodalConnectivity2 = mesh2.m_connectivity;
 
 
    ///////////////////////////////
@@ -196,7 +196,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    int cpID = 0;
    int err = 0;
    bool neg_thickness {false};
-   for (IndexType kp = 0; kp < numPairs; ++kp)
+   for (IndexT kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
@@ -206,15 +206,15 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       }
 
       // get pair indices
-      IndexType index1 = pair.pairIndex1;
-      IndexType index2 = pair.pairIndex2;
+      IndexT index1 = pair.pairIndex1;
+      IndexT index2 = pair.pairIndex2;
 
-      real gap = cpManager.m_gap[ cpID ];
-      real A = cpManager.m_area[ cpID ]; // face-pair overlap area
+      RealT gap = cpManager.m_gap[ cpID ];
+      RealT A = cpManager.m_area[ cpID ]; // face-pair overlap area
 
       // don't proceed for gaps that don't violate the constraints. This check 
       // allows for numerically zero interpenetration.
-      real gap_tol = cs->getGapTol( index1, index2 );
+      RealT gap_tol = cs->getGapTol( index1, index2 );
 
       if ( gap > gap_tol )
       {
@@ -228,17 +228,17 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       }
 
       // debug force sums
-      real dbg_sum_force1 {0.};
-      real dbg_sum_force2 {0.};
+      RealT dbg_sum_force1 {0.};
+      RealT dbg_sum_force2 {0.};
 
       /////////////////////////////////////////////
       // kinematic penalty stiffness calculation //
       /////////////////////////////////////////////
-      real penalty_stiff_per_area {0.};
+      RealT penalty_stiff_per_area {0.};
       const EnforcementOptions& enforcement_options = const_cast<EnforcementOptions&>(cs->getEnforcementOptions());
       const PenaltyEnforcementOptions& pen_enfrc_options = enforcement_options.penalty_options;
-      real pen_scale1 = mesh1.m_elemData.m_penalty_scale;
-      real pen_scale2 = mesh2.m_elemData.m_penalty_scale;
+      RealT pen_scale1 = mesh1.m_elemData.m_penalty_scale;
+      RealT pen_scale2 = mesh2.m_elemData.m_penalty_scale;
       switch (pen_enfrc_options.kinematic_calculation)
       {
          case KINEMATIC_CONSTANT: 
@@ -280,7 +280,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       ////////////////////////////////////////////////////
 
       // compute total pressure based on constraint type
-      real totalPressure = 0.;
+      RealT totalPressure = 0.;
       cpManager.m_pressure[ cpID ] = gap * penalty_stiff_per_area; // kinematic contribution
       switch(pen_enfrc_options.constraint_type)
       {
@@ -316,9 +316,9 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       ///////////////////////////////////////////
 
       // construct array of nodal coordinates
-      real xf1[ dim * numNodesPerFace ];
-      real xf2[ dim * numNodesPerFace ];
-      real xVert[dim * cpManager.m_numPolyVert[cpID]];  
+      RealT xf1[ dim * numNodesPerFace ];
+      RealT xf2[ dim * numNodesPerFace ];
+      RealT xVert[dim * cpManager.m_numPolyVert[cpID]];  
 
       initRealArray( &xf1[0], dim*numNodesPerFace, 0. );
       initRealArray( &xf2[0], dim*numNodesPerFace, 0. );
@@ -346,9 +346,9 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
                                     meshId1, meshId2, index1, index2 );
 
       // set SurfaceContactElem face normals and overlap normal
-      real faceNormal1[dim];
-      real faceNormal2[dim];
-      real overlapNormal[dim];
+      RealT faceNormal1[dim];
+      RealT faceNormal2[dim];
+      RealT overlapNormal[dim];
 
       mesh1.getFaceNormal( index1, dim, &faceNormal1[0] );
       mesh2.getFaceNormal( index2, dim, &faceNormal2[0] );
@@ -359,8 +359,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       cntctElem.overlapNormal = &overlapNormal[0];
 
       // create arrays to hold nodal residual weak form integral evaluations
-      real phi1[numNodesPerFace];
-      real phi2[numNodesPerFace];
+      RealT phi1[numNodesPerFace];
+      RealT phi2[numNodesPerFace];
       initRealArray( &phi1[0], numNodesPerFace, 0. );
       initRealArray( &phi2[0], numNodesPerFace, 0. );
 
@@ -377,14 +377,14 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       //  contact pressure, and overlap area)                              //
       ///////////////////////////////////////////////////////////////////////
 
-      real phi_sum_1 = 0.;
-      real phi_sum_2 = 0.;
+      RealT phi_sum_1 = 0.;
+      RealT phi_sum_2 = 0.;
 
       // compute contact force (spring force)
-      real contact_force = totalPressure * A;
-      real force_x = overlapNormal[0] * contact_force;
-      real force_y = overlapNormal[1] * contact_force;
-      real force_z = 0.;
+      RealT contact_force = totalPressure * A;
+      RealT force_x = overlapNormal[0] * contact_force;
+      RealT force_y = overlapNormal[1] * contact_force;
+      RealT force_z = 0.;
       if (dim == 3)
       {
          force_z = overlapNormal[2] * contact_force;
@@ -393,11 +393,11 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
       //////////////////////////////////////////////////////
       // loop over nodes and compute contact nodal forces //
       //////////////////////////////////////////////////////
-      for( IndexType a=0 ; a < numNodesPerFace ; ++a )
+      for( IndexT a=0 ; a < numNodesPerFace ; ++a )
       {
 
-        IndexType node0 = nodalConnectivity1[ index1*numNodesPerFace + a ];
-        IndexType node1 = nodalConnectivity2[ index2*numNodesPerFace + a ];
+        IndexT node0 = nodalConnectivity1[ index1*numNodesPerFace + a ];
+        IndexT node1 = nodalConnectivity2[ index2*numNodesPerFace + a ];
 
         if (logLevel == TRIBOL_DEBUG)
         {
@@ -405,13 +405,13 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
            phi_sum_2 += phi2[a];
         }
  
-        const real nodal_force_x1 = force_x * phi1[a];
-        const real nodal_force_y1 = force_y * phi1[a];
-        const real nodal_force_z1 = force_z * phi1[a];
+        const RealT nodal_force_x1 = force_x * phi1[a];
+        const RealT nodal_force_y1 = force_y * phi1[a];
+        const RealT nodal_force_z1 = force_z * phi1[a];
 
-        const real nodal_force_x2 = force_x * phi2[a];
-        const real nodal_force_y2 = force_y * phi2[a];
-        const real nodal_force_z2 = force_z * phi2[a];
+        const RealT nodal_force_x2 = force_x * phi2[a];
+        const RealT nodal_force_y2 = force_y * phi2[a];
+        const RealT nodal_force_z2 = force_z * phi2[a];
 
         if (logLevel == TRIBOL_DEBUG)
         {

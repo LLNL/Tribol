@@ -60,16 +60,16 @@ struct TestControlParameters
       // no-op
    }
 
-   real dt {0.};
-   real auto_contact_pen_frac {0.95};
+   RealT dt {0.};
+   RealT auto_contact_pen_frac {0.95};
 
    // penalty control parameters
    bool penalty_ratio;
    bool constant_rate_penalty;
    bool percent_rate_penalty;
-   real rate_penalty;
-   real rate_penalty_ratio;
-   real const_penalty;
+   RealT rate_penalty;
+   RealT rate_penalty_ratio;
+   RealT const_penalty;
    bool enable_timestep_vote;
 };
 
@@ -133,12 +133,12 @@ public:
    *
    */
    void setupContactMeshHex( int numElemsX1, int numElemsY1, int numElemsZ1, 
-                             real xMin1, real yMin1, real zMin1,
-                             real xMax1, real yMax1, real zMax1,
+                             RealT xMin1, RealT yMin1, RealT zMin1,
+                             RealT xMax1, RealT yMax1, RealT zMax1,
                              int numElemsX2, int numElemsY2, int numElemsZ2,
-                             real xMin2, real yMin2, real zMin2, 
-                             real xMax2, real yMax2, real zMax2,
-                             real thetaMortar, real thetaNonmortar );
+                             RealT xMin2, RealT yMin2, RealT zMin2, 
+                             RealT xMax2, RealT yMax2, RealT zMax2,
+                             RealT thetaMortar, RealT thetaNonmortar );
 
   /*!
    * \brief setups of a 3D contact tet mesh consisting of two blocks
@@ -166,12 +166,12 @@ public:
    *
    */
    void setupContactMeshTet( int numElemsX1, int numElemsY1, int numElemsZ1, 
-                             real xMin1, real yMin1, real zMin1,
-                             real xMax1, real yMax1, real zMax1,
+                             RealT xMin1, RealT yMin1, RealT zMin1,
+                             RealT xMax1, RealT yMax1, RealT zMax1,
                              int numElemsX2, int numElemsY2, int numElemsZ2,
-                             real xMin2, real yMin2, real zMin2, 
-                             real xMax2, real yMax2, real zMax2,
-                             real thetaMortar, real thetaNonmortar );
+                             RealT xMin2, RealT yMin2, RealT zMin2, 
+                             RealT xMax2, RealT yMax2, RealT zMax2,
+                             RealT thetaMortar, RealT thetaNonmortar );
 
   /*!
    * \brief sets up an mfem mesh object representation of the original hex or tet test mesh
@@ -203,7 +203,7 @@ public:
    */
    void setupPatchTestDirichletBCs( int meshId, int numElemsX, int numElemsY, int numElemsZ, 
                                     int nodeIdOffset, bool inHomogeneousGap, 
-                                    real inHomogeneousZVal = 0. );
+                                    RealT inHomogeneousZVal = 0. );
 
   /*!
    * \brief sets up pressure dof ids for a 3D nonmortar mesh block for PATCH TEST
@@ -229,7 +229,7 @@ public:
    * \note in the future we should handle an array of velocity values
    *
    */
-   void allocateAndSetVelocities( int meshId, real valX, real valY, real valZ=0. );
+   void allocateAndSetVelocities( int meshId, RealT valX, RealT valY, RealT valZ=0. );
 
   /*!
    * \brief allocates and sets bulk modulus arrays on mesh
@@ -239,7 +239,7 @@ public:
    * \note in the future we should handle an array of values
    *
    */
-   void allocateAndSetBulkModulus( int meshId, real val );
+   void allocateAndSetBulkModulus( int meshId, RealT val );
 
   /*!
    * \brief allocates and sets element thickness arrays on mesh
@@ -250,7 +250,7 @@ public:
    *       should handle an array of values
    *
    */
-   void allocateAndSetElementThickness( int meshId, real t );
+   void allocateAndSetElementThickness( int meshId, RealT t );
 
   /*!
    * \brief wraps element Jacobian calculations for linear elasticity
@@ -264,7 +264,7 @@ public:
    * \pre matrix A cannot have been finalized yet
    */
    void computeEquilibriumJacobian( mfem::SparseMatrix * const A, 
-                                    real const nu, real const youngs );
+                                    RealT const nu, RealT const youngs );
 
   /*!
    * \brief wraps element Jacobian calculations for linear elasticity 
@@ -324,7 +324,7 @@ public:
    * \pre v of length, dim * numTotalNodes + numPressureDofs
    *
    */
-   void getGapEvals( real * const v );
+   void getGapEvals( RealT * const v );
 
   /*!
    * \brief Modifies matrix A and rhs vector b to enforce Dirichlet BCs
@@ -347,7 +347,7 @@ public:
    /// print mesh to vtk file
    void testMeshToVtk( const std::string& dir, ///< Name of the output directory
                        int cycle,              ///< Cycle number
-                       double time             ///< Simulation time 
+                       RealT time             ///< Simulation time 
                      );
 
 public:
@@ -376,15 +376,15 @@ public:
    int *dirNodesX1;          ///< Pointer to list of mortar node ids with x-component Dirichlet BCs
    int *dirNodesY1;          ///< Pointer to list of mortar node ids with y-component Dirichlet BCs
    int *dirNodesZ1;          ///< Pointer to list of mortar node ids with z-component Dirichlet BCs
-   double *iDirValX1;        ///< Pointer to x-component Dirichlet BC values for specified mortar nodes
-   double *iDirValY1;        ///< Pointer to y-component Dirichlet BC values for specified mortar nodes
-   double *iDirValZ1;        ///< Pointer to z-component Dirichlet BC values for specified mortar nodes
+   RealT *iDirValX1;        ///< Pointer to x-component Dirichlet BC values for specified mortar nodes
+   RealT *iDirValY1;        ///< Pointer to y-component Dirichlet BC values for specified mortar nodes
+   RealT *iDirValZ1;        ///< Pointer to z-component Dirichlet BC values for specified mortar nodes
    int *dirNodesX2;          ///< Pointer to list of nonmortar node ids with x-component Dirichlet BCs
    int *dirNodesY2;          ///< Pointer to list of nonmortar node ids with y-component Dirichlet BCs
    int *dirNodesZ2;          ///< Pointer to list of nonmortar node ids with z-component Dirichlet BCs
-   double *iDirValX2;        ///< Pointer to x-component Dirichlet BC values for specified nonmortar nodes
-   double *iDirValY2;        ///< Pointer to y-component Dirichlet BC values for specified nonmortar nodes
-   double *iDirValZ2;        ///< Pointer to z-component Dirichlet BC values for specified nonmortar nodes
+   RealT *iDirValX2;        ///< Pointer to x-component Dirichlet BC values for specified nonmortar nodes
+   RealT *iDirValY2;        ///< Pointer to y-component Dirichlet BC values for specified nonmortar nodes
+   RealT *iDirValZ2;        ///< Pointer to z-component Dirichlet BC values for specified nonmortar nodes
    int *presDofs1;           ///< Pointer to mortar node ids with a pressure BC
    int *presDofs2;           ///< Pointer to nonmortar node ids with a pressure BC
 
@@ -395,43 +395,43 @@ public:
    int *elConn2;             ///< Pointer to nonmortar element connectivity 
 
    // TODO can we make these mfem grid functions?
-   double *fx1; ///< Mortar nodal forces, x-component 
-   double *fy1; ///< Mortar nodal forces, y-component 
-   double *fz1; ///< Mortar nodal forces, z-component
-   double *fx2; ///< Nonmortar nodal forces, x-component
-   double *fy2; ///< Nonmortar nodal forces, y-component
-   double *fz2; ///< Nonmortar nodal forces, z-component
-   double *vx1; ///< Mortar nodal velocities, x-component
-   double *vy1; ///< Mortar nodal velocities, y-component
-   double *vz1; ///< Mortar nodal velocities, z-component
-   double *vx2; ///< Nonmortar nodal velocities, x-component
-   double *vy2; ///< Nonmortar nodal velocities, y-component
-   double *vz2; ///< Nonmortar nodal velocities, z-component
-   double *x;   ///< Nodal coordinates, x-component
-   double *y;   ///< Nodal coordinates, y-component
-   double *z;   ///< Nodal coordinates, z-component
+   RealT *fx1; ///< Mortar nodal forces, x-component 
+   RealT *fy1; ///< Mortar nodal forces, y-component 
+   RealT *fz1; ///< Mortar nodal forces, z-component
+   RealT *fx2; ///< Nonmortar nodal forces, x-component
+   RealT *fy2; ///< Nonmortar nodal forces, y-component
+   RealT *fz2; ///< Nonmortar nodal forces, z-component
+   RealT *vx1; ///< Mortar nodal velocities, x-component
+   RealT *vy1; ///< Mortar nodal velocities, y-component
+   RealT *vz1; ///< Mortar nodal velocities, z-component
+   RealT *vx2; ///< Nonmortar nodal velocities, x-component
+   RealT *vy2; ///< Nonmortar nodal velocities, y-component
+   RealT *vz2; ///< Nonmortar nodal velocities, z-component
+   RealT *x;   ///< Nodal coordinates, x-component
+   RealT *y;   ///< Nodal coordinates, y-component
+   RealT *z;   ///< Nodal coordinates, z-component
 
    // CSR storage
    int* I;       ///< Offsets for CSR storage
    int* J;       ///< Column indices for all nonzero entries in CSR storage
-   double *vals; ///< Array of nonzero values 
+   RealT *vals; ///< Array of nonzero values 
 
-   double *gaps;      ///< Array of nodal gaps
-   double *pressures; ///< Array of nodal pressures
+   RealT *gaps;      ///< Array of nodal gaps
+   RealT *pressures; ///< Array of nodal pressures
 
-   real * mortar_bulk_mod;
-   real * mortar_element_thickness;
-   real * nonmortar_bulk_mod;
-   real * nonmortar_element_thickness;
+   RealT * mortar_bulk_mod;
+   RealT * mortar_element_thickness;
+   RealT * nonmortar_bulk_mod;
+   RealT * nonmortar_element_thickness;
 
    bool registered_velocities1 {false};
    bool registered_velocities2 {false};
    bool mesh_constructed {false};
 
   public:
-   double* getX() const {return x;}
-   double* getY() const {return y;}
-   double* getZ() const {return z;}
+   RealT* getX() const {return x;}
+   RealT* getY() const {return y;}
+   RealT* getZ() const {return z;}
    int* getMortarFaceConnectivity() const {return faceConn1;}
    int* getNonmortarFaceConnectivity()  const {return faceConn2;}
 

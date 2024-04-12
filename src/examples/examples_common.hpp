@@ -30,7 +30,7 @@ namespace utilities = axom::utilities;
 namespace fmt       = axom::fmt;
 namespace CLI       = axom::CLI;
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 //------------------------------------------------------------------------------
 // COMMON DATA STRUCTURE DEFINITIONS
@@ -101,12 +101,12 @@ struct Arguments
   bool dump_vis{false};          // should the example dump visualization files?
 
   /// input arguments for examples that use the TestMesh class
-  std::vector<tribol::integer> block1_res{4, 4, 4};      // block1 -- number of elements in each direction
-  std::vector<tribol::real> block1_min {0., 0., 0.};     // block1 -- bounding box min
-  std::vector<tribol::real> block1_max {1., 1., 1.05};   // block1 -- bounding box max
-  std::vector<tribol::integer> block2_res{4, 4, 4};      // block2 -- number of elements in each direction
-  std::vector<tribol::real> block2_min {0., 0., 0.95};   // block2 -- bounding box min
-  std::vector<tribol::real> block2_max {1., 1., 2.};     // block2 -- bounding box max
+  std::vector<int> block1_res{4, 4, 4};      // block1 -- number of elements in each direction
+  std::vector<tribol::RealT> block1_min {0., 0., 0.};     // block1 -- bounding box min
+  std::vector<tribol::RealT> block1_max {1., 1., 1.05};   // block1 -- bounding box max
+  std::vector<int> block2_res{4, 4, 4};      // block2 -- number of elements in each direction
+  std::vector<tribol::RealT> block2_min {0., 0., 0.95};   // block2 -- bounding box min
+  std::vector<tribol::RealT> block2_max {1., 1., 2.};     // block2 -- bounding box max
 };
 
 //------------------------------------------------------------------------------
@@ -233,7 +233,7 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
    // STEP 0: initialize tribol //
    //                           //
    ///////////////////////////////
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( mesh.dim, problem_comm );
 
    /////////////////////////////////////////////
@@ -504,7 +504,7 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
  * \brief Initialize logger
  * \param [in] problem_comm MPI communicator
  */
-void initialize_logger( tribol::CommType problem_comm )
+void initialize_logger( tribol::CommT problem_comm )
 {
   slic::initialize();
   slic::setLoggingMsgLevel( slic::message::Debug );

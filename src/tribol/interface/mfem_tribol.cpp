@@ -15,13 +15,13 @@
 namespace tribol
 {
 
-void registerMfemCouplingScheme( integer cs_id,
-                                 integer mesh_id_1,
-                                 integer mesh_id_2,
+void registerMfemCouplingScheme( int cs_id,
+                                 int mesh_id_1,
+                                 int mesh_id_2,
                                  const mfem::ParMesh& mesh,
                                  const mfem::ParGridFunction& current_coords,
-                                 std::set<integer> b_attributes_1,
-                                 std::set<integer> b_attributes_2,
+                                 std::set<int> b_attributes_1,
+                                 std::set<int> b_attributes_2,
                                  ContactMode contact_mode,
                                  ContactCase contact_case,
                                  ContactMethod contact_method,
@@ -62,7 +62,7 @@ void registerMfemCouplingScheme( integer cs_id,
             current_coords.FESpace()->FEColl()->GetOrder(),
             mesh.SpaceDimension()
          );
-      integer pressure_vdim = 0;
+      int pressure_vdim = 0;
       if (contact_model == FRICTIONLESS)
       {
          pressure_vdim = 1;
@@ -109,7 +109,7 @@ void registerMfemCouplingScheme( integer cs_id,
 
 }
 
-void setMfemLORFactor( integer cs_id, integer lor_factor )
+void setMfemLORFactor( int cs_id, int lor_factor )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -120,9 +120,9 @@ void setMfemLORFactor( integer cs_id, integer lor_factor )
    coupling_scheme->getMfemMeshData()->SetLORFactor(lor_factor);
 }
 
-void setMfemKinematicConstantPenalty( integer cs_id, 
-                                      real mesh1_penalty,
-                                      real mesh2_penalty )
+void setMfemKinematicConstantPenalty( int cs_id, 
+                                      RealT mesh1_penalty,
+                                      RealT mesh2_penalty )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -136,7 +136,7 @@ void setMfemKinematicConstantPenalty( integer cs_id,
    coupling_scheme->getMfemMeshData()->SetMesh2KinematicConstantPenalty(mesh2_penalty);
 }
 
-void setMfemKinematicElementPenalty( integer cs_id, 
+void setMfemKinematicElementPenalty( int cs_id, 
                                      mfem::Coefficient& modulus_coefficient )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
@@ -151,9 +151,9 @@ void setMfemKinematicElementPenalty( integer cs_id,
    coupling_scheme->getMfemMeshData()->SetMaterialModulus(modulus_coefficient);
 }
 
-void setMfemRateConstantPenalty( integer cs_id, 
-                                 real mesh1_penalty, 
-                                 real mesh2_penalty )
+void setMfemRateConstantPenalty( int cs_id, 
+                                 RealT mesh1_penalty, 
+                                 RealT mesh2_penalty )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -174,9 +174,9 @@ void setMfemRateConstantPenalty( integer cs_id,
    coupling_scheme->getMfemMeshData()->SetMesh2RateConstantPenalty(mesh2_penalty);
 }
 
-void setMfemRatePercentPenalty( integer cs_id, 
-                                 real mesh1_ratio, 
-                                 real mesh2_ratio )
+void setMfemRatePercentPenalty( int cs_id, 
+                                 RealT mesh1_ratio, 
+                                 RealT mesh2_ratio )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -197,7 +197,7 @@ void setMfemRatePercentPenalty( integer cs_id,
    coupling_scheme->getMfemMeshData()->SetMesh2RatePercentPenalty(mesh2_ratio);
 }
 
-void setMfemKinematicPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale )
+void setMfemKinematicPenaltyScale( int cs_id, RealT mesh1_scale, RealT mesh2_scale )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -215,7 +215,7 @@ void setMfemKinematicPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_s
    coupling_scheme->getMfemMeshData()->SetMesh2KinematicPenaltyScale(mesh2_scale);
 }
 
-void updateMfemElemThickness(integer cs_id)
+void updateMfemElemThickness(int cs_id)
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -231,7 +231,7 @@ void updateMfemElemThickness(integer cs_id)
    coupling_scheme->getMfemMeshData()->ComputeElementThicknesses();
 }
 
-void updateMfemMaterialModulus(integer cs_id, mfem::Coefficient& modulus_coefficient)
+void updateMfemMaterialModulus(int cs_id, mfem::Coefficient& modulus_coefficient)
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -247,7 +247,7 @@ void updateMfemMaterialModulus(integer cs_id, mfem::Coefficient& modulus_coeffic
    coupling_scheme->getMfemMeshData()->SetMaterialModulus(modulus_coefficient);
 }
 
-void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v )
+void registerMfemVelocity( int cs_id, const mfem::ParGridFunction& v )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -258,7 +258,7 @@ void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v )
    coupling_scheme->getMfemMeshData()->SetParentVelocity(v);
 }
 
-void getMfemResponse( integer cs_id, mfem::Vector& r )
+void getMfemResponse( int cs_id, mfem::Vector& r )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -269,7 +269,7 @@ void getMfemResponse( integer cs_id, mfem::Vector& r )
    coupling_scheme->getMfemMeshData()->GetParentResponse(r);
 }
 
-std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
+std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( int csId )
 {
    CouplingScheme* coupling_scheme = CouplingSchemeManager::getInstance().
       getCoupling(csId);
@@ -294,7 +294,7 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId )
    );
 }
 
-void getMfemGap( integer cs_id, mfem::Vector& g )
+void getMfemGap( int cs_id, mfem::Vector& g )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -306,7 +306,7 @@ void getMfemGap( integer cs_id, mfem::Vector& g )
    coupling_scheme->getMfemSubmeshData()->GetSubmeshGap(g);
 }
 
-mfem::ParGridFunction& getMfemPressure( integer cs_id )
+mfem::ParGridFunction& getMfemPressure( int cs_id )
 {
    auto coupling_scheme = CouplingSchemeManager::getInstance().getCoupling(cs_id);
    SLIC_ERROR_ROOT_IF(
@@ -336,7 +336,7 @@ void updateMfemParallelDecomposition()
       if (couplingScheme->hasMfemData())
       {
          auto mfem_data = couplingScheme->getMfemMeshData();
-         axom::Array<int> mesh_ids {2, 2};
+         ArrayT<int> mesh_ids {2, 2};
          mesh_ids[0] = mfem_data->GetMesh1ID();
          mesh_ids[1] = mfem_data->GetMesh2ID();
          // creates a new redecomp mesh based on updated coordinates and updates
@@ -468,7 +468,7 @@ void updateMfemParallelDecomposition()
 
 }
 
-void saveRedecompMesh( integer output_id )
+void saveRedecompMesh( int output_id )
 {
    CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
    int numCouplings = csManager.getNumberOfCouplings();

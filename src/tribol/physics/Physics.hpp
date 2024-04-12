@@ -29,7 +29,7 @@ class CouplingScheme;
  *
  */
 int ApplyInterfacePhysics( CouplingScheme const * cs,
-                           integer cycle, real t );
+                           int cycle, RealT t );
 /*!
  *
  * \brief applies interface method in the normal direction

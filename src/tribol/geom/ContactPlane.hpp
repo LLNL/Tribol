@@ -65,10 +65,10 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
  * \pre length(pX), length(pY), length(pZ) >= number of nodes on face
  */
 void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId,
-                              real nrmlX, real nrmlY, real nrmlZ,
-                              real cX, real cY, real cZ,
-                              real* RESTRICT pX, real* RESTRICT pY, 
-                              real* RESTRICT pZ );
+                              RealT nrmlX, RealT nrmlY, RealT nrmlZ,
+                              RealT cX, RealT cY, RealT cZ,
+                              RealT* RESTRICT pX, RealT* RESTRICT pY, 
+                              RealT* RESTRICT pZ );
 
 /*!
  *
@@ -85,9 +85,9 @@ void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId,
  *
  */
 void ProjectEdgeNodesToSegment( const MeshData& mesh, int edgeId, 
-                                real nrmlX, real nrmlY, real cX, 
-                                real cY, real* RESTRICT pX, 
-                                real* RESTRICT pY );
+                                RealT nrmlX, RealT nrmlY, RealT cX, 
+                                RealT cY, RealT* RESTRICT pX, 
+                                RealT* RESTRICT pY );
 
 /*!
  * \brief checks if the vertices on face2 have interpenetrated the level set 
@@ -110,7 +110,7 @@ void ProjectEdgeNodesToSegment( const MeshData& mesh, int edgeId,
  * 
  */
 bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2, 
-                     int fId1, int fId2, real tol, bool& allVerts );
+                     int fId1, int fId2, RealT tol, bool& allVerts );
 
 /*!
  *
@@ -128,7 +128,7 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
  *
  */
 bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2, 
-                     int eId1, int eId2, real tol, bool& allVerts );
+                     int eId1, int eId2, RealT tol, bool& allVerts );
 
 /*!
  *
@@ -147,7 +147,7 @@ bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
  *
  */
 bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
-                             const int faceId1, const int faceId2, const real gap );
+                             const int faceId1, const int faceId2, const RealT gap );
 
 //-----------------------------------------------------------------------------
 // Contact Plane base class
@@ -168,40 +168,40 @@ public:
    bool m_inContact;         ///< True if face-pair is in contact
    bool m_interpenOverlap;   ///< True if using interpenetration overlap algorithm
 
-   real m_cX; ///< Contact plane point global x-coordinate 
-   real m_cY; ///< Contact plane point global y-coordinate 
-   real m_cZ; ///< Contact plane point global z-coordinate (zero out for 2D)
+   RealT m_cX; ///< Contact plane point global x-coordinate 
+   RealT m_cY; ///< Contact plane point global y-coordinate 
+   RealT m_cZ; ///< Contact plane point global z-coordinate (zero out for 2D)
 
-   real m_cXf1; ///< Global x-coordinate of contact plane centroid projected to face 1
-   real m_cYf1; ///< Global y-coordinate of contact plane centroid projected to face 1
-   real m_cZf1; ///< Global z-coordinate of contact plane centroid projected to face 1
+   RealT m_cXf1; ///< Global x-coordinate of contact plane centroid projected to face 1
+   RealT m_cYf1; ///< Global y-coordinate of contact plane centroid projected to face 1
+   RealT m_cZf1; ///< Global z-coordinate of contact plane centroid projected to face 1
   
-   real m_cXf2; ///< global x-coordinate of contact plane centroid projected to face 2
-   real m_cYf2; ///< global y-coordinate of contact plane centroid projected to face 2
-   real m_cZf2; ///< global z-coordinate of contact plane centroid projected to face 2
+   RealT m_cXf2; ///< global x-coordinate of contact plane centroid projected to face 2
+   RealT m_cYf2; ///< global y-coordinate of contact plane centroid projected to face 2
+   RealT m_cZf2; ///< global z-coordinate of contact plane centroid projected to face 2
 
    int m_numInterpenPoly1Vert; ///< Number of vertices on face 1 interpenetrating polygon
-   real* m_interpenG1X;        ///< Global x-coordinate of face 1 interpenetrating polygon
-   real* m_interpenG1Y;        ///< Global y-coordinate of face 1 interpenetrating polygon
-   real* m_interpenG1Z;        ///< Global z-coordinate of face 1 interpenetrating polygon
+   RealT* m_interpenG1X;   ///< Global x-coordinate of face 1 interpenetrating polygon
+   RealT* m_interpenG1Y;   ///< Global y-coordinate of face 1 interpenetrating polygon
+   RealT* m_interpenG1Z;   ///< Global z-coordinate of face 1 interpenetrating polygon
    
    int m_numInterpenPoly2Vert; ///< Number of vertices on face 2 interpenetrating polygon
-   real* m_interpenG2X;        ///< Global x-coordinate of face 2 interpenetrating polygon
-   real* m_interpenG2Y;        ///< Global y-coordinate of face 2 interpenetrating polygon
-   real* m_interpenG2Z;        ///< Global z-coordinate of face 2 interpenetrating polygon
+   RealT* m_interpenG2X;   ///< Global x-coordinate of face 2 interpenetrating polygon
+   RealT* m_interpenG2Y;   ///< Global y-coordinate of face 2 interpenetrating polygon
+   RealT* m_interpenG2Z;   ///< Global z-coordinate of face 2 interpenetrating polygon
 
-   real m_nX; ///< Global x-component of contact plane unit normal 
-   real m_nY; ///< Global y-component of contact plane unit normal
-   real m_nZ; ///< Global z-component of contact plane unit normal (zero out for 2D)
+   RealT m_nX; ///< Global x-component of contact plane unit normal 
+   RealT m_nY; ///< Global y-component of contact plane unit normal
+   RealT m_nZ; ///< Global z-component of contact plane unit normal (zero out for 2D)
 
-   real m_gap;    ///< Face-pair gap
-   real m_gapTol; ///< Face-pair gap tolerance
+   RealT m_gap;    ///< Face-pair gap
+   RealT m_gapTol; ///< Face-pair gap tolerance
 
    // cp area
-   real m_areaFrac;     ///< Face area fraction used to determine overlap area cutoff
-   real m_areaMin;      ///< Minimum overlap area for inclusion into the active set
-   real m_area;         ///< Overlap area
-   real m_interpenArea; ///< Interpenetrating overlap area
+   RealT m_areaFrac;     ///< Face area fraction used to determine overlap area cutoff
+   RealT m_areaMin;      ///< Minimum overlap area for inclusion into the active set
+   RealT m_area;         ///< Overlap area
+   RealT m_interpenArea; ///< Interpenetrating overlap area
 
 public:
 
@@ -211,7 +211,7 @@ public:
    /*!
     * \brief Compute the contact plane normal
     */
-   virtual void computeNormal( ) = 0 ; 
+   virtual void computeNormal() = 0 ; 
 
    /*!
     * \brief Compute the contact plane point
@@ -233,14 +233,14 @@ public:
     *
     * \param [in] scale Scale to help find centroid-to-face projections
     */
-   virtual void centroidGap(real scale) = 0 ;
+   virtual void centroidGap( RealT scale ) = 0 ;
 
    /*!
     * \brief Compute the contact plane centroid gap and relocate contact plane point
     *
     * \param [in] scale Scale to help find the centroid-to-face projections
     */
-   virtual void planePointAndCentroidGap( real scale ) = 0 ;
+   virtual void planePointAndCentroidGap( RealT scale ) = 0 ;
 
    /*!
     * \brief Compute the contact plane integral gap expression
@@ -249,7 +249,7 @@ public:
     *
     * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
-   virtual FaceGeomError computeLocalInterpenOverlap(bool& interpen) = 0 ;
+   virtual FaceGeomError computeLocalInterpenOverlap( bool& interpen ) = 0 ;
    
    /*!
     * \brief Copy the contact plane object
@@ -374,7 +374,7 @@ public:
     * \param [in] i Face number 
     * \param [in] pairType Face type 
     */
-   void setCpPairType( int id, integer pairType )
+   void setCpPairType( int id, int pairType )
    {
       if (id != 1 && id != 2)
      {
@@ -412,31 +412,31 @@ class ContactPlane3D : public ContactPlane
 {
 public:
 
-   real m_e1X; ///< Global x-component of first in-plane basis vector
-   real m_e1Y; ///< Global y-component of first in-plane basis vector
-   real m_e1Z; ///< Global z-component of first in-plane basis vector
+   RealT m_e1X; ///< Global x-component of first in-plane basis vector
+   RealT m_e1Y; ///< Global y-component of first in-plane basis vector
+   RealT m_e1Z; ///< Global z-component of first in-plane basis vector
 
-   real m_e2X; ///< Global x-component of second in-plane basis vector
-   real m_e2Y; ///< Global y-component of second in-plane basis vector
-   real m_e2Z; ///< Global z-component of second in-plane basis vector
+   RealT m_e2X; ///< Global x-component of second in-plane basis vector
+   RealT m_e2Y; ///< Global y-component of second in-plane basis vector
+   RealT m_e2Z; ///< Global z-component of second in-plane basis vector
 
-   real* m_polyLocX; ///< Pointer to local x-components of overlap polygon's vertices
-   real* m_polyLocY; ///< Pointer to local y-components of overlap polygon's vertices 
+   RealT* m_polyLocX; ///< Pointer to local x-components of overlap polygon's vertices
+   RealT* m_polyLocY; ///< Pointer to local y-components of overlap polygon's vertices 
 
-   real* m_polyX; ///< Pointer to global x-components of overlap polygon's vertices
-   real* m_polyY; ///< Pointer to global y-components of overlap polygon's vertices
-   real* m_polyZ; ///< Pointer to global z-components of overlap polygon's vertices
+   RealT* m_polyX; ///< Global x-components of overlap polygon's vertices
+   RealT* m_polyY; ///< Global y-components of overlap polygon's vertices
+   RealT* m_polyZ; ///< Global z-components of overlap polygon's vertices
 
    int m_numPolyVert; ///< Number of vertices in overlapping polygon
 
-   real m_overlapCX; ///< Local x-coordinate of overlap centroid
-   real m_overlapCY; ///< Local y-coordinate of overlap centroid
+   RealT m_overlapCX; ///< Local x-coordinate of overlap centroid
+   RealT m_overlapCY; ///< Local y-coordinate of overlap centroid
 
-   real* m_interpenPoly1X; ///< Local x-coordinates of face 1 interpenetrating overlap
-   real* m_interpenPoly1Y; ///< Local y-coordinates of face 1 interpenetrating overlap
+   RealT* m_interpenPoly1X; ///< Local x-coordinates of face 1 interpenetrating overlap
+   RealT* m_interpenPoly1Y; ///< Local y-coordinates of face 1 interpenetrating overlap
 
-   real* m_interpenPoly2X; ///< Local x-coordinates of face 2 interpenetrating overlap
-   real* m_interpenPoly2Y; ///< Local y-coordinates of face 2 interpenetrating overlap
+   RealT* m_interpenPoly2X; ///< Local x-coordinates of face 2 interpenetrating overlap
+   RealT* m_interpenPoly2Y; ///< Local y-coordinates of face 2 interpenetrating overlap
 
 public:
 
@@ -449,9 +449,9 @@ public:
     * \param [in] interPlane True if intermediate (i.e. common) plane is used
     * \param [in] dimension Dimension of the problem
     */
-   ContactPlane3D( InterfacePair& pair, real areaFrac, 
-                   bool interpenOverlap, bool interPlane, 
-                   int dimension );
+   ContactPlane3D( InterfacePair& pair, RealT areaFrac, 
+                                      bool interpenOverlap, bool interPlane, 
+                                      int dimension );
 
    /*!
     * Overload constructor with no argument list
@@ -483,11 +483,15 @@ public:
 
    /*!
     * \brief Compute the unit normal that defines the contact plane
+    * \param [in] m1 data associated with mesh 1
+    * \param [in] m2 data associated with mesh 2
     */
-   virtual void computeNormal( );
+   virtual void computeNormal();
    
    /*!
     * \brief Computes a reference point on the plane locating it in 3-space
+    * \param [in] m1 data associated with mesh 1
+    * \param [in] m2 data associated with mesh 2
     *
     * \note This is taken as the average of the vertex averaged centroids of 
     *  the two faces that are used to define a local contact plane
@@ -518,9 +522,9 @@ public:
     * \pre length(pX), length(pY), length(pZ) >= size
     * \pre length(pLX), length(pLY) >= size
     */
-   void globalTo2DLocalCoords( real* RESTRICT pX, real* RESTRICT pY, 
-                               real* RESTRICT pZ, real* RESTRICT pLX, 
-                               real* RESTRICT pLY, int size );
+   void globalTo2DLocalCoords( RealT* RESTRICT pX, RealT* RESTRICT pY, 
+                               RealT* RESTRICT pZ, RealT* RESTRICT pLX, 
+                               RealT* RESTRICT pLY, int size );
    
    /*!
     * \brief Compute the local 2D coordinates of a point on the contact plane
@@ -534,8 +538,8 @@ public:
     * \note Overloaded member function to compute local coordinates of 
     *  a single point on the contact plane
     */
-   void globalTo2DLocalCoords( real pX, real pY, real pZ,
-                               real& pLX, real& pLY, int size );
+   void globalTo2DLocalCoords( RealT pX, RealT pY, RealT pZ,
+                               RealT& pLX, RealT& pLY, int size );
    
    /*!
     * \brief Computes the area tolerance for accepting a face pair
@@ -547,9 +551,9 @@ public:
     *
     * \note Wrapper routine that calls the ALE3D polygon intersection routine
     */
-   void checkPolyOverlap( real* RESTRICT projLocX1, real* RESTRICT projLocY1, 
-                          real* RESTRICT projLocX2, real* RESTRICT projLocY2, 
-                          const int isym );
+   void checkPolyOverlap( RealT* RESTRICT projLocX1, RealT* RESTRICT projLocY1, 
+                          RealT* RESTRICT projLocX2, RealT* RESTRICT projLocY2, 
+                          const int isym);
 
    /*!
     * \brief Transform a local 2D point on the contact plane to global 3D 
@@ -562,7 +566,7 @@ public:
     * \param [in,out] zg global z coordinate of point
     *
     */
-   void local2DToGlobalCoords( real xloc, real yloc, real& xg, real& yg, real& zg );
+   void local2DToGlobalCoords( RealT xloc, RealT yloc, RealT& xg, RealT& yg, RealT& zg );
    
    /*!
     * \brief Recomputes the reference point that locates the plane in 3-space
@@ -572,7 +576,7 @@ public:
     *  polygon intersection routine) back to each face that are used to form 
     *  the contact plane and then averages these projected points.
     */
-   virtual void planePointAndCentroidGap( real scale );
+   virtual void planePointAndCentroidGap( RealT scale );
    
    /*!
     * \brief Computes the gap between the two projections of the contact 
@@ -580,7 +584,7 @@ public:
     *
     * \param [in] scale
     */
-   virtual void centroidGap( real scale );
+   virtual void centroidGap( RealT scale );
    
    /*!
     * \brief Computes the polygonal overlap between the portion of two  
@@ -591,7 +595,7 @@ public:
     *
     * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
-   virtual FaceGeomError computeLocalInterpenOverlap(bool& interpen);
+   virtual FaceGeomError computeLocalInterpenOverlap( bool& interpen );
    
    /*!
     * \brief Copies one contact plane object's data to another
@@ -611,8 +615,8 @@ class ContactPlane2D : public ContactPlane
 {
 public:
 
-   real m_segX[2]; ///< Global x-components of overlap segment vertices
-   real m_segY[2]; ///< Global y-components of overlap segment vertices
+   RealT m_segX[2]; ///< Global x-components of overlap segment vertices
+   RealT m_segY[2]; ///< Global y-components of overlap segment vertices
 
 public:
 
@@ -625,9 +629,9 @@ public:
     * \param [in] interPlane True if intermediate (i.e. common) plane is used
     * \param [in] dimension Dimension of problem
     */
-   ContactPlane2D( InterfacePair& pair, real lenFrac, 
-                  bool interpenOverlap, bool interPlane, 
-                  int dimension ) ;
+   ContactPlane2D( InterfacePair& pair, RealT lenFrac, 
+                   bool interpenOverlap, bool interPlane, 
+                   int dimension ) ;
 
    /*!
     * \brief Overloaded constructor with no arguments
@@ -648,11 +652,15 @@ public:
 
    /*!
     * \brief Compute the unit normal that defines the contact plane
+    * \param [in] m1 data associated with mesh 1
+    * \param [in] m2 data associated with mesh 2
     */
-   virtual void computeNormal( );
+   virtual void computeNormal();
 
    /*!
     * \brief Computes a reference point on the plane locating it in 3-space
+    * \param [in] m1 data associated with mesh 1
+    * \param [in] m2 data associated with mesh 2
     *
     * \note This is taken as the average of the vertex averaged centroids of 
     *  the two faces that are used to define a local contact plane
@@ -675,7 +683,7 @@ public:
     *
     * \param [in] scale
     */
-   virtual void centroidGap( real scale );
+   virtual void centroidGap( RealT scale );
 
    /*!
     * \brief Recomputes the reference point that locates the plane in 3-space
@@ -685,7 +693,7 @@ public:
     *  polygon intersection routine) back to each face that are used to form 
     *  the contact plane and then averages these projected points.
     */
-   virtual void planePointAndCentroidGap( real scale );
+   virtual void planePointAndCentroidGap( RealT scale );
  
    /*!
     * \brief Computes the polygonal overlap between the portion of two  
@@ -696,7 +704,7 @@ public:
     *
     * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
-   virtual FaceGeomError computeLocalInterpenOverlap(bool& interpen);
+   virtual FaceGeomError computeLocalInterpenOverlap( bool& interpen );
    
    /*!
     * \brief Copies one contact plane object's data to another
@@ -709,8 +717,8 @@ public:
     * \brief Check whether two segments have a positive length of overlap 
     *
     */
-   void checkSegOverlap( const real* const RESTRICT pX1, const real* const RESTRICT pY1, 
-                         const real* const RESTRICT pX2, const real* const RESTRICT pY2, 
+   void checkSegOverlap( const RealT* const RESTRICT pX1, const RealT* const RESTRICT pY1, 
+                         const RealT* const RESTRICT pX2, const RealT* const RESTRICT pY2, 
                          const int nV1, const int nV2 );
 
 };

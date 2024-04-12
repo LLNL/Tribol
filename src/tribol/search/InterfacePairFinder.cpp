@@ -17,13 +17,11 @@
 #include "axom/slam.hpp"
 #include "axom/primal.hpp"
 #include "axom/spin.hpp"
-#include "axom/quest.hpp"
 
 // Define some namespace aliases to help with axom usage
 namespace slam = axom::slam;
 namespace primal = axom::primal;
 namespace spin = axom::spin;
-namespace quest = axom::quest;
 
 namespace tribol
 {
@@ -34,10 +32,10 @@ namespace tribol
 bool geomFilter( InterfacePair & iPair, ContactMode const mode )
 {
    // alias variables off the InterfacePair
-   integer const & meshId1 = iPair.meshId1;
-   integer const & meshId2 = iPair.meshId2;
-   integer const & faceId1 = iPair.pairIndex1;
-   integer const & faceId2 = iPair.pairIndex2;
+   int const & meshId1 = iPair.meshId1;
+   int const & meshId2 = iPair.meshId2;
+   int const & faceId1 = iPair.pairIndex1;
+   int const & faceId2 = iPair.pairIndex2;
 
    /// CHECK #1: Check to make sure the two face ids are not the same
    ///           and the two mesh ids are not the same.
@@ -77,9 +75,9 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
 
    /// CHECK #3: Check that face normals are opposing up to some tolerance.
    ///           This uses a hard coded normal tolerance for this check.
-   real nrmlTol = -0.173648177; // taken as cos(100) between face pair
+   RealT nrmlTol = -0.173648177; // taken as cos(100) between face pair
 
-   real m_nZ1, m_nZ2;
+   RealT m_nZ1, m_nZ2;
    if ( dim == 3 )
    {
       m_nZ1 = mesh1.m_nZ[ faceId1 ];
@@ -91,7 +89,7 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
       m_nZ2 = 0.;
    }
 
-   real nrmlCheck = mesh1.m_nX[faceId1] * mesh2.m_nX[faceId2] +
+   RealT nrmlCheck = mesh1.m_nX[faceId1] * mesh2.m_nX[faceId2] +
                     mesh1.m_nY[faceId1] * mesh2.m_nY[faceId2] +
                     m_nZ1 * m_nZ2;
 
@@ -112,14 +110,14 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    ///                The face radii are taken to be the magnitude of the
    ///                longest vector from that face's vertex averaged
    ///                centroid to one its nodes.
-   real offset_tol = 0.05;
+   RealT offset_tol = 0.05;
    if (dim == 3)
    {
-      real r1 = mesh1.m_faceRadius[ faceId1 ];
-      real r2 = mesh2.m_faceRadius[ faceId2 ];
+      RealT r1 = mesh1.m_faceRadius[ faceId1 ];
+      RealT r2 = mesh2.m_faceRadius[ faceId2 ];
 
       // set maximum offset of face centroids for inclusion
-      real distMax = r1 + r2; // default is sum of face radii
+      RealT distMax = r1 + r2; // default is sum of face radii
 
       // check if the contact mode is conforming, in which case the
       // faces are supposed to be aligned
@@ -131,11 +129,11 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
       }
 
       // compute the distance between the two face centroids
-      real distX = mesh2.m_cX[ faceId2 ] - mesh1.m_cX[ faceId1 ];
-      real distY = mesh2.m_cY[ faceId2 ] - mesh1.m_cY[ faceId1 ];
-      real distZ = mesh2.m_cZ[ faceId2 ] - mesh1.m_cZ[ faceId1 ];
+      RealT distX = mesh2.m_cX[ faceId2 ] - mesh1.m_cX[ faceId1 ];
+      RealT distY = mesh2.m_cY[ faceId2 ] - mesh1.m_cY[ faceId1 ];
+      RealT distZ = mesh2.m_cZ[ faceId2 ] - mesh1.m_cZ[ faceId1 ];
 
-      real distMag = magnitude(distX, distY, distZ );
+      RealT distMag = magnitude(distX, distY, distZ );
 
       if (distMag >= (distMax)) {
          iPair.isContactCandidate = false;
@@ -145,11 +143,11 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    else if (dim == 2)
    {
       // get 1/2 edge length off the mesh data
-      real e1 = 0.5 * mesh1.m_area[ faceId1 ];
-      real e2 = 0.5 * mesh2.m_area[ faceId2 ];
+      RealT e1 = 0.5 * mesh1.m_area[ faceId1 ];
+      RealT e2 = 0.5 * mesh2.m_area[ faceId2 ];
 
       // set maximum offset of edge centroids for inclusion
-      real distMax = e1 + e2; // default is sum of 1/2 edge lengths
+      RealT distMax = e1 + e2; // default is sum of 1/2 edge lengths
 
       // check if the contact mode is conforming, in which case the
       // edges are supposed to be aligned
@@ -161,10 +159,10 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
       }
 
       // compute the distance between the two edge centroids
-      real distX = mesh2.m_cX[ faceId2 ] - mesh1.m_cX[ faceId1 ];
-      real distY = mesh2.m_cY[ faceId2 ] - mesh1.m_cY[ faceId1 ];
+      RealT distX = mesh2.m_cX[ faceId2 ] - mesh1.m_cX[ faceId1 ];
+      RealT distY = mesh2.m_cY[ faceId2 ] - mesh1.m_cY[ faceId1 ];
 
-      real distMag = magnitude(distX, distY);
+      RealT distMag = magnitude(distX, distY);
 
       if (distMag >= (distMax))
       {
@@ -193,16 +191,16 @@ template<int D>
 class MeshWrapper
 {
 private:
-   using VertSet = slam::PositionSet<IndexType>;
-   using ElemSet = slam::PositionSet<IndexType>;
-   using RTStride = slam::policies::RuntimeStride<IndexType>;
-   using Card = slam::policies::ConstantCardinality<IndexType, RTStride>;
-   using Ind = slam::policies::CArrayIndirection<IndexType, const IndexType>;
-   using ElemVertRelation = slam::StaticRelation<IndexType, IndexType, Card, Ind,ElemSet,VertSet>;
+   using VertSet = slam::PositionSet<IndexT>;
+   using ElemSet = slam::PositionSet<IndexT>;
+   using RTStride = slam::policies::RuntimeStride<IndexT>;
+   using Card = slam::policies::ConstantCardinality<IndexT, RTStride>;
+   using Ind = slam::policies::CArrayIndirection<IndexT, const IndexT>;
+   using ElemVertRelation = slam::StaticRelation<IndexT, IndexT, Card, Ind,ElemSet,VertSet>;
 
 public:
-   using PointType = primal::Point<real, D>;
-   using BBox = primal::BoundingBox<real, D>;
+   using PointType = primal::Point<double, D>;
+   using BBox = primal::BoundingBox<double, D>;
 
    MeshWrapper() : m_meshData(nullptr) {}
 
@@ -232,12 +230,12 @@ public:
     * \param vId Vertex Id
     * \return A primal Point instance
     */
-   PointType getVertex(IndexType vId)
+   PointType getVertex(IndexT vId)
    {
       return PointType::make_point(
-            m_meshData->m_positionX[vId],
-            m_meshData->m_positionY[vId],
-            (D == 3) ? m_meshData->m_positionZ[vId] : real() );
+            static_cast<double>(m_meshData->m_positionX[vId]),
+            static_cast<double>(m_meshData->m_positionY[vId]),
+            (D == 3) ? static_cast<double>(m_meshData->m_positionZ[vId]) : double() );
    }
 
    /*!
@@ -245,7 +243,7 @@ public:
     * \param vId Vertex Id
     * \return A primal BoundingBox instance
     */
-   BBox elementBoundingBox(IndexType eId)
+   BBox elementBoundingBox(IndexT eId)
    {
       BBox box;
 
@@ -258,10 +256,10 @@ public:
    }
 
    /*! Returns the number of vertices in the mesh */
-   integer numVerts() const { return m_vertSet.size(); }
+   int numVerts() const { return m_vertSet.size(); }
 
    /*! Returns the number of elements in the mesh */
-   integer numElems() const { return m_elemSet.size(); }
+   int numElems() const { return m_elemSet.size(); }
 
 private:
    const MeshData* m_meshData;
@@ -302,11 +300,11 @@ public:
    {
       MeshManager & meshManager = MeshManager::getInstance();
 
-      integer meshId1 = m_couplingScheme->getMeshId1();
+      int meshId1 = m_couplingScheme->getMeshId1();
       MeshData const & meshData1 = meshManager.GetMeshInstance(meshId1);
       m_meshWrapper1 = MeshWrapper<D>(&meshData1);
 
-      integer meshId2 = m_couplingScheme->getMeshId2();
+      int meshId2 = m_couplingScheme->getMeshId2();
       MeshData const & meshData2 = meshManager.GetMeshInstance(meshId2);
       m_meshWrapper2 = MeshWrapper<D>(&meshData2);
 
@@ -319,7 +317,7 @@ public:
    void generateSpatialIndex()
    {
       // TODO does this tolerance need to scale with the mesh?
-      const real bboxTolerance = 1e-6;
+      constexpr double bboxTolerance = 1e-6;
 
       // Find the bounding boxes of the elements in the first mesh
       // Store them in an array for efficient reuse
@@ -352,17 +350,17 @@ public:
       }
 
       // inflate grid box slightly so elem bounding boxes are not on grid bdry
-      m_gridBBox.scale(1 + bboxTolerance);
+      m_gridBBox.scale(1.0 + bboxTolerance);
 
       ranges /= m_meshWrapper1.numElems();
 
       // Compute grid resolution from average bbox size
       typename ImplicitGridType::GridCell resolution;
       SpaceVec bboxRange = m_gridBBox.range();
-      const real scaleFac = 0.5; // TODO is this mesh dependent?
+      const RealT scaleFac = 0.5; // TODO is this mesh dependent?
       for(int i=0; i < D; ++i)
       {
-         resolution[i] = static_cast<IndexType>(
+         resolution[i] = static_cast<IndexT>(
                std::ceil( scaleFac * bboxRange[i] / ranges[i] ));
       }
 
@@ -405,13 +403,13 @@ public:
       // Extract some mesh metadata from coupling scheme / mesh manageer
       MeshManager & meshManager = MeshManager::getInstance();
 
-      integer meshId1 = m_couplingScheme->getMeshId1();
+      int meshId1 = m_couplingScheme->getMeshId1();
       MeshData const & meshData1 = meshManager.GetMeshInstance(meshId1);
-      int cellType1 = static_cast<integer>(meshData1.m_elementType);
+      int cellType1 = static_cast<int>(meshData1.m_elementType);
 
-      integer meshId2 = m_couplingScheme->getMeshId2();
+      int meshId2 = m_couplingScheme->getMeshId2();
       MeshData const & meshData2 = meshManager.GetMeshInstance(meshId2);
-      int cellType2 = static_cast<integer>(meshData2.m_elementType);
+      int cellType2 = static_cast<int>(meshData2.m_elementType);
 
       InterfacePairs* contactPairs = m_couplingScheme->getInterfacePairs();
 
@@ -428,7 +426,7 @@ public:
          auto candidateBits = m_grid.getCandidates( bbox );
 
          // Add candidates
-         for(IndexType fromIdx = candidateBits.find_first() ;
+         for(IndexT fromIdx = candidateBits.find_first() ;
              fromIdx != BitsetType::npos ;
              fromIdx = candidateBits.find_next( fromIdx) )
          {
@@ -469,7 +467,7 @@ private:
       constexpr double sc = 1./3.;
 
       int d = bbox.getLongestDimension();
-      const real expansionFac =  sc * bbox.range()[d];
+      const double expansionFac =  sc * bbox.range()[d];
       bbox.expand(expansionFac);
    }
 
@@ -481,7 +479,7 @@ private:
 
    ImplicitGridType m_grid;
    SpatialBoundingBox m_gridBBox;
-   containerArray<SpatialBoundingBox> m_meshBBoxes1;
+   ArrayT<SpatialBoundingBox> m_meshBBoxes1;
 
 };
 
@@ -494,13 +492,13 @@ private:
  {
     MeshManager & meshManager = MeshManager::getInstance();
 
-    integer meshId1 = cs->getMeshId1();
+    int meshId1 = cs->getMeshId1();
     MeshData const & meshData1 = meshManager.GetMeshInstance(meshId1);
-    integer mesh1NumElems = meshData1.m_numCells;
+    int mesh1NumElems = meshData1.m_numCells;
 
-    integer meshId2 = cs->getMeshId2();
+    int meshId2 = cs->getMeshId2();
     MeshData const & meshData2 = meshManager.GetMeshInstance(meshId2);
-    integer mesh2NumElems = meshData2.m_numCells;
+    int mesh2NumElems = meshData2.m_numCells;
 
     int numPairs = mesh1NumElems * mesh2NumElems;
 
@@ -508,8 +506,8 @@ private:
     contactPairs->clear();
     contactPairs->reserve( numPairs );
 
-    int cellType1 = static_cast<integer>(meshData1.m_elementType);
-    int cellType2 = static_cast<integer>(meshData2.m_elementType);
+    int cellType1 = static_cast<int>(meshData1.m_elementType);
+    int cellType2 = static_cast<int>(meshData2.m_elementType);
 
     int k = 0;
     for(int fromIdx = 0; fromIdx < mesh1NumElems; ++fromIdx)

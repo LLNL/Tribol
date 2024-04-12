@@ -54,9 +54,9 @@ int GetVtkElementId( const InterfaceElementType type )
 
 //------------------------------------------------------------------------------
 void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
-                                 const integer csId, const integer meshId1,
-                                 const integer meshId2, const integer dim,
-                                 const integer cycle, const real time )
+                                 const int csId, const int meshId1,
+                                 const int meshId2, const int dim,
+                                 const int cycle, const RealT time )
 {
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    MeshManager & meshManager = MeshManager::getInstance();
@@ -214,7 +214,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          }
          faces << std::endl;
 
-         // print cell types as VTK integer IDs
+         // print cell types as VTK int IDs
          {
             fmt::print(faces, "CELL_TYPES {}\n", 2*cpSize);
             const int vtkid1 = dim==3? 7 : 3; // 7 is VTK_POLYGON; 3 is VTK_LINE
@@ -322,7 +322,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
             k += nVerts;
          }
 
-         // print cell types as VTK integer IDs
+         // print cell types as VTK int IDs
          {
             fmt::print(overlap, "CELL_TYPES {}\n", cpSize);
             const int vtkid = dim==3? 7 : 3; // 7 is VTK_POLYGON; 3 is VTK_LINE
@@ -456,7 +456,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          mesh << std::endl;
       } // end i-loop over cells
 
-      // specify integer id for each cell type.
+      // specify int id for each cell type.
       // For 4-node quad, id = 9.
       const int mesh1_element_id = GetVtkElementId( mesh1.m_elementType );
       const int mesh2_element_id = GetVtkElementId( mesh2.m_elementType );

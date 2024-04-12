@@ -7,6 +7,7 @@
 #define SRC_UTILS_CONTACTPLANEOUTPUT_HPP_
 
 #include "tribol/types.hpp"
+#include "tribol/common/Parameters.hpp"
 
 // AXOM includes
 #include "axom/slic.hpp" 
@@ -35,9 +36,9 @@ class ContactPlaneManager;
  *
  */
 void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type, 
-                                 const integer csId, const integer meshId1, 
-                                 const integer meshId2, const integer dim,
-                                 const integer cycle, const real t );
+                                 const int csId, const int meshId1, 
+                                 const int meshId2, const int dim,
+                                 const int cycle, const RealT t );
 
 
 } // end of namespace "tribol"

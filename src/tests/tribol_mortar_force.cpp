@@ -23,7 +23,7 @@
 // c++ includes
 #include <cmath> // std::abs
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class with some setup necessary to compute 
@@ -40,32 +40,32 @@ public:
    int numOverlapNodes;
    int dim;
 
-   real* getXCoords( )
+   RealT* getXCoords( )
    {
       return x;
    }
 
-   real* getYCoords( )
+   RealT* getYCoords( )
    {
       return y;
    }
 
-   real* getZCoords( )
+   RealT* getZCoords( )
    {
       return z;
    }
 
-   real* getXOverlapCoords()
+   RealT* getXOverlapCoords()
    {
       return xOverlap;
    }
 
-   real* getYOverlapCoords()
+   RealT* getYOverlapCoords()
    {
       return yOverlap;
    }
 
-   real* getZOverlapCoords()
+   RealT* getZOverlapCoords()
    {
       return zOverlap;
    }
@@ -75,9 +75,9 @@ public:
                            tribol::ContactMethod method )
    {
       // grab coordinate data
-      real * x = this->x;
-      real * y = this->y;
-      real * z = this->z;
+      RealT * x = this->x;
+      RealT * y = this->y;
+      RealT * z = this->z;
 
       // register the mesh with tribol
       int cellType = static_cast<int>(tribol::UNDEFINED_ELEMENT);
@@ -98,7 +98,7 @@ public:
       const int nonmortarMeshId = 1;
 
       // initialize tribol
-      tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+      tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
       tribol::initialize( dim, problem_comm );
 
       // register mesh
@@ -112,16 +112,16 @@ public:
                             x, y, z );
 
       // register nodal forces
-      real *fx1, *fy1, *fz1;
-      real *fx2, *fy2, *fz2;
+      RealT *fx1, *fy1, *fz1;
+      RealT *fx2, *fy2, *fz2;
 
-      real forceX1[ this->numNodes ];
-      real forceY1[ this->numNodes ];
-      real forceZ1[ this->numNodes ];     
+      RealT forceX1[ this->numNodes ];
+      RealT forceY1[ this->numNodes ];
+      RealT forceZ1[ this->numNodes ];     
 
-      real forceX2[ this->numNodes ];
-      real forceY2[ this->numNodes ];
-      real forceZ2[ this->numNodes ];     
+      RealT forceX2[ this->numNodes ];
+      RealT forceY2[ this->numNodes ];
+      RealT forceZ2[ this->numNodes ];     
 
       fx1 = forceX1; 
       fy1 = forceY1;
@@ -146,10 +146,10 @@ public:
       tribol::registerNodalResponse( nonmortarMeshId, fx2, fy2, fz2 );
 
       // register nodal pressure and nodal gap array for the nonmortar mesh
-      real *gaps, *pressures;
+      RealT *gaps, *pressures;
 
-      gaps = new real [ this->numNodes ];
-      pressures = new real [ this->numNodes ];
+      gaps = new RealT [ this->numNodes ];
+      pressures = new RealT [ this->numNodes ];
 
       // initialize gaps and pressures. Initialize all 
       // nonmortar pressures to 1.0
@@ -178,7 +178,7 @@ public:
                                             tribol::SparseMode::MFEM_LINKED_LIST );
 
       // call tribol update
-      double dt = 1.0;
+      RealT dt = 1.0;
       int tribol_update_err = tribol::update( 1, 1., dt );
 
       EXPECT_EQ( tribol_update_err, 0 );      
@@ -189,13 +189,13 @@ public:
       tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarMeshId );
 
       // compute the sum of the nodal forces
-      real fx1Sum = 0.;
-      real fy1Sum = 0.;
-      real fz1Sum = 0.;
+      RealT fx1Sum = 0.;
+      RealT fy1Sum = 0.;
+      RealT fz1Sum = 0.;
 
-      real fx2Sum = 0.;
-      real fy2Sum = 0.;
-      real fz2Sum = 0.;
+      RealT fx2Sum = 0.;
+      RealT fy2Sum = 0.;
+      RealT fz2Sum = 0.;
       for (int i=0; i<this->numNodesPerFace; ++i)
       {
          int nonmortarNodeId = nonmortarMesh.getFaceNodeId( 0, i );
@@ -211,22 +211,22 @@ public:
       }
 
       // sum nonmortar pressure
-      real pSum = 0.;
+      RealT pSum = 0.;
       for (int i=0; i<this->numNodesPerFace; ++i)
       {
          int nonmortarNodeId = nonmortarMesh.getFaceNodeId( 0, i );
          pSum += nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarNodeId ];
       }
 
-      real diffX1 = std::abs(fx1Sum) - std::abs(pSum);
-      real diffY1 = std::abs(fy1Sum) - std::abs(pSum);
-      real diffZ1 = std::abs(fz1Sum) - std::abs(pSum);
+      RealT diffX1 = std::abs(fx1Sum) - std::abs(pSum);
+      RealT diffY1 = std::abs(fy1Sum) - std::abs(pSum);
+      RealT diffZ1 = std::abs(fz1Sum) - std::abs(pSum);
 
-      real diffX2 = std::abs(fx2Sum) - std::abs(pSum);
-      real diffY2 = std::abs(fy2Sum) - std::abs(pSum);
-      real diffZ2 = std::abs(fz2Sum) - std::abs(pSum);
+      RealT diffX2 = std::abs(fx2Sum) - std::abs(pSum);
+      RealT diffY2 = std::abs(fy2Sum) - std::abs(pSum);
+      RealT diffZ2 = std::abs(fz2Sum) - std::abs(pSum);
 
-      real tol = 1.e-8;
+      RealT tol = 1.e-8;
       EXPECT_LE( diffX1, tol);
       EXPECT_LE( diffY1, tol);
       EXPECT_LE( diffZ1, tol);
@@ -254,61 +254,61 @@ protected:
 
       if (this->x == nullptr)
       {
-         this->x = new real [this->numNodes];
+         this->x = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->x;
-         this->x = new real [this->numNodes];
+         this->x = new RealT [this->numNodes];
       }
 
       if (this->y == nullptr)
       {
-         this->y = new real [this->numNodes];
+         this->y = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->y;
-         this->y = new real [this->numNodes];
+         this->y = new RealT [this->numNodes];
       }
 
       if (this->z == nullptr)
       {
-         this->z = new real [this->numNodes];
+         this->z = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->z;
-         this->z = new real [this->numNodes];
+         this->z = new RealT [this->numNodes];
       }
 
       if (this->xOverlap == nullptr)
       {
-         this->xOverlap = new real [this->numOverlapNodes];
+         this->xOverlap = new RealT [this->numOverlapNodes];
       }
       else
       {
          delete [] this->xOverlap;
-         this->xOverlap = new real [this->numOverlapNodes];
+         this->xOverlap = new RealT [this->numOverlapNodes];
       }
 
       if (this->yOverlap == nullptr)
       {
-         this->yOverlap = new real [this->numOverlapNodes];
+         this->yOverlap = new RealT [this->numOverlapNodes];
       }
       else
       {
          delete [] this->yOverlap;
-         this->yOverlap = new real [this->numOverlapNodes];
+         this->yOverlap = new RealT [this->numOverlapNodes];
       }
       if (this->zOverlap == nullptr)
       {
-         this->zOverlap = new real [this->numOverlapNodes];
+         this->zOverlap = new RealT [this->numOverlapNodes];
       }
       else
       {
          delete [] this->zOverlap;
-         this->zOverlap = new real [this->numOverlapNodes];
+         this->zOverlap = new RealT [this->numOverlapNodes];
       }
    }
 
@@ -348,26 +348,26 @@ protected:
 
 protected:
 
-   real* x {nullptr};
-   real* y {nullptr};
-   real* z {nullptr};
+   RealT* x {nullptr};
+   RealT* y {nullptr};
+   RealT* z {nullptr};
 
-   real* xOverlap {nullptr};
-   real* yOverlap {nullptr};
-   real* zOverlap {nullptr};
+   RealT* xOverlap {nullptr};
+   RealT* yOverlap {nullptr};
+   RealT* zOverlap {nullptr};
 
 };
 
 TEST_F( MortarForceTest, parallel_misaligned )
 {
 
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
-   real* xOvrlp = this->getXOverlapCoords();
-   real* yOvrlp = this->getYOverlapCoords();
-   real* zOvrlp = this->getZOverlapCoords();
+   RealT* xOvrlp = this->getXOverlapCoords();
+   RealT* yOvrlp = this->getYOverlapCoords();
+   RealT* zOvrlp = this->getZOverlapCoords();
 
    x[0] = -1.;
    x[1] = -1.;
@@ -432,13 +432,13 @@ TEST_F( MortarForceTest, parallel_misaligned )
 TEST_F( MortarForceTest, parallel_aligned )
 {
 
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
-   real* xOvrlp = this->getXOverlapCoords();
-   real* yOvrlp = this->getYOverlapCoords();
-   real* zOvrlp = this->getZOverlapCoords();
+   RealT* xOvrlp = this->getXOverlapCoords();
+   RealT* yOvrlp = this->getYOverlapCoords();
+   RealT* zOvrlp = this->getZOverlapCoords();
 
    x[0] = -1.;
    x[1] = -1.;
@@ -503,13 +503,13 @@ TEST_F( MortarForceTest, parallel_aligned )
 TEST_F( MortarForceTest, non_parallel_misaligned )
 {
 
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
-   real* xOvrlp = this->getXOverlapCoords();
-   real* yOvrlp = this->getYOverlapCoords();
-   real* zOvrlp = this->getZOverlapCoords();
+   RealT* xOvrlp = this->getXOverlapCoords();
+   RealT* yOvrlp = this->getYOverlapCoords();
+   RealT* zOvrlp = this->getZOverlapCoords();
 
    x[0] = -1.;
    x[1] = -1.;
@@ -574,13 +574,13 @@ TEST_F( MortarForceTest, non_parallel_misaligned )
 TEST_F( MortarForceTest, non_parallel_aligned )
 {
 
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
-   real* xOvrlp = this->getXOverlapCoords();
-   real* yOvrlp = this->getYOverlapCoords();
-   real* zOvrlp = this->getZOverlapCoords();
+   RealT* xOvrlp = this->getXOverlapCoords();
+   RealT* yOvrlp = this->getYOverlapCoords();
+   RealT* zOvrlp = this->getZOverlapCoords();
 
    x[0] = -1.;
    x[1] = -1.;
@@ -645,13 +645,13 @@ TEST_F( MortarForceTest, non_parallel_aligned )
 TEST_F( MortarForceTest, parallel_simple_aligned )
 {
 
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
-   real* xOvrlp = this->getXOverlapCoords();
-   real* yOvrlp = this->getYOverlapCoords();
-   real* zOvrlp = this->getZOverlapCoords();
+   RealT* xOvrlp = this->getXOverlapCoords();
+   RealT* yOvrlp = this->getYOverlapCoords();
+   RealT* zOvrlp = this->getZOverlapCoords();
 
    x[0] = -1.;
    x[1] = -1.;

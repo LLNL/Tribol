@@ -42,7 +42,7 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
    // also initializes the array
    elem.allocateMortarWts();
 
-   real phiNonmortarA, phiNonmortarB, phiMortarA;
+   RealT phiNonmortarA, phiNonmortarB, phiMortarA;
 
    // loop over nodes "a", where node "a" can be a nonmortar node or a mortar node
    for (int a=0; a<elem.numFaceVert; ++a)
@@ -55,7 +55,7 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
          for (int ip=0; ip<integ.numIPs; ++ip)
          {
 
-            real xi[2]; 
+            RealT xi[2]; 
             xi[0] = integ.xy[ integ.ipDim * ip ];
             xi[1] = integ.xy[ integ.ipDim * ip + 1 ];
             LinIsoQuadShapeFunc( xi[0], xi[1], a, phiMortarA );
@@ -89,7 +89,7 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
    MeshData& nonmortarMesh = meshManager.GetMeshInstance( elem.meshId2 );
-   IndexType const * const nonmortarConn = nonmortarMesh.m_connectivity;
+   IndexT const * const nonmortarConn = nonmortarMesh.m_connectivity;
 
    SLIC_ERROR_IF(nonmortarMesh.m_nodalFields.m_node_gap == nullptr, 
                  "ComputeNodalGap< ALIGNED_MORTAR >: allocate gaps on mesh data object.");
@@ -99,16 +99,16 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 
    // set the distance magnitude tolerance as the longest edge of 
    // the mortar face
-   real magTol;
-   real magTest = 0.;
+   RealT magTol;
+   RealT magTest = 0.;
    for (int k=0; k<elem.numFaceVert; ++k)
    {
       int idPlus = (k == (elem.numFaceVert-1)) ? 0 : k+1;
-      real dx = elem.faceCoords1[ elem.dim * idPlus ] - elem.faceCoords1[ elem.dim * k ];
-      real dy = elem.faceCoords1[ elem.dim * idPlus + 1 ] - elem.faceCoords1[ elem.dim * k + 1 ];
-      real dz = elem.faceCoords1[ elem.dim * idPlus + 2 ] - elem.faceCoords1[ elem.dim * k + 2 ];
+      RealT dx = elem.faceCoords1[ elem.dim * idPlus ] - elem.faceCoords1[ elem.dim * k ];
+      RealT dy = elem.faceCoords1[ elem.dim * idPlus + 1 ] - elem.faceCoords1[ elem.dim * k + 1 ];
+      RealT dz = elem.faceCoords1[ elem.dim * idPlus + 2 ] - elem.faceCoords1[ elem.dim * k + 2 ];
 
-      real mag = magnitude( dx, dy, dz );
+      RealT mag = magnitude( dx, dy, dz );
 
       magTol = (mag > magTest) ? mag : magTest;
       magTest = mag;
@@ -119,7 +119,7 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
    {
 
       // get global nonmortar node number from connectivity
-      real nrml_a[elem.dim];
+      RealT nrml_a[elem.dim];
       int glbId = nonmortarConn[ elem.numFaceVert * elem.faceId2 + a ];
       nrml_a[0] = nonmortarMesh.m_node_nX[ glbId ];
       nrml_a[1] = nonmortarMesh.m_node_nY[ glbId ];
@@ -133,8 +133,8 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
       // nonmortar node "a" 
       //////////////////////////////////////////////
       int mortarNodeId;
-      real v[3] = {0., 0., 0.};
-      real magTest = magTol; 
+      RealT v[3] = {0., 0., 0.};
+      RealT magTest = magTol; 
       // loop over nodes on the mortar side 
       for (int b=0; b<elem.numFaceVert; ++b)
       {
@@ -142,7 +142,7 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
          v[1] = elem.faceCoords1[ elem.dim * b + 1 ] - elem.faceCoords2[ elem.dim * a + 1 ];
          v[2] = elem.faceCoords1[ elem.dim * b + 2 ] - elem.faceCoords2[ elem.dim * a + 2 ];
 
-         real magV = magnitude( v[0], v[1], v[2] );
+         RealT magV = magnitude( v[0], v[1], v[2] );
 
          if (magV < magTest)
          {
@@ -167,34 +167,34 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 void ComputeAlignedMortarGaps( CouplingScheme const * cs )
 {
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = pairs->getNumPairs();
+   IndexT const numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
-   integer const dim = parameters.dimension;
+   int const dim = parameters.dimension;
 
    ////////////////////////////////////////////////////////////////////////
    //
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   IndexType const mortarId = cs->getMeshId1();
-   IndexType const nonmortarId =  cs->getMeshId2();
+   IndexT const mortarId = cs->getMeshId1();
+   IndexT const nonmortarId =  cs->getMeshId2();
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
-   IndexType const numNodesPerFace = mortarMesh.m_numNodesPerCell;
+   IndexT const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
-   real const * const x1 = mortarMesh.m_positionX;
-   real const * const y1 = mortarMesh.m_positionY; 
-   real const * const z1 = mortarMesh.m_positionZ; 
-   IndexType const * const mortarConn= mortarMesh.m_connectivity;
+   RealT const * const x1 = mortarMesh.m_positionX;
+   RealT const * const y1 = mortarMesh.m_positionY; 
+   RealT const * const z1 = mortarMesh.m_positionZ; 
+   IndexT const * const mortarConn= mortarMesh.m_connectivity;
 
-   real const * const x2 = nonmortarMesh.m_positionX; 
-   real const * const y2 = nonmortarMesh.m_positionY;
-   real const * const z2 = nonmortarMesh.m_positionZ;
-   IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
+   RealT const * const x2 = nonmortarMesh.m_positionX; 
+   RealT const * const y2 = nonmortarMesh.m_positionY;
+   RealT const * const z2 = nonmortarMesh.m_positionZ;
+   IndexT const * nonmortarConn = nonmortarMesh.m_connectivity;
 
    // compute nodal normals (do this outside the element loop)
    // This routine is guarded against a null mesh
@@ -202,15 +202,15 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
  
    // declare local variables to hold face nodal coordinates
    // and overlap vertex coordinates
-   real mortarX[ dim * numNodesPerFace ];
-   real nonmortarX[ dim * numNodesPerFace ];
-   real* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
+   RealT mortarX[ dim * numNodesPerFace ];
+   RealT nonmortarX[ dim * numNodesPerFace ];
+   RealT* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
 
    ////////////////////////////
    // compute nonmortar gaps //
    ////////////////////////////
    int cpID = 0;
-   for (IndexType kp = 0; kp < numPairs; ++kp)
+   for (IndexT kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
@@ -220,8 +220,8 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
       }
 
       // get pair indices
-      IndexType index1 = pair.pairIndex1;
-      IndexType index2 = pair.pairIndex2;
+      IndexT index1 = pair.pairIndex1;
+      IndexT index2 = pair.pairIndex2;
 
       // populate nodal coordinates array. For the aligned mortar 
       // gap equations, the nodal coordinates are NOT to be projected 
@@ -239,7 +239,7 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
          nonmortarX[ id+2 ] = z2[ nonmortarConn[ numNodesPerFace * index2 + i ] ];
       }
 
-      overlapX = new real[ dim * cpManager.m_numPolyVert[ cpID ]];  
+      overlapX = new RealT[ dim * cpManager.m_numPolyVert[ cpID ]];  
       initRealArray( overlapX, dim*cpManager.m_numPolyVert[cpID], 0. );
 
       // construct array of polygon overlap vertex coordinates
@@ -281,40 +281,40 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
 {
 
    InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexType const numPairs = pairs->getNumPairs();
+   IndexT const numPairs = pairs->getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
-   integer const dim = parameters.dimension;
+   int const dim = parameters.dimension;
 
    ////////////////////////////////////////////////////////////////////////
    //
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   IndexType const mortarId = cs->getMeshId1();
-   IndexType const nonmortarId =  cs->getMeshId2();
+   IndexT const mortarId = cs->getMeshId1();
+   IndexT const nonmortarId =  cs->getMeshId2();
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh  = meshManager.GetMeshInstance( nonmortarId );
-   IndexType const numNodesPerFace = mortarMesh.m_numNodesPerCell;
+   IndexT const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
-   real const * const x1 = mortarMesh.m_positionX;
-   real const * const y1 = mortarMesh.m_positionY; 
-   real const * const z1 = mortarMesh.m_positionZ; 
-   real * const fx1 = mortarMesh.m_forceX;
-   real * const fy1 = mortarMesh.m_forceY; 
-   real * const fz1 = mortarMesh.m_forceZ; 
-   IndexType const * const mortarConn= mortarMesh.m_connectivity;
+   RealT const * const x1 = mortarMesh.m_positionX;
+   RealT const * const y1 = mortarMesh.m_positionY; 
+   RealT const * const z1 = mortarMesh.m_positionZ; 
+   RealT * const fx1 = mortarMesh.m_forceX;
+   RealT * const fy1 = mortarMesh.m_forceY; 
+   RealT * const fz1 = mortarMesh.m_forceZ; 
+   IndexT const * const mortarConn= mortarMesh.m_connectivity;
 
-   real const * const x2 = nonmortarMesh.m_positionX; 
-   real const * const y2 = nonmortarMesh.m_positionY;
-   real const * const z2 = nonmortarMesh.m_positionZ;
-   real * const fx2 = nonmortarMesh.m_forceX; 
-   real * const fy2 = nonmortarMesh.m_forceY;
-   real * const fz2 = nonmortarMesh.m_forceZ;
-   IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
+   RealT const * const x2 = nonmortarMesh.m_positionX; 
+   RealT const * const y2 = nonmortarMesh.m_positionY;
+   RealT const * const z2 = nonmortarMesh.m_positionZ;
+   RealT * const fx2 = nonmortarMesh.m_forceX; 
+   RealT * const fy2 = nonmortarMesh.m_forceY;
+   RealT * const fz2 = nonmortarMesh.m_forceZ;
+   IndexT const * nonmortarConn = nonmortarMesh.m_connectivity;
 
    ///////////////////////////////////////////////////////
    //                                                   //
@@ -337,7 +337,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    // compute equilibrium residual and/or Jacobian contributions //
    ////////////////////////////////////////////////////////////////
    int cpID = 0;
-   for (IndexType kp = 0; kp < numPairs; ++kp)
+   for (IndexT kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
@@ -347,8 +347,8 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
       }
 
       // get pair indices
-      IndexType index1 = pair.pairIndex1;
-      IndexType index2 = pair.pairIndex2;
+      IndexT index1 = pair.pairIndex1;
+      IndexT index2 = pair.pairIndex2;
 
       //////////////////////////////////
       // compute equilibrium residual //
@@ -372,11 +372,11 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
          // note: we don't have to interpolate the nodal pressure for mortar and nonmortar 
          // sides for the aligned mortar case (i.e. no interpolation necessary for coincident 
          // mortar and nonmortar nodes).
-         real forceX = nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarIdA ] * 
+         RealT forceX = nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarIdA ] * 
                        nonmortarMesh.m_node_nX[ nonmortarIdA ];
-         real forceY = nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarIdA ] *
+         RealT forceY = nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarIdA ] *
                        nonmortarMesh.m_node_nY[ nonmortarIdA ];
-         real forceZ = nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarIdA ] * 
+         RealT forceZ = nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarIdA ] * 
                        nonmortarMesh.m_node_nZ[ nonmortarIdA ];
 
          fx2[ nonmortarIdA ]  -= forceX;
@@ -405,9 +405,9 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
       {
          // declare local variables to hold face nodal coordinates
          // and overlap vertex coordinates
-         real mortarX[ dim * numNodesPerFace ];
-         real nonmortarX[ dim * numNodesPerFace ];
-         real* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
+         RealT mortarX[ dim * numNodesPerFace ];
+         RealT nonmortarX[ dim * numNodesPerFace ];
+         RealT* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
 
          // populate nodal coordinates array. For the aligned mortar 
          // gap equations, the nodal coordinates are NOT to be projected 
@@ -425,7 +425,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
             nonmortarX[ id+2 ] = z2[ nonmortarConn[ numNodesPerFace * index2 + i ] ];
          }
 
-         overlapX = new real[ dim * cpManager.m_numPolyVert[ cpID ]];  
+         overlapX = new RealT[ dim * cpManager.m_numPolyVert[ cpID ]];  
          initRealArray( overlapX, dim*cpManager.m_numPolyVert[cpID], 0. );
 
          // construct array of polygon overlap vertex coordinates

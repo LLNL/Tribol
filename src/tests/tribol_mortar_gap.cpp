@@ -24,7 +24,7 @@
 // c++ includes
 #include <cmath> // std::abs
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class with some setup necessary to compute
@@ -40,7 +40,7 @@ public:
    int numOverlapNodes;
    int dim;
 
-   real* getXCoords( int id )
+   RealT* getXCoords( int id )
    {
       if (id == 0)
       {
@@ -52,7 +52,7 @@ public:
       }
    }
 
-   real* getYCoords( int id )
+   RealT* getYCoords( int id )
    {
       if (id == 0)
       {
@@ -64,7 +64,7 @@ public:
       }
    }
 
-   real* getZCoords( int id )
+   RealT* getZCoords( int id )
    {
       if (id == 0)
       {
@@ -76,17 +76,17 @@ public:
       }
    }
 
-   real* getXOverlapCoords()
+   RealT* getXOverlapCoords()
    {
       return xOverlap;
    }
 
-   real* getYOverlapCoords()
+   RealT* getYOverlapCoords()
    {
       return yOverlap;
    }
 
-   real* getZOverlapCoords()
+   RealT* getZOverlapCoords()
    {
       return zOverlap;
    }
@@ -97,28 +97,28 @@ public:
    {
       // declare arrays to hold stacked coordinates for each
       // face used in initializing a SurfaceContactElem struct
-      real xyz1[ this->dim * this->numNodesPerFace ];
-      real xyz2[ this->dim * this->numNodesPerFace ];
+      RealT xyz1[ this->dim * this->numNodesPerFace ];
+      RealT xyz2[ this->dim * this->numNodesPerFace ];
 
       // declare array to hold overlap vertices used for
       // initializing a SurfaceContactElem struct
-      real xyzOverlap[ this->dim * this->numOverlapNodes ];
+      RealT xyzOverlap[ this->dim * this->numOverlapNodes ];
 
       // assign pointers to arrays
-      real* xy1 = xyz1;
-      real* xy2 = xyz2;
-      real* xyOverlap = xyzOverlap;
+      RealT* xy1 = xyz1;
+      RealT* xy2 = xyz2;
+      RealT* xyOverlap = xyzOverlap;
 
       // grab coordinate data
-      real * x1 = this->x1;
-      real * y1 = this->y1;
-      real * z1 = this->z1;
-      real * x2 = this->x2;
-      real * y2 = this->y2;
-      real * z2 = this->z2;
-      real * xo = this->xOverlap;
-      real * yo = this->yOverlap;
-      real * zo = this->zOverlap;
+      RealT * x1 = this->x1;
+      RealT * y1 = this->y1;
+      RealT * z1 = this->z1;
+      RealT * x2 = this->x2;
+      RealT * y2 = this->y2;
+      RealT * z2 = this->z2;
+      RealT * xo = this->xOverlap;
+      RealT * yo = this->yOverlap;
+      RealT * zo = this->zOverlap;
 
       // generate stacked coordinate array
       for (int j=0; j<this->numNodesPerFace; ++j)
@@ -164,7 +164,7 @@ public:
       }
 
       int dim = 3;
-      tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+      tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
       tribol::initialize( dim, problem_comm );
 
       const int mortarMeshId = 0;
@@ -187,9 +187,9 @@ public:
       mortarMesh.computeFaceData(dim);
       nonmortarMesh.computeFaceData(dim);
 
-      real* gaps;
+      RealT* gaps;
       int size = 2*this->numNodesPerFace;
-      gaps = new real[ size ];
+      gaps = new RealT[ size ];
 
       for (int i=0; i<size; ++i)
       {
@@ -250,91 +250,91 @@ protected:
 
       if (this->x1 == nullptr)
       {
-         this->x1 = new real [this->numNodes];
+         this->x1 = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->x1;
-         this->x1 = new real [this->numNodes];
+         this->x1 = new RealT [this->numNodes];
       }
 
       if (this->x2 == nullptr)
       {
-         this->x2 = new real [this->numNodes];
+         this->x2 = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->x2;
-         this->x2 = new real [this->numNodes];
+         this->x2 = new RealT [this->numNodes];
       }
 
       if (this->y1 == nullptr)
       {
-         this->y1 = new real [this->numNodes];
+         this->y1 = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->y1;
-         this->y1 = new real [this->numNodes];
+         this->y1 = new RealT [this->numNodes];
       }
 
       if (this->y2 == nullptr)
       {
-         this->y2 = new real [this->numNodes];
+         this->y2 = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->y2;
-         this->y2 = new real [this->numNodes];
+         this->y2 = new RealT [this->numNodes];
       }
 
       if (this->z1 == nullptr)
       {
-         this->z1 = new real [this->numNodes];
+         this->z1 = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->z1;
-         this->z1 = new real [this->numNodes];
+         this->z1 = new RealT [this->numNodes];
       }
 
       if (this->z2 == nullptr)
       {
-         this->z2 = new real [this->numNodes];
+         this->z2 = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->z2;
-         this->z2 = new real [this->numNodes];
+         this->z2 = new RealT [this->numNodes];
       }
 
       if (this->xOverlap == nullptr)
       {
-         this->xOverlap = new real [this->numOverlapNodes];
+         this->xOverlap = new RealT [this->numOverlapNodes];
       }
       else
       {
          delete [] this->xOverlap;
-         this->xOverlap = new real [this->numOverlapNodes];
+         this->xOverlap = new RealT [this->numOverlapNodes];
       }
 
       if (this->yOverlap == nullptr)
       {
-         this->yOverlap = new real [this->numOverlapNodes];
+         this->yOverlap = new RealT [this->numOverlapNodes];
       }
       else
       {
          delete [] this->yOverlap;
-         this->yOverlap = new real [this->numOverlapNodes];
+         this->yOverlap = new RealT [this->numOverlapNodes];
       }
       if (this->zOverlap == nullptr)
       {
-         this->zOverlap = new real [this->numOverlapNodes];
+         this->zOverlap = new RealT [this->numOverlapNodes];
       }
       else
       {
          delete [] this->zOverlap;
-         this->zOverlap = new real [this->numOverlapNodes];
+         this->zOverlap = new RealT [this->numOverlapNodes];
       }
    }
 
@@ -389,34 +389,34 @@ protected:
 
 protected:
 
-   real* x1 {nullptr};
-   real* y1 {nullptr};
-   real* z1 {nullptr};
+   RealT* x1 {nullptr};
+   RealT* y1 {nullptr};
+   RealT* z1 {nullptr};
 
-   real* x2 {nullptr};
-   real* y2 {nullptr};
-   real* z2 {nullptr};
+   RealT* x2 {nullptr};
+   RealT* y2 {nullptr};
+   RealT* z2 {nullptr};
 
-   real* xOverlap {nullptr};
-   real* yOverlap {nullptr};
-   real* zOverlap {nullptr};
+   RealT* xOverlap {nullptr};
+   RealT* yOverlap {nullptr};
+   RealT* zOverlap {nullptr};
 
 };
 
 TEST_F( MortarGapTest, parallel_misaligned )
 {
 
-   real* x1 = this->getXCoords(0);
-   real* y1 = this->getYCoords(0);
-   real* z1 = this->getZCoords(0);
+   RealT* x1 = this->getXCoords(0);
+   RealT* y1 = this->getYCoords(0);
+   RealT* z1 = this->getZCoords(0);
 
-   real* x2 = this->getXCoords(1);
-   real* y2 = this->getYCoords(1);
-   real* z2 = this->getZCoords(1);
+   RealT* x2 = this->getXCoords(1);
+   RealT* y2 = this->getYCoords(1);
+   RealT* z2 = this->getZCoords(1);
 
-   real* xOvrlp = this->getXOverlapCoords();
-   real* yOvrlp = this->getYOverlapCoords();
-   real* zOvrlp = this->getZOverlapCoords();
+   RealT* xOvrlp = this->getXOverlapCoords();
+   RealT* yOvrlp = this->getYOverlapCoords();
+   RealT* zOvrlp = this->getZOverlapCoords();
 
    x1[0] = -1.;
    x1[1] = -1.;
@@ -480,7 +480,7 @@ TEST_F( MortarGapTest, parallel_misaligned )
    tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
 
    // compute the sum of the nodal gaps
-   real gap = 0.;
+   RealT gap = 0.;
    for (int i=0; i<numNodesPerFace; ++i)
    {
       gap += nonmortarMesh.m_nodalFields.m_node_gap[i];
@@ -488,9 +488,9 @@ TEST_F( MortarGapTest, parallel_misaligned )
 
    // note the face-gap of 0.1 is hard coded based on the
    // hard-coded face coordinates in this test
-   real gapDiff = std::abs(0.1 + gap);
+   RealT gapDiff = std::abs(0.1 + gap);
 
-   real tol = 1.e-8;
+   RealT tol = 1.e-8;
    EXPECT_LE( gapDiff, tol );
 
    if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
@@ -503,17 +503,17 @@ TEST_F( MortarGapTest, parallel_misaligned )
 TEST_F( MortarGapTest, parallel_aligned )
 {
 
-   real* x1 = this->getXCoords(0);
-   real* y1 = this->getYCoords(0);
-   real* z1 = this->getZCoords(0);
+   RealT* x1 = this->getXCoords(0);
+   RealT* y1 = this->getYCoords(0);
+   RealT* z1 = this->getZCoords(0);
 
-   real* x2 = this->getXCoords(1);
-   real* y2 = this->getYCoords(1);
-   real* z2 = this->getZCoords(1);
+   RealT* x2 = this->getXCoords(1);
+   RealT* y2 = this->getYCoords(1);
+   RealT* z2 = this->getZCoords(1);
 
-   real* xOvrlp = this->getXOverlapCoords();
-   real* yOvrlp = this->getYOverlapCoords();
-   real* zOvrlp = this->getZOverlapCoords();
+   RealT* xOvrlp = this->getXOverlapCoords();
+   RealT* yOvrlp = this->getYOverlapCoords();
+   RealT* zOvrlp = this->getZOverlapCoords();
 
    x1[0] = 0.; //-1.;
    x1[1] = 0.; //-1.;
@@ -577,7 +577,7 @@ TEST_F( MortarGapTest, parallel_aligned )
    tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
 
    // compute the sum of the nodal gaps
-   real gap = 0.;
+   RealT gap = 0.;
    for (int i=0; i<numNodesPerFace; ++i)
    {
       gap += nonmortarMesh.m_nodalFields.m_node_gap[i];
@@ -585,9 +585,9 @@ TEST_F( MortarGapTest, parallel_aligned )
 
    // note the face-gap of 0.1 is hard coded based on the
    // hard-coded face coordinates in this test
-   real gapDiff = std::abs(0.1 + gap);
+   RealT gapDiff = std::abs(0.1 + gap);
 
-   real tol = 1.e-8;
+   RealT tol = 1.e-8;
    EXPECT_LE( gapDiff, tol );
 
    if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
@@ -600,17 +600,17 @@ TEST_F( MortarGapTest, parallel_aligned )
 TEST_F( MortarGapTest, parallel_simple_aligned )
 {
 
-   real* x1 = this->getXCoords(0);
-   real* y1 = this->getYCoords(0);
-   real* z1 = this->getZCoords(0);
+   RealT* x1 = this->getXCoords(0);
+   RealT* y1 = this->getYCoords(0);
+   RealT* z1 = this->getZCoords(0);
 
-   real* x2 = this->getXCoords(1);
-   real* y2 = this->getYCoords(1);
-   real* z2 = this->getZCoords(1);
+   RealT* x2 = this->getXCoords(1);
+   RealT* y2 = this->getYCoords(1);
+   RealT* z2 = this->getZCoords(1);
 
-   real* xOvrlp = this->getXOverlapCoords();
-   real* yOvrlp = this->getYOverlapCoords();
-   real* zOvrlp = this->getZOverlapCoords();
+   RealT* xOvrlp = this->getXOverlapCoords();
+   RealT* yOvrlp = this->getYOverlapCoords();
+   RealT* zOvrlp = this->getZOverlapCoords();
 
    x1[0] = -1.;
    x1[1] = -1.;
@@ -674,8 +674,8 @@ TEST_F( MortarGapTest, parallel_simple_aligned )
    tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( 1 );
 
    // compute the sum of the nodal gaps
-   real gap = 0.;
-   real gapTest = 0;
+   RealT gap = 0.;
+   RealT gapTest = 0;
    for (int i=0; i<numNodesPerFace; ++i)
    {
       gap += nonmortarMesh.m_nodalFields.m_node_gap[i];
@@ -684,9 +684,9 @@ TEST_F( MortarGapTest, parallel_simple_aligned )
 
    // note the face-gap of 0.1 is hard coded based on the
    // hard-coded face coordinates in this test
-   real gapDiff = std::abs(gapTest + gap);
+   RealT gapDiff = std::abs(gapTest + gap);
 
-   real tol = 1.e-8;
+   RealT tol = 1.e-8;
    EXPECT_LE( gapDiff, tol );
 
    if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)

@@ -19,6 +19,11 @@
 #include "tribol/physics/CommonPlane.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 #include "axom/slic.hpp"
 
 // C/C++ includes
@@ -57,8 +62,12 @@ int main( int argc, char** argv )
 #ifdef TRIBOL_USE_MPI
   MPI_Init( &argc, &argv );
 #endif
-  tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+  tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
   initialize_logger( problem_comm );
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
+#endif
 
   // parse command line arguments
   Arguments args;

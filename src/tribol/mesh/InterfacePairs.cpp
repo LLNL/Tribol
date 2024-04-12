@@ -8,7 +8,7 @@
 namespace tribol
 {
 
-void InterfacePairs::reserve(integer new_size)
+void InterfacePairs::reserve(int new_size)
 {
    m_pairIndex1.reserve(new_size);
    m_pairIndex2.reserve(new_size);
@@ -41,12 +41,12 @@ void InterfacePairs::addInterfacePair( InterfacePair const& pair )
 }
 
 void InterfacePairs::updateInterfacePair( InterfacePair const& pair, 
-                                          integer const idx )
+                                          int const idx )
 {
    m_isContactCandidate[ idx ] = pair.isContactCandidate;
 }
 
-InterfacePair InterfacePairs::getInterfacePair(IndexType idx) const
+InterfacePair InterfacePairs::getInterfacePair(IndexT idx) const
 {
    SLIC_ERROR_IF(idx >= getNumPairs(), "Index out of range.");
 

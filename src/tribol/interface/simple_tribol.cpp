@@ -45,7 +45,7 @@ int Initialize(const int dim, bool init_slic)
    }
 
    // Initialize tribol
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( dim, problem_comm );
 
    return 0;

@@ -38,7 +38,7 @@ namespace
 {
 
 //------------------------------------------------------------------------------
-inline bool validMeshID( integer meshID )
+inline bool validMeshID( int meshID )
 {
   MeshManager & meshManager = MeshManager::getInstance();
   return (meshID==ANY_MESH) || meshManager.hasMesh( meshID );
@@ -310,15 +310,15 @@ void CouplingSchemeInfo::printEnforcementInfo()
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-CouplingScheme::CouplingScheme( integer couplingSchemeId, 
-                                integer meshId1,
-                                integer meshId2,
-                                integer contact_mode,
-                                integer contact_case,
-                                integer contact_method,
-                                integer contact_model,
-                                integer enforcement_method,
-                                integer binning_method )
+CouplingScheme::CouplingScheme( int couplingSchemeId, 
+                                int meshId1,
+                                int meshId2,
+                                int contact_mode,
+                                int contact_case,
+                                int contact_method,
+                                int contact_model,
+                                int enforcement_method,
+                                int binning_method )
    : m_id                   ( couplingSchemeId ) 
    , m_meshId1              ( meshId1 )
    , m_meshId2              ( meshId2 )
@@ -574,7 +574,7 @@ bool CouplingScheme::isValidMethod()
    MeshManager & meshManager = MeshManager::getInstance(); 
    MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
    MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
-   integer dim = this->spatialDimension();
+   int dim = this->spatialDimension();
 
    // check all methods for basic validity issues for non-null meshes
    if (!this->m_nullMeshes)
@@ -916,7 +916,7 @@ void CouplingScheme::performBinning()
    return;
 }
 //------------------------------------------------------------------------------
-int CouplingScheme::apply( integer cycle, real t, real &dt ) 
+int CouplingScheme::apply( int cycle, RealT t, RealT &dt ) 
 {
   // set dimension on the contact plane manager
   parameters_t& params = parameters_t::getInstance();
@@ -928,7 +928,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
   cpMgr.setSpaceDim( params.dimension );
 
   // loop over number of interface pairs
-  IndexType numPairs = m_interfacePairs->getNumPairs();
+  IndexT numPairs = m_interfacePairs->getNumPairs();
 
   SLIC_DEBUG("Coupling scheme " << m_id << " has " << numPairs << " pairs.");
 
@@ -936,7 +936,7 @@ int CouplingScheme::apply( integer cycle, real t, real &dt )
   // are interacting
   int numActivePairs = 0;
   int pair_err = 0;
-  for (IndexType kp = 0; kp < numPairs; ++kp)
+  for (IndexT kp = 0; kp < numPairs; ++kp)
   {
      InterfacePair pair = m_interfacePairs->getInterfacePair(kp);
 
@@ -1134,13 +1134,13 @@ void CouplingScheme::allocateMethodData()
 } // end CouplingScheme::allocateMethodData()
 
 //------------------------------------------------------------------------------
-real CouplingScheme::getGapTol( int fid1, int fid2 ) const
+RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 {
    MeshManager & meshManager = MeshManager::getInstance(); 
    MeshData & mesh1 = meshManager.GetMeshInstance( m_meshId1 );
    MeshData & mesh2 = meshManager.GetMeshInstance( m_meshId2 );
    parameters_t& params = parameters_t::getInstance();
-   real gap_tol = 0.;
+   RealT gap_tol = 0.;
 
    // add debug warning if this routine is called for interface methods 
    // that do not require gap tolerances 
@@ -1188,7 +1188,7 @@ real CouplingScheme::getGapTol( int fid1, int fid2 ) const
 }
 
 //------------------------------------------------------------------------------
-void CouplingScheme::computeTimeStep(real &dt)
+void CouplingScheme::computeTimeStep(RealT &dt)
 {
    // make sure velocities are registered
    MeshManager & meshManager = MeshManager::getInstance(); 
@@ -1272,7 +1272,7 @@ void CouplingScheme::computeTimeStep(real &dt)
    } // end-switch
 }
 //------------------------------------------------------------------------------
-void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
+void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 {
    // note: the timestep vote is based on a velocity projection 
    // and does not account for the spring stiffness in a CFL-like 
@@ -1305,7 +1305,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    }
 
    parameters_t & parameters = parameters_t::getInstance();
-   real proj_ratio = parameters.timestep_pen_frac;
+   RealT proj_ratio = parameters.timestep_pen_frac;
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    //int num_sides = 2; // always 2 sides in a single coupling scheme
    int dim = this->spatialDimension();
@@ -1315,14 +1315,14 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    // loop over each interface pair. Even if pair is not in contact, 
    // we still do a velocity projection for that proximate face-pair 
    // to see if interpenetration next cycle 'may' be too much
-   IndexType numPairs = m_interfacePairs->getNumPairs();
-   real dt_temp1 = dt;
-   real dt_temp2 = dt;
+   IndexT numPairs = m_interfacePairs->getNumPairs();
+   RealT dt_temp1 = dt;
+   RealT dt_temp2 = dt;
    int cpID = 0; 
    bool max_gap_msg = false;
    bool neg_dt_gap_msg = false;
    bool neg_dt_vel_proj_msg = false;
-   for (IndexType kp = 0; kp < numPairs; ++kp)
+   for (IndexT kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = m_interfacePairs->getInterfacePair(kp);
 
@@ -1333,38 +1333,38 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          continue;
       }
    
-      real x1[dim * numNodesPerCell1];
-      real v1[dim * numNodesPerCell1];
+      RealT x1[dim * numNodesPerCell1];
+      RealT v1[dim * numNodesPerCell1];
       mesh1.getFaceCoords( pair.pairIndex1, &x1[0] );
       mesh1.getFaceNodalVelocities( pair.pairIndex1, &v1[0] );
 
-      real x2[dim * numNodesPerCell2];
-      real v2[dim * numNodesPerCell2];
+      RealT x2[dim * numNodesPerCell2];
+      RealT v2[dim * numNodesPerCell2];
       mesh2.getFaceCoords( pair.pairIndex2, &x2[0] );
       mesh2.getFaceNodalVelocities( pair.pairIndex2, &v2[0] );
 
       /////////////////////////////////////////////////////////////
       // calculate face velocities at projected overlap centroid //
       /////////////////////////////////////////////////////////////
-      real vel_f1[dim];
-      real vel_f2[dim];
+      RealT vel_f1[dim];
+      RealT vel_f2[dim];
       initRealArray( &vel_f1[0], dim, 0. );
       initRealArray( &vel_f2[0], dim, 0. );
 
       // interpolate nodal velocity at overlap centroid as projected 
       // onto face 1
-      double cXf1 = cpMgr.m_cXf1[cpID];
-      double cYf1 = cpMgr.m_cYf1[cpID];
-      double cZf1 = (dim == 3) ? cpMgr.m_cZf1[cpID] : 0.;
+      RealT cXf1 = cpMgr.m_cXf1[cpID];
+      RealT cYf1 = cpMgr.m_cYf1[cpID];
+      RealT cZf1 = (dim == 3) ? cpMgr.m_cZf1[cpID] : 0.;
       GalerkinEval( &x1[0], cXf1, cYf1, cZf1,
                     LINEAR, PHYSICAL, dim, dim, 
                     &v1[0], &vel_f1[0] );
 
       // interpolate nodal velocity at overlap centroid as projected 
       // onto face 2
-      double cXf2 = cpMgr.m_cXf2[cpID];
-      double cYf2 = cpMgr.m_cYf2[cpID];
-      double cZf2 = (dim == 3) ? cpMgr.m_cZf2[cpID] : 0.;
+      RealT cXf2 = cpMgr.m_cXf2[cpID];
+      RealT cYf2 = cpMgr.m_cYf2[cpID];
+      RealT cZf2 = (dim == 3) ? cpMgr.m_cZf2[cpID] : 0.;
       GalerkinEval( &x2[0], cXf2, cYf2, cZf2,
                     LINEAR, PHYSICAL, dim, dim, 
                     &v2[0], &vel_f2[0] );
@@ -1385,12 +1385,12 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       // face's outward unit normal AND the overlap normal. The 
       // former is used to compute projections and the latter is 
       // used to indicate further contact using a velocity projection
-      real v1_dot_n, v2_dot_n, v1_dot_n1, v2_dot_n2;
-      real overlapNormal[dim];
+      RealT v1_dot_n, v2_dot_n, v1_dot_n1, v2_dot_n2;
+      RealT overlapNormal[dim];
       cpMgr.getContactPlaneNormal( cpID, dim, &overlapNormal[0] );
 
       // get face normals
-      real fn1[dim], fn2[dim];
+      RealT fn1[dim], fn2[dim];
       mesh1.getFaceNormal( pair.pairIndex1, dim, &fn1[0] );
       mesh2.getFaceNormal( pair.pairIndex2, dim, &fn2[0] );
 
@@ -1416,9 +1416,9 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       // zero, there may stationary interactions or tangential motion. 
       // In this case, any timestep estimate will be very large, and 
       // not control the simulation
-      real tiny = 1.e-12;
-      real tiny1 = (v1_dot_n >= 0.) ? tiny : -1.*tiny;
-      real tiny2 = (v2_dot_n >= 0.) ? tiny : -1.*tiny;
+      RealT tiny = 1.e-12;
+      RealT tiny1 = (v1_dot_n >= 0.) ? tiny : -1.*tiny;
+      RealT tiny2 = (v2_dot_n >= 0.) ? tiny : -1.*tiny;
       v1_dot_n  += tiny1;
       v2_dot_n  += tiny2;
       // add tiny amount to velocity-face_normal projections to avoid
@@ -1435,11 +1435,11 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
       // get volume element thicknesses associated with each 
       // face in this pair and find minimum
-      real t1 = mesh1.m_elemData.m_thickness[pair.pairIndex1];
-      real t2 = mesh2.m_elemData.m_thickness[pair.pairIndex2];
+      RealT t1 = mesh1.m_elemData.m_thickness[pair.pairIndex1];
+      RealT t2 = mesh2.m_elemData.m_thickness[pair.pairIndex2];
 
       // compute the gap vector (recall gap is x1-x2 by convention)
-      real gapVec[dim];
+      RealT gapVec[dim];
       gapVec[0] = cpMgr.m_cXf1[cpID] - cpMgr.m_cXf2[cpID];
       gapVec[1] = cpMgr.m_cYf1[cpID] - cpMgr.m_cYf2[cpID];
       if (dim == 3)
@@ -1454,19 +1454,19 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       // NOT the normal of the contact plane. This is despite the 
       // fact that the contact nodal forces are resisting contact 
       // in the direction of the overlap normal. 
-      real gap_f1_n1 = dotProd( &gapVec[0], &fn1[0], dim );
-      real gap_f2_n2 = dotProd( &gapVec[0], &fn2[0], dim );
+      RealT gap_f1_n1 = dotProd( &gapVec[0], &fn1[0], dim );
+      RealT gap_f2_n2 = dotProd( &gapVec[0], &fn2[0], dim );
 
-      real dt1 = 1.e6;  // initialize as large number
-      real dt2 = 1.e6;  // initialize as large number
-      real alpha = 1.0; // multiplier on timestep estimate
+      RealT dt1 = 1.e6;  // initialize as large number
+      RealT dt2 = 1.e6;  // initialize as large number
+      RealT alpha = 1.0; // multiplier on timestep estimate
       bool dt1_check1 = false;
       bool dt2_check1 = false;
       bool dt1_vel_check = false;
       bool dt2_vel_check = false;
 
-      real max_delta1 = proj_ratio * t1;
-      real max_delta2 = proj_ratio * t2;
+      RealT max_delta1 = proj_ratio * t1;
+      RealT max_delta2 = proj_ratio * t2;
 
       // Trigger for check 1 and 2:
       // check if there is further interpen or separation based on the 
@@ -1494,8 +1494,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
          // compute the difference between the 'face-gaps' and the max allowable 
          // interpen as a function of element thickness. 
-         real delta1 = max_delta1 - gap_f1_n1; // >0 not exceeding max allowable
-         real delta2 = max_delta2 + gap_f2_n2; // >0 not exceeding max allowable
+         RealT delta1 = max_delta1 - gap_f1_n1; // >0 not exceeding max allowable
+         RealT delta2 = max_delta2 + gap_f2_n2; // >0 not exceeding max allowable
 
          if (delta1 < 0 || delta2 < 0)
          {
@@ -1554,21 +1554,21 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          // compute delta between velocity projection of face-projected 
          // overlap centroid and the OTHER face's face-projected overlap 
          // centroid
-         real proj_delta_x1 = cpMgr.m_cXf1[cpID] + dt * vel_f1[0] - cpMgr.m_cXf2[cpID];
-         real proj_delta_y1 = cpMgr.m_cYf1[cpID] + dt * vel_f1[1] - cpMgr.m_cYf2[cpID];
-         real proj_delta_z1 = 0.;
+         RealT proj_delta_x1 = cpMgr.m_cXf1[cpID] + dt * vel_f1[0] - cpMgr.m_cXf2[cpID];
+         RealT proj_delta_y1 = cpMgr.m_cYf1[cpID] + dt * vel_f1[1] - cpMgr.m_cYf2[cpID];
+         RealT proj_delta_z1 = 0.;
 
-         real proj_delta_x2 = cpMgr.m_cXf2[cpID] + dt * vel_f2[0] - cpMgr.m_cXf1[cpID]; 
-         real proj_delta_y2 = cpMgr.m_cYf2[cpID] + dt * vel_f2[1] - cpMgr.m_cYf1[cpID];
-         real proj_delta_z2 = 0.;
+         RealT proj_delta_x2 = cpMgr.m_cXf2[cpID] + dt * vel_f2[0] - cpMgr.m_cXf1[cpID]; 
+         RealT proj_delta_y2 = cpMgr.m_cYf2[cpID] + dt * vel_f2[1] - cpMgr.m_cYf1[cpID];
+         RealT proj_delta_z2 = 0.;
 
          // compute the dot product between each face's delta and the OTHER 
          // face's outward unit normal. This is the magnitude of interpenetration 
          // of one face's projected overlap-centroid in the 'thickness-direction' 
          // of the other face (with whom in may be in contact currently, or in 
          // a velocity projected sense).
-         real proj_delta_n_1 = proj_delta_x1 * fn2[0] + proj_delta_y1 * fn2[1];
-         real proj_delta_n_2 = proj_delta_x2 * fn1[0] + proj_delta_y2 * fn1[1];
+         RealT proj_delta_n_1 = proj_delta_x1 * fn2[0] + proj_delta_y1 * fn2[1];
+         RealT proj_delta_n_2 = proj_delta_x2 * fn1[0] + proj_delta_y2 * fn1[1];
 
          if (dim == 3)
          {
@@ -1648,8 +1648,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 //------------------------------------------------------------------------------
 void CouplingScheme::writeInterfaceOutput( const std::string& dir,
                                            const VisType v_type, 
-                                           const integer cycle, 
-                                           const real t )
+                                           const int cycle, 
+                                           const RealT t )
 {
    parameters_t & parameters = parameters_t::getInstance();
    int dim = this->spatialDimension();

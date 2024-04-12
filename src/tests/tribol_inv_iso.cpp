@@ -15,7 +15,7 @@
 // gtest includes
 #include "gtest/gtest.h"
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class with some setup necessary to use the
@@ -27,36 +27,36 @@ class InvIsoTest : public ::testing::Test
 public:
    int numNodes;
 
-   real* getXCoords() 
+   RealT* getXCoords() 
    {
       return this->x;
    }
 
-   real* getYCoords() 
+   RealT* getYCoords() 
    {
       return this->y;
    }
 
-   real* getZCoords() 
+   RealT* getZCoords() 
    {
       return this->z;
    }
 
    
-   bool InvMap( real point[3], real const tol )
+   bool InvMap( RealT point[3], RealT const tol )
    {
 
-      real x_sol[2];
+      RealT x_sol[2];
       tribol::InvIso( point, this->x, this->y, this->z, 4, x_sol );
 
       // test (xi,eta) obtained from inverse isoparametric 
       // mapping by performing forward map of that point and 
       // compare to original point.
-      real map_point[3] = {0., 0, 0};
+      RealT map_point[3] = {0., 0, 0};
       tribol::FwdMapLinQuad( x_sol, this->x, this->y, this->z, map_point );
 
       bool convrg = false;
-      real res = tribol::magnitude((point[0] - map_point[0]), 
+      RealT res = tribol::magnitude((point[0] - map_point[0]), 
                                   (point[1] - map_point[1]),
                                   (point[2] - map_point[2]));
   
@@ -76,32 +76,32 @@ protected:
       this->numNodes = 4;
       if (this->x == nullptr)
       {
-         this->x = new real [this->numNodes];
+         this->x = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->x;
-         this->x = new real [this->numNodes];
+         this->x = new RealT [this->numNodes];
       }
 
       if (this->y == nullptr)
       {
-         this->y = new real [this->numNodes];
+         this->y = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->y;
-         this->y = new real [this->numNodes];
+         this->y = new RealT [this->numNodes];
       }
 
       if (this->z == nullptr)
       {
-         this->z = new real [this->numNodes];
+         this->z = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->z;
-         this->z = new real [this->numNodes];
+         this->z = new RealT [this->numNodes];
       }
    }
 
@@ -126,18 +126,18 @@ protected:
 
 protected:
 
-   real* x {nullptr};
-   real* y {nullptr};
-   real* z {nullptr};
+   RealT* x {nullptr};
+   RealT* y {nullptr};
+   RealT* z {nullptr};
 
 };
 
 
 TEST_F( InvIsoTest, nonaffine_centroid )
 {
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
    x[0] = -0.5;
    x[1] =  0.5;
@@ -154,7 +154,7 @@ TEST_F( InvIsoTest, nonaffine_centroid )
    z[2] = 0.1; 
    z[3] = 0.1;
 
-   real point[3];
+   RealT point[3];
 
    // initialize physical point array
    for (int i=0; i<3; ++i)
@@ -184,9 +184,9 @@ TEST_F( InvIsoTest, nonaffine_centroid )
 
 TEST_F( InvIsoTest, nonaffine_test_point )
 {
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
    x[0] = -0.5;
    x[1] =  0.5;
@@ -204,7 +204,7 @@ TEST_F( InvIsoTest, nonaffine_test_point )
    z[3] = 0.1;
 
    // hard code point
-   real point[3] = { 0.215, 0.116, 0.1 };
+   RealT point[3] = { 0.215, 0.116, 0.1 };
 
    bool convrg = this->InvMap( point, 1.e-6 );
 
@@ -214,9 +214,9 @@ TEST_F( InvIsoTest, nonaffine_test_point )
 
 TEST_F( InvIsoTest, affine_test_point )
 {
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
    x[0] = -0.5;
    x[1] =  0.5;
@@ -233,7 +233,7 @@ TEST_F( InvIsoTest, affine_test_point )
    z[2] = 0.1; 
    z[3] = 0.1;
 
-   real point[3];
+   RealT point[3];
 
    // hard-code point
    point[0] = 0.25;

@@ -68,11 +68,11 @@ protected:
 
    int meshId[2];
 
-   tribol::real x[4] { 0., 1., 1., 0. };
-   tribol::real y[4] { 0., 0., 1., 1. };
-   tribol::real z[4] { 0., 0., 0., 0. };
+   tribol::RealT x[4] { 0., 1., 1., 0. };
+   tribol::RealT y[4] { 0., 0., 1., 1. };
+   tribol::RealT z[4] { 0., 0., 0., 0. };
 
-   tribol::IndexType connectivity[4] { 0, 1, 2, 3 };
+   tribol::IndexT connectivity[4] { 0, 1, 2, 3 };
 
 };
 

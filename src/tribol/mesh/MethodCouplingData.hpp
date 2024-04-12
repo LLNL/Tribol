@@ -36,16 +36,16 @@ struct SurfaceContactElem
    SurfaceContactElem( );
 
    /// Overloaded Constructor
-   SurfaceContactElem( integer dimension, ///< [in] Dimension of the problem
-                       real * x1,         ///< [in] Vertex coordinates of first face
-                       real * x2,         ///< [in] Vertex coordinates of second face
-                       real * xOverlap,   ///< [in] Vertex coordinates of overlap
-                       integer nFV,       ///< [in] Number of face vertices
-                       integer nPV,       ///< [in] Number of overlap vertices
-                       integer mId1,      ///< [in] Id for mesh 1
-                       integer mId2,      ///< [in] Id for mesh 2
-                       integer fId1,      ///< [in] Id for face 1
-                       integer fId2       ///< [in] Id for face 2
+   SurfaceContactElem( int dimension, ///< [in] Dimension of the problem
+                       RealT * x1,         ///< [in] Vertex coordinates of first face
+                       RealT * x2,         ///< [in] Vertex coordinates of second face
+                       RealT * xOverlap,   ///< [in] Vertex coordinates of overlap
+                       int nFV,       ///< [in] Number of face vertices
+                       int nPV,       ///< [in] Number of overlap vertices
+                       int mId1,      ///< [in] Id for mesh 1
+                       int mId2,      ///< [in] Id for mesh 2
+                       int fId1,      ///< [in] Id for face 1
+                       int fId2       ///< [in] Id for face 2
                      )
      : dim(dimension)
      , meshId1(mId1)
@@ -73,27 +73,27 @@ struct SurfaceContactElem
       this->deallocateElem();
    }
 
-   integer dim;          ///< Problem dimension
-   integer meshId1;      ///< Mesh Id for face 1 (mortar)
-   integer meshId2;      ///< Mesh Id for face 2 (nonmortar)
-   integer faceId1;      ///< Face Id for face 1 (mortar)
-   integer faceId2;      ///< Face Id for face 2 (nonmortar)
-   real * faceCoords1;   ///< Coordinates of face 1 in 3D
-   real * faceCoords2;   ///< Coordinates of face 2 in 3D
-   real * faceNormal1;   ///< Components of face 1 normal
-   real * faceNormal2;   ///< Components of face 2 normal
-   real * overlapCoords; ///< Coordinates of overlap vertices in 3D
-   real * overlapNormal; ///< Components of overlap normal
-   integer numFaceVert;  ///< Number of face vertices/nodes
-   integer numPolyVert;  ///< Number of overlap vertices
-   real overlapArea;     ///< Area of polygonal overlap
+   int dim;          ///< Problem dimension
+   int meshId1;      ///< Mesh Id for face 1 (mortar)
+   int meshId2;      ///< Mesh Id for face 2 (nonmortar)
+   int faceId1;      ///< Face Id for face 1 (mortar)
+   int faceId2;      ///< Face Id for face 2 (nonmortar)
+   RealT * faceCoords1;   ///< Coordinates of face 1 in 3D
+   RealT * faceCoords2;   ///< Coordinates of face 2 in 3D
+   RealT * faceNormal1;   ///< Components of face 1 normal
+   RealT * faceNormal2;   ///< Components of face 2 normal
+   RealT * overlapCoords; ///< Coordinates of overlap vertices in 3D
+   RealT * overlapNormal; ///< Components of overlap normal
+   int numFaceVert;  ///< Number of face vertices/nodes
+   int numPolyVert;  ///< Number of overlap vertices
+   RealT overlapArea;     ///< Area of polygonal overlap
 
-   real * mortarWts;   ///< Stacked array of mortar wts for mortar methods
+   RealT * mortarWts;   ///< Stacked array of mortar wts for mortar methods
    int numWts;         ///< Number of mortar weights
 
    int numActiveGaps;  ///< Number of local face-pair active gaps
 
-   axom::Array<mfem::DenseMatrix, 2> blockJ;
+   ArrayT<mfem::DenseMatrix, 2> blockJ;
 
    /// routine to allocate space to store mortar weights
    void allocateMortarWts();
@@ -108,7 +108,7 @@ struct SurfaceContactElem
    * \param [in] b NONMORTAR node id
    *
    */
-   real getMortarNonmortarWt( const int a, const int b );
+   RealT getMortarNonmortarWt( const int a, const int b );
 
   /*!
    * \brief routine to return nonmortar-mortar mortar weights
@@ -117,7 +117,7 @@ struct SurfaceContactElem
    * \param [in] b MORTAR node id
    *
    */
-   real getNonmortarMortarWt( const int a, const int b );
+   RealT getNonmortarMortarWt( const int a, const int b );
 
   /*!
    * \brief routine to return nonmortar-nonmortar mortar weight
@@ -126,7 +126,7 @@ struct SurfaceContactElem
    * \param [in] b NONMORTAR node id
    *
    */
-   real getNonmortarNonmortarWt( const int a, const int b );
+   RealT getNonmortarNonmortarWt( const int a, const int b );
 
   /*!
    * \brief get array index for x-dimension face-pair Jacobian contribution
@@ -211,9 +211,9 @@ public:
     *
     * \param [in] blockJSpaces list of block spaces used in the Jacobian matrix
     * \param [in] nPairs approximate number of contacting face-pairs (used to
-    * allocate memory in the axom::Array)
+    * allocate memory in the ArrayT)
     */
-   void reserveBlockJ( axom::Array<BlockSpace>&& blockJSpaces, int nPairs );
+   void reserveBlockJ( ArrayT<BlockSpace>&& blockJSpaces, int nPairs );
    
    /*!
     * \brief store an element contribution to all blocks of the Jacobian matrix
@@ -224,8 +224,8 @@ public:
     * entry corresponds to a block of the Jacobian matrix)
     */
    void storeElemBlockJ( 
-      axom::Array<integer>&& blockJElemIds,
-      axom::Array<mfem::DenseMatrix, 2>& blockJ
+      ArrayT<int>&& blockJElemIds,
+      ArrayT<mfem::DenseMatrix, 2>& blockJ
    );
 
    /*!
@@ -233,10 +233,10 @@ public:
     *
     * See @ref getElementBlockJacobians for a definition of the blocks.
     */
-   integer getNSpaces() const { return m_blockJSpaces.size(); }
+   int getNSpaces() const { return m_blockJSpaces.size(); }
 
    /*!
-   * \brief Get the element ids for each entry of the getBlockJ 2D axom::Array
+   * \brief Get the element ids for each entry of the getBlockJ 2D ArrayT
    * sorted by block space
    *
    * \note Method returns a nested array. With getBlockJElementIds()[i][j], the
@@ -247,7 +247,7 @@ public:
    *
    * \return nested array identifying element ids for a given block space
    */
-   const axom::Array<axom::Array<integer>>& getBlockJElementIds() const
+   const ArrayT<ArrayT<int>>& getBlockJElementIds() const
    { 
       return m_blockJElemIds;
    }
@@ -264,16 +264,16 @@ public:
    * \return nested array identifying element Jacobian contributions for given
    * test and trial block spaces
    */
-   const axom::Array<axom::Array<mfem::DenseMatrix>, 2>& getBlockJ() const
+   const ArrayT<ArrayT<mfem::DenseMatrix>, 2>& getBlockJ() const
    {
       return m_blockJ;
    }
 
 private:
 
-   axom::Array<BlockSpace> m_blockJSpaces; ///< list of Jacobian blocks in use
-   axom::Array<axom::Array<integer>> m_blockJElemIds; ///< element ids for element Jacobian contributions
-   axom::Array<axom::Array<mfem::DenseMatrix>, 2> m_blockJ; ///< element Jacobian contributions by block
+   ArrayT<BlockSpace> m_blockJSpaces; ///< list of Jacobian blocks in use
+   ArrayT<ArrayT<int>> m_blockJElemIds; ///< element ids for element Jacobian contributions
+   ArrayT<ArrayT<mfem::DenseMatrix>, 2> m_blockJ; ///< element Jacobian contributions by block
 };
 
 //------------------------------------------------------------------------------
@@ -290,7 +290,7 @@ public:
     */
    ~MortarData();
 
-   integer m_numTotalNodes;
+   int m_numTotalNodes;
 
    /*!
     * \brief allocate object's mfem sparse matrix
@@ -330,7 +330,7 @@ public:
     */
    void getCSRArrays( int** I, 
                       int** J, 
-                      real** vals,
+                      RealT** vals,
                       int* n_offsets = nullptr, 
                       int* n_nonzero = nullptr );
 

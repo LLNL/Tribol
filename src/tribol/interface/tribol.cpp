@@ -84,7 +84,7 @@ void set_defaults()
 } /* end namepsace internal */
 
 //------------------------------------------------------------------------------
-void initialize( integer dimension, CommType comm )
+void initialize( int dimension, CommT comm )
 {
    // sanity checks
    SLIC_ASSERT( (dimension==2) || (dimension==3) );
@@ -152,7 +152,7 @@ void setPenaltyOptions( int couplingSchemeIndex, PenaltyConstraintType pen_enfrc
 } // end setPenaltyOptions()
 
 //------------------------------------------------------------------------------
-void setKinematicConstantPenalty( int meshId, double k )
+void setKinematicConstantPenalty( int meshId, RealT k )
 {
    // note, error checking done in the following registration routine
    registerRealElementField( meshId, KINEMATIC_CONSTANT_STIFFNESS, &k ); 
@@ -161,8 +161,8 @@ void setKinematicConstantPenalty( int meshId, double k )
 
 //------------------------------------------------------------------------------
 void setKinematicElementPenalty( int meshId, 
-                                 const double *material_modulus,
-                                 const double *element_thickness )
+                                 const RealT *material_modulus,
+                                 const RealT *element_thickness )
 {
    // note, error checking done in the following registration routine
    registerRealElementField( meshId, BULK_MODULUS, material_modulus ); 
@@ -171,7 +171,7 @@ void setKinematicElementPenalty( int meshId,
 } // end setKinematicElementPenalty()
 
 //------------------------------------------------------------------------------
-void setRateConstantPenalty( int meshId, double r_k )
+void setRateConstantPenalty( int meshId, RealT r_k )
 {
    // note, error checking done in the following registration routine
    registerRealElementField( meshId, RATE_CONSTANT_STIFFNESS, &r_k );
@@ -179,7 +179,7 @@ void setRateConstantPenalty( int meshId, double r_k )
 } // end setRateConstantPenalty()
 
 //------------------------------------------------------------------------------
-void setRatePercentPenalty( int meshId, double r_p )
+void setRatePercentPenalty( int meshId, RealT r_p )
 {
    // note, error checking done in the following registration routine
    registerRealElementField( meshId, RATE_PERCENT_STIFFNESS, &r_p );
@@ -187,7 +187,7 @@ void setRatePercentPenalty( int meshId, double r_p )
 } // end setRatePercentPenalty()
 
 //------------------------------------------------------------------------------
-void setAutoContactPenScale( double scale )
+void setAutoContactPenScale( RealT scale )
 {
    parameters_t & parameters = parameters_t::getInstance();
 
@@ -200,7 +200,7 @@ void setAutoContactPenScale( double scale )
 } // end setAutoContactPenScale()
 
 //------------------------------------------------------------------------------
-void setTimestepPenFrac( double frac )
+void setTimestepPenFrac( RealT frac )
 {
    parameters_t & parameters = parameters_t::getInstance();
    if (frac <= 0.)
@@ -214,7 +214,7 @@ void setTimestepPenFrac( double frac )
 } // end setTimestepPenFrac()
 
 //------------------------------------------------------------------------------
-void setContactAreaFrac( double frac )
+void setContactAreaFrac( RealT frac )
 {
    parameters_t & parameters = parameters_t::getInstance();
    if (frac < 1.e-12)
@@ -227,7 +227,7 @@ void setContactAreaFrac( double frac )
 }
 
 //------------------------------------------------------------------------------
-void setPenaltyScale( int meshId, double scale )
+void setPenaltyScale( int meshId, RealT scale )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -300,7 +300,7 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
 } // end setLagrangeMultiplierOptions()
 
 //------------------------------------------------------------------------------
-void setPlotCycleIncrement( double incr )
+void setPlotCycleIncrement( int incr )
 {
    parameters_t & parameters = parameters_t::getInstance();
    parameters.vis_cycle_incr = incr;
@@ -356,14 +356,14 @@ void enableTimestepVote( const bool enable )
 }
 
 //------------------------------------------------------------------------------
-void registerMesh( integer meshId,
-                   integer numCells,
-                   integer lengthNodalData,
-                   const IndexType* connectivity,
-                   integer elementType,
-                   const real* x,
-                   const real* y,
-                   const real* z )
+void registerMesh( int meshId,
+                   int numCells,
+                   int lengthNodalData,
+                   const IndexT* connectivity,
+                   int elementType,
+                   const RealT* x,
+                   const RealT* y,
+                   const RealT* z )
 {
    MeshManager & meshManager = MeshManager::getInstance();
    MeshData & mesh = meshManager.CreateMesh( meshId );
@@ -473,10 +473,10 @@ void registerMesh( integer meshId,
 } // end of registerMesh()
 
 //------------------------------------------------------------------------------
-void registerNodalDisplacements( integer meshId,
-                                 const real* dx,
-                                 const real* dy,
-                                 const real* dz )
+void registerNodalDisplacements( int meshId,
+                                 const RealT* dx,
+                                 const RealT* dy,
+                                 const RealT* dz )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -506,10 +506,10 @@ void registerNodalDisplacements( integer meshId,
 } // end registerNodalDisplacements()
 
 //------------------------------------------------------------------------------
-void registerNodalVelocities( integer meshId,
-                              const real* vx,
-                              const real* vy,
-                              const real* vz )
+void registerNodalVelocities( int meshId,
+                              const RealT* vx,
+                              const RealT* vy,
+                              const RealT* vz )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -539,10 +539,10 @@ void registerNodalVelocities( integer meshId,
 } // end registerNodalVelocities()
 
 //------------------------------------------------------------------------------
-void registerNodalResponse( integer meshId,
-                            real* rx,
-                            real* ry,
-                            real* rz )
+void registerNodalResponse( int meshId,
+                            RealT* rx,
+                            RealT* ry,
+                            RealT* rz )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -604,7 +604,7 @@ int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
 } // end getMfemSparseMatrix()
 
 //------------------------------------------------------------------------------
-int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
+int getJacobianCSRMatrix( int** I, int** J, RealT** vals, int csId,
                   int* n_offsets, int* n_nonzero )
 {
    // check to make sure input pointers are null
@@ -652,11 +652,11 @@ int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
 } // end getCSRMatrix()
 
 //------------------------------------------------------------------------------
-int getElementBlockJacobians( integer csId, 
+int getElementBlockJacobians( int csId, 
                               BlockSpace row_block, 
                               BlockSpace col_block,
-                              const axom::Array<integer>** row_elem_idx,
-                              const axom::Array<integer>** col_elem_idx,
+                              const axom::Array<int>** row_elem_idx,
+                              const axom::Array<int>** col_elem_idx,
                               const axom::Array<mfem::DenseMatrix>** jacobians )
 {
    SparseMode sparse_mode = CouplingSchemeManager::getInstance().
@@ -681,8 +681,8 @@ int getElementBlockJacobians( integer csId,
 }
 
 //------------------------------------------------------------------------------
-void registerMortarGaps( integer meshId,
-                         real * gaps )
+void registerMortarGaps( int meshId,
+                         RealT * gaps )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -706,8 +706,8 @@ void registerMortarGaps( integer meshId,
 }
 
 //------------------------------------------------------------------------------
-void registerMortarPressures( integer meshId,
-                              const real * pressures )
+void registerMortarPressures( int meshId,
+                              const RealT * pressures )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -731,9 +731,9 @@ void registerMortarPressures( integer meshId,
 }
 
 //------------------------------------------------------------------------------
-void registerIntNodalField( integer meshId,
+void registerIntNodalField( int meshId,
                             const IntNodalFields field,
-                            integer * TRIBOL_UNUSED_PARAM(fieldVariable) )
+                            int * TRIBOL_UNUSED_PARAM(fieldVariable) )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -750,9 +750,9 @@ void registerIntNodalField( integer meshId,
 } // end registerIntNodalField()
 
 //------------------------------------------------------------------------------
-void registerRealElementField( integer meshId,
+void registerRealElementField( int meshId,
                                const RealElementFields field,
-                               const real * fieldVariable )
+                               const RealT * fieldVariable )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -934,9 +934,9 @@ void registerRealElementField( integer meshId,
 } // end registerRealElementField()
 
 //------------------------------------------------------------------------------
-void registerIntElementField( integer meshId,
+void registerIntElementField( int meshId,
                               const IntElementFields field,
-                              integer * TRIBOL_UNUSED_PARAM(fieldVariable) )
+                              int * TRIBOL_UNUSED_PARAM(fieldVariable) )
 {
    MeshManager & meshManager = MeshManager::getInstance();
 
@@ -953,15 +953,15 @@ void registerIntElementField( integer meshId,
 } // end registerIntElementField()
 
 //------------------------------------------------------------------------------
-void registerCouplingScheme( integer couplingSchemeIndex,
-                             integer meshId1,
-                             integer meshId2,
-                             integer contact_mode,
-                             integer contact_case,
-                             integer contact_method,
-                             integer contact_model,
-                             integer enforcement_method,
-                             integer binning_method )
+void registerCouplingScheme( int couplingSchemeIndex,
+                             int meshId1,
+                             int meshId2,
+                             int contact_mode,
+                             int contact_case,
+                             int contact_method,
+                             int contact_model,
+                             int enforcement_method,
+                             int binning_method )
 {
    // add coupling scheme. Checks for valid schemes will be performed later
    CouplingSchemeManager& couplingSchemeManager =
@@ -985,14 +985,14 @@ void registerCouplingScheme( integer couplingSchemeIndex,
 } // end registerCouplingScheme()
 
 //------------------------------------------------------------------------------
-void setInterfacePairs( integer couplingSchemeIndex,
-                        IndexType numPairs,
-                        IndexType const * const meshId1,
-                        IndexType const * const pairType1,
-                        IndexType const * const pairIndex1,
-                        IndexType const * const meshId2,
-                        IndexType const * const pairType2,
-                        IndexType const * const pairIndex2 )
+void setInterfacePairs( int couplingSchemeIndex,
+                        IndexT numPairs,
+                        IndexT const * const meshId1,
+                        IndexT const * const pairType1,
+                        IndexT const * const pairIndex1,
+                        IndexT const * const meshId2,
+                        IndexT const * const pairType2,
+                        IndexT const * const pairIndex2 )
 {
    CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
 
@@ -1033,7 +1033,7 @@ void setInterfacePairs( integer couplingSchemeIndex,
 }
 
 //------------------------------------------------------------------------------
-integer update( integer cycle, real t, real &dt )
+int update( int cycle, RealT t, RealT &dt )
 {
    CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
    int numCouplings = csManager.getNumberOfCouplings();

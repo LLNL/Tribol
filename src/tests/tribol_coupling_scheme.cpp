@@ -30,7 +30,7 @@
 #include <iomanip>
 #include <fstream>
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class to test valid coupling schemes.
@@ -51,12 +51,12 @@ public:
    int m_lengthNodalData;
    int * m_connectivity {nullptr};
    int m_elementType;
-   real* m_x {nullptr};
-   real* m_y {nullptr};
-   real* m_z {nullptr};
-   real* m_fx {nullptr};
-   real* m_fy {nullptr};
-   real* m_fz {nullptr};
+   RealT* m_x {nullptr};
+   RealT* m_y {nullptr};
+   RealT* m_z {nullptr};
+   RealT* m_fx {nullptr};
+   RealT* m_fy {nullptr};
+   RealT* m_fz {nullptr};
 
 protected:
 
@@ -81,12 +81,12 @@ protected:
       {
 
          m_connectivity = new int[ m_lengthNodalData ];
-         m_x = new real[ m_lengthNodalData ];
-         m_y = new real[ m_lengthNodalData ];
+         m_x = new RealT[ m_lengthNodalData ];
+         m_y = new RealT[ m_lengthNodalData ];
          if (set_response)
          {
-            m_fx = new real[ m_lengthNodalData ];
-            m_fy = new real[ m_lengthNodalData ];
+            m_fx = new RealT[ m_lengthNodalData ];
+            m_fy = new RealT[ m_lengthNodalData ];
          }
 
          for (int i=0; i<m_lengthNodalData; ++i)
@@ -135,14 +135,14 @@ protected:
       if (m_numCells > 0)
       {
          m_connectivity = new int[ m_lengthNodalData ];
-         m_x = new real[ m_lengthNodalData ];
-         m_y = new real[ m_lengthNodalData ];
-         m_z = new real[ m_lengthNodalData ];
+         m_x = new RealT[ m_lengthNodalData ];
+         m_y = new RealT[ m_lengthNodalData ];
+         m_z = new RealT[ m_lengthNodalData ];
          if (set_response)
          {
-            m_fx = new real[ m_lengthNodalData ];
-            m_fy = new real[ m_lengthNodalData ];
-            m_fz = new real[ m_lengthNodalData ];
+            m_fx = new RealT[ m_lengthNodalData ];
+            m_fy = new RealT[ m_lengthNodalData ];
+            m_fz = new RealT[ m_lengthNodalData ];
          }
 
          for (int i=0; i<m_lengthNodalData; ++i)
@@ -241,7 +241,7 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
 {
    // expect the coupling scheme to fail because 2D 
    // is not yet implemented
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 2, problem_comm );
 
    registerDummy2DMesh( 0 );
@@ -249,8 +249,8 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[this->m_lengthNodalData];
-   real pressures[this->m_lengthNodalData];
+   RealT gaps[this->m_lengthNodalData];
+   RealT pressures[this->m_lengthNodalData];
 
    tribol::registerMortarGaps( 1, &gaps[0] );
    tribol::registerMortarPressures( 1, &pressures[0] );
@@ -277,7 +277,7 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
 
 TEST_F( CouplingSchemeTest, aligned_mortar_2D )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 2, problem_comm );
 
    registerDummy2DMesh( 0 );
@@ -285,8 +285,8 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[this->m_lengthNodalData];
-   real pressures[this->m_lengthNodalData];
+   RealT gaps[this->m_lengthNodalData];
+   RealT pressures[this->m_lengthNodalData];
 
    tribol::registerMortarGaps( 1, &gaps[0] );
    tribol::registerMortarPressures( 1, &pressures[0] );
@@ -313,7 +313,7 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
 
 TEST_F( CouplingSchemeTest, mortar_weights_2D )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 2, problem_comm );
 
    registerDummy2DMesh( 0 );
@@ -341,7 +341,7 @@ TEST_F( CouplingSchemeTest, mortar_weights_2D )
 
 TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    registerDummy3DMesh( 0 );
@@ -349,8 +349,8 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[this->m_lengthNodalData];
-   real pressures[this->m_lengthNodalData];
+   RealT gaps[this->m_lengthNodalData];
+   RealT pressures[this->m_lengthNodalData];
 
    tribol::registerMortarGaps( 1, &gaps[0] );
    tribol::registerMortarPressures( 1, &pressures[0] );
@@ -377,7 +377,7 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
 
 TEST_F( CouplingSchemeTest, common_plane_lagrange_multiplier )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    registerDummy3DMesh( 0 );
@@ -403,7 +403,7 @@ TEST_F( CouplingSchemeTest, common_plane_lagrange_multiplier )
 
 TEST_F( CouplingSchemeTest, mortar_no_nodal_gaps_or_pressures )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    registerDummy3DMesh( 0 );
@@ -431,7 +431,7 @@ TEST_F( CouplingSchemeTest, mortar_no_nodal_gaps_or_pressures )
 
 TEST_F( CouplingSchemeTest, mortar_tied )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    registerDummy3DMesh( 0 );
@@ -439,8 +439,8 @@ TEST_F( CouplingSchemeTest, mortar_tied )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[this->m_lengthNodalData];
-   real pressures[this->m_lengthNodalData];
+   RealT gaps[this->m_lengthNodalData];
+   RealT pressures[this->m_lengthNodalData];
 
    tribol::registerMortarGaps( 1, &gaps[0] );
    tribol::registerMortarPressures( 1, &pressures[0] );
@@ -467,7 +467,7 @@ TEST_F( CouplingSchemeTest, mortar_tied )
 
 TEST_F( CouplingSchemeTest, mortar_coulomb )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    registerDummy3DMesh( 0 );
@@ -475,8 +475,8 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
 
    // register dummy nodal fields so error doesn't return from field 
    // registration
-   real gaps[this->m_lengthNodalData];
-   real pressures[this->m_lengthNodalData];
+   RealT gaps[this->m_lengthNodalData];
+   RealT pressures[this->m_lengthNodalData];
 
    tribol::registerMortarGaps( 1, &gaps[0] );
    tribol::registerMortarPressures( 1, &pressures[0] );
@@ -503,13 +503,13 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
 
 TEST_F( CouplingSchemeTest, common_plane_tied )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
    tribol::setKinematicConstantPenalty(1, penalty);
 
@@ -535,13 +535,13 @@ TEST_F( CouplingSchemeTest, common_plane_tied )
 
 TEST_F( CouplingSchemeTest, common_plane_coulomb )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
    tribol::setKinematicConstantPenalty(1, penalty);
 
@@ -567,7 +567,7 @@ TEST_F( CouplingSchemeTest, common_plane_coulomb )
 
 TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    ////////////////////////////////////////////////
@@ -588,19 +588,19 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                              x_min1, y_min1, z_min1,
@@ -624,7 +624,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
                          mesh.x, mesh.y, mesh.z );
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty( 0, penalty );
    tribol::setKinematicConstantPenalty( 1, penalty );
 
@@ -656,7 +656,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
                               tribol::KINEMATIC_CONSTANT ); 
 
    // call update so binning on coupling scheme is performed.
-   double dt = 1.0;
+   RealT dt = 1.0;
    EXPECT_EQ(tribol::update(1, 1., dt), 0);
 
    tribol::CouplingSchemeManager& csManager =
@@ -728,7 +728,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
 
 TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    // register meshes
@@ -740,14 +740,14 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
    constexpr int numTotalNodes2 = 4;
    int faceConn1[numTotalNodes1] = {0, 1};    // dummy triangle connectivity (invalid)
    int faceConn2[numTotalNodes2] = {4, 5, 6, 7}; // dummy quadrilateral connectivity (valid)
-   real x1[numTotalNodes1] = {0., 0.5};
-   real y1[numTotalNodes1] = {0., 0.};
-   real z1[numTotalNodes1] = {0., 0.};
-   real x2[numTotalNodes2] = {0., 0.5, 0.5, 0.};
-   real y2[numTotalNodes2] = {0., 0., 0.5, 0.5};
-   real z2[numTotalNodes2] = {-0.1, -0.1, -0.1, -0.1};
-   real fx1[numTotalNodes1], fy1[numTotalNodes1], fz1[numTotalNodes1];
-   real fx2[numTotalNodes2], fy2[numTotalNodes2], fz2[numTotalNodes2];
+   RealT x1[numTotalNodes1] = {0., 0.5};
+   RealT y1[numTotalNodes1] = {0., 0.};
+   RealT z1[numTotalNodes1] = {0., 0.};
+   RealT x2[numTotalNodes2] = {0., 0.5, 0.5, 0.};
+   RealT y2[numTotalNodes2] = {0., 0., 0.5, 0.5};
+   RealT z2[numTotalNodes2] = {-0.1, -0.1, -0.1, -0.1};
+   RealT fx1[numTotalNodes1], fy1[numTotalNodes1], fz1[numTotalNodes1];
+   RealT fx2[numTotalNodes2], fy2[numTotalNodes2], fz2[numTotalNodes2];
 
    tribol::initRealArray( &fx1[0], numTotalNodes1, 0. );
    tribol::initRealArray( &fy1[0], numTotalNodes1, 0. );
@@ -766,7 +766,7 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
                          &x2[0], &y2[0], &z2[0] );
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty( 0, penalty );
    tribol::setKinematicConstantPenalty( 1, penalty );
 
@@ -798,7 +798,7 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
 
 TEST_F( CouplingSchemeTest, finalize )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    ////////////////////////////////////////////////
@@ -819,19 +819,19 @@ TEST_F( CouplingSchemeTest, finalize )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                              x_min1, y_min1, z_min1,
@@ -855,7 +855,7 @@ TEST_F( CouplingSchemeTest, finalize )
                          mesh.x, mesh.y, mesh.z );
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
    tribol::setKinematicConstantPenalty(1, penalty);
 
@@ -887,7 +887,7 @@ TEST_F( CouplingSchemeTest, finalize )
                               tribol::KINEMATIC_CONSTANT ); 
   
    // call update so binning on coupling scheme is performed.
-   double dt = 1.0;
+   RealT dt = 1.0;
    EXPECT_EQ(tribol::update(1, 1., dt), 0);
 
    tribol::finalize();
@@ -900,13 +900,13 @@ TEST_F( CouplingSchemeTest, finalize )
 
 TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
    tribol::setKinematicConstantPenalty(1, penalty);
 
@@ -923,9 +923,9 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
 
    // register null nodal velocity pointers. The coupling scheme 
    // should initialize correctly for kinematic penalty only.
-   real* v_x {nullptr};
-   real* v_y {nullptr};
-   real* v_z {nullptr};
+   RealT* v_x {nullptr};
+   RealT* v_y {nullptr};
+   RealT* v_z {nullptr};
    tribol::registerNodalVelocities(0, v_x, v_y, v_z);
    tribol::registerNodalVelocities(1, v_x, v_y, v_z);
 
@@ -940,13 +940,13 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
 
 TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
    tribol::setKinematicConstantPenalty(1, penalty);
 
@@ -963,9 +963,9 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
 
    // register null nodal velocity pointers. The coupling scheme 
    // should NOT initialize correctly for kinematic-and-rate penalty.
-   real* v_x {nullptr};
-   real* v_y {nullptr};
-   real* v_z {nullptr};
+   RealT* v_x {nullptr};
+   RealT* v_y {nullptr};
+   RealT* v_z {nullptr};
    tribol::registerNodalVelocities(0, v_x, v_y, v_z);
    tribol::registerNodalVelocities(1, v_x, v_y, v_z);
 
@@ -980,7 +980,7 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
 
 TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    bool setResponse = false;
@@ -1010,7 +1010,7 @@ TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
 
 TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    bool setResponse = false;
@@ -1018,8 +1018,8 @@ TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
    registerDummy3DMesh( 0, numCells, setResponse );
    registerDummy3DMesh( 1, numCells, setResponse );
 
-   real gaps[this->m_lengthNodalData];
-   real pressures[this->m_lengthNodalData];
+   RealT gaps[this->m_lengthNodalData];
+   RealT pressures[this->m_lengthNodalData];
 
    tribol::registerMortarGaps( 1, &gaps[0] );
    tribol::registerMortarPressures( 1, &pressures[0] );
@@ -1046,7 +1046,7 @@ TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
 
 TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    int numCells = 1;
@@ -1054,7 +1054,7 @@ TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
    registerDummy3DMesh( 0, numCells, setResponse );
    registerDummy3DMesh( 1, numCells, setResponse );
 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
    tribol::setKinematicConstantPenalty(1, penalty);
 
@@ -1080,7 +1080,7 @@ TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
 
 TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    int numCells = 0;
@@ -1088,7 +1088,7 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
    registerDummy3DMesh( 0, numCells, setResponse );
    registerDummy3DMesh( 1, numCells, setResponse );
 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty(0, penalty);
    tribol::setKinematicConstantPenalty(1, penalty);
 
@@ -1102,9 +1102,9 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
 
    // register null nodal velocity pointers. The coupling scheme 
    // should NOT initialize correctly for kinematic-and-rate penalty.
-   real* v_x {nullptr};
-   real* v_y {nullptr};
-   real* v_z {nullptr};
+   RealT* v_x {nullptr};
+   RealT* v_y {nullptr};
+   RealT* v_z {nullptr};
    tribol::registerNodalVelocities(0, v_x, v_y, v_z);
    tribol::registerNodalVelocities(1, v_x, v_y, v_z);
 
@@ -1132,7 +1132,7 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
 
 TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    int meshId = 0;
@@ -1161,7 +1161,7 @@ TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
 
 TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    int meshId = 0;
@@ -1182,7 +1182,7 @@ TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
    tribol::setPenaltyOptions( csId, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
 
-   real element_thick = 1.0;
+   RealT element_thick = 1.0;
    tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thick );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
@@ -1194,7 +1194,7 @@ TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
 
 TEST_F( CouplingSchemeTest, two_meshes_with_auto_case )
 {
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 3, problem_comm );
 
    int meshId1 = 0;

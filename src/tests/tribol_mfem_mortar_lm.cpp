@@ -35,7 +35,7 @@
  */
 class MfemCommonPlaneTest : public testing::TestWithParam<int> {
 protected:
-  double max_disp_;
+  tribol::RealT max_disp_;
   void SetUp() override
   {
     // number of times to uniformly refine the serial mesh before constructing the
@@ -175,7 +175,7 @@ protected:
 
     // update tribol (compute contact contribution to force and stiffness)
     tribol::updateMfemParallelDecomposition();
-    double dt {1.0};  // time is arbitrary here (no timesteps)
+    tribol::RealT dt {1.0};  // time is arbitrary here (no timesteps)
     tribol::update(1, 1.0, dt);
 
     // retrieve block stiffness matrix

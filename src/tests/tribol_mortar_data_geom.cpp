@@ -42,7 +42,7 @@
 #include <iomanip>
 #include <fstream>
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 namespace axom_fs = axom::utilities::filesystem;
 
 /*!
@@ -142,21 +142,21 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
    int* ixs_data   = this->v_ixs.GetData();
-   double* xm_data = this->v_xm.GetData();
-   double* ym_data = this->v_ym.GetData();
-   double* zm_data = this->v_zm.GetData();
-   double* xs_data = this->v_xs.GetData();
-   double* ys_data = this->v_ys.GetData();
-   double* zs_data = this->v_zs.GetData();
+   RealT* xm_data = this->v_xm.GetData();
+   RealT* ym_data = this->v_ym.GetData();
+   RealT* zm_data = this->v_zm.GetData();
+   RealT* xs_data = this->v_xs.GetData();
+   RealT* ys_data = this->v_ys.GetData();
+   RealT* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
    // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
-   double* gaps, * pressures;
+   RealT* gaps, * pressures;
    int numTotalNodes = this->lengthNonmortarNodes;
-   gaps = new double[ numTotalNodes ];
-   pressures = new double[ numTotalNodes ];
+   gaps = new RealT[ numTotalNodes ];
+   pressures = new RealT[ numTotalNodes ];
 
    // initialize arrays
    for (int i=0; i<numTotalNodes; ++i)
@@ -188,7 +188,7 @@ TEST_F( MortarGeomTest, mortar_good_patch )
                         gaps,
                         pressures);
 
-   double dt = 1.0;
+   RealT dt = 1.0;
    err = Update( dt );
 
    EXPECT_EQ(err, 0);
@@ -256,21 +256,21 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
    int* ixs_data   = this->v_ixs.GetData();
-   double* xm_data = this->v_xm.GetData();
-   double* ym_data = this->v_ym.GetData();
-   double* zm_data = this->v_zm.GetData();
-   double* xs_data = this->v_xs.GetData();
-   double* ys_data = this->v_ys.GetData();
-   double* zs_data = this->v_zs.GetData();
+   RealT* xm_data = this->v_xm.GetData();
+   RealT* ym_data = this->v_ym.GetData();
+   RealT* zm_data = this->v_zm.GetData();
+   RealT* xs_data = this->v_xs.GetData();
+   RealT* ys_data = this->v_ys.GetData();
+   RealT* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
    // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
-   double* gaps, * pressures;
+   RealT* gaps, * pressures;
    int numTotalNodes = this->lengthNonmortarNodes;
-   gaps = new double[ numTotalNodes ];
-   pressures = new double[ numTotalNodes ];
+   gaps = new RealT[ numTotalNodes ];
+   pressures = new RealT[ numTotalNodes ];
 
    // initialize arrays
    for (int i=0; i<numTotalNodes; ++i)
@@ -302,7 +302,7 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
                         gaps,
                         pressures);
 
-   double dt = 1.0;
+   RealT dt = 1.0;
    err = Update( dt );
 
    EXPECT_EQ(err, 0);
@@ -371,21 +371,21 @@ TEST_F( MortarGeomTest, mortar_ironing )
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
    int* ixs_data   = this->v_ixs.GetData();
-   double* xm_data = this->v_xm.GetData();
-   double* ym_data = this->v_ym.GetData();
-   double* zm_data = this->v_zm.GetData();
-   double* xs_data = this->v_xs.GetData();
-   double* ys_data = this->v_ys.GetData();
-   double* zs_data = this->v_zs.GetData();
+   RealT* xm_data = this->v_xm.GetData();
+   RealT* ym_data = this->v_ym.GetData();
+   RealT* zm_data = this->v_zm.GetData();
+   RealT* xs_data = this->v_xs.GetData();
+   RealT* ys_data = this->v_ys.GetData();
+   RealT* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
    // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
-   double* gaps, * pressures;
+   RealT* gaps, * pressures;
    int numTotalNodes = this->lengthNonmortarNodes;
-   gaps = new double[ numTotalNodes ];
-   pressures = new double[ numTotalNodes ];
+   gaps = new RealT[ numTotalNodes ];
+   pressures = new RealT[ numTotalNodes ];
 
    // initialize arrays
    for (int i=0; i<numTotalNodes; ++i)
@@ -417,7 +417,7 @@ TEST_F( MortarGeomTest, mortar_ironing )
                         gaps,
                         pressures);
 
-   double dt = 1.0;
+   RealT dt = 1.0;
    err = Update( dt );
 
    EXPECT_EQ( err, 0 );
@@ -427,8 +427,8 @@ TEST_F( MortarGeomTest, mortar_ironing )
   
    tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
 
-   tribol::IndexType const mortarId = couplingScheme->getMeshId1();
-   //tribol::IndexType const nonmortarId = couplingScheme->getMeshId2();
+   tribol::IndexT const mortarId = couplingScheme->getMeshId1();
+   //tribol::IndexT const nonmortarId = couplingScheme->getMeshId2();
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
    tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
 
@@ -441,7 +441,7 @@ TEST_F( MortarGeomTest, mortar_ironing )
 
    int *I = nullptr;
    int *J = nullptr;
-   real *wts = nullptr;
+   RealT *wts = nullptr;
    int nOffsets = 0;
    int nNonZeros = 0;
    int csr_err = GetSimpleCouplingCSR( &I, &J, &wts, &nOffsets, &nNonZeros );
@@ -530,21 +530,21 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
    int* ixs_data   = this->v_ixs.GetData();
-   double* xm_data = this->v_xm.GetData();
-   double* ym_data = this->v_ym.GetData();
-   double* zm_data = this->v_zm.GetData();
-   double* xs_data = this->v_xs.GetData();
-   double* ys_data = this->v_ys.GetData();
-   double* zs_data = this->v_zs.GetData();
+   RealT* xm_data = this->v_xm.GetData();
+   RealT* ym_data = this->v_ym.GetData();
+   RealT* zm_data = this->v_zm.GetData();
+   RealT* xs_data = this->v_xs.GetData();
+   RealT* ys_data = this->v_ys.GetData();
+   RealT* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
    // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
-   double* gaps, * pressures;
+   RealT* gaps, * pressures;
    int numTotalNodes = this->lengthNonmortarNodes;
-   gaps = new double[ numTotalNodes ];
-   pressures = new double[ numTotalNodes ];
+   gaps = new RealT[ numTotalNodes ];
+   pressures = new RealT[ numTotalNodes ];
 
    // initialize arrays
    for (int i=0; i<numTotalNodes; ++i)
@@ -576,7 +576,7 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
                         gaps,
                         pressures);
 
-   double dt = 1.0; 
+   RealT dt = 1.0; 
    err = Update( dt );
 
    EXPECT_EQ( err, 0 );

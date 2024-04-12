@@ -20,7 +20,7 @@
 // c++ includes
 #include <cmath> // std::abs
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class with some setup for registering a mesh 
@@ -34,9 +34,9 @@ public:
    int dim;
 
    void computeNodalNormals( int cell_type,
-                             real const * const x, 
-                             real const * const y, 
-                             real const * const z,
+                             RealT const * const x, 
+                             RealT const * const y, 
+                             RealT const * const z,
                              int const * const conn,
                              int const numCells,
                              int const numNodes,
@@ -102,9 +102,9 @@ TEST_F( NodalNormalTest, two_quad_inverted_v )
    conn[7] = 1;
 
    // setup the nodal coordinates of the mesh
-   real x[numNodesPerFace + 2]; 
-   real y[numNodesPerFace + 2]; 
-   real z[numNodesPerFace + 2]; 
+   RealT x[numNodesPerFace + 2]; 
+   RealT y[numNodesPerFace + 2]; 
+   RealT z[numNodesPerFace + 2]; 
 
    x[0] =  0.;
    x[1] =  0.;
@@ -135,26 +135,26 @@ TEST_F( NodalNormalTest, two_quad_inverted_v )
    tribol::MeshData& mesh = meshManager.GetMeshInstance( 0 );
 
    // check each normal...hard coded
-   real n1check = tribol::magnitude( mesh.m_node_nX[0] - 0., 
+   RealT n1check = tribol::magnitude( mesh.m_node_nX[0] - 0., 
                                      mesh.m_node_nY[0] - 0., 
                                      mesh.m_node_nZ[0] - 1. );
-   real n2check = tribol::magnitude( mesh.m_node_nX[1] - 0., 
+   RealT n2check = tribol::magnitude( mesh.m_node_nX[1] - 0., 
                                      mesh.m_node_nY[1] - 0., 
                                      mesh.m_node_nZ[1] - 1. );
-   real n3check = tribol::magnitude( mesh.m_node_nX[2] - (-1./std::sqrt(2.)), 
+   RealT n3check = tribol::magnitude( mesh.m_node_nX[2] - (-1./std::sqrt(2.)), 
                                      mesh.m_node_nY[2] - 0., 
                                      mesh.m_node_nZ[2] - (1./std::sqrt(2.)) );
-   real n4check = tribol::magnitude( mesh.m_node_nX[3] - (-1./std::sqrt(2.)), 
+   RealT n4check = tribol::magnitude( mesh.m_node_nX[3] - (-1./std::sqrt(2.)), 
                                      mesh.m_node_nY[3] - 0., 
                                      mesh.m_node_nZ[3] - (1./std::sqrt(2.)) );
-   real n5check = tribol::magnitude( mesh.m_node_nX[4] - (1./std::sqrt(2.)), 
+   RealT n5check = tribol::magnitude( mesh.m_node_nX[4] - (1./std::sqrt(2.)), 
                                      mesh.m_node_nY[4] - 0., 
                                      mesh.m_node_nZ[4] - (1./std::sqrt(2.)) );
-   real n6check = tribol::magnitude( mesh.m_node_nX[4] - (1./std::sqrt(2.)), 
+   RealT n6check = tribol::magnitude( mesh.m_node_nX[4] - (1./std::sqrt(2.)), 
                                      mesh.m_node_nY[4] - 0., 
                                      mesh.m_node_nZ[4] - (1./std::sqrt(2.)) );
 
-   real tol = 1.e-12;
+   RealT tol = 1.e-12;
 
    EXPECT_LE( n1check, tol );
    EXPECT_LE( n2check, tol );

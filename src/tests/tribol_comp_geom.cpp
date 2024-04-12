@@ -35,7 +35,7 @@
 #include <iomanip>
 #include <fstream>
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class with some setup necessary to test 
@@ -82,19 +82,19 @@ TEST_F( CompGeomTest, common_plane_check )
    int userSpecifiedNumOverlaps = 25;
 
    // mesh bounding box with 0.1 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = -0.1;
-   real y_min2 = 0.0001;
-   real z_min2 = 0.95;
-   real x_max2 = 1.1;
-   real y_max2 = 0.9999;
-   real z_max2 = 2.;
+   RealT x_min2 = -0.1;
+   RealT y_min2 = 0.0001;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.1;
+   RealT y_max2 = 0.9999;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -141,19 +141,19 @@ TEST_F( CompGeomTest, single_mortar_check )
    int userSpecifiedNumOverlaps = 64;
 
    // mesh bounding box with 0.1 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -191,7 +191,7 @@ TEST_F( CompGeomTest, poly_area_centroid_1 )
    // the results are the same
    constexpr int dim = 3;
    constexpr int numVerts = 4;
-   real x[ dim * numVerts ];
+   RealT x[ dim * numVerts ];
 
    for (int i=0; i<dim*numVerts; ++i)
    {
@@ -214,21 +214,21 @@ TEST_F( CompGeomTest, poly_area_centroid_1 )
    x[dim*2+2] = 0.1; 
    x[dim*3+2] = 0.1;
 
-   real cX_avg, cY_avg, cZ_avg;
-   real cX_area, cY_area, cZ_area;
+   RealT cX_avg, cY_avg, cZ_avg;
+   RealT cX_area, cY_area, cZ_area;
 
    tribol::VertexAvgCentroid( x, dim, numVerts, cX_avg, cY_avg, cZ_avg );
    tribol::PolyAreaCentroid( x, dim, numVerts, cX_area, cY_area, cZ_area );
 
-   real diff[3] { 0., 0., 0. };
+   RealT diff[3] { 0., 0., 0. };
 
    diff[0] = std::abs(cX_avg - cX_area);
    diff[1] = std::abs(cY_avg - cY_area);
    diff[2] = std::abs(cZ_avg - cZ_area);
 
-   real diff_mag = tribol::magnitude( diff[0], diff[1], diff[2] );
+   RealT diff_mag = tribol::magnitude( diff[0], diff[1], diff[2] );
 
-   real tol = 1.e-5;
+   RealT tol = 1.e-5;
    EXPECT_LE( diff_mag, tol );
 }
 
@@ -239,9 +239,9 @@ TEST_F( CompGeomTest, poly_area_centroid_2 )
    // closed polygon
    constexpr int dim = 3;
    constexpr int numVerts = 4;
-   real x[ numVerts ];
-   real y[ numVerts ];
-   real z[ numVerts ];
+   RealT x[ numVerts ];
+   RealT y[ numVerts ];
+   RealT z[ numVerts ];
 
    for (int i=0; i<numVerts; ++i)
    {
@@ -267,7 +267,7 @@ TEST_F( CompGeomTest, poly_area_centroid_2 )
    z[3] = 0.1;
 
    // create stacked array of coordinates
-   real x_bar[ dim*numVerts];
+   RealT x_bar[ dim*numVerts];
    for (int i=0; i<numVerts; ++i)
    {
       x_bar[dim*i]   = x[i];
@@ -275,23 +275,23 @@ TEST_F( CompGeomTest, poly_area_centroid_2 )
       x_bar[dim*i+2] = z[i];
    }
 
-   real cX_area, cY_area, cZ_area;
-   real cX_poly, cY_poly, cZ_poly;
+   RealT cX_area, cY_area, cZ_area;
+   RealT cX_poly, cY_poly, cZ_poly;
 
    tribol::PolyAreaCentroid( x_bar, dim, numVerts, cX_area, cY_area, cZ_area );
    tribol::PolyCentroid( x, y, numVerts, cX_poly, cY_poly );
 
    cZ_poly = z[0];
 
-   real diff[3] { 0., 0., 0. };
+   RealT diff[3] { 0., 0., 0. };
 
    diff[0] = std::abs(cX_poly - cX_area);
    diff[1] = std::abs(cY_poly - cY_area);
    diff[2] = std::abs(cZ_poly - cZ_area);
 
-   real diff_mag = tribol::magnitude( diff[0], diff[1], diff[2] );
+   RealT diff_mag = tribol::magnitude( diff[0], diff[1], diff[2] );
 
-   real tol = 1.e-5;
+   RealT tol = 1.e-5;
    EXPECT_LE( diff_mag, tol );
 }
 
@@ -299,8 +299,8 @@ TEST_F( CompGeomTest, 2d_projections_1 )
 {
    constexpr int dim = 2;
    constexpr int numVerts = 2;
-   real xy1[dim*numVerts];
-   real xy2[dim*numVerts];
+   RealT xy1[dim*numVerts];
+   RealT xy2[dim*numVerts];
 
 // Notice how the face vertices are flipped between register mesh and the segment basis eval!
 
@@ -338,58 +338,58 @@ TEST_F( CompGeomTest, 2d_projections_1 )
    xy2[3] = 0.;
 
    // compute face normal
-   real faceNormal1[dim];
-   real faceNormal2[dim];
+   RealT faceNormal1[dim];
+   RealT faceNormal2[dim];
 
-   real lambdaX1 = xy1[2]-xy1[0];
-   real lambdaY1 = xy1[3]-xy1[1];
+   RealT lambdaX1 = xy1[2]-xy1[0];
+   RealT lambdaY1 = xy1[3]-xy1[1];
 
    faceNormal1[0] = lambdaY1;
    faceNormal1[1] = -lambdaX1;
 
-   real lambdaX2 = xy2[2]-xy2[0];
-   real lambdaY2 = xy2[3]-xy2[1];
+   RealT lambdaX2 = xy2[2]-xy2[0];
+   RealT lambdaY2 = xy2[3]-xy2[1];
 
    faceNormal2[0] = lambdaY2;
    faceNormal2[1] = -lambdaX2;
 
-   real cxf1[3] = {0., 0., 0.};
-   real cxf2[3] = {0., 0., 0.};
+   RealT cxf1[3] = {0., 0., 0.};
+   RealT cxf2[3] = {0., 0., 0.};
 
    tribol::VertexAvgCentroid( xy1, dim, numVerts, cxf1[0], cxf1[1], cxf1[2] );
    tribol::VertexAvgCentroid( xy2, dim, numVerts, cxf2[0], cxf2[1], cxf2[2] );
 
    // average the vertex averaged centroids of each face to get a pretty good 
    // estimate of the common plane centroid
-   real cx[dim];
+   RealT cx[dim];
    cx[0] = 0.5*(cxf1[0] + cxf2[0]);
    cx[1] = 0.5*(cxf1[1] + cxf2[1]);
 
-   real cxProj1[3] = {0., 0., 0.}; 
-   real cxProj2[3] = {0., 0., 0.}; 
+   RealT cxProj1[3] = {0., 0., 0.}; 
+   RealT cxProj2[3] = {0., 0., 0.}; 
 
    tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal1[0], faceNormal1[1], 
                                   cxf1[0], cxf1[1], cxProj1[0], cxProj1[1] );
    tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal2[0], faceNormal2[1], 
                                   cxf2[0], cxf2[1], cxProj2[0], cxProj2[1] );
 
-   real diffx1 = std::abs(cxProj1[0] - 0.738595);
-   real diffy1 = std::abs(cxProj1[1] - 0.0915028);
-   real diffx2 = std::abs(cxProj2[0] - 0.738591);
-   real diffy2 = std::abs(cxProj2[1] - 0.0915022);
+   RealT diffx1 = std::abs(cxProj1[0] - 0.738595);
+   RealT diffy1 = std::abs(cxProj1[1] - 0.0915028);
+   RealT diffx2 = std::abs(cxProj2[0] - 0.738591);
+   RealT diffy2 = std::abs(cxProj2[1] - 0.0915022);
    EXPECT_LE(diffx1, 1.e-6);  
    EXPECT_LE(diffy1, 1.e-6); 
    EXPECT_LE(diffx2, 1.e-6); 
    EXPECT_LE(diffy2, 1.e-6); 
 
    // check with call to tribol::update()
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( 2, problem_comm );
 
-   real x1[numVerts];
-   real y1[numVerts];
-   real x2[numVerts];
-   real y2[numVerts];
+   RealT x1[numVerts];
+   RealT y1[numVerts];
+   RealT x2[numVerts];
+   RealT y2[numVerts];
 
    for (int i=0; i<numVerts; ++i)
    {
@@ -399,16 +399,16 @@ TEST_F( CompGeomTest, 2d_projections_1 )
       y2[i] = xy2[i*dim+1];
    }
 
-   tribol::IndexType conn1[2] = {0,1};
-   tribol::IndexType conn2[2] = {0,1};
+   tribol::IndexT conn1[2] = {0,1};
+   tribol::IndexT conn2[2] = {0,1};
 
    tribol::registerMesh( 0, 1, 2, &conn1[0], (int)(tribol::LINEAR_EDGE), &x1[0], &y1[0], nullptr );
    tribol::registerMesh( 1, 1, 2, &conn2[0], (int)(tribol::LINEAR_EDGE), &x2[0], &y2[0], nullptr );
 
-   real fx1[2] = {0., 0.};
-   real fy1[2] = {0., 0.};
-   real fx2[2] = {0., 0.};
-   real fy2[2] = {0., 0.};
+   RealT fx1[2] = {0., 0.};
+   RealT fy1[2] = {0., 0.};
+   RealT fx2[2] = {0., 0.};
+   RealT fy2[2] = {0., 0.};
 
    tribol::registerNodalResponse( 0, &fx1[0], &fy1[0], nullptr );
    tribol::registerNodalResponse( 1, &fx2[0], &fy2[0], nullptr );
@@ -429,7 +429,7 @@ TEST_F( CompGeomTest, 2d_projections_1 )
 
    // TODO check penetration and overlap tolerance with what is being used in host-code
 
-   double dt = 1.;
+   RealT dt = 1.;
    int update_err = tribol::update( 1, 1., dt );
 
    EXPECT_EQ( update_err, 0 );
@@ -440,8 +440,8 @@ TEST_F( CompGeomTest, 2d_projections_2 )
 {
    constexpr int dim = 2;
    constexpr int numVerts = 2;
-   real xy1[dim*numVerts];
-   real xy2[dim*numVerts];
+   RealT xy1[dim*numVerts];
+   RealT xy2[dim*numVerts];
 
    // face coordinates from testing
    xy1[0] = 0.75;
@@ -455,45 +455,45 @@ TEST_F( CompGeomTest, 2d_projections_2 )
    xy2[3] = 0.;
 
    // compute face normal
-   real faceNormal1[dim];
-   real faceNormal2[dim];
+   RealT faceNormal1[dim];
+   RealT faceNormal2[dim];
 
-   real lambdaX1 = xy1[2]-xy1[0];
-   real lambdaY1 = xy1[3]-xy1[1];
+   RealT lambdaX1 = xy1[2]-xy1[0];
+   RealT lambdaY1 = xy1[3]-xy1[1];
 
    faceNormal1[0] = lambdaY1;
    faceNormal1[1] = -lambdaX1;
 
-   real lambdaX2 = xy2[2]-xy2[0];
-   real lambdaY2 = xy2[3]-xy2[1];
+   RealT lambdaX2 = xy2[2]-xy2[0];
+   RealT lambdaY2 = xy2[3]-xy2[1];
 
    faceNormal2[0] = lambdaY2;
    faceNormal2[1] = -lambdaX2;
 
-   real cxf1[3] = {0., 0., 0.};
-   real cxf2[3] = {0., 0., 0.};
+   RealT cxf1[3] = {0., 0., 0.};
+   RealT cxf2[3] = {0., 0., 0.};
 
    tribol::VertexAvgCentroid( xy1, dim, numVerts, cxf1[0], cxf1[1], cxf1[2] );
    tribol::VertexAvgCentroid( xy2, dim, numVerts, cxf2[0], cxf2[1], cxf2[2] );
 
    // average the vertex averaged centroids of each face to get a pretty good 
    // estimate of the common plane centroid
-   real cx[dim];
+   RealT cx[dim];
    cx[0] = 0.5*(cxf1[0] + cxf2[0]);
    cx[1] = 0.5*(cxf1[1] + cxf2[1]);
 
-   real cxProj1[3] = {0., 0., 0.}; 
-   real cxProj2[3] = {0., 0., 0.}; 
+   RealT cxProj1[3] = {0., 0., 0.}; 
+   RealT cxProj2[3] = {0., 0., 0.}; 
 
    tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal1[0], faceNormal1[1], 
                                   cxf1[0], cxf1[1], cxProj1[0], cxProj1[1] );
    tribol::ProjectPointToSegment( cx[0], cx[1], faceNormal2[0], faceNormal2[1], 
                                   cxf2[0], cxf2[1], cxProj2[0], cxProj2[1] );
 
-   real diffx1 = std::abs(cxProj1[0] - cx[0]); 
-   real diffy1 = std::abs(cxProj1[1] - cx[1]);
-   real diffx2 = std::abs(cxProj2[0] - cx[0]); 
-   real diffy2 = std::abs(cxProj2[1] - cx[1]); 
+   RealT diffx1 = std::abs(cxProj1[0] - cx[0]); 
+   RealT diffy1 = std::abs(cxProj1[1] - cx[1]);
+   RealT diffx2 = std::abs(cxProj2[0] - cx[0]); 
+   RealT diffy2 = std::abs(cxProj2[1] - cx[1]); 
    EXPECT_LE(diffx1, 1.e-6);  
    EXPECT_LE(diffy1, 1.e-6); 
    EXPECT_LE(diffx2, 1.e-6); 
@@ -508,10 +508,10 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    constexpr int numVerts = 4;
    constexpr int numCells = 2;
    constexpr int lengthNodalData = numCells * numVerts;
-   real element_thickness[numCells];
-   real x[lengthNodalData];
-   real y[lengthNodalData];
-   real z[lengthNodalData];
+   RealT element_thickness[numCells];
+   RealT x[lengthNodalData];
+   RealT y[lengthNodalData];
+   RealT z[lengthNodalData];
 
    for (int i=0; i<numCells; ++i)
    {
@@ -552,35 +552,35 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    z[7] = -0.300001*element_thickness[1];
 
    // initialize tribol
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( dim, problem_comm );
 
    // register contact mesh
    int meshId = 0;
-   tribol::IndexType conn[8] = {0,1,2,3,4,5,6,7}; // hard coded for a two face problem
+   tribol::IndexT conn[8] = {0,1,2,3,4,5,6,7}; // hard coded for a two face problem
    tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
 
-   real *fx;
-   real *fy;
-   real *fz; 
+   RealT *fx;
+   RealT *fy;
+   RealT *fz; 
    tribol::allocRealArray( &fx, lengthNodalData, 0. );
    tribol::allocRealArray( &fy, lengthNodalData, 0. );
    tribol::allocRealArray( &fz, lengthNodalData, 0. );
 
    tribol::registerNodalResponse( meshId, fx, fy, fz );
 
-   real *vx;
-   real *vy;
-   real *vz; 
-   real vel0 = -1.e-15;
+   RealT *vx;
+   RealT *vy;
+   RealT *vz; 
+   RealT vel0 = -1.e-15;
    tribol::allocRealArray( &vx, lengthNodalData, 0. );
    tribol::allocRealArray( &vy, lengthNodalData, 0. );
    tribol::allocRealArray( &vz, lengthNodalData, vel0 );
 
    // set second face to impacting velocity
-   real vel2 = 1.e-15;
+   RealT vel2 = 1.e-15;
    vz[4] = vel2;
    vz[5] = vel2;
    vz[6] = vel2;
@@ -588,7 +588,7 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
 
    tribol::registerNodalVelocities( meshId, vx, vy, vz );
 
-   real bulk_mod = 1.;
+   RealT bulk_mod = 1.;
    tribol::registerRealElementField( meshId, tribol::BULK_MODULUS, &bulk_mod );
    tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
 
@@ -605,7 +605,7 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
 
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_ELEMENT, tribol::NO_RATE_PENALTY );
 
-   real dt = 1.0;
+   RealT dt = 1.0;
    int err = tribol::update( 1, 1., dt );
  
    EXPECT_EQ( err, 0 );
@@ -637,10 +637,10 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
    constexpr int numVerts = 4;
    constexpr int numCells = 2;
    constexpr int lengthNodalData = numCells * numVerts;
-   real element_thickness[numCells];
-   real x[lengthNodalData];
-   real y[lengthNodalData];
-   real z[lengthNodalData];
+   RealT element_thickness[numCells];
+   RealT x[lengthNodalData];
+   RealT y[lengthNodalData];
+   RealT z[lengthNodalData];
 
    for (int i=0; i<numCells; ++i)
    {
@@ -675,44 +675,44 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
    y[7] = 1.; 
 
    // amount of interpenetration in the z-direction
-   real max_interpen_frac = 1.0;
+   RealT max_interpen_frac = 1.0;
    tribol::setAutoContactPenScale( max_interpen_frac );
-   real test_ratio = 0.90; // fraction of max interpen frac used for this test
+   RealT test_ratio = 0.90; // fraction of max interpen frac used for this test
    z[4] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[5] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[6] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[7] = -test_ratio * max_interpen_frac * element_thickness[1]; 
 
    // initialize tribol
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( dim, problem_comm );
 
    // register contact mesh
    int meshId = 0;
-   tribol::IndexType conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
+   tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
    tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
 
-   real *fx;
-   real *fy;
-   real *fz; 
+   RealT *fx;
+   RealT *fy;
+   RealT *fz; 
    tribol::allocRealArray( &fx, lengthNodalData, 0. );
    tribol::allocRealArray( &fy, lengthNodalData, 0. );
    tribol::allocRealArray( &fz, lengthNodalData, 0. );
 
    tribol::registerNodalResponse( meshId, fx, fy, fz );
 
-   real *vx;
-   real *vy;
-   real *vz; 
-   real vel0 = -1.;
+   RealT *vx;
+   RealT *vy;
+   RealT *vz; 
+   RealT vel0 = -1.;
    tribol::allocRealArray( &vx, lengthNodalData, 0. );
    tribol::allocRealArray( &vy, lengthNodalData, 0. );
    tribol::allocRealArray( &vz, lengthNodalData, vel0 );
 
    // set second face to impacting velocity
-   real vel2 = 1.0;
+   RealT vel2 = 1.0;
    vz[4] = vel2;
    vz[5] = vel2;
    vz[6] = vel2;
@@ -736,7 +736,7 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
 
    tribol::setKinematicConstantPenalty( meshId, 1.0 );
 
-   real dt = 1.0;
+   RealT dt = 1.0;
    int err = tribol::update( 1, 1., dt );
  
    EXPECT_EQ( err, 0 );
@@ -767,10 +767,10 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
    constexpr int numVerts = 4;
    constexpr int numCells = 2;
    constexpr int lengthNodalData = numCells * numVerts;
-   real element_thickness[numCells];
-   real x[lengthNodalData];
-   real y[lengthNodalData];
-   real z[lengthNodalData];
+   RealT element_thickness[numCells];
+   RealT x[lengthNodalData];
+   RealT y[lengthNodalData];
+   RealT z[lengthNodalData];
 
    for (int i=0; i<numCells; ++i)
    {
@@ -805,44 +805,44 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
    y[7] = 1.; 
 
    // amount of interpenetration in the z-direction
-   real max_interpen_frac = 1.0;
+   RealT max_interpen_frac = 1.0;
    tribol::setAutoContactPenScale( max_interpen_frac );
-   real test_ratio = 1.01; // fraction of max interpen frac used for this test
+   RealT test_ratio = 1.01; // fraction of max interpen frac used for this test
    z[4] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[5] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[6] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[7] = -test_ratio * max_interpen_frac * element_thickness[1]; 
 
    // initialize tribol
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
    tribol::initialize( dim, problem_comm );
 
    // register contact mesh
    int meshId = 0;
-   tribol::IndexType conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
+   tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
    tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
 
-   real *fx;
-   real *fy;
-   real *fz; 
+   RealT *fx;
+   RealT *fy;
+   RealT *fz; 
    tribol::allocRealArray( &fx, lengthNodalData, 0. );
    tribol::allocRealArray( &fy, lengthNodalData, 0. );
    tribol::allocRealArray( &fz, lengthNodalData, 0. );
 
    tribol::registerNodalResponse( meshId, fx, fy, fz );
 
-   real *vx;
-   real *vy;
-   real *vz; 
-   real vel0 = -1.;
+   RealT *vx;
+   RealT *vy;
+   RealT *vz; 
+   RealT vel0 = -1.;
    tribol::allocRealArray( &vx, lengthNodalData, 0. );
    tribol::allocRealArray( &vy, lengthNodalData, 0. );
    tribol::allocRealArray( &vz, lengthNodalData, vel0 );
 
    // set second face to impacting velocity
-   real vel2 = 1.0;
+   RealT vel2 = 1.0;
    vz[4] = vel2;
    vz[5] = vel2;
    vz[6] = vel2;
@@ -866,7 +866,7 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
 
    tribol::setKinematicConstantPenalty( meshId, 1.0 );
 
-   real dt = 1.0;
+   RealT dt = 1.0;
    int err = tribol::update( 1, 1., dt );
  
    EXPECT_EQ( err, 0 );

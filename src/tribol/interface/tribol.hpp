@@ -30,7 +30,7 @@ namespace tribol
  * \pre dimension==2 || dimensions==3
  * \pre comm != MPI_COMM_NULL
  */
-void initialize( integer dimension, CommType comm );
+void initialize( int dimension, CommT comm );
 
 /// @}
 
@@ -56,7 +56,7 @@ void setPenaltyOptions( int couplingSchemeIndex,
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] k constant kinematic penalty stiffness
  */
-void setKinematicConstantPenalty( int meshId, double k );
+void setKinematicConstantPenalty( int meshId, RealT k );
 
 /*!
  * \brief Sets the kinematic element penalty stiffness data
@@ -68,22 +68,22 @@ void setKinematicConstantPenalty( int meshId, double k );
  *       is the number of contact faces registered for mesh with id, \p meshId.
  */
 void setKinematicElementPenalty( int meshId, 
-                                 const double *material_modulus, 
-                                 const double *element_thickness );
+                                 const RealT *material_modulus, 
+                                 const RealT *element_thickness );
 
 /*!
  * \brief Sets the constant rate penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] r_k constant rate penalty stiffness
  */
-void setRateConstantPenalty( int meshId, double r_k );
+void setRateConstantPenalty( int meshId, RealT r_k );
 
 /*!
  * \brief Sets the percent rate penalty stiffness
  * \param [in] meshId mesh id for penalty stiffness  
  * \param [in] r_p rate penalty as percent of kinematic penalty
  */
-void setRatePercentPenalty( int meshId, double r_p );
+void setRatePercentPenalty( int meshId, RealT r_p );
 
 /*!
  *
@@ -96,7 +96,7 @@ void setRatePercentPenalty( int meshId, double r_p );
  *     
  *
  */
-void setAutoContactPenScale( double scale );
+void setAutoContactPenScale( RealT scale );
 
 /*!
  *
@@ -108,7 +108,7 @@ void setAutoContactPenScale( double scale );
  * fraction of the element thickness that is allowed prior to triggering a timestep vote.
  *
  */
-void setTimestepPenFrac( double frac );
+void setTimestepPenFrac( RealT frac );
 
 /*!
  * \brief Sets the area fraction for inclusion of a contact overlap 
@@ -118,7 +118,7 @@ void setTimestepPenFrac( double frac );
  *       contact overlap with the largest of the two consituent 
  *       faces. A default ratio is provided by Tribol.
  */
-void setContactAreaFrac( double frac );
+void setContactAreaFrac( RealT frac );
 
 /*!
  * \brief Sets the penalty scale
@@ -126,7 +126,7 @@ void setContactAreaFrac( double frac );
  * \param [in] meshId ID for the mesh the penalty scale will be applied to
  * \param [in] scale the penalty scale
  */
-void setPenaltyScale( int meshId, double scale );
+void setPenaltyScale( int meshId, RealT scale );
 
 /*!
  * \brief Sets the Lagrange multiplier enforcement options
@@ -143,7 +143,7 @@ void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode eva
  * \brief Sets the plot cycle increment for visualization
  * \param [in] incr cycle increment between writing plot data
  */
-void setPlotCycleIncrement( double incr );
+void setPlotCycleIncrement( int incr );
 
 /*!
  * \brief Sets the plot options for interface visualization 
@@ -204,14 +204,14 @@ void enableTimestepVote( const bool enable );
  * \pre y != nullptr
  * \pre z != nullptr (3D only)
  */
-void registerMesh( integer meshId,
-                   integer numCells,
-                   integer lengthNodalData,
-                   const IndexType* connectivity,
-                   integer cellType,
-                   const real* x,
-                   const real* y,
-                   const real* z=nullptr );
+void registerMesh( int meshId,
+                   int numCells,
+                   int lengthNodalData,
+                   const IndexT* connectivity,
+                   int cellType,
+                   const RealT* x,
+                   const RealT* y,
+                   const RealT* z=nullptr );
 
 /*!
  * \brief Registers nodal displacements on the contact surface.
@@ -228,10 +228,10 @@ void registerMesh( integer meshId,
  * \note A mesh for the given contact surface must have already been registered
  *  prior to calling this method via registerMesh()
  */
-void registerNodalDisplacements( integer meshId,
-                                 const real* dx,
-                                 const real* dy,
-                                 const real* dz=nullptr );
+void registerNodalDisplacements( int meshId,
+                                 const RealT* dx,
+                                 const RealT* dy,
+                                 const RealT* dz=nullptr );
 
 /*!
  * \brief Registers nodal velocities on the contact surface.
@@ -248,10 +248,10 @@ void registerNodalDisplacements( integer meshId,
  *  \note A mesh for the given contact surface must have already been registered
  *   prior to calling this method] via registerMesh()
  */
-void registerNodalVelocities( integer meshId,
-                              const real* vx,
-                              const real* vy,
-                              const real* vz=nullptr );
+void registerNodalVelocities( int meshId,
+                              const RealT* vx,
+                              const RealT* vy,
+                              const RealT* vz=nullptr );
 
 /*!
  * \brief Registers nodal response buffers.
@@ -268,10 +268,10 @@ void registerNodalVelocities( integer meshId,
  * \note A mesh for the given contact surface must have already been registered
  *  prior to calling this method.
  */
-void registerNodalResponse( integer meshId,
-                            real* rx,
-                            real* ry,
-                            real* rz=nullptr );
+void registerNodalResponse( int meshId,
+                            RealT* rx,
+                            RealT* ry,
+                            RealT* rz=nullptr );
 
 /*!
  * \brief Get mfem sparse matrix for method specific Jacobian matrix output 
@@ -312,7 +312,7 @@ int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
  * \return 0 success (if CSR data exists and pointed to), nonzero for failure
  *
  */
-int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
+int getJacobianCSRMatrix( int** I, int** J, RealT** vals, int csId,
                   int* n_offsets = nullptr, int* n_nonzero = nullptr );
 
 /*!
@@ -361,12 +361,12 @@ int getJacobianCSRMatrix( int** I, int** J, real** vals, int csId,
  *
  * \return 0 success (if Jacobians exist), nonzero for failure
  */
-int getElementBlockJacobians( integer csId, 
+int getElementBlockJacobians( int csId, 
                               BlockSpace row_block,
                               BlockSpace col_block,
-                              const axom::Array<integer>** row_elem_idx,
-                              const axom::Array<integer>** col_elem_idx,
-                              const axom::Array<mfem::DenseMatrix>** jacobians );
+                              const ArrayT<int>** row_elem_idx,
+                              const ArrayT<int>** col_elem_idx,
+                              const ArrayT<mfem::DenseMatrix>** jacobians );
 
 /*!
  * \brief Register gap field on a nonmortar surface mesh associated with the
@@ -376,8 +376,8 @@ int getElementBlockJacobians( integer csId,
  * \param gaps Array of degree-of-freedom values on the nodes of the mesh
  * representing the scalar gap field
  */
-void registerMortarGaps( integer meshId,
-                         real * gaps );
+void registerMortarGaps( int meshId,
+                         RealT * gaps );
 
 /*!
  * \brief Register pressure field on a nonmortar surface mesh associated with
@@ -387,23 +387,23 @@ void registerMortarGaps( integer meshId,
  * \param gaps Array of degree-of-freedom values on the nodes of the mesh
  * representing the scalar pressure field
  */
-void registerMortarPressures( integer meshId,
-                              const real * pressures );
+void registerMortarPressures( int meshId,
+                              const RealT * pressures );
 
 /// register an integer nodal field
-void registerIntNodalField( integer meshId,
+void registerIntNodalField( int meshId,
                             const IntNodalFields field,
-                            integer * fieldVariable );
+                            int * fieldVariable );
 
 /// register a real element field or parameter 
 void registerRealElementField( int meshId,
                                const RealElementFields field,
-                               const double * fieldVariable );
+                               const RealT * fieldVariable );
 
 /// register an integer element field
 void registerIntElementField( int meshId,
                               const IntElementFields field,
-                              integer * fieldVariable );
+                              int * fieldVariable );
 
 /// @}
 
@@ -426,15 +426,15 @@ void registerIntElementField( int meshId,
  * \note A mesh for the given contact surface must have already been registered
  *  prior to calling this method.
  */
-void registerCouplingScheme( integer couplingSchemeIndex,
-                             integer meshId1,
-                             integer meshId2,
-                             integer contact_mode,
-                             integer contact_case,
-                             integer contact_method,
-                             integer contact_model,
-                             integer enforcement_method,
-                             integer binning_method = DEFAULT_BINNING_METHOD);
+void registerCouplingScheme( int couplingSchemeIndex,
+                             int meshId1,
+                             int meshId2,
+                             int contact_mode,
+                             int contact_case,
+                             int contact_method,
+                             int contact_model,
+                             int enforcement_method,
+                             int binning_method = DEFAULT_BINNING_METHOD);
 /// @}
 
 
@@ -452,14 +452,14 @@ void registerCouplingScheme( integer couplingSchemeIndex,
  * \param [in] pairIndex2 index of the second cell in the pair list
  *
  */
-void setInterfacePairs( integer couplingSchemeIndex,
-                        IndexType numPairs,
-                        IndexType const * meshId1,
-                        IndexType const * pairType1,
-                        IndexType const * pairIndex1,
-                        IndexType const * meshId2,
-                        IndexType const * pairType2,
-                        IndexType const * pairIndex2 );
+void setInterfacePairs( int couplingSchemeIndex,
+                        IndexT numPairs,
+                        IndexT const * meshId1,
+                        IndexT const * pairType1,
+                        IndexT const * pairIndex1,
+                        IndexT const * meshId2,
+                        IndexT const * pairType2,
+                        IndexT const * pairIndex2 );
 
 
 /*!
@@ -471,7 +471,7 @@ void setInterfacePairs( integer couplingSchemeIndex,
  *
  * \return rc return code, a non-zero return code indicates an error.
  */
-integer update( integer cycle, real t, real &dt );
+int update( int cycle, RealT t, RealT &dt );
 
 /// \name Contact Library finalization methods
 /// @{

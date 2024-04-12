@@ -16,26 +16,26 @@ namespace tribol
 
 struct InterfacePair
 {
-   InterfacePair( integer m1, integer t1, integer i1,
-                  integer m2, integer t2, integer i2 )
+   InterfacePair( int m1, int t1, int i1,
+                  int m2, int t2, int i2 )
       : pairId(-1)
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
       , isContactCandidate(true) {}
 
    // overload constructor with pair id
-   InterfacePair( integer m1, integer t1, integer i1,
-                  integer m2, integer t2, integer i2,
-                  integer id )
+   InterfacePair( int m1, int t1, int i1,
+                  int m2, int t2, int i2,
+                  int id )
       : pairId(id)
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
       , isContactCandidate(true) {}
 
    // overload constructor with boolean indicating contact candidacy
-   InterfacePair( integer m1, integer t1, integer i1,
-                  integer m2, integer t2, integer i2,
-                  bool isCandidate, integer id )
+   InterfacePair( int m1, int t1, int i1,
+                  int m2, int t2, int i2,
+                  bool isCandidate, int id )
       : pairId(id)
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
@@ -48,17 +48,17 @@ struct InterfacePair
                    , isContactCandidate(true) {}
 
    // pair id
-   integer pairId;
+   int pairId;
 
    // mesh id, face type, and face id for face 1
-   integer meshId1;
-   integer pairType1;
-   integer pairIndex1;
+   int meshId1;
+   int pairType1;
+   int pairIndex1;
 
    // mesh id, face type and face id for face 2
-   integer meshId2;
-   integer pairType2;
-   integer pairIndex2;
+   int meshId2;
+   int pairType2;
+   int pairIndex2;
 
    // boolean indicating if a binned pair is a contact candidate.
    // A contact candidate is defined as a face-pair that is deemed geometrically proximate 
@@ -78,12 +78,12 @@ public:
   ~InterfacePairs() = default;
 
   void clear();
-  void reserve(integer capacity);
+  void reserve(int capacity);
 
   void addInterfacePair( InterfacePair const& pair );
 
   void updateInterfacePair( InterfacePair const& pair,
-                            integer const idx );
+                            int const idx );
 
   void setMeshId( int side, int id )
   {
@@ -92,29 +92,29 @@ public:
      if (side == 2) m_meshId2 = id;
   }
 
-  void setPairType( int side, integer type )
+  void setPairType( int side, int type )
   {
      SLIC_ERROR_IF( side !=1 && side !=2, "mesh side not 1 or 2.");
      if (side == 1) m_pairType1 = type;
      if (side == 2) m_pairType2 = type;
   }
 
-  InterfacePair getInterfacePair(IndexType idx) const;
+  InterfacePair getInterfacePair(IndexT idx) const;
 
-  IndexType getNumPairs() const { return static_cast<IndexType>(m_pairIndex1.size()); }
+  IndexT getNumPairs() const { return static_cast<IndexT>(m_pairIndex1.size()); }
 
 private:
 
   // A list of interface pairs is defined to be between 
   // two meshes with the same elements type on each mesh
-  integer m_meshId1;
-  integer m_meshId2;
-  integer m_pairType1;
-  integer m_pairType2;
+  int m_meshId1;
+  int m_meshId2;
+  int m_pairType1;
+  int m_pairType2;
 
-  containerArray<integer> m_pairIndex1;
-  containerArray<integer> m_pairIndex2;
-  containerArray<bool>    m_isContactCandidate;
+  ArrayT<int> m_pairIndex1;
+  ArrayT<int> m_pairIndex2;
+  ArrayT<bool>    m_isContactCandidate;
 };
 
 } /* namespace tribol */

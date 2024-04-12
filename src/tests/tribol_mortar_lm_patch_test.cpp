@@ -33,7 +33,7 @@
 #include <iomanip>
 #include <fstream>
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class with some setup necessary to test
@@ -49,15 +49,15 @@ public:
 
    void computeContactSolution( int nMortarElemsX, int nMortarElemsY, int nMortarElemsZ,
                                 int nNonmortarElemsX, int nNonmortarElemsY, int nNonmortarElemsZ,
-                                real xMin1, real yMin1, real zMin1,
-                                real xMax1, real yMax1, real zMax1,
-                                real xMin2, real yMin2, real zMin2,
-                                real xMax2, real yMax2, real zMax2,
-                                real thetaM, real thetaS,
+                                RealT xMin1, RealT yMin1, RealT zMin1,
+                                RealT xMax1, RealT yMax1, RealT zMax1,
+                                RealT xMin2, RealT yMin2, RealT zMin2,
+                                RealT xMax2, RealT yMax2, RealT zMax2,
+                                RealT thetaM, RealT thetaS,
                                 tribol::ContactMethod method,
                                 std::string test_name,
                                 bool cntct, bool writeOutput, bool debug, bool vis,
-                                mfem::Vector &sol, real &pressure_rel_error );
+                                mfem::Vector &sol, RealT &pressure_rel_error );
 
 protected:
 
@@ -77,18 +77,18 @@ protected:
 
 void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarElemsY, int nMortarElemsZ,
                                                 int nNonmortarElemsX, int nNonmortarElemsY, int nNonmortarElemsZ,
-                                                real xMin1, real yMin1, real zMin1,
-                                                real xMax1, real yMax1, real zMax1,
-                                                real xMin2, real yMin2, real zMin2,
-                                                real xMax2, real yMax2, real zMax2,
-                                                real thetaM, real thetaS,
+                                                RealT xMin1, RealT yMin1, RealT zMin1,
+                                                RealT xMax1, RealT yMax1, RealT zMax1,
+                                                RealT xMin2, RealT yMin2, RealT zMin2,
+                                                RealT xMax2, RealT yMax2, RealT zMax2,
+                                                RealT thetaM, RealT thetaS,
                                                 tribol::ContactMethod method,
                                                 std::string test_name,
                                                 bool cntct, bool writeOutput, bool TRIBOL_UNUSED_PARAM(debug), bool vis,
-                                                mfem::Vector &sol, real &pressure_rel_error )
+                                                mfem::Vector &sol, RealT &pressure_rel_error )
 {
    bool inHomogeneous = false;
-   real inHomogeneousVal = 0.;
+   RealT inHomogeneousVal = 0.;
    if (!cntct)
    {
       inHomogeneous = true;
@@ -141,8 +141,8 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
    // setup a temporary stacked array of nodal coordinates for use in the instantiation 
    // of a reference configuration grid function. The nodal coordinates are stacked x, then 
    // y, then z. Also setup a local interleaved array of incremental nodal displacements.
-   real xyz[ this->m_mesh.dim * this->m_mesh.numTotalNodes ];
-   real xyz_inc[ this->m_mesh.dim * this->m_mesh.numTotalNodes ];
+   RealT xyz[ this->m_mesh.dim * this->m_mesh.numTotalNodes ];
+   RealT xyz_inc[ this->m_mesh.dim * this->m_mesh.numTotalNodes ];
    for (int i=0; i<this->m_mesh.numTotalNodes; ++i)
    {
       xyz[ i ] = this->m_mesh.x[i];
@@ -168,7 +168,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
 
    // add hex8 equilibrium contributions for linear elasticity
    // define the lambda and mu constant coefficients
-   double lambda_val, mu_val, nu_val, youngs_val;
+   RealT lambda_val, mu_val, nu_val, youngs_val;
    nu_val = 0.33;
    youngs_val = 3.E7; 
    lambda_val = (youngs_val * nu_val) / ((1. + nu_val) * (1. - 2. * nu_val));
@@ -194,7 +194,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
    // where the last addition is for the pressure lagrange multiplier field
    int rhs_size = this->m_mesh.dim * this->m_mesh.numTotalNodes +
                   this->m_mesh.numNonmortarSurfaceNodes;
-   double b[ rhs_size ];
+   RealT b[ rhs_size ];
 
    // initialize b vector
    for (int i=0; i<rhs_size; ++i)
@@ -252,7 +252,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
    invJ.Mult( rhs, sol );
 
    // get solution data
-   double * sol_data = sol.GetData();
+   RealT * sol_data = sol.GetData();
 
    // update the tribol nodal pressure array. This traverses 
    // the connectivity array, which will populate nonmortar pressures 
@@ -263,7 +263,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
    // instead I exploit the fact that the nonmortar pressure nodes are 
    // ordered consecutively with an offset that is the number of 
    // mortar nodes in the mortar block
-   double nonmortarForceSum = 0.;
+   RealT nonmortarForceSum = 0.;
    if (contact)
    {
       int connSize = this->m_mesh.numNonmortarFaces * this->m_mesh.numNodesPerFace;
@@ -296,7 +296,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
       tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_RESIDUAL, 
                                             tribol::SparseMode::MFEM_LINKED_LIST );
 
-      double dt = 1.0;
+      RealT dt = 1.0;
       int tribol_update_err = tribol::update( 1, 1., dt );
 
       EXPECT_EQ( tribol_update_err, 0 );
@@ -344,14 +344,14 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
    {
       mfem::Vector node_vals;
       stress.GetNodalValues( node_vals, 3 );
-      real *data = stress.GetData();
+      RealT *data = stress.GetData();
       pressure_rel_error 
          -= data[2*this->m_mesh.numTotalNodes + this->m_mesh.faceConn2[0]];
       pressure_rel_error 
          /= data[2*this->m_mesh.numTotalNodes + this->m_mesh.faceConn2[0]];
       pressure_rel_error = std::abs(pressure_rel_error);
 
-      real * error_data = stress33_rel_error.GetData();
+      RealT * error_data = stress33_rel_error.GetData();
       for (int i=(2*this->m_mesh.numTotalNodes); i<(2*this->m_mesh.numTotalNodes+this->m_mesh.numTotalNodes); ++i)
       {
          error_data[i] -= nonmortarForceSum;
@@ -419,7 +419,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
          sol_vec << sol_data[i] << "\n";
          for (int j=0; j<jac.NumCols(); ++j)
          {
-            double val = dJac(i,j);
+            RealT val = dJac(i,j);
             matrix << val << "  ";
          }
          matrix << "\n";
@@ -453,29 +453,29 @@ TEST_F( MortarLMPatchTest, single_mortar_uniform_patch )
    int nElemsYS = nNonmortarElems;
    int nElemsZS = 1;
 
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    bool output = false; // solution vector and rhs
    bool contact = true;
    bool debug = false;  // element matrix writes to .txt files
    bool visualization = false; // output of .vtk with mesh and stress output
 
-   real thetaM = 0.;
-   real thetaS = 0.;
+   RealT thetaM = 0.;
+   RealT thetaS = 0.;
 
-   real press_rel_error = 0.;
+   RealT press_rel_error = 0.;
    this->computeContactSolution( nElemsXM, nElemsYM, nElemsZM,
                                  nElemsXS, nElemsYS, nElemsZS,
                                  x_min1, y_min1, z_min1,
@@ -495,7 +495,7 @@ TEST_F( MortarLMPatchTest, single_mortar_uniform_patch )
    debug = false;
    visualization = false;
 
-   real press_rel_error_null = 0.;
+   RealT press_rel_error_null = 0.;
 
    this->computeContactSolution( nElemsXM, nElemsYM, nElemsZM, 
                                  nElemsXS, nElemsYS, nElemsZS,
@@ -512,14 +512,14 @@ TEST_F( MortarLMPatchTest, single_mortar_uniform_patch )
    mfem::Vector diff(xsol_cntct.Size());
    subtract(xsol_cntct, xsol_base, diff);
 
-   double tol = 5.e-4; // 1/100th of the gap
+   RealT tol = 5.e-4; // 1/100th of the gap
    int size = this->m_mesh.dim * this->m_mesh.numTotalNodes;
    for (int i=0; i<size; ++i)
    {
       EXPECT_LE( std::abs(diff(i)), tol );
    }
 
-   double press_tol = 1.e-2; // 0.02% error in pressure
+   RealT press_tol = 1.e-2; // 0.02% error in pressure
    SLIC_DEBUG( "press_rel_error: " << press_rel_error );
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }
@@ -540,29 +540,29 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_mortar_fine_patch )
    int nElemsYS = nNonmortarElems;
    int nElemsZS = 1;
 
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    bool output = false; // solution vector and rhs
    bool contact = true;
    bool debug = false;  // element matrix writes to .txt files
    bool visualization = false; // output of .vtk with mesh and stress output
 
-   real thetaM = 3.; // 0.; // keep for a nice non-uniform mesh
-   real thetaS = -5.; // 3.; // keep for a nice non-uniform mesh
+   RealT thetaM = 3.; // 0.; // keep for a nice non-uniform mesh
+   RealT thetaS = -5.; // 3.; // keep for a nice non-uniform mesh
 
-   real press_rel_error = 0.;
+   RealT press_rel_error = 0.;
    this->computeContactSolution( nElemsXM, nElemsYM, nElemsZM,
                                  nElemsXS, nElemsYS, nElemsZS,
                                  x_min1, y_min1, z_min1,
@@ -582,7 +582,7 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_mortar_fine_patch )
    debug = false;
    visualization = false;
 
-   real press_rel_error_null = 0.;
+   RealT press_rel_error_null = 0.;
 
    this->computeContactSolution( nElemsXM, nElemsYM, nElemsZM, 
                                  nElemsXS, nElemsYS, nElemsZS,
@@ -599,14 +599,14 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_mortar_fine_patch )
    mfem::Vector diff(xsol_cntct.Size());
    subtract(xsol_cntct, xsol_base, diff);
 
-   double tol = 5.e-4; // 1/100th of the gap
+   RealT tol = 5.e-4; // 1/100th of the gap
    int size = this->m_mesh.dim * this->m_mesh.numTotalNodes;
    for (int i=0; i<size; ++i)
    {
       EXPECT_LE( std::abs(diff(i)), tol );
    }
 
-   double press_tol = 5.e-3; // 0.5% error in pressure
+   RealT press_tol = 5.e-3; // 0.5% error in pressure
    SLIC_DEBUG( "press_rel_error: " << press_rel_error );
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }
@@ -627,26 +627,26 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_nonmortar_fine_patch )
    int nElemsYS = 7; //nNonmortarElems;
    int nElemsZS = 1;
 
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    bool output = false; // solution vector and rhs
    bool contact = true;
    bool debug = false;  // element matrix writes to .txt files
    bool visualization = false; // output of .vtk with mesh and stress output
 
-   real press_rel_error = 0.;
+   RealT press_rel_error = 0.;
    this->computeContactSolution( nElemsXM, nElemsYM, nElemsZM,
                                  nElemsXS, nElemsYS, nElemsZS,
                                  x_min1, y_min1, z_min1,
@@ -666,7 +666,7 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_nonmortar_fine_patch )
    debug = false;
    visualization = false;
 
-   real press_rel_error_null = 0.;
+   RealT press_rel_error_null = 0.;
 
    this->computeContactSolution( nElemsXM, nElemsYM, nElemsZM, 
                                  nElemsXS, nElemsYS, nElemsZS,
@@ -683,14 +683,14 @@ TEST_F( MortarLMPatchTest, single_mortar_nonuniform_nonmortar_fine_patch )
    mfem::Vector diff(xsol_cntct.Size());
    subtract(xsol_cntct, xsol_base, diff);
 
-   double tol = 1.e-10;
+   RealT tol = 1.e-10;
    int size = this->m_mesh.dim * this->m_mesh.numTotalNodes;
    for (int i=0; i<size; ++i)
    {
       EXPECT_LE( std::abs(diff(i)), tol );
    }
 
-   double press_tol = 1.e-7;
+   RealT press_tol = 1.e-7;
    SLIC_DEBUG( "press_rel_error: " << press_rel_error );
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }
@@ -711,26 +711,26 @@ TEST_F( MortarLMPatchTest, aligned_mortar_patch )
    int nElemsYS = nNonmortarElems;
    int nElemsZS = 1;
 
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    bool output = false; // solution output and rhs
    bool contact = true; 
    bool debug = false; // debug matrix writes to .txt files
    bool visualization = false; // visualize mesh and stress
 
-   real press_rel_error = 0.;
+   RealT press_rel_error = 0.;
    this->computeContactSolution( nElemsXM, nElemsYM, nElemsZM,
                                  nElemsXS, nElemsYS, nElemsZS,
                                  x_min1, y_min1, z_min1,
@@ -750,7 +750,7 @@ TEST_F( MortarLMPatchTest, aligned_mortar_patch )
    debug = false;
    visualization = false;
 
-   real press_rel_error_null = 0.;
+   RealT press_rel_error_null = 0.;
 
    this->computeContactSolution( nElemsXM, nElemsYM, nElemsZM, 
                                  nElemsXS, nElemsYS, nElemsZS,
@@ -767,14 +767,14 @@ TEST_F( MortarLMPatchTest, aligned_mortar_patch )
    mfem::Vector diff(xsol_cntct.Size());
    subtract(xsol_cntct, xsol_base, diff);
 
-   double tol = 1.e-10;
+   RealT tol = 1.e-10;
    int size = this->m_mesh.dim * this->m_mesh.numTotalNodes;
    for (int i=0; i<size; ++i)
    {
       EXPECT_LE( std::abs(diff(i)), tol );
    }
 
-   double press_tol = 1.e-7;
+   RealT press_tol = 1.e-7;
    SLIC_DEBUG( "press_rel_error: " << press_rel_error );
    EXPECT_LE( std::abs(press_rel_error), press_tol );
 }

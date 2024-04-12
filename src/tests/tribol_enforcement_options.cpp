@@ -30,7 +30,7 @@
 #include <iomanip>
 #include <fstream>
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class to test valid enforcement options
@@ -53,7 +53,7 @@ protected:
    // Setup boiler plate data and register mesh, nodal response, and coupling scheme
    void SetupTest( tribol::TestMesh* mesh )
    {
-      tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+      tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
       tribol::initialize( 3, problem_comm );
 
       ////////////////////////////////////////////////
@@ -73,19 +73,19 @@ protected:
       int nElemsZS = nNonmortarElems;
 
       // mesh bounding box with 0.1 interpenetration gap
-      real x_min1 = 0.;
-      real y_min1 = 0.;
-      real z_min1 = 0.; 
-      real x_max1 = 1.;
-      real y_max1 = 1.;
-      real z_max1 = 1.05;
+      RealT x_min1 = 0.;
+      RealT y_min1 = 0.;
+      RealT z_min1 = 0.; 
+      RealT x_max1 = 1.;
+      RealT y_max1 = 1.;
+      RealT z_max1 = 1.05;
 
-      real x_min2 = 0.;
-      real y_min2 = 0.;
-      real z_min2 = 0.95;
-      real x_max2 = 1.;
-      real y_max2 = 1.;
-      real z_max2 = 2.;
+      RealT x_min2 = 0.;
+      RealT y_min2 = 0.;
+      RealT z_min2 = 0.95;
+      RealT x_max2 = 1.;
+      RealT y_max2 = 1.;
+      RealT z_max2 = 2.;
 
       mesh->setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                  x_min1, y_min1, z_min1,
@@ -124,12 +124,12 @@ protected:
 
 
       // allocate velocity arrays on test mesh
-      real velX1 = 0.;
-      real velY1 = 0.;
-      real velZ1 = -1.;
-      real velX2 = 0.;
-      real velY2 = 0.;
-      real velZ2 = 1.;
+      RealT velX1 = 0.;
+      RealT velY1 = 0.;
+      RealT velZ1 = -1.;
+      RealT velX2 = 0.;
+      RealT velY2 = 0.;
+      RealT velZ2 = 1.;
       mesh->allocateAndSetVelocities( mesh->mortarMeshId, velX1, velY1, velZ1 );
       mesh->allocateAndSetVelocities( mesh->nonmortarMeshId,  velX2, velY2, velZ2 );
 
@@ -169,7 +169,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_error )
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty( 0, penalty );
    tribol::setKinematicConstantPenalty( 1, penalty );
 
@@ -196,10 +196,10 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_error )
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real* bulk_modulus_1;
-   real* bulk_modulus_2;
-   real* element_thickness_1;
-   real* element_thickness_2;
+   RealT* bulk_modulus_1;
+   RealT* bulk_modulus_2;
+   RealT* element_thickness_1;
+   RealT* element_thickness_2;
 
    tribol::allocRealArray( &bulk_modulus_1, mesh->numMortarFaces, 0. );
    tribol::allocRealArray( &bulk_modulus_2, mesh->numNonmortarFaces, 0. );
@@ -236,11 +236,11 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_error )
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty( 0, penalty );
    tribol::setKinematicConstantPenalty( 1, penalty );
 
-   real rate_penalty = 0.5;
+   RealT rate_penalty = 0.5;
    tribol::setRateConstantPenalty( 0, rate_penalty );
    tribol::setRateConstantPenalty( 1, rate_penalty );
 
@@ -268,11 +268,11 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_1 
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty( 0, penalty );
    tribol::setKinematicConstantPenalty( 1, penalty );
 
-   real rate_percent = 0.5;
+   RealT rate_percent = 0.5;
    tribol::setRatePercentPenalty( 0, rate_percent );
    tribol::setRatePercentPenalty( 1, rate_percent );
 
@@ -300,12 +300,12 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_2 
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty( 0, penalty );
    tribol::setKinematicConstantPenalty( 1, penalty );
 
    // incorrectly set the rate_percent value outside of acceptable bounds
-   real rate_percent = 1.2;
+   RealT rate_percent = 1.2;
    tribol::setRatePercentPenalty( 0, rate_percent );
    tribol::setRatePercentPenalty( 1, rate_percent );
 
@@ -334,7 +334,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_pass )
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty( 0, penalty );
    tribol::setKinematicConstantPenalty( 1, penalty );
 
@@ -360,10 +360,10 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_pass )
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real* bulk_modulus_1;
-   real* bulk_modulus_2;
-   real* element_thickness_1;
-   real* element_thickness_2;
+   RealT* bulk_modulus_1;
+   RealT* bulk_modulus_2;
+   RealT* element_thickness_1;
+   RealT* element_thickness_2;
 
    tribol::allocRealArray( &bulk_modulus_1, mesh->numMortarFaces, 1. );
    tribol::allocRealArray( &bulk_modulus_2, mesh->numNonmortarFaces, 1. );
@@ -399,10 +399,10 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_invalid_element_input 
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real* bulk_modulus_1;
-   real* bulk_modulus_2;
-   real* element_thickness_1;
-   real* element_thickness_2;
+   RealT* bulk_modulus_1;
+   RealT* bulk_modulus_2;
+   RealT* element_thickness_1;
+   RealT* element_thickness_2;
 
    tribol::allocRealArray( &bulk_modulus_1, mesh->numMortarFaces, 0. );
    tribol::allocRealArray( &bulk_modulus_2, mesh->numNonmortarFaces, 0. );
@@ -438,11 +438,11 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_pass )
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty( 0, penalty );
    tribol::setKinematicConstantPenalty( 1, penalty );
 
-   real rate_penalty = 0.5;
+   RealT rate_penalty = 0.5;
    tribol::setRateConstantPenalty( 0, rate_penalty );
    tribol::setRateConstantPenalty( 1, rate_penalty );
 
@@ -469,11 +469,11 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_pass )
    SetupTest(mesh);
 
    // set penalty data so coupling scheme initialization passes 
-   real penalty = 1.0;
+   RealT penalty = 1.0;
    tribol::setKinematicConstantPenalty( 0, penalty );
    tribol::setKinematicConstantPenalty( 1, penalty );
 
-   real rate_percent = 0.5;
+   RealT rate_percent = 0.5;
    tribol::setRatePercentPenalty( 0, rate_percent );
    tribol::setRatePercentPenalty( 1, rate_percent );
 

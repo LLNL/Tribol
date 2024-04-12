@@ -34,10 +34,10 @@ namespace tribol
  * \param [in,out] pz z coordinate of projected point
  *
  */
-void ProjectPointToPlane( const real x, const real y, const real z, 
-                          const real nx, const real ny, const real nz,
-                          const real ox, const real oy, const real oz, 
-                          real& px, real& py, real& pz );
+void ProjectPointToPlane( const RealT x, const RealT y, const RealT z, 
+                          const RealT nx, const RealT ny, const RealT nz,
+                          const RealT ox, const RealT oy, const RealT oz, 
+                          RealT& px, RealT& py, RealT& pz );
 
 /*!
  *
@@ -54,10 +54,10 @@ void ProjectPointToPlane( const real x, const real y, const real z,
  * \param [in,out] py y coordinate of projected point
  *
  */
-void ProjectPointToSegment( const real x, const real y,
-                            const real nx, const real ny,
-                            const real ox, const real oy,
-                            real& px, real& py );
+void ProjectPointToSegment( const RealT x, const RealT y,
+                            const RealT nx, const RealT ny,
+                            const RealT ox, const RealT oy,
+                            RealT& px, RealT& py );
 
 /*!
  *
@@ -83,14 +83,14 @@ void ProjectPointToSegment( const real x, const real y,
  *  to get centroid x-coordinate.
  */
 void PolyInterYCentroid( const int namax,
-                         const real* const RESTRICT xa,
-                         const real* const RESTRICT ya,
+                         const RealT* const RESTRICT xa,
+                         const RealT* const RESTRICT ya,
                          const int nbmax,
-                         const real* const RESTRICT xb,
-                         const real* const RESTRICT yb,
+                         const RealT* const RESTRICT xb,
+                         const RealT* const RESTRICT yb,
                          const int isym,
-                         real & area,
-                         real & ycent );
+                         RealT & area,
+                         RealT & ycent );
 
 /*!
  *
@@ -116,11 +116,11 @@ void PolyInterYCentroid( const int namax,
  *  2D coordinate basis to a point in the 3D global coordinate system
  *
  */
-void Local2DToGlobalCoords( real xloc, real yloc, 
-                            real e1X, real e1Y, real e1Z,
-                            real e2X, real e2Y, real e2Z,
-                            real cX, real cY, real cZ,
-                            real& xg, real& yg, real& zg );
+void Local2DToGlobalCoords( RealT xloc, RealT yloc, 
+                            RealT e1X, RealT e1Y, RealT e1Z,
+                            RealT e2X, RealT e2Y, RealT e2Z,
+                            RealT cX, RealT cY, RealT cZ,
+                            RealT& xg, RealT& yg, RealT& zg );
 
 /*!
  *
@@ -151,14 +151,14 @@ void Local2DToGlobalCoords( real xloc, real yloc,
  * \note this assumes that the point lies in the plane defined by the 
  *  2D local basis vectors. 
  */
-void GlobalTo2DLocalCoords( const real* const RESTRICT pX, 
-                            const real* const RESTRICT pY, 
-                            const real* const RESTRICT pZ,
-                            real e1X, real e1Y, real e1Z,
-                            real e2X, real e2Y, real e2Z,
-                            real cX, real cY, real cZ,
-                            real* const RESTRICT pLX, 
-                            real* const RESTRICT pLY, 
+void GlobalTo2DLocalCoords( const RealT* const RESTRICT pX, 
+                            const RealT* const RESTRICT pY, 
+                            const RealT* const RESTRICT pZ,
+                            RealT e1X, RealT e1Y, RealT e1Z,
+                            RealT e2X, RealT e2Y, RealT e2Z,
+                            RealT cX, RealT cY, RealT cZ,
+                            RealT* const RESTRICT pLX, 
+                            RealT* const RESTRICT pLY, 
                             int size );
 
 /*!
@@ -184,11 +184,11 @@ void GlobalTo2DLocalCoords( const real* const RESTRICT pX,
  * \note this assumes that the point lies in the plane defined by the 
  *  2D local basis vectors. 
  */
-void GlobalTo2DLocalCoords( real pX, real pY, real pZ,
-                            real e1X, real e1Y, real e1Z,
-                            real e2X, real e2Y, real e2Z,
-                            real cX, real cY, real cZ,
-                            real& pLX, real& pLY );
+void GlobalTo2DLocalCoords( RealT pX, RealT pY, RealT pZ,
+                            RealT e1X, RealT e1Y, RealT e1Z,
+                            RealT e2X, RealT e2Y, RealT e2Z,
+                            RealT cX, RealT cY, RealT cZ,
+                            RealT& pLX, RealT& pLY );
 /*!
  *
  * \brief computes the vertex averaged centroid of a point set
@@ -206,11 +206,11 @@ void GlobalTo2DLocalCoords( real pX, real pY, real pZ,
  * \pre length(z) >= numVert
  *
  */
-void VertexAvgCentroid( const real* const RESTRICT x, 
-                        const real* const RESTRICT y, 
-                        const real* const RESTRICT z, 
+void VertexAvgCentroid( const RealT* const RESTRICT x, 
+                        const RealT* const RESTRICT y, 
+                        const RealT* const RESTRICT z, 
                         const int numVert,
-                        real& cX, real& cY, real& cZ );
+                        RealT& cX, RealT& cY, RealT& cZ );
 
 /*!
  *
@@ -226,10 +226,10 @@ void VertexAvgCentroid( const real* const RESTRICT x,
  * \pre length(x) >= numVert
  *
  */
-void VertexAvgCentroid( const real* const RESTRICT x, 
+void VertexAvgCentroid( const RealT* const RESTRICT x, 
                         const int dim,
                         const int numVert,
-                        real& cX, real& cY, real& cZ );
+                        RealT& cX, RealT& cY, RealT& cZ );
 
 /*!
  *
@@ -245,10 +245,10 @@ void VertexAvgCentroid( const real* const RESTRICT x,
  * \pre length(x) >= numVert
  *
  */
-void PolyAreaCentroid( const real* const RESTRICT x, 
+void PolyAreaCentroid( const RealT* const RESTRICT x, 
                        const int dim,
                        const int numVert,
-                       real& cX, real& cY, real& cZ );
+                       RealT& cX, RealT& cY, RealT& cZ );
 
 /*!
  *
@@ -263,10 +263,10 @@ void PolyAreaCentroid( const real* const RESTRICT x,
  * \pre length(x) >= numVert
  *
  */
-void PolyCentroid( const real* const RESTRICT x, 
-                   const real* const RESTRICT y,
+void PolyCentroid( const RealT* const RESTRICT x, 
+                   const RealT* const RESTRICT y,
                    const int numVert,
-                   real& cX, real& cY );
+                   RealT& cX, RealT& cY );
 
 /*!
  *
@@ -295,16 +295,16 @@ void PolyCentroid( const real* const RESTRICT x,
  *  this memory when necessary.
  *
  */
-FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA, 
-                                     const real* const RESTRICT yA, 
+FaceGeomError Intersection2DPolygon( const RealT* const RESTRICT xA, 
+                                     const RealT* const RESTRICT yA, 
                                      const int numVertexA, 
-                                     const real* const RESTRICT xB, 
-                                     const real* const RESTRICT yB, 
+                                     const RealT* const RESTRICT xB, 
+                                     const RealT* const RESTRICT yB, 
                                      const int numVertexB,
-                                     real posTol, real lenTol, 
-                                     real* RESTRICT * RESTRICT polyX, 
-                                     real* RESTRICT * RESTRICT polyY, 
-                                     int& numPolyVert, real& area,
+                                     RealT posTol, RealT lenTol, 
+                                     RealT* RESTRICT * RESTRICT polyX, 
+                                     RealT* RESTRICT * RESTRICT polyY, 
+                                     int& numPolyVert, RealT& area,
                                      bool orientCheck=true );
                            
 /*!
@@ -318,8 +318,8 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
  * \return true if CCW orientation, false otherwise
  *
  */
-bool CheckPolyOrientation( const real* const RESTRICT x, 
-                           const real* const RESTRICT y, 
+bool CheckPolyOrientation( const RealT* const RESTRICT x, 
+                           const RealT* const RESTRICT y, 
                            const int numVertex );
 
 /*!
@@ -346,10 +346,10 @@ bool CheckPolyOrientation( const real* const RESTRICT x,
  *  vertex averaged centroid. This routine then calls a routine to check if the 
  *  point lies in either of those two triangles.
  */
-bool Point2DInFace( const real xPoint, const real yPoint, 
-                    const real* const RESTRICT xPoly, 
-                    const real* const RESTRICT yPoly,
-                    const real xC, const real yC, 
+bool Point2DInFace( const RealT xPoint, const RealT yPoint, 
+                    const RealT* const RESTRICT xPoly, 
+                    const RealT* const RESTRICT yPoly,
+                    const RealT xC, const RealT yC, 
                     const int numPolyVert );
 
 /*!
@@ -369,9 +369,9 @@ bool Point2DInFace( const real xPoint, const real yPoint,
  *  determines if those coordinates are inside or out 
  *  (http://blackpawn.com/texts/pointinpoly/default.html);
  */
-bool Point2DInTri( const real xp, const real yp, 
-                   const real* const RESTRICT xTri, 
-                   const real* const RESTRICT yTri );
+bool Point2DInTri( const RealT xp, const RealT yp, 
+                   const RealT* const RESTRICT xTri, 
+                   const RealT* const RESTRICT yTri );
 
 /*!
  * \brief computes the area of a polygon
@@ -384,8 +384,8 @@ bool Point2DInTri( const real xp, const real yp,
  *
  * \note breaks the polygon into triangles and sums the areas of the triangles
  */
-real Area2DPolygon( const real* const RESTRICT x, 
-                    const real* const RESTRICT y, 
+RealT Area2DPolygon( const RealT* const RESTRICT x, 
+                    const RealT* const RESTRICT y, 
                     const int numPolyVert );
 
 /*!
@@ -398,9 +398,9 @@ real Area2DPolygon( const real* const RESTRICT x,
  * \return area of triangle
  *
  */
-real Area3DTri( const real* const RESTRICT x,
-                const real* const RESTRICT y,
-                const real* const RESTRICT z );
+RealT Area3DTri( const RealT* const RESTRICT x,
+                const RealT* const RESTRICT y,
+                const RealT* const RESTRICT z );
 
 /*!
  *
@@ -438,10 +438,10 @@ real Area3DTri( const real* const RESTRICT x,
  *  vertices tagged as interior to one of the polygons may render a degenerate overlap 
  *  polygon and must be checked.
  */
-bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, const real yB1,
-                            const real xA2, const real yA2, const real xB2, const real yB2,
-                            const bool* const RESTRICT interior, real& x, real& y, 
-                            bool& duplicate, const real tol );
+bool SegmentIntersection2D( const RealT xA1, const RealT yA1, const RealT xB1, const RealT yB1,
+                            const RealT xA2, const RealT yA2, const RealT xB2, const RealT yB2,
+                            const bool* const RESTRICT interior, RealT& x, RealT& y, 
+                            bool& duplicate, const RealT tol );
 
 /*!
  *
@@ -467,9 +467,9 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
  *  xnew and ynew values are set to x and y, respectively, and numNewPoints 
  *  equals numPoints.
  */
-FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y, 
-                             const int numPoints, const real tol, 
-                             real* RESTRICT * RESTRICT xnew, real* RESTRICT * RESTRICT ynew, 
+FaceGeomError CheckPolySegs( const RealT* const RESTRICT x, const RealT* const RESTRICT y, 
+                             const int numPoints, const RealT tol, 
+                             RealT* RESTRICT * RESTRICT xnew, RealT* RESTRICT * RESTRICT ynew, 
                              int& numNewPoints );
 
 /*!
@@ -486,7 +486,7 @@ FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RES
  * \note This routine takes the unordered set of vertex coordinates of a star convex 
  *  polygon and orders the vertices in counter-clockwise orientation.
  */
-void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numPoints );
+void PolyReorder( RealT* const RESTRICT x, RealT* const RESTRICT y, const int numPoints );
 
 /*!
  *
@@ -499,7 +499,7 @@ void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numP
  * \pre length(x), length(y) >= numPoints
  *
  */
-void PolyReverse( real* const RESTRICT x, real* const RESTRICT y, const int numPoints );
+void PolyReverse( RealT* const RESTRICT x, RealT* const RESTRICT y, const int numPoints );
 
 /*!
  *
@@ -517,13 +517,13 @@ void PolyReverse( real* const RESTRICT x, real* const RESTRICT y, const int numP
  * \pre length(x), length(y), length(z) >= numPoints
  *
  */
-void PolyReorderWithNormal( real* const RESTRICT x,
-                            real* const RESTRICT y,
-                            real* const RESTRICT z,
+void PolyReorderWithNormal( RealT* const RESTRICT x,
+                            RealT* const RESTRICT y,
+                            RealT* const RESTRICT z,
                             const int numPoints,
-                            const real nX,
-                            const real nY,
-                            const real nZ );
+                            const RealT nX,
+                            const RealT nY,
+                            const RealT nZ );
 
 /*!
  * \brief computes the intersection point between a line and plane
@@ -546,11 +546,11 @@ void PolyReorderWithNormal( real* const RESTRICT x,
  * \param[in,out] inPlane true if segment lies in the plane
  *
  */
-bool LinePlaneIntersection( const real xA, const real yA, const real zA,
-                            const real xB, const real yB, const real zB,
-                            const real xP, const real yP, const real zP,
-                            const real nX, const real nY, const real nZ,
-                            real& x, real& y, real& z, bool& inPlane );
+bool LinePlaneIntersection( const RealT xA, const RealT yA, const RealT zA,
+                            const RealT xB, const RealT yB, const RealT zB,
+                            const RealT xP, const RealT yP, const RealT zP,
+                            const RealT nX, const RealT nY, const RealT nZ,
+                            RealT& x, RealT& y, RealT& z, bool& inPlane );
 
 /*!
  * \brief computes the line segment that is the intersection between two 
@@ -586,11 +586,11 @@ bool LinePlaneIntersection( const real xA, const real yA, const real zA,
  * segment is controlled by each plane's input reference points.
  *
  */
-bool PlanePlaneIntersection( const real x1, const real y1, const real z1,
-                             const real x2, const real y2, const real z2,
-                             const real nX1, const real nY1, const real nZ1,
-                             const real nX2, const real nY2, const real nZ2,
-                             real& x, real& y, real& z );
+bool PlanePlaneIntersection( const RealT x1, const RealT y1, const RealT z1,
+                             const RealT x2, const RealT y2, const RealT z2,
+                             const RealT nX1, const RealT nY1, const RealT nZ1,
+                             const RealT nX2, const RealT nY2, const RealT nZ2,
+                             RealT& x, RealT& y, RealT& z );
 
 /*!
  *
@@ -605,8 +605,8 @@ bool PlanePlaneIntersection( const real x1, const real y1, const real z1,
  * \pre this routine assumes that the original coordinates are in clockwise ordering
  *
  */
-void Vertex2DOrderToCCW( const real* const RESTRICT x, const real* const RESTRICT y,
-                         real* RESTRICT xTemp, real* RESTRICT yTemp,
+void Vertex2DOrderToCCW( const RealT* const RESTRICT x, const RealT* const RESTRICT y,
+                         RealT* RESTRICT xTemp, RealT* RESTRICT yTemp,
                          const int numVert );
 
 }

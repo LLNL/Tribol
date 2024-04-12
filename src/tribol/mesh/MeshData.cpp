@@ -252,19 +252,19 @@ MeshData::MeshData()
 //------------------------------------------------------------------------------
 void MeshData::allocateArrays(int dimension)
 {
-  m_nX = new   real[m_numCells];
-  m_nY = new   real[m_numCells];
-  m_cX = new   real[m_numCells];
-  m_cY = new   real[m_numCells];
-  m_area = new real[m_numCells];
-  m_faceRadius = new real[m_numCells];
+  m_nX = new   RealT[m_numCells];
+  m_nY = new   RealT[m_numCells];
+  m_cX = new   RealT[m_numCells];
+  m_cY = new   RealT[m_numCells];
+  m_area = new RealT[m_numCells];
+  m_faceRadius = new RealT[m_numCells];
   m_nZ = nullptr;
   m_cZ = nullptr;
 
   if (dimension == 3)
   {
-    m_nZ = new real[m_numCells];
-    m_cZ = new real[m_numCells];
+    m_nZ = new RealT[m_numCells];
+    m_cZ = new RealT[m_numCells];
   }
 }
 
@@ -355,8 +355,8 @@ void MeshData::deallocateArrays()
 bool MeshData::computeFaceData( int const dim )
 {
   bool faceDataOk = true;
-  real fac = 1.0 / m_numNodesPerCell;
-  constexpr real nrmlMagTol = 1.0e-15;
+  RealT fac = 1.0 / m_numNodesPerCell;
+  constexpr RealT nrmlMagTol = 1.0e-15;
 
   // loop over all cells in the mesh
   for (int i=0; i<m_numCells; ++i) {
@@ -399,8 +399,8 @@ bool MeshData::computeFaceData( int const dim )
         auto nodeIndex = m_numNodesPerCell * i;
         auto nodeId = m_connectivity[ nodeIndex ];
         auto nextNodeId = m_connectivity[ nodeIndex+1 ];
-        real lambdaX = m_positionX[ nextNodeId ] - m_positionX[ nodeId ];
-        real lambdaY = m_positionY[ nextNodeId ] - m_positionY[ nodeId ];
+        RealT lambdaX = m_positionX[ nextNodeId ] - m_positionX[ nodeId ];
+        RealT lambdaY = m_positionY[ nextNodeId ] - m_positionY[ nodeId ];
    
         m_nX[i] = lambdaY;
         m_nY[i] = -lambdaX;
@@ -440,9 +440,9 @@ bool MeshData::computeFaceData( int const dim )
         // edge's first node and the face edge's two nodes
 
         // declare triangle edge vector components and normal components
-        real vX1, vY1, vZ1;
-        real vX2, vY2, vZ2;
-        real nX, nY, nZ; 
+        RealT vX1, vY1, vZ1;
+        RealT vX2, vY2, vZ2;
+        RealT nX, nY, nZ; 
 
         // loop over m_numNodesPerCell-1 cell edges and compute pallet normal
         for (int j=0; j<(m_numNodesPerCell-1); ++j) 
@@ -537,17 +537,17 @@ bool MeshData::computeFaceData( int const dim )
 } // end MeshData::computeFaceData()
 
 //------------------------------------------------------------------------------
-real MeshData::computeFaceRadius( int faceId ) 
+RealT MeshData::computeFaceRadius( int faceId ) 
 {
    // loop over nodes of the face and determine the maximum 
    // "link" vector from the ith node to the face center
-   real sqrRadius = 0.0;
+   RealT sqrRadius = 0.0;
    for (int i=0; i<m_numNodesPerCell; ++i) {
       const int nodeId = getFaceNodeId(faceId, i);
-      real lvx = m_positionX[nodeId] - m_cX[faceId];
-      real lvy = m_positionY[nodeId] - m_cY[faceId];
+      RealT lvx = m_positionX[nodeId] - m_cX[faceId];
+      RealT lvy = m_positionY[nodeId] - m_cY[faceId];
 
-      real lvz;
+      RealT lvz;
       if (m_positionZ != nullptr) { // for 3D
          lvz = m_positionZ[nodeId] - m_cZ[faceId];
       }
@@ -555,7 +555,7 @@ real MeshData::computeFaceRadius( int faceId )
          lvz = 0.0;
       }
 
-      real sqrLinkMag = lvx * lvx + lvy * lvy + lvz * lvz;   
+      RealT sqrLinkMag = lvx * lvx + lvy * lvy + lvz * lvz;   
      
       if (sqrLinkMag > sqrRadius) {
          sqrRadius = sqrLinkMag;
@@ -567,29 +567,29 @@ real MeshData::computeFaceRadius( int faceId )
 } // end MeshData::computeFaceRadius()
 
 //------------------------------------------------------------------------------
-real MeshData::computeEdgeLength( int faceId ) 
+RealT MeshData::computeEdgeLength( int faceId ) 
 {
    // compute the length of the edge as the magnitude of 
    // the vector defined between the two edge vertices
    const int nodeId1 = getFaceNodeId( faceId, 0 );
    const int nodeId2 = getFaceNodeId( faceId, 1 );
-   real lvx = m_positionX[nodeId2] - m_positionX[nodeId1];
-   real lvy = m_positionY[nodeId2] - m_positionY[nodeId1];
+   RealT lvx = m_positionX[nodeId2] - m_positionX[nodeId1];
+   RealT lvy = m_positionY[nodeId2] - m_positionY[nodeId1];
 
-   real len = magnitude( lvx, lvy );
+   RealT len = magnitude( lvx, lvy );
 
    return len;
 
 } // end MeshData::computeEdgeLength()
 
 //------------------------------------------------------------------------------
-void MeshData::getFaceCoords( int const faceId, real * coords )
+void MeshData::getFaceCoords( int const faceId, RealT * coords )
 {
    int dim =  (m_positionZ != nullptr) ? 3 : 2;
 
-   for (IndexType a=0; a<m_numNodesPerCell; ++a)
+   for (IndexT a=0; a<m_numNodesPerCell; ++a)
    {
-     IndexType nodeId = m_connectivity[ faceId*m_numNodesPerCell + a ];
+     IndexT nodeId = m_connectivity[ faceId*m_numNodesPerCell + a ];
 
      coords[dim * a]     = m_positionX[ nodeId ];
      coords[dim * a + 1] = m_positionY[ nodeId ];
@@ -605,7 +605,7 @@ void MeshData::getFaceCoords( int const faceId, real * coords )
 }  // end MeshData::getFaceCoords()
 
 //------------------------------------------------------------------------------
-void MeshData::getFaceNodalVelocities( int const faceId, real * nodalVel )
+void MeshData::getFaceNodalVelocities( int const faceId, RealT * nodalVel )
 {
    if (m_velX == nullptr || m_velY == nullptr)
    {
@@ -615,9 +615,9 @@ void MeshData::getFaceNodalVelocities( int const faceId, real * nodalVel )
 
    int dim =  (m_velZ != nullptr) ? 3 : 2;
 
-   for (IndexType a=0; a<m_numNodesPerCell; ++a)
+   for (IndexT a=0; a<m_numNodesPerCell; ++a)
    {
-     IndexType nodeId = m_connectivity[ faceId*m_numNodesPerCell + a ];
+     IndexT nodeId = m_connectivity[ faceId*m_numNodesPerCell + a ];
 
      nodalVel[dim * a]     = m_velX[ nodeId ];
      nodalVel[dim * a + 1] = m_velY[ nodeId ];
@@ -651,21 +651,21 @@ void MeshData::computeNodalNormals( int const dim )
       if (this->m_node_nX != nullptr)
       {
          delete[] m_node_nX;
-         m_node_nX = new real [size];
+         m_node_nX = new RealT [size];
       }
       else
       {
-         m_node_nX = new real [size];
+         m_node_nX = new RealT [size];
       }
 
       if (this->m_node_nY != nullptr)
       {
          delete[] m_node_nY;
-         m_node_nY = new real [size];
+         m_node_nY = new RealT [size];
       }
       else
       {
-         m_node_nY = new real [size];
+         m_node_nY = new RealT [size];
       }
 
       if (dim == 3)
@@ -673,11 +673,11 @@ void MeshData::computeNodalNormals( int const dim )
          if (this->m_node_nZ != nullptr)
          {
             delete[] m_node_nZ;
-            m_node_nZ = new real [size];
+            m_node_nZ = new RealT [size];
          }
          else 
          {
-            m_node_nZ = new real [size];
+            m_node_nZ = new RealT [size];
          }
 
          // initialize z component
@@ -707,7 +707,7 @@ void MeshData::computeNodalNormals( int const dim )
          // the mesh nodal normal array. If it is not, then nodeId will access some other
          // piece of memory and there may be a memory issue when numFaceNrmlsToNodes is deleted
          // at the end of this routine.
-         integer nodeId = this->m_connectivity[ this->m_numNodesPerCell * i + j ]; 
+         int nodeId = this->m_connectivity[ this->m_numNodesPerCell * i + j ]; 
          m_node_nX[ nodeId ] += this->m_nX[ i ]; // m_nX[i] is the ith face normal x-component
          m_node_nY[ nodeId ] += this->m_nY[ i ]; // see above...
 
@@ -723,7 +723,7 @@ void MeshData::computeNodalNormals( int const dim )
          // repeat loop over cell nodes for z-component
          for (int k=0; k<this->m_numNodesPerCell; ++k)
          {
-            integer nodeId = this->m_connectivity[ this->m_numNodesPerCell * i + k ]; 
+            int nodeId = this->m_connectivity[ this->m_numNodesPerCell * i + k ]; 
             m_node_nZ[ nodeId ] += this->m_nZ[ i ];
          } // end loop over cell nodes
 
@@ -752,7 +752,7 @@ void MeshData::computeNodalNormals( int const dim )
       {
          for (int i=0; i<this->m_lengthNodalData; ++i)
          {
-            real mag = magnitude( m_node_nX[i], m_node_nY[i], m_node_nZ[i] );
+            RealT mag = magnitude( m_node_nX[i], m_node_nY[i], m_node_nZ[i] );
             m_node_nX[ i ] /= mag;
             m_node_nY[ i ] /= mag;
             m_node_nZ[ i ] /= mag;
@@ -762,7 +762,7 @@ void MeshData::computeNodalNormals( int const dim )
       {
          for (int i=0; i<this->m_lengthNodalData; ++i)
          {
-            real mag = magnitude( m_node_nX[i], m_node_nY[i] );
+            RealT mag = magnitude( m_node_nX[i], m_node_nY[i] );
             m_node_nX[ i ] /= mag;
             m_node_nY[ i ] /= mag;
          }
@@ -775,7 +775,7 @@ void MeshData::computeNodalNormals( int const dim )
 } // end MeshData::computeNodalNormals()
 
 //------------------------------------------------------------------------------
-void MeshData::getFaceNormal( int const faceId, int const dim, real * nrml )
+void MeshData::getFaceNormal( int const faceId, int const dim, RealT * nrml )
 {
    nrml[0] = this->m_nX[ faceId ];
    nrml[1] = this->m_nY[ faceId ];

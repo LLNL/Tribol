@@ -42,10 +42,10 @@
 #include <iomanip>
 #include <fstream>
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 namespace axom_fs = axom::utilities::filesystem;
 
-void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, double tol )
+void TestMortarWeights( tribol::CouplingScheme const * cs, RealT exact_area, RealT tol )
 {
    ////////////////////////////////////////////////////////////////////////
    //
@@ -53,8 +53,8 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
    //
    ////////////////////////////////////////////////////////////////////////
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::IndexType const mortarId = cs->getMeshId1();
-   //tribol::IndexType const nonmortarId = cs->getMeshId2();
+   tribol::IndexT const mortarId = cs->getMeshId1();
+   //tribol::IndexT const nonmortarId = cs->getMeshId2();
 
    tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    //tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
@@ -62,7 +62,7 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
    // get CSR weights data
    int *I = nullptr;
    int *J = nullptr;
-   double *wts = nullptr;
+   RealT *wts = nullptr;
    int nOffsets = 0;
    int nNonZeros = 0;
    int csr_err = GetSimpleCouplingCSR( &I, &J, &wts, &nOffsets, &nNonZeros );
@@ -80,7 +80,7 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
 
    // int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
 
-   double area = 0.;
+   RealT area = 0.;
    int numTotalNodes = static_cast<tribol::MortarData*>( cs->getMethodData() )->m_numTotalNodes;
    for (int a=0; a<numTotalNodes; ++a)
    {
@@ -101,7 +101,7 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
 
    SLIC_DEBUG("area: " << area << ".");
 
-   double diff = std::abs( area - exact_area );
+   RealT diff = std::abs( area - exact_area );
    EXPECT_LE( diff, tol );
 
 } // end TestMortarWeights()
@@ -204,21 +204,21 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
    int* ixs_data   = this->v_ixs.GetData();
-   double* xm_data = this->v_xm.GetData();
-   double* ym_data = this->v_ym.GetData();
-   double* zm_data = this->v_zm.GetData();
-   double* xs_data = this->v_xs.GetData();
-   double* ys_data = this->v_ys.GetData();
-   double* zs_data = this->v_zs.GetData();
+   RealT* xm_data = this->v_xm.GetData();
+   RealT* ym_data = this->v_ym.GetData();
+   RealT* zm_data = this->v_zm.GetData();
+   RealT* xs_data = this->v_xs.GetData();
+   RealT* ys_data = this->v_ys.GetData();
+   RealT* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
    // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
-   double* gaps, * pressures;
+   RealT* gaps, * pressures;
    int numTotalNodes = this->lengthNonmortarNodes;
-   gaps = new double[ numTotalNodes ];
-   pressures = new double[ numTotalNodes ];
+   gaps = new RealT[ numTotalNodes ];
+   pressures = new RealT[ numTotalNodes ];
 
    // initialize arrays
    for (int i=0; i<numTotalNodes; ++i)
@@ -250,7 +250,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
                         gaps,
                         pressures);
 
-   double dt = 1.0;
+   RealT dt = 1.0;
    err = Update( dt );
 
    EXPECT_EQ(err, 0);
@@ -318,21 +318,21 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
    int* ixs_data   = this->v_ixs.GetData();
-   double* xm_data = this->v_xm.GetData();
-   double* ym_data = this->v_ym.GetData();
-   double* zm_data = this->v_zm.GetData();
-   double* xs_data = this->v_xs.GetData();
-   double* ys_data = this->v_ys.GetData();
-   double* zs_data = this->v_zs.GetData();
+   RealT* xm_data = this->v_xm.GetData();
+   RealT* ym_data = this->v_ym.GetData();
+   RealT* zm_data = this->v_zm.GetData();
+   RealT* xs_data = this->v_xs.GetData();
+   RealT* ys_data = this->v_ys.GetData();
+   RealT* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
    // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
-   double* gaps, * pressures;
+   RealT* gaps, * pressures;
    int numTotalNodes = this->lengthNonmortarNodes;
-   gaps = new double[ numTotalNodes ];
-   pressures = new double[ numTotalNodes ];
+   gaps = new RealT[ numTotalNodes ];
+   pressures = new RealT[ numTotalNodes ];
 
    // initialize arrays
    for (int i=0; i<numTotalNodes; ++i)
@@ -364,7 +364,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
                         gaps,
                         pressures);
 
-   double dt = 1.0;
+   RealT dt = 1.0;
    err = Update( dt );
 
    EXPECT_EQ(err, 0);
@@ -432,21 +432,21 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
    int* ixs_data   = this->v_ixs.GetData();
-   double* xm_data = this->v_xm.GetData();
-   double* ym_data = this->v_ym.GetData();
-   double* zm_data = this->v_zm.GetData();
-   double* xs_data = this->v_xs.GetData();
-   double* ys_data = this->v_ys.GetData();
-   double* zs_data = this->v_zs.GetData();
+   RealT* xm_data = this->v_xm.GetData();
+   RealT* ym_data = this->v_ym.GetData();
+   RealT* zm_data = this->v_zm.GetData();
+   RealT* xs_data = this->v_xs.GetData();
+   RealT* ys_data = this->v_ys.GetData();
+   RealT* zs_data = this->v_zs.GetData();
 
    // set gaps and pressure arrays. Note that for this test 
    // the length of the nonmortar nodes array is the same as the mortar, 
    // which means that it is the total number of nodes in the whole 
    // mesh
-   double* gaps, * pressures;
+   RealT* gaps, * pressures;
    int numTotalNodes = this->lengthNonmortarNodes;
-   gaps = new double[ numTotalNodes ];
-   pressures = new double[ numTotalNodes ];
+   gaps = new RealT[ numTotalNodes ];
+   pressures = new RealT[ numTotalNodes ];
 
    // initialize arrays
    for (int i=0; i<numTotalNodes; ++i)
@@ -478,7 +478,7 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
                         gaps,
                         pressures);
 
-   double dt = 1.0;
+   RealT dt = 1.0;
    err = Update( dt );
 
    EXPECT_EQ(err, 0);
