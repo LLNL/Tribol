@@ -7,7 +7,6 @@
 #include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/common/Parameters.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/MeshData.hpp"

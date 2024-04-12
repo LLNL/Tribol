@@ -40,13 +40,13 @@ void initialize( int dimension, CommT comm );
 /*!
  * \brief Sets the penalty enforcement option
  *
- * \param [in] couplingSchemeIndex coupling scheme index
+ * \param [in] cs_id coupling scheme id
  * \param [in] pen_enfrc_option enum with the type of penalty enforcement to be used
  * \param [in] kinematic_calc kinematic penalty stiffness calculation option
  * \param [in] rate_calc rate penalty stiffness calculation option
  * \pre user must register coupling scheme prior to setting penalty enforcement options for that scheme
  */
-void setPenaltyOptions( int couplingSchemeIndex, 
+void setPenaltyOptions( IndexT cs_id, 
                         PenaltyConstraintType pen_enfrc_option,
                         KinematicPenaltyCalculation kinematic_calc,
                         RatePenaltyCalculation rate_calc=NO_RATE_PENALTY );
@@ -131,12 +131,12 @@ void setPenaltyScale( int meshId, RealT scale );
 /*!
  * \brief Sets the Lagrange multiplier enforcement options
  *
- * \param [in] couplingSchemeIndex the index for the coupling scheme
+ * \param [in] cs_id coupling scheme id
  * \param [in] evalMode evaluation mode (see enum definition)
  * \param [in] sparseMode options for how the sparse matrix is initialized
  *
  */
-void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode evalMode,
+void setLagrangeMultiplierOptions( IndexT cs_id, ImplicitEvalMode evalMode,
                                    SparseMode sparseMode=SparseMode::MFEM_LINKED_LIST );
 
 /*!
@@ -160,12 +160,12 @@ void setOutputDirectory( const std::string& dir );
 
 /*!
  * \brief Optionally sets the logging level per coupling scheme
- * \param [in] csId coupling scheme id
+ * \param [in] cs_id coupling scheme id
  * \param [in] log_level the desired logging level 
  *
  * \note this overrides the logging level set in initialize().
  */
-void setLoggingLevel( int csId, LoggingLevel log_level );
+void setLoggingLevel( IndexT cs_id, LoggingLevel log_level );
 
 /*!
  * \brief Enable the contact timestep vote 
@@ -277,7 +277,7 @@ void registerNodalResponse( int meshId,
  * \brief Get mfem sparse matrix for method specific Jacobian matrix output 
  *
  * \param [in,out] sMat double pointer to mfem sparse matrix object
- * \param [in] csId Coupling scheme id
+ * \param [in] cs_id coupling scheme id
  *
  * \return 0 for success, nonzero for failure 
  *
@@ -289,7 +289,7 @@ void registerNodalResponse( int meshId,
  *       which assumes contiguous and unique node ids between mortar and 
  *       nonmortar meshes registered in a given coupling scheme.
  */
-int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
+int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, IndexT cs_id );
 
 /*!
  * \brief Gets CSR storage arrays for method specific Jacobian matrix output
@@ -297,7 +297,7 @@ int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
  * \param [out] I pointer to row offset integer array
  * \param [out] J pointer to column index array
  * \param [out] vals pointer to nonzero value array
- * \param [in]  csId coupling scheme id
+ * \param [in]  cs_id coupling scheme id
  * \param [out] n_offsets optional pointer to the number of offsets (size of I array)
  * \param [out] n_nonzero optional pointer to the number of non zeros 
  *                        (size of J and vals arrays)
@@ -312,8 +312,12 @@ int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId );
  * \return 0 success (if CSR data exists and pointed to), nonzero for failure
  *
  */
-int getJacobianCSRMatrix( int** I, int** J, RealT** vals, int csId,
-                  int* n_offsets = nullptr, int* n_nonzero = nullptr );
+int getJacobianCSRMatrix( int** I, 
+                          int** J,
+                          RealT** vals,
+                          IndexT cs_id,
+                          int* n_offsets = nullptr,
+                          int* n_nonzero = nullptr );
 
 /*!
  * \brief Get element Jacobian matrix contributions for a given block
@@ -345,7 +349,7 @@ int getJacobianCSRMatrix( int** I, int** J, RealT** vals, int csId,
  * not be unique, in general.  For instance, if a nonmortar face interacts with
  * multiple mortar faces and vice-versa.
  *
- * \param [in]  csId Coupling scheme id
+ * \param [in]  cs_id coupling scheme id
  * \param [in]  row_block Row Jacobian block (MORTAR, NONMORTAR, or 
  * LAGRANGE_MULTIPLIER)
  * \param [in]  col_block Column Jacobian block (MORTAR, NONMORTAR, or 
@@ -361,7 +365,7 @@ int getJacobianCSRMatrix( int** I, int** J, RealT** vals, int csId,
  *
  * \return 0 success (if Jacobians exist), nonzero for failure
  */
-int getElementBlockJacobians( int csId, 
+int getElementBlockJacobians( IndexT cs_id, 
                               BlockSpace row_block,
                               BlockSpace col_block,
                               const ArrayT<int>** row_elem_idx,
@@ -413,9 +417,9 @@ void registerIntElementField( int meshId,
 /*!
  * \brief Registers a contact coupling scheme between two contact surfaces.
  *
- * \param [in] couplingSchemeIndex Index to use for this coupling scheme.
+ * \param [in] cs_id   coupling scheme id
  * \param [in] meshId1 Id of the first contact surface.
- * \param [in] mehsId2 Id of the second contact surface.
+ * \param [in] meshId2 Id of the second contact surface.
  * \param [in] contact_mode
  * \param [in] contact_case
  * \param [in] contact_method
@@ -426,9 +430,9 @@ void registerIntElementField( int meshId,
  * \note A mesh for the given contact surface must have already been registered
  *  prior to calling this method.
  */
-void registerCouplingScheme( int couplingSchemeIndex,
-                             int meshId1,
-                             int meshId2,
+void registerCouplingScheme( IndexT cs_id,
+                             IndexT meshId1,
+                             IndexT meshId2,
                              int contact_mode,
                              int contact_case,
                              int contact_method,
@@ -441,8 +445,7 @@ void registerCouplingScheme( int couplingSchemeIndex,
 /*!
  * \brief Sets the interacting cell-pairs manually.
  *
- * \param [in] couplingSchemeIndex The index of the coupling scheme to which
- * we are associating these interface pairs
+ * \param [in] cs_id      coupling scheme id
  * \param [in] numPairs   number of cell-pairs to be registered 
  * \param [in] meshId1    meshId of the first cell in the pair list
  * \param [in] pairType1  cell type of the first cell in the pair list
@@ -452,7 +455,7 @@ void registerCouplingScheme( int couplingSchemeIndex,
  * \param [in] pairIndex2 index of the second cell in the pair list
  *
  */
-void setInterfacePairs( int couplingSchemeIndex,
+void setInterfacePairs( IndexT cs_id,
                         IndexT numPairs,
                         IndexT const * meshId1,
                         IndexT const * pairType1,
@@ -479,7 +482,7 @@ int update( int cycle, RealT t, RealT &dt );
 /*!
  * \brief Finalizes
  */
-void finalize( );
+void finalize();
 
 /// @}
 

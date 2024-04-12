@@ -12,7 +12,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/MeshManager.hpp"
@@ -258,7 +257,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
    TestMortarWeights( couplingScheme, 2.256, 1.e-3 );
 
 }
@@ -372,7 +371,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
    TestMortarWeights( couplingScheme, 2.260, 1.e-1 );
 
 }
@@ -486,7 +485,7 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
    TestMortarWeights( couplingScheme, 20., 1.e-3 );
 
 }

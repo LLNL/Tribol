@@ -12,7 +12,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/MeshManager.hpp"
@@ -196,7 +195,7 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 36 );
 }
@@ -310,7 +309,7 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 36 );
 
@@ -425,7 +424,7 @@ TEST_F( MortarGeomTest, mortar_ironing )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    tribol::IndexT const mortarId = couplingScheme->getMeshId1();
    //tribol::IndexT const nonmortarId = couplingScheme->getMeshId2();

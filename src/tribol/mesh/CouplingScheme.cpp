@@ -310,7 +310,7 @@ void CouplingSchemeInfo::printEnforcementInfo()
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-CouplingScheme::CouplingScheme( int couplingSchemeId, 
+CouplingScheme::CouplingScheme( IndexT cs_id, 
                                 int meshId1,
                                 int meshId2,
                                 int contact_mode,
@@ -319,7 +319,7 @@ CouplingScheme::CouplingScheme( int couplingSchemeId,
                                 int contact_model,
                                 int enforcement_method,
                                 int binning_method )
-   : m_id                   ( couplingSchemeId ) 
+   : m_id                   ( cs_id ) 
    , m_meshId1              ( meshId1 )
    , m_meshId2              ( meshId2 )
    , m_numTotalNodes        ( 0 )
@@ -367,13 +367,6 @@ CouplingScheme::CouplingScheme( int couplingSchemeId,
   m_interfacePairs = new InterfacePairs( );
 
 } // end CouplingScheme::CouplingScheme()
-
-//------------------------------------------------------------------------------
-CouplingScheme::~CouplingScheme()
-{
-  delete m_interfacePairs;
-  delete m_methodData;
-}
 
 //------------------------------------------------------------------------------
 bool CouplingScheme::isValidCouplingScheme()
@@ -1732,5 +1725,7 @@ void CouplingScheme::printPairReportingData()
                  "% of total number of binned interface pairs.");
 }
 //------------------------------------------------------------------------------
+template class DataManager<CouplingScheme>;
+
 
 } /* namespace tribol */

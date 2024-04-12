@@ -10,7 +10,6 @@
 #include "tribol/types.hpp"
 
 #include "tribol/mesh/CouplingScheme.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/MeshManager.hpp"
 #include "tribol/mesh/MfemData.hpp"
@@ -98,19 +97,16 @@ void initialize( int dimension, CommT comm )
 }
 
 //------------------------------------------------------------------------------
-void setPenaltyOptions( int couplingSchemeIndex, PenaltyConstraintType pen_enfrc_option,
+void setPenaltyOptions( IndexT cs_id, PenaltyConstraintType pen_enfrc_option,
                         KinematicPenaltyCalculation kinematic_calc,
                         RatePenaltyCalculation rate_calc )
 {
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
+   auto couplingScheme = CouplingSchemeManager::getInstance().findData(cs_id);
 
    // check to see if coupling scheme exists
-   SLIC_ERROR_ROOT_IF( !csManager.hasCoupling( couplingSchemeIndex ), 
+   SLIC_ERROR_ROOT_IF( !couplingScheme, 
                        "tribol::setPenaltyOptions(): call tribol::registerCouplingScheme() " <<
                        "prior to calling this routine." );
-
-   // get access to coupling scheme
-   CouplingScheme* couplingScheme  = csManager.getCoupling(couplingSchemeIndex);
 
    // get access to struct on coupling scheme holding penalty options
    EnforcementOptions& enforcement_options = couplingScheme->getEnforcementOptions();
@@ -224,7 +220,8 @@ void setContactAreaFrac( RealT frac )
       frac = 1.e-8;
    }
    parameters.overlap_area_frac = frac;
-}
+
+} // end setPenaltyScale()
 
 //------------------------------------------------------------------------------
 void setPenaltyScale( int meshId, RealT scale )
@@ -253,17 +250,15 @@ void setPenaltyScale( int meshId, RealT scale )
 } // end setPenaltyScale()
 
 //------------------------------------------------------------------------------
-void setLagrangeMultiplierOptions( int couplingSchemeIndex, ImplicitEvalMode evalMode, 
+void setLagrangeMultiplierOptions( IndexT cs_id, ImplicitEvalMode evalMode, 
                                    SparseMode sparseMode )
 {
    // get access to coupling scheme
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
+   auto couplingScheme = CouplingSchemeManager::getInstance().findData(cs_id);
 
-   SLIC_ERROR_ROOT_IF( !csManager.hasCoupling( couplingSchemeIndex ), 
+   SLIC_ERROR_ROOT_IF( !couplingScheme, 
                        "tribol::setLagrangeMultiplierOptions(): call tribol::registerCouplingScheme() " <<
                        "prior to calling this routine." );
-
-   CouplingScheme* couplingScheme  = csManager.getCoupling(couplingSchemeIndex);
 
    // get access to struct on coupling scheme holding penalty options
    EnforcementOptions& enforcement_options = couplingScheme->getEnforcementOptions();
@@ -304,14 +299,16 @@ void setPlotCycleIncrement( int incr )
 {
    parameters_t & parameters = parameters_t::getInstance();
    parameters.vis_cycle_incr = incr;
-}
+
+} // end setPlotCycleIncrement()
 
 //------------------------------------------------------------------------------
 void setPlotOptions( enum VisType v_type )
 {
    parameters_t & parameters = parameters_t::getInstance();
    parameters.vis_type = v_type;
-}
+
+} // end setPlotOptions()
 
 //------------------------------------------------------------------------------
 void setOutputDirectory( const std::string& dir)
@@ -325,15 +322,17 @@ void setOutputDirectory( const std::string& dir)
 
    parameters_t & parameters = parameters_t::getInstance();
    parameters.output_directory = dir;
-}
+
+} // end setOutputDirectory()
 
 //------------------------------------------------------------------------------
-void setLoggingLevel( int csId, LoggingLevel log_level )
+void setLoggingLevel( IndexT cs_id, LoggingLevel log_level )
 {
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
-   SLIC_ERROR_IF(!csManager.hasCoupling(csId), "tribol::setLoggingLevel(): " << 
+   // get access to coupling scheme
+   auto couplingScheme = CouplingSchemeManager::getInstance().findData(cs_id);
+
+   SLIC_ERROR_IF(!couplingScheme, "tribol::setLoggingLevel(): " << 
                  "invalid CouplingScheme id.");
-   CouplingScheme* couplingScheme  = csManager.getCoupling( csId );
 
    if ( !in_range(static_cast<int>(log_level), 
                   static_cast<int>(tribol::NUM_LOGGING_LEVELS)) )
@@ -346,14 +345,16 @@ void setLoggingLevel( int csId, LoggingLevel log_level )
    {
       couplingScheme->setLoggingLevel( log_level );
    }
-}
+
+} // end setLoggingLevel()
 
 //------------------------------------------------------------------------------
 void enableTimestepVote( const bool enable )
 {
    parameters_t & parameters = parameters_t::getInstance();
    parameters.enable_timestep_vote= enable;
-}
+
+} // end enableTimestepVote()
 
 //------------------------------------------------------------------------------
 void registerMesh( int meshId,
@@ -469,8 +470,7 @@ void registerMesh( int meshId,
       initRealArray( mesh.m_cZ, mesh.m_numCells, 0. );
    }
 
-
-} // end of registerMesh()
+} // end registerMesh()
 
 //------------------------------------------------------------------------------
 void registerNodalDisplacements( int meshId,
@@ -571,20 +571,18 @@ void registerNodalResponse( int meshId,
 } // end registerNodalResponse()
 
 //------------------------------------------------------------------------------
-int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
+int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, IndexT cs_id )
 {
-
    // note, SLIC_ERROR_ROOT_IF is not used here because it's possible not all ranks 
    // will have method (i.e. mortar) data.
-   SLIC_ERROR_IF(*sMat!=nullptr, "tribol::getMfemSparseMatrix(): " << 
+   SLIC_ERROR_IF(*sMat!=nullptr, "tribol::getJacobianSparseMatrix(): " << 
                  "sparse matrix pointer not null.");
 
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
+   // get access to coupling scheme
+   auto couplingScheme = CouplingSchemeManager::getInstance().findData(cs_id);
 
-   SLIC_ERROR_IF(!csManager.hasCoupling(csId), "tribol::getMfemSparseMatrix(): " << 
+   SLIC_ERROR_IF(!couplingScheme, "tribol::getJacobianSparseMatrix(): " << 
                  "invalid CouplingScheme id.");
-
-   CouplingScheme* couplingScheme  = csManager.getCoupling( csId );
 
    switch (couplingScheme->getContactMethod())
    {
@@ -597,15 +595,16 @@ int getJacobianSparseMatrix( mfem::SparseMatrix ** sMat, int csId )
       }
       default:
       {
-         SLIC_WARNING("tribol::getMfemSparseMatrix(): interface method does not return matrix data.");
+         SLIC_WARNING("tribol::getJacobianSparseMatrix(): interface method does not return matrix data.");
          return 1;
       }
    }
-} // end getMfemSparseMatrix()
+
+} // end getJacobianSparseMatrix()
 
 //------------------------------------------------------------------------------
-int getJacobianCSRMatrix( int** I, int** J, RealT** vals, int csId,
-                  int* n_offsets, int* n_nonzero )
+int getJacobianCSRMatrix( int** I, int** J, RealT** vals, IndexT cs_id,
+                          int* n_offsets, int* n_nonzero )
 {
    // check to make sure input pointers are null
    if ( *I != nullptr || *J != nullptr || *vals != nullptr )
@@ -614,14 +613,13 @@ int getJacobianCSRMatrix( int** I, int** J, RealT** vals, int csId,
       return 1;
    }
 
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
+   // get access to coupling scheme
+   auto couplingScheme = CouplingSchemeManager::getInstance().findData(cs_id);
 
    // Note, SLIC_<>_ROOT macros are not here because it's possible not all ranks will have 
    // method data.
-   SLIC_ERROR_IF(!csManager.hasCoupling(csId), "tribol::getJacobianCSRMatrix(): invalid " << 
+   SLIC_ERROR_IF(!couplingScheme, "tribol::getJacobianCSRMatrix(): invalid " << 
                  "CouplingScheme id.");
-
-   CouplingScheme* couplingScheme  = csManager.getCoupling( csId );
 
    switch (couplingScheme->getContactMethod())
    {
@@ -649,18 +647,26 @@ int getJacobianCSRMatrix( int** I, int** J, RealT** vals, int csId,
          return 1;
       }
    }
-} // end getCSRMatrix()
+
+} // end getJacobianCSRMatrix()
 
 //------------------------------------------------------------------------------
-int getElementBlockJacobians( int csId, 
+int getElementBlockJacobians( IndexT cs_id, 
                               BlockSpace row_block, 
                               BlockSpace col_block,
                               const axom::Array<int>** row_elem_idx,
                               const axom::Array<int>** col_elem_idx,
                               const axom::Array<mfem::DenseMatrix>** jacobians )
 {
-   SparseMode sparse_mode = CouplingSchemeManager::getInstance().
-      getCoupling(csId)->getEnforcementOptions().lm_implicit_options.sparse_mode;
+   // get access to coupling scheme
+   auto couplingScheme = CouplingSchemeManager::getInstance().findData(cs_id);
+
+   // Note, SLIC_<>_ROOT macros are not here because it's possible not all ranks will have 
+   // method data.
+   SLIC_ERROR_IF(!couplingScheme, "tribol::getElementBlockJacobians(): invalid " << 
+                 "CouplingScheme id.");
+
+   SparseMode sparse_mode = couplingScheme->getEnforcementOptions().lm_implicit_options.sparse_mode;
    if (sparse_mode != SparseMode::MFEM_ELEMENT_DENSE)
    {
       SLIC_WARNING("Jacobian is assembled and can be accessed by " 
@@ -669,8 +675,7 @@ int getElementBlockJacobians( int csId,
          "SparseMode::MFEM_ELEMENT_DENSE before calling update().");
       return 1;
    }
-   MethodData* method_data = 
-      CouplingSchemeManager::getInstance().getCoupling( csId )->getMethodData();
+   MethodData* method_data = couplingScheme->getMethodData();
    *row_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(row_block)];
    *col_elem_idx = &method_data->getBlockJElementIds()[static_cast<int>(col_block)];
    *jacobians = &method_data->getBlockJ()(
@@ -678,7 +683,8 @@ int getElementBlockJacobians( int csId,
       static_cast<int>(col_block)
    );
    return 0;
-}
+
+} // end getElementBlockJacobians()
 
 //------------------------------------------------------------------------------
 void registerMortarGaps( int meshId,
@@ -703,7 +709,7 @@ void registerMortarGaps( int meshId,
       mesh.m_nodalFields.m_is_node_gap_set = true;
    }
    
-}
+} // end registerMortarGaps()
 
 //------------------------------------------------------------------------------
 void registerMortarPressures( int meshId,
@@ -728,7 +734,7 @@ void registerMortarPressures( int meshId,
       mesh.m_nodalFields.m_is_node_pressure_set = true;
    }
    
-}
+} // end registerMortarPressures()
 
 //------------------------------------------------------------------------------
 void registerIntNodalField( int meshId,
@@ -953,9 +959,9 @@ void registerIntElementField( int meshId,
 } // end registerIntElementField()
 
 //------------------------------------------------------------------------------
-void registerCouplingScheme( int couplingSchemeIndex,
-                             int meshId1,
-                             int meshId2,
+void registerCouplingScheme( IndexT cs_id,
+                             IndexT meshId1,
+                             IndexT meshId2,
                              int contact_mode,
                              int contact_case,
                              int contact_method,
@@ -963,29 +969,24 @@ void registerCouplingScheme( int couplingSchemeIndex,
                              int enforcement_method,
                              int binning_method )
 {
-   // add coupling scheme. Checks for valid schemes will be performed later
-   CouplingSchemeManager& couplingSchemeManager =
-         CouplingSchemeManager::getInstance();
-
-   CouplingScheme* scheme =
-         new CouplingScheme(couplingSchemeIndex,
-                            meshId1,
-                            meshId2,
-                            contact_mode,
-                            contact_case,
-                            contact_method,
-                            contact_model,
-                            enforcement_method,
-                            binning_method);
+   CouplingScheme scheme (cs_id,
+                          meshId1,
+                          meshId2,
+                          contact_mode,
+                          contact_case,
+                          contact_method,
+                          contact_model,
+                          enforcement_method,
+                          binning_method);
 
    // add coupling scheme to manager. Validity checks are performed in 
    // tribol::update() when each coupling scheme is initialized.
-   couplingSchemeManager.addCoupling(couplingSchemeIndex, scheme);
+   CouplingSchemeManager::getInstance().addData(cs_id, std::move(scheme));
 
 } // end registerCouplingScheme()
 
 //------------------------------------------------------------------------------
-void setInterfacePairs( int couplingSchemeIndex,
+void setInterfacePairs( IndexT cs_id,
                         IndexT numPairs,
                         IndexT const * const meshId1,
                         IndexT const * const pairType1,
@@ -994,12 +995,12 @@ void setInterfacePairs( int couplingSchemeIndex,
                         IndexT const * const pairType2,
                         IndexT const * const pairIndex2 )
 {
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
+   // get access to coupling scheme
+   auto couplingScheme = CouplingSchemeManager::getInstance().findData(cs_id);
 
-   SLIC_ERROR_ROOT_IF(!csManager.hasCoupling(couplingSchemeIndex), 
+   SLIC_ERROR_ROOT_IF(!couplingScheme, 
                       "tribol::setInterfacePairs(): invalid coupling scheme index.");
 
-   auto* couplingScheme = csManager.getCoupling(couplingSchemeIndex);
    auto* pairs = couplingScheme->getInterfacePairs();
 
    pairs->clear();
@@ -1030,13 +1031,12 @@ void setInterfacePairs( int couplingSchemeIndex,
 
    // Disable per-cycle rebinning
    couplingScheme->setFixedBinning(true);
-}
+
+} // end setInterfacePairs()
 
 //------------------------------------------------------------------------------
 int update( int cycle, RealT t, RealT &dt )
 {
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
-   int numCouplings = csManager.getNumberOfCouplings();
    bool err_cs = false;
 
    /////////////////////////////////////////////////////////////////////////
@@ -1048,35 +1048,30 @@ int update( int cycle, RealT t, RealT &dt )
    // which may arise from host-code registration or from skipped schemes // 
    //                                                                     //
    /////////////////////////////////////////////////////////////////////////
-   for(int csIndex =0; csIndex < numCouplings; ++csIndex)
+   for (auto& cs_pair : CouplingSchemeManager::getInstance())
    {
-      if(!csManager.hasCoupling(csIndex))
-      {
-         continue;
-      }
-
-      CouplingScheme* couplingScheme  = csManager.getCoupling(csIndex);
+      auto& couplingScheme = cs_pair.second;
 
       // initialize and check for valid coupling scheme. If not valid, the coupling 
       // scheme will not be valid across all ranks and we will skip this coupling scheme
-      if (!couplingScheme->init())
+      if (!couplingScheme.init())
       {
          SLIC_WARNING_ROOT("tribol::update(): skipping invalid CouplingScheme " << 
-                           couplingScheme->getId() << "Please see warnings.");
+                           cs_pair.first << "Please see warnings.");
          continue;
       }
 
       // perform binning between meshes on the coupling scheme
       // Note, this routine is guarded against null meshes
-      couplingScheme->performBinning();
+      couplingScheme.performBinning();
 
       // apply the coupling scheme. Note, there are appropriate guards against zero 
       // element meshes, or null-mesh coupling schemes
-      err_cs = couplingScheme->apply( cycle, t, dt );
+      err_cs = couplingScheme.apply( cycle, t, dt );
 
       if ( err_cs != 0 )
       {
-         SLIC_WARNING("tribol::update(): coupling scheme " << csIndex <<
+         SLIC_WARNING("tribol::update(): coupling scheme " << cs_pair.first <<
                       " returned with an error.");
       }
 
@@ -1087,14 +1082,9 @@ int update( int cycle, RealT t, RealT &dt )
 } // end update()
 
 //------------------------------------------------------------------------------
-void finalize( )
+void finalize()
 {
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
-   int numCouplings = csManager.getNumberOfCouplings();
-   if (numCouplings > 0)
-   {
-      csManager.clearAllCouplings();
-   }
+   CouplingSchemeManager::getInstance().clear();
 }
 
 //------------------------------------------------------------------------------

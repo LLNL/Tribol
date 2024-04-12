@@ -7,7 +7,6 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/mesh/MeshManager.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 
@@ -18,6 +17,7 @@
 #include "axom/fmt.hpp"
 
 // C++ includes
+#include <axom/slic/interface/slic_macros.hpp>
 #include <iomanip>
 #include <sstream>
 #include <fstream>
@@ -54,7 +54,7 @@ int GetVtkElementId( const InterfaceElementType type )
 
 //------------------------------------------------------------------------------
 void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
-                                 const int csId, const int meshId1,
+                                 const IndexT cs_id, const int meshId1,
                                  const int meshId2, const int dim,
                                  const int cycle, const RealT time )
 {
@@ -62,8 +62,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
    MeshManager & meshManager = MeshManager::getInstance();
    MeshData& mesh1 = meshManager.GetMeshInstance(meshId1);
    MeshData& mesh2 = meshManager.GetMeshInstance(meshId2);
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
-   CouplingScheme* couplingScheme  = csManager.getCoupling(csId);
+   CouplingScheme* couplingScheme  = CouplingSchemeManager::getInstance().findData(cs_id);
+   SLIC_ERROR_ROOT_IF(!couplingScheme, "No coupling scheme registered with given cs_id.");
 
    int nranks = 1;
    int rank = -1;

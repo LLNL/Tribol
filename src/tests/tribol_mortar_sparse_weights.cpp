@@ -12,7 +12,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/MeshManager.hpp"
@@ -232,7 +231,7 @@ TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    // allocate storage for gap computations using sparse mortar weights
    RealT * gaps = nullptr;
@@ -300,7 +299,7 @@ TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    // allocate storage for gap computations using sparse mortar weights
    RealT * gaps = nullptr;
@@ -369,7 +368,7 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_mortar_fine )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    // allocate storage for gap computations using sparse mortar weights
    RealT * gaps = nullptr;
@@ -438,7 +437,7 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_nonmortar_fine )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    // allocate storage for gap computations using sparse mortar weights
    RealT * gaps = nullptr;

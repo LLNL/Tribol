@@ -10,7 +10,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
@@ -179,7 +178,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_error )
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, wrong_calculation ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -215,7 +214,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_error )
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, wrong_calculation ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -251,7 +250,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_error )
                               tribol::KINEMATIC_CONSTANT, wrong_calculation ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -283,7 +282,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_1 
                               tribol::KINEMATIC_CONSTANT, wrong_calculation ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -315,7 +314,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_error_2 
                               tribol::KINEMATIC_CONSTANT, tribol::RATE_PERCENT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -343,7 +342,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_pass )
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
@@ -378,7 +377,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_pass )
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_ELEMENT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
@@ -417,7 +416,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_element_invalid_element_input 
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_ELEMENT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -452,7 +451,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_constant_pass )
                               tribol::KINEMATIC_CONSTANT, tribol::RATE_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
@@ -483,7 +482,7 @@ TEST_F( EnforcementOptionsTest, penalty_kinematic_constant_rate_percent_pass )
                               tribol::KINEMATIC_CONSTANT, tribol::RATE_PERCENT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* scheme  = &csManager.at(csIndex);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );

@@ -9,6 +9,7 @@
 #include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MfemData.hpp"
+#include "tribol/utils/DataManager.hpp"
 
 // Axom includes
 #include "axom/core.hpp"
@@ -91,7 +92,7 @@ public:
   /*!
    * \brief Creates a CouplingSchmeme instance between a pair of meshes
    *
-   * \param [in] params pointer to the parameters object
+   * \param [in] cs_id coupling scheme id
    * \param [in] meshId1 ID of the mortar surface
    * \param [in] meshId2 ID of the nonmortar surface, or ANY_MESH for multiple meshes
    * \param [in] contact_mode the type of contact, e.g. SURFACE_TO_SURFACE
@@ -103,7 +104,7 @@ public:
    *
    * Per-cycle rebinning is enabled by default.
    */
-  CouplingScheme( int couplingSchemeId, 
+  CouplingScheme( IndexT cs_id, 
                   int meshId1,
                   int meshId2,
                   int contact_mode,
@@ -113,10 +114,12 @@ public:
                   int enforcement_method,
                   int binning_method);
 
-  /*!
-   * \brief Destructor.
-   */
-  ~CouplingScheme();
+  // Prevent copying
+  CouplingScheme(const CouplingScheme& other) = delete;
+  CouplingScheme& operator=(const CouplingScheme& other) = delete;
+  // Enable moving
+  CouplingScheme(CouplingScheme&& other) = default;
+  CouplingScheme& operator=(CouplingScheme&& other) = default;
 
   /// \name Getters
   /// @{
@@ -548,7 +551,7 @@ private:
 
 private:
 
-  int m_id; ///< Coupling Scheme id
+  IndexT m_id; ///< Coupling Scheme id
 
   int m_meshId1; ///< Integer id for mesh 1
   int m_meshId2; ///< Integer id for mesh 2
@@ -590,11 +593,10 @@ private:
   std::unique_ptr<MfemJacobianData> m_mfemJacobianData;  ///< MFEM jacobian data
 
 #endif /* BUILD_REDECOMP */
-  
-  DISABLE_COPY_AND_ASSIGNMENT( CouplingScheme );
-  DISABLE_MOVE_AND_ASSIGNMENT( CouplingScheme );
 
 };
+
+using CouplingSchemeManager = DataManager<CouplingScheme>;
 
 } /* namespace tribol */
 

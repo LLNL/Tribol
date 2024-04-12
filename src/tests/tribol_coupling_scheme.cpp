@@ -10,7 +10,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
@@ -267,7 +266,7 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
                                          tribol::SparseMode::MFEM_LINKED_LIST );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
   
    EXPECT_EQ( isInit, false );
@@ -303,7 +302,7 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
                                          tribol::SparseMode::MFEM_LINKED_LIST );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -331,7 +330,7 @@ TEST_F( CouplingSchemeTest, mortar_weights_2D )
                                          tribol::SparseMode::MFEM_LINKED_LIST );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -367,7 +366,7 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
                               tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -395,7 +394,7 @@ TEST_F( CouplingSchemeTest, common_plane_lagrange_multiplier )
                                          tribol::SparseMode::MFEM_LINKED_LIST );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -421,7 +420,7 @@ TEST_F( CouplingSchemeTest, mortar_no_nodal_gaps_or_pressures )
                                          tribol::SparseMode::MFEM_LINKED_LIST );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -457,7 +456,7 @@ TEST_F( CouplingSchemeTest, mortar_tied )
                                          tribol::SparseMode::MFEM_LINKED_LIST );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -493,7 +492,7 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
                                          tribol::SparseMode::MFEM_LINKED_LIST );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -525,7 +524,7 @@ TEST_F( CouplingSchemeTest, common_plane_tied )
                               tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
@@ -557,7 +556,7 @@ TEST_F( CouplingSchemeTest, common_plane_coulomb )
                               tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -661,7 +660,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
 
    tribol::CouplingSchemeManager& csManager =
          tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* cs_non_null = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* cs_non_null  = &csManager.at(csIndex);
 
    // check that the total number of nodes in the coupling scheme are 
    // the two 8 node hexes in 3D
@@ -697,7 +696,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
 
-   tribol::CouplingScheme* cs_null = csManager.getCoupling(csIndex);
+   tribol::CouplingScheme* cs_null = &csManager.at(csIndex);
    
    // check that total number of nodes on the coupling scheme is zero from null meshes
    EXPECT_EQ(cs_null->getNumTotalNodes(), 0);
@@ -788,7 +787,7 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
                               tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -894,7 +893,7 @@ TEST_F( CouplingSchemeTest, finalize )
 
    tribol::CouplingSchemeManager& csManager =
          tribol::CouplingSchemeManager::getInstance();
-   EXPECT_EQ( csManager.hasCoupling(csIndex), false );
+   EXPECT_EQ( csManager.findData(csIndex), nullptr );
 
 }
 
@@ -930,7 +929,7 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
    tribol::registerNodalVelocities(1, v_x, v_y, v_z);
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
@@ -970,7 +969,7 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
    tribol::registerNodalVelocities(1, v_x, v_y, v_z);
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -1000,7 +999,7 @@ TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
                                          tribol::SparseMode::MFEM_LINKED_LIST );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
@@ -1036,7 +1035,7 @@ TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
                                          tribol::SparseMode::MFEM_LINKED_LIST );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -1070,7 +1069,7 @@ TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
                               tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -1112,7 +1111,7 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
                               tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(0);
+   tribol::CouplingScheme* scheme  = &csManager.at( 0 );
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
@@ -1153,7 +1152,7 @@ TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
                               tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csId);
+   tribol::CouplingScheme* scheme  = &csManager.at(csId);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, false );
@@ -1186,7 +1185,7 @@ TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
    tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thick );
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csId);
+   tribol::CouplingScheme* scheme  = &csManager.at(csId);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );
@@ -1219,7 +1218,7 @@ TEST_F( CouplingSchemeTest, two_meshes_with_auto_case )
                               tribol::KINEMATIC_CONSTANT ); 
 
    tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = csManager.getCoupling(csId);
+   tribol::CouplingScheme* scheme  = &csManager.at(csId);
    bool isInit = scheme->init();
 
    EXPECT_EQ( isInit, true );

@@ -10,7 +10,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
@@ -318,7 +317,7 @@ TEST_F( CommonPlaneTest, constant_rate_penetration )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check mesh rate penalties
    RealT penalty = 0.;
@@ -415,7 +414,7 @@ TEST_F( CommonPlaneTest, constant_rate_separation )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check mesh rate penalties
    RealT penalty = 0.;
@@ -511,7 +510,7 @@ TEST_F( CommonPlaneTest, no_gap_constant_rate_penetration )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check mesh rate penalties
    RealT penalty = 0.;
@@ -604,7 +603,7 @@ TEST_F( CommonPlaneTest, percent_rate_penetration )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check mesh rate penalties
    RealT penalty = 0.;
@@ -703,7 +702,7 @@ TEST_F( CommonPlaneTest, percent_rate_separation )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check mesh rate penalties
    RealT penalty = 0.;
@@ -799,7 +798,7 @@ TEST_F( CommonPlaneTest, no_gap_percent_rate_penetration )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check mesh rate penalties
    RealT penalty = 0.;

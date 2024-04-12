@@ -27,7 +27,7 @@ class ContactPlaneManager;
  *
  * \param [in] dir output directory
  * \param [in] v_type visualization type
- * \param [in] csId coupling scheme id
+ * \param [in] cs_id coupling scheme id
  * \param [in] meshId1 id for first mesh in interface
  * \param [in] meshId2 id for second mesh in interface
  * \param [in] dim spatial dimension
@@ -36,7 +36,7 @@ class ContactPlaneManager;
  *
  */
 void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type, 
-                                 const int csId, const int meshId1, 
+                                 const IndexT cs_id, const int meshId1, 
                                  const int meshId2, const int dim,
                                  const int cycle, const RealT t );
 

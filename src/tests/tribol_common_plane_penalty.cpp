@@ -10,7 +10,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
@@ -302,7 +301,7 @@ TEST_F( CommonPlaneTest, penetration_gap_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    RealT gap = z_min2 - z_max1;
 
@@ -365,7 +364,7 @@ TEST_F( CommonPlaneTest, separation_gap_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    RealT gap = z_min2 - z_max1;
 
@@ -427,7 +426,7 @@ TEST_F( CommonPlaneTest, constant_penalty_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check mesh penalties
    checkMeshPenalties( couplingScheme, parameters.const_penalty, 1.E-8, "constant" );
@@ -518,7 +517,7 @@ TEST_F( CommonPlaneTest, element_penalty_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    checkMeshPenalties( couplingScheme, parameters.const_penalty, 1.E-8, "face" );
    
@@ -589,7 +588,7 @@ TEST_F( CommonPlaneTest, tied_contact_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check the pressures
    RealT gap = z_min2 - z_max1;

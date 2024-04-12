@@ -10,7 +10,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
@@ -119,7 +118,7 @@ TEST_F( CompGeomTest, common_plane_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    EXPECT_EQ( userSpecifiedNumOverlaps, couplingScheme->getNumActivePairs() );
 
@@ -176,7 +175,7 @@ TEST_F( CompGeomTest, single_mortar_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    EXPECT_EQ( userSpecifiedNumOverlaps, couplingScheme->getNumActivePairs() );
 
@@ -615,7 +614,7 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( csIndex );
+      &couplingSchemeManager.at( 0 );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 0 );
 
@@ -745,7 +744,7 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( csIndex );
+      &couplingSchemeManager.at( 0 );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 1 );
 
@@ -875,7 +874,7 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( csIndex );
+      &couplingSchemeManager.at( 0 );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 0 );
 
