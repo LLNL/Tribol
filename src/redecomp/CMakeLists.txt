@@ -46,7 +46,7 @@ set( redecomp_sources
 
 ## setup the dependency list for redecomp
 set(redecomp_depends axom::primal mfem)
-blt_list_append(TO redecomp_depends ELEMENTS mpi IF TRIBOL_USE_MPI )
+blt_list_append(TO redecomp_depends ELEMENTS blt::mpi IF TRIBOL_USE_MPI )
 
 ## create the library
 blt_add_library(
