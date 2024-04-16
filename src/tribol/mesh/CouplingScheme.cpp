@@ -382,22 +382,22 @@ bool CouplingScheme::isValidCouplingScheme()
    MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
 
    // check for invalid mesh topology matches in a coupling scheme
-   if (mesh1.m_elementType != mesh2.m_elementType)
+   if (mesh1.getElementType() != mesh2.getElementType())
    {
       SLIC_WARNING_ROOT("Coupling scheme, " << this->m_id << ", does not support meshes with " << 
                         "different surface element types.");
-      mesh1.m_isValid = false;
-      mesh2.m_isValid = false;
+      mesh1.isMeshValid() = false;
+      mesh2.isMeshValid() = false;
    }
 
    // check for invalid meshes. A mesh could be deemed invalid when registered.
-   if (!mesh1.m_isValid || !mesh2.m_isValid)
+   if (!mesh1.isMeshValid() || !mesh2.isMeshValid())
    {
       return false;
    }
    
    // set boolean for null meshes
-   if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
+   if ( mesh1.numberOfElements() <= 0 || mesh2.numberOfElements() <= 0 )
    {
       this->m_nullMeshes = true;
       valid = true; // a null-mesh coupling scheme should still be valid
@@ -528,8 +528,8 @@ bool CouplingScheme::isValidCase()
       MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
       MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
 
-      if (!mesh1.m_elemData.m_is_element_thickness_set ||
-          !mesh2.m_elemData.m_is_element_thickness_set)
+      if (!mesh1.getElementData().m_is_element_thickness_set ||
+          !mesh2.getElementData().m_is_element_thickness_set)
       {
          this->m_couplingSchemeErrors.cs_case_error = INVALID_CASE_DATA;
          return false;
@@ -575,7 +575,7 @@ bool CouplingScheme::isValidMethod()
            this->m_contactMethod == MORTAR_WEIGHTS ||
            this->m_contactMethod == SINGLE_MORTAR )
       {
-         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
+         if (mesh1.numberOfNodesPerElement() != mesh2.numberOfNodesPerElement())
          {
             this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
             return false;
@@ -599,7 +599,7 @@ bool CouplingScheme::isValidMethod()
       else if ( this->m_contactMethod == COMMON_PLANE )
       {
          // check for different face types. This is not yet supported
-         if (mesh1.m_numNodesPerCell != mesh2.m_numNodesPerCell)
+         if (mesh1.numberOfNodesPerElement() != mesh2.numberOfNodesPerElement())
          {
             this->m_couplingSchemeErrors.cs_method_error = DIFFERENT_FACE_TYPES; 
             return false;
@@ -617,13 +617,13 @@ bool CouplingScheme::isValidMethod()
            this->m_contactMethod == SINGLE_MORTAR  ||
            this->m_contactMethod == COMMON_PLANE )
       {
-         if ( mesh1.m_numCells > 0 && !mesh1.m_nodalFields.m_is_nodal_response_set )
+         if ( mesh1.numberOfElements() > 0 && !mesh1.getNodalFields().m_is_nodal_response_set )
          {
             this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
             return false; 
          }
  
-         if ( mesh2.m_numCells > 0 && !mesh2.m_nodalFields.m_is_nodal_response_set )
+         if ( mesh2.numberOfElements() > 0 && !mesh2.getNodalFields().m_is_nodal_response_set )
          {
             this->m_couplingSchemeErrors.cs_method_error = NULL_NODAL_RESPONSE;
             return false; 
@@ -1042,11 +1042,11 @@ bool CouplingScheme::init()
       // compute the face data
       MeshManager & meshManager = MeshManager::getInstance(); 
       MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
-      mesh1.computeFaceData( mesh1.m_dim );
+      mesh1.computeFaceData( mesh1.dimension() );
       if (this->m_mesh_id2 != this->m_mesh_id1)
       {
          MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
-         mesh2.computeFaceData( mesh2.m_dim );
+         mesh2.computeFaceData( mesh2.dimension() );
       }
 
       return true;
@@ -1103,9 +1103,9 @@ void CouplingScheme::allocateMethodData()
    MeshManager & meshManager = MeshManager::getInstance(); 
    MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
    MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
-   if (mesh1.m_numCells > 0 && mesh2.m_numCells > 0)
+   if (mesh1.numberOfElements() > 0 && mesh2.numberOfElements() > 0)
    {
-      this->m_numTotalNodes = mesh1.m_lengthNodalData;
+      this->m_numTotalNodes = mesh1.numberOfNodes();
 
       // dynamically allocate method data object for mortar method
       switch (this->m_contactMethod)
@@ -1163,14 +1163,14 @@ RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 
             case TIED :
                gap_tol = params.gap_tied_tol *
-                         axom::utilities::max( mesh1.m_faceRadius[fid1],
-                                               mesh2.m_faceRadius[fid2] );
+                         axom::utilities::max( mesh1.getFaceRadius()[fid1],
+                                               mesh2.getFaceRadius()[fid2] );
                break;
 
             default :  
                gap_tol = -1. * params.gap_tol_ratio *  
-                         axom::utilities::max( mesh1.m_faceRadius[fid1],
-                                               mesh2.m_faceRadius[fid2] );
+                         axom::utilities::max( mesh1.getFaceRadius()[fid1],
+                                               mesh2.getFaceRadius()[fid2] );
                break;
 
          } // end switch over m_contactModel
@@ -1197,38 +1197,9 @@ void CouplingScheme::computeTimeStep(RealT &dt)
       return;
    }
 
-   // check for null velocities needed to compute timestep. Allow for null-meshes
-   // (i.e. zero-element on rank meshes)
-   bool meshVel1 = true;
-   bool meshVel2 = true;
-   if (this->spatialDimension() == 2)
+   if (mesh1.getVelocity().empty() || mesh2.getVelocity().empty())
    {
-      if (mesh1.m_velX == nullptr || mesh1.m_velY == nullptr)
-      {
-         meshVel1 = false;
-      }
-
-      if (mesh2.m_velX == nullptr || mesh2.m_velY == nullptr)
-      {
-         meshVel2 = false;
-      }
-   }
-   else 
-   {
-      if (mesh1.m_velX == nullptr || mesh1.m_velY == nullptr || mesh1.m_velZ == nullptr)
-      {
-         meshVel1 = false;
-      }
-
-      if (mesh2.m_velX == nullptr || mesh2.m_velY == nullptr || mesh2.m_velZ == nullptr)
-      {
-         meshVel2 = false;
-      }
-   } // end if-check on dim for velocity registration
-
-   if (!meshVel1 || !meshVel2)
-   {
-      if (mesh1.m_numCells > 0 && mesh2.m_numCells > 0)
+      if (mesh1.numberOfElements() > 0 && mesh2.numberOfElements() > 0)
       {
          // invalid registration of nodal velocities for non-null meshes
          dt = -1.0;
@@ -1306,8 +1277,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    //int num_sides = 2; // always 2 sides in a single coupling scheme
    int dim = this->spatialDimension();
-   int numNodesPerCell1 = mesh1.m_numNodesPerCell;
-   int numNodesPerCell2 = mesh2.m_numNodesPerCell;
+   int numNodesPerCell1 = mesh1.numberOfNodesPerElement();
+   int numNodesPerCell2 = mesh2.numberOfNodesPerElement();
 
    // loop over each interface pair. Even if pair is not in contact, 
    // we still do a velocity projection for that proximate face-pair 
@@ -1432,8 +1403,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 
       // get volume element thicknesses associated with each 
       // face in this pair and find minimum
-      RealT t1 = mesh1.m_elemData.m_thickness[pair.pairIndex1];
-      RealT t2 = mesh2.m_elemData.m_thickness[pair.pairIndex2];
+      RealT t1 = mesh1.getElementData().m_thickness[pair.pairIndex1];
+      RealT t2 = mesh2.getElementData().m_thickness[pair.pairIndex2];
 
       // compute the gap vector (recall gap is x1-x2 by convention)
       RealT gapVec[dim];

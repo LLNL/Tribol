@@ -556,7 +556,7 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    // register contact mesh
    tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,5,6,7}; // hard coded for a two face problem
-   tribol::registerMesh( mesh_id, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+   tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
 
@@ -688,7 +688,7 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
    // register contact mesh
    tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
-   tribol::registerMesh( mesh_id, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+   tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
 
@@ -818,7 +818,7 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
    // register contact mesh
    tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
-   tribol::registerMesh( mesh_id, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+   tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
    tribol::enableTimestepVote(true);
 

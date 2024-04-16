@@ -50,12 +50,6 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, RealT exact_area, Rea
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::IndexT const mortarId = cs->getMeshId1();
-   //tribol::IndexT const nonmortarId = cs->getMeshId2();
-
-   tribol::MeshData& mortarMesh = meshManager.at( mortarId );
-   //tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
 
    // get CSR weights data
    int *I = nullptr;
@@ -70,12 +64,6 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, RealT exact_area, Rea
    SLIC_ERROR_IF(I==nullptr, "Mortar wts test, I is null.");
 
    // get mortar node id offset to distinguish mortar from nonmortar column contributions
-   if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
-   {
-      SLIC_DEBUG("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
-      mortarMesh.sortSurfaceNodeIds();
-   }
-
    // int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
 
    RealT area = 0.;

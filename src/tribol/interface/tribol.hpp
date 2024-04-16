@@ -186,10 +186,10 @@ void enableTimestepVote( const bool enable );
  * \brief Registers the mesh description for a contact surface.
  *
  * \param [in] mesh_id the ID of the contact surface.
- * \param [in] numCells the number of cells on the contact surface.
- * \param [in] lengthNodalData length of the data arrays being registered.
+ * \param [in] num_cells the number of cells on the contact surface.
+ * \param [in] num_nodes length of the data arrays being registered.
  * \param [in] connectivity mesh connectivity array for the contact surface.
- * \param [in] cellType the cell type of the contact surface elements.
+ * \param [in] element_type the cell type of the contact surface elements.
  * \param [in] x array of x-components of the mesh coordinates
  * \param [in] y array of y-components of the mesh coordinates
  * \param [in] z array of z-components of the mesh coordinates (3D only)
@@ -205,13 +205,13 @@ void enableTimestepVote( const bool enable );
  * \pre z != nullptr (3D only)
  */
 void registerMesh( IndexT mesh_id,
-                   int numCells,
-                   int lengthNodalData,
+                   IndexT num_cells,
+                   IndexT num_nodes,
                    const IndexT* connectivity,
-                   int cellType,
+                   int element_type,
                    const RealT* x,
                    const RealT* y,
-                   const RealT* z=nullptr );
+                   const RealT* z = nullptr );
 
 /*!
  * \brief Registers nodal displacements on the contact surface.

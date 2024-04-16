@@ -13,6 +13,11 @@
 #include "tribol/geom/GeomUtilities.hpp"
 #include "tribol/utils/TestUtils.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 // Axom includes
 #include "axom/slic.hpp"
 
@@ -197,24 +202,24 @@ public:
       RealT fz2Sum = 0.;
       for (int i=0; i<this->numNodesPerFace; ++i)
       {
-         int nonmortarNodeId = nonmortarMesh.getFaceNodeId( 0, i );
-         int mortarNodeId = mortarMesh.getFaceNodeId( 0, i );
+         int nonmortarNodeId = nonmortarMesh.getGlobalNodeId( 0, i );
+         int mortarNodeId = mortarMesh.getGlobalNodeId( 0, i );
 
-         fx2Sum += nonmortarMesh.m_forceX[ nonmortarNodeId ];
-         fy2Sum += nonmortarMesh.m_forceY[ nonmortarNodeId ];
-         fz2Sum += nonmortarMesh.m_forceZ[ nonmortarNodeId ];
+         fx2Sum += nonmortarMesh.getResponse()[0][ nonmortarNodeId ];
+         fy2Sum += nonmortarMesh.getResponse()[1][ nonmortarNodeId ];
+         fz2Sum += nonmortarMesh.getResponse()[2][ nonmortarNodeId ];
 
-         fx1Sum += mortarMesh.m_forceX[ mortarNodeId ];
-         fy1Sum += mortarMesh.m_forceY[ mortarNodeId ];
-         fz1Sum += mortarMesh.m_forceZ[ mortarNodeId ];
+         fx1Sum += mortarMesh.getResponse()[0][ mortarNodeId ];
+         fy1Sum += mortarMesh.getResponse()[1][ mortarNodeId ];
+         fz1Sum += mortarMesh.getResponse()[2][ mortarNodeId ];
       }
 
       // sum nonmortar pressure
       RealT pSum = 0.;
       for (int i=0; i<this->numNodesPerFace; ++i)
       {
-         int nonmortarNodeId = nonmortarMesh.getFaceNodeId( 0, i );
-         pSum += nonmortarMesh.m_nodalFields.m_node_pressure[ nonmortarNodeId ];
+         int nonmortarNodeId = nonmortarMesh.getGlobalNodeId( 0, i );
+         pSum += nonmortarMesh.getNodalFields().m_node_pressure[ nonmortarNodeId ];
       }
 
       RealT diffX1 = std::abs(fx1Sum) - std::abs(pSum);
@@ -717,6 +722,10 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
+#endif
 
   axom::slic::SimpleLogger logger;                // create & initialize logger,
 

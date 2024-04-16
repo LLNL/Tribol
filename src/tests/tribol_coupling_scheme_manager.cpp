@@ -9,6 +9,11 @@
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/interface/tribol.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 // Axom includes
 #include "axom/slic.hpp"
 
@@ -181,6 +186,10 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
+#endif
 
   axom::slic::SimpleLogger logger;
 

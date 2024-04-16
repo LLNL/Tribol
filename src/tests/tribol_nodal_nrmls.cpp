@@ -10,6 +10,11 @@
 #include "tribol/geom/GeomUtilities.hpp"
 #include "tribol/utils/Math.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 // Axom includes
 #include "axom/slic.hpp"
 
@@ -134,24 +139,24 @@ TEST_F( NodalNormalTest, two_quad_inverted_v )
    tribol::MeshData& mesh = meshManager.at( 0 );
 
    // check each normal...hard coded
-   RealT n1check = tribol::magnitude( mesh.m_node_nX[0] - 0., 
-                                     mesh.m_node_nY[0] - 0., 
-                                     mesh.m_node_nZ[0] - 1. );
-   RealT n2check = tribol::magnitude( mesh.m_node_nX[1] - 0., 
-                                     mesh.m_node_nY[1] - 0., 
-                                     mesh.m_node_nZ[1] - 1. );
-   RealT n3check = tribol::magnitude( mesh.m_node_nX[2] - (-1./std::sqrt(2.)), 
-                                     mesh.m_node_nY[2] - 0., 
-                                     mesh.m_node_nZ[2] - (1./std::sqrt(2.)) );
-   RealT n4check = tribol::magnitude( mesh.m_node_nX[3] - (-1./std::sqrt(2.)), 
-                                     mesh.m_node_nY[3] - 0., 
-                                     mesh.m_node_nZ[3] - (1./std::sqrt(2.)) );
-   RealT n5check = tribol::magnitude( mesh.m_node_nX[4] - (1./std::sqrt(2.)), 
-                                     mesh.m_node_nY[4] - 0., 
-                                     mesh.m_node_nZ[4] - (1./std::sqrt(2.)) );
-   RealT n6check = tribol::magnitude( mesh.m_node_nX[4] - (1./std::sqrt(2.)), 
-                                     mesh.m_node_nY[4] - 0., 
-                                     mesh.m_node_nZ[4] - (1./std::sqrt(2.)) );
+   RealT n1check = tribol::magnitude( mesh.getNodalNormals()[0][0] - 0., 
+                                     mesh.getNodalNormals()[1][0] - 0., 
+                                     mesh.getNodalNormals()[2][0] - 1. );
+   RealT n2check = tribol::magnitude( mesh.getNodalNormals()[0][1] - 0., 
+                                     mesh.getNodalNormals()[1][1] - 0., 
+                                     mesh.getNodalNormals()[2][1] - 1. );
+   RealT n3check = tribol::magnitude( mesh.getNodalNormals()[0][2] - (-1./std::sqrt(2.)), 
+                                     mesh.getNodalNormals()[1][2] - 0., 
+                                     mesh.getNodalNormals()[2][2] - (1./std::sqrt(2.)) );
+   RealT n4check = tribol::magnitude( mesh.getNodalNormals()[0][3] - (-1./std::sqrt(2.)), 
+                                     mesh.getNodalNormals()[1][3] - 0., 
+                                     mesh.getNodalNormals()[2][3] - (1./std::sqrt(2.)) );
+   RealT n5check = tribol::magnitude( mesh.getNodalNormals()[0][4] - (1./std::sqrt(2.)), 
+                                     mesh.getNodalNormals()[1][4] - 0., 
+                                     mesh.getNodalNormals()[2][4] - (1./std::sqrt(2.)) );
+   RealT n6check = tribol::magnitude( mesh.getNodalNormals()[0][4] - (1./std::sqrt(2.)), 
+                                     mesh.getNodalNormals()[1][4] - 0., 
+                                     mesh.getNodalNormals()[2][4] - (1./std::sqrt(2.)) );
 
    RealT tol = 1.e-12;
 
@@ -168,6 +173,10 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
+#endif
 
   axom::slic::SimpleLogger logger;
 

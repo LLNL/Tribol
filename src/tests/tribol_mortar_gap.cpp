@@ -14,6 +14,11 @@
 #include "tribol/geom/GeomUtilities.hpp"
 #include "tribol/utils/TestUtils.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 // Axom includes
 #include "axom/slic.hpp"
 
@@ -482,7 +487,7 @@ TEST_F( MortarGapTest, parallel_misaligned )
    RealT gap = 0.;
    for (int i=0; i<numNodesPerFace; ++i)
    {
-      gap += nonmortarMesh.m_nodalFields.m_node_gap[i];
+      gap += nonmortarMesh.getNodalFields().m_node_gap[i];
    }
 
    // note the face-gap of 0.1 is hard coded based on the
@@ -491,12 +496,6 @@ TEST_F( MortarGapTest, parallel_misaligned )
 
    RealT tol = 1.e-8;
    EXPECT_LE( gapDiff, tol );
-
-   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
-   {
-      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
-      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
-   }
 }
 
 TEST_F( MortarGapTest, parallel_aligned )
@@ -579,7 +578,7 @@ TEST_F( MortarGapTest, parallel_aligned )
    RealT gap = 0.;
    for (int i=0; i<numNodesPerFace; ++i)
    {
-      gap += nonmortarMesh.m_nodalFields.m_node_gap[i];
+      gap += nonmortarMesh.getNodalFields().m_node_gap[i];
    }
 
    // note the face-gap of 0.1 is hard coded based on the
@@ -588,12 +587,6 @@ TEST_F( MortarGapTest, parallel_aligned )
 
    RealT tol = 1.e-8;
    EXPECT_LE( gapDiff, tol );
-
-   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
-   {
-      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
-      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
-   }
 }
 
 TEST_F( MortarGapTest, parallel_simple_aligned )
@@ -677,7 +670,7 @@ TEST_F( MortarGapTest, parallel_simple_aligned )
    RealT gapTest = 0;
    for (int i=0; i<numNodesPerFace; ++i)
    {
-      gap += nonmortarMesh.m_nodalFields.m_node_gap[i];
+      gap += nonmortarMesh.getNodalFields().m_node_gap[i];
       gapTest += z1[i] - z2[i];
    }
 
@@ -687,12 +680,6 @@ TEST_F( MortarGapTest, parallel_simple_aligned )
 
    RealT tol = 1.e-8;
    EXPECT_LE( gapDiff, tol );
-
-   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
-   {
-      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
-      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
-   }
 }
 
 int main(int argc, char* argv[])
@@ -700,6 +687,10 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
+#endif
 
   axom::slic::SimpleLogger logger;
 

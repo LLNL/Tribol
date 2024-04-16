@@ -299,15 +299,15 @@ void MortarData::assembleJacobian( SurfaceContactElem & elem, SparseMode s_mode 
    for (int a = 0; a<elem.numFaceVert; ++a)
    {
       // get mortar and nonmortar node ids from connectivity
-      int mortarNodeIdA = mortarMesh.getFaceNodeId( elem.faceId1, a );
-      int nonmortarNodeIdA  = nonmortarMesh.getFaceNodeId( elem.faceId2, a );
+      int mortarNodeIdA = mortarMesh.getGlobalNodeId( elem.faceId1, a );
+      int nonmortarNodeIdA  = nonmortarMesh.getGlobalNodeId( elem.faceId2, a );
 
       // loop over face nodes "b" (general loop, don't distinguish mortar/nonmortar 
       // as that changes for Jrp and Jgu contributions)
       for (int b = 0; b<elem.numFaceVert; ++b)
       {
          // get nonmortar node id from connectivity
-         int nonmortarNodeIdB = nonmortarMesh.getFaceNodeId( elem.faceId2, b );
+         int nonmortarNodeIdB = nonmortarMesh.getGlobalNodeId( elem.faceId2, b );
 
          // We don't exclude nonmortar nodes that are in separation. NOTE: Per 
          // testing, we include ALL nonmortar contributions for faces that 
@@ -447,7 +447,7 @@ void MortarData::assembleMortarWts( SurfaceContactElem & elem, SparseMode s_mode
       // weights will be mortar/nonmortar (a,b) or nonmortar/nonmortar (a,b)
 
       // get nonmortar node ROW id from connectivity
-      int nonmortarNodeIdA = nonmortarMesh.getFaceNodeId( elem.faceId2, a );
+      int nonmortarNodeIdA = nonmortarMesh.getGlobalNodeId( elem.faceId2, a );
 
       // We include ALL nonmortar nodes, even if the nodal gap is in separation. 
       // NOTE: Per testing, we include ALL nonmortar node 
@@ -460,10 +460,10 @@ void MortarData::assembleMortarWts( SurfaceContactElem & elem, SparseMode s_mode
       for (int b = 0; b<elem.numFaceVert; ++b)
       {
          // get mortar COL id based on connectivity array
-         int mortarNodeIdB = mortarMesh.getFaceNodeId( elem.faceId1, b );
+         int mortarNodeIdB = mortarMesh.getGlobalNodeId( elem.faceId1, b );
 
          // get nonmortar COL id based on connectivity array
-         int nonmortarNodeIdB  = nonmortarMesh.getFaceNodeId( elem.faceId2, b );
+         int nonmortarNodeIdB  = nonmortarMesh.getGlobalNodeId( elem.faceId2, b );
 
          // Add() will "set" if a nonzero entry hasn't been 
          // introduced at the (i,j) element

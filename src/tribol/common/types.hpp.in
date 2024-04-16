@@ -54,8 +54,14 @@ using RealT = double;
 
 #endif
 
-template< typename T, int DIM = 1, axom::MemorySpace SPACE = axom::MemorySpace::Dynamic >
+template <typename T, int DIM = 1, axom::MemorySpace SPACE = axom::MemorySpace::Dynamic>
 using ArrayT = axom::Array<T, DIM, SPACE>;
+
+template <typename T, int DIM = 1, axom::MemorySpace SPACE = axom::MemorySpace::Dynamic>
+using ArrayViewT = axom::ArrayView<T, DIM, SPACE>;
+
+template <typename T, int N>
+using FixedArrayT = axom::StackArray<T, N>;
 
 constexpr int MAX_NUM_POLY_VERT = 16;     ///< Maximum allowed number of polygon vertices per contact plane
 constexpr int MAX_NUM_CELL_NODES = 8;     ///< Maximum allowed number of nodes per cell

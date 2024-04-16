@@ -73,12 +73,7 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, RealT * gaps )
    SLIC_ERROR_IF(I==nullptr, "Mortar wts test, I is null.");
 
    // get mortar node id offset to distinguish mortar from nonmortar column contributions
-   if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
-   {
-      SLIC_DEBUG("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
-      mortarMesh.sortSurfaceNodeIds();
-   }
-   int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
+   int nodeOffset = mortarMesh.getSortedSurfaceNodeIds().back() + 1;
 
    ////////////////////////////////////////////////////////////////
    // compute nonmortar gaps to determine active set of contact dofs //
@@ -90,11 +85,11 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, RealT * gaps )
    {
       // get nonmortar nodal normal
       RealT nrml_a[dim];
-      nrml_a[0] = nonmortarMesh.m_node_nX[ a ]; // array is global length; no index out (?)
-      nrml_a[1] = nonmortarMesh.m_node_nY[ a ];
+      nrml_a[0] = nonmortarMesh.getNodalNormals()[0][ a ]; // array is global length; no index out (?)
+      nrml_a[1] = nonmortarMesh.getNodalNormals()[1][ a ];
       if (dim == 3 )
       {
-         nrml_a[2] = nonmortarMesh.m_node_nZ[ a ];
+         nrml_a[2] = nonmortarMesh.getNodalNormals()[2][ a ];
       }
 
       // loop over range of nonzero column entries
@@ -114,11 +109,11 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, RealT * gaps )
 
          if ( J[b] < nodeOffset ) // nonmortar/mortar  weight
          {
-            mortar_xyz[0] = mortarMesh.m_positionX[ J[b] ];
-            mortar_xyz[1] = mortarMesh.m_positionY[ J[b] ];
+            mortar_xyz[0] = mortarMesh.getPosition()[0][ J[b] ];
+            mortar_xyz[1] = mortarMesh.getPosition()[1][ J[b] ];
             if ( dim == 3 )
             { 
-               mortar_xyz[2] = mortarMesh.m_positionZ[ J[b] ];
+               mortar_xyz[2] = mortarMesh.getPosition()[2][ J[b] ];
             }
  
             gaps[a] += tribol::dotProd( &nrml_a[0], &mortar_xyz[0], dim ) *
@@ -127,11 +122,11 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, RealT * gaps )
          }
          else // nonmortar/nonmortar weight
          {
-            nonmortar_xyz[0] = nonmortarMesh.m_positionX[ J[b] ];
-            nonmortar_xyz[1] = nonmortarMesh.m_positionY[ J[b] ];
+            nonmortar_xyz[0] = nonmortarMesh.getPosition()[0][ J[b] ];
+            nonmortar_xyz[1] = nonmortarMesh.getPosition()[1][ J[b] ];
             if ( dim == 3 )
             { 
-               nonmortar_xyz[2] = nonmortarMesh.m_positionZ[ J[b] ];
+               nonmortar_xyz[2] = nonmortarMesh.getPosition()[2][ J[b] ];
             }
             gaps[a] -= tribol::dotProd( &nrml_a[0], &nonmortar_xyz[0], dim ) * 
                        n_ab;
@@ -152,7 +147,7 @@ void compareGaps( tribol::CouplingScheme const * cs, RealT * gaps, const RealT t
 
    for (int i=0; i<numTotalNodes; ++i)
    {
-      RealT diff = nonmortarMesh.m_nodalFields.m_node_gap[i] - gaps[i];
+      RealT diff = nonmortarMesh.getNodalFields().m_node_gap[i] - gaps[i];
       EXPECT_LE( diff, tol );
    }
 

@@ -16,6 +16,11 @@
 #include "tribol/physics/CommonPlane.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 // Axom includes
 #include "axom/slic.hpp"
 
@@ -104,8 +109,8 @@ void checkMeshPenalties( tribol::CouplingScheme const * cs,
 
    if ( std::strcmp( penaltyType, "constant" ) == 0 )
    {
-      RealT penalty_diff_1 = std::abs( mesh1.m_elemData.m_penalty_stiffness - penalty );
-      RealT penalty_diff_2 = std::abs( mesh2.m_elemData.m_penalty_stiffness - penalty );
+      RealT penalty_diff_1 = std::abs( mesh1.getElementData().m_penalty_stiffness - penalty );
+      RealT penalty_diff_2 = std::abs( mesh2.getElementData().m_penalty_stiffness - penalty );
       EXPECT_LE( penalty_diff_1, tol );
       EXPECT_LE( penalty_diff_2, tol );
    }
@@ -115,15 +120,15 @@ void checkMeshPenalties( tribol::CouplingScheme const * cs,
    }
    else if ( std::strcmp( penaltyType, "constant_rate" ) == 0 )
    {
-      RealT penalty_diff_1 = std::abs( mesh1.m_elemData.m_rate_penalty_stiffness - penalty );
-      RealT penalty_diff_2 = std::abs( mesh2.m_elemData.m_rate_penalty_stiffness - penalty );
+      RealT penalty_diff_1 = std::abs( mesh1.getElementData().m_rate_penalty_stiffness - penalty );
+      RealT penalty_diff_2 = std::abs( mesh2.getElementData().m_rate_penalty_stiffness - penalty );
       EXPECT_LE( penalty_diff_1, tol );
       EXPECT_LE( penalty_diff_2, tol );
    }
    else if ( std::strcmp( penaltyType, "percent_rate" ) == 0 )
    {
-      RealT penalty1 = mesh1.m_elemData.m_rate_percent_stiffness * mesh1.m_elemData.m_penalty_stiffness; 
-      RealT penalty2 = mesh2.m_elemData.m_rate_percent_stiffness * mesh2.m_elemData.m_penalty_stiffness; 
+      RealT penalty1 = mesh1.getElementData().m_rate_percent_stiffness * mesh1.getElementData().m_penalty_stiffness; 
+      RealT penalty2 = mesh2.getElementData().m_rate_percent_stiffness * mesh2.getElementData().m_penalty_stiffness; 
       RealT penalty_diff_1 = std::abs( penalty1 - penalty );
       RealT penalty_diff_2 = std::abs( penalty2 - penalty );
       EXPECT_LE( penalty_diff_1, tol );
@@ -196,18 +201,17 @@ void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
       tribol::MeshData & mesh = (i==0) ? mesh1 : mesh2;
   
       // loop over faces and nodes
-      for (tribol::IndexT kf = 0; kf < mesh.m_numCells; ++kf)
+      for (tribol::IndexT kf = 0; kf < mesh.numberOfElements(); ++kf)
       {
-         for (tribol::IndexT a = 0; a<mesh.m_numNodesPerCell; ++a)
+         for (tribol::IndexT a = 0; a<mesh.numberOfNodesPerElement(); ++a)
          {
-            int idx = mesh.m_numNodesPerCell * kf + a;
-            int node_id = mesh.m_connectivity[ idx ];
-            RealT force_mag = tribol::dotProd( mesh.m_forceX[ node_id ],
-                                              mesh.m_forceY[ node_id ], 
-                                              mesh.m_forceZ[ node_id ],
-                                              mesh.m_nX[ kf ],
-                                              mesh.m_nY[ kf ],
-                                              mesh.m_nZ[ kf ] );
+            int node_id = mesh.getGlobalNodeId(kf, a);
+            RealT force_mag = tribol::dotProd( mesh.getResponse()[0][ node_id ],
+                                              mesh.getResponse()[1][ node_id ], 
+                                              mesh.getResponse()[2][ node_id ],
+                                              mesh.getElementNormals()[0][ kf ],
+                                              mesh.getElementNormals()[1][ kf ],
+                                              mesh.getElementNormals()[2][ kf ] );
             if (!isTied) {
                // <= catches interpenetration AND separation
                EXPECT_LE( force_mag, 0. );
@@ -826,6 +830,10 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
+#endif
 
   axom::slic::SimpleLogger logger;
 

@@ -50,19 +50,19 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    // get instance of mesh data
    MeshData& mesh1 = meshManager.at(mesh_id1);
    MeshData& mesh2 = meshManager.at(mesh_id2);
-   int dim = mesh1.m_dim;
+   int dim = mesh1.dimension();
 
    /// CHECK #2: Check to make sure faces don't share a common
    ///           node for the case where mesh_id1 = mesh_id2.
    ///           We want to preclude two adjacent faces from interacting.
    if (mesh_id1 == mesh_id2)
    {
-      for (int i=0; i<mesh1.m_numNodesPerCell; ++i)
+      for (int i=0; i<mesh1.numberOfNodesPerElement(); ++i)
       {
-         int node1 = mesh1.getFaceNodeId(faceId1, i);
-         for (int j=0; j<mesh2.m_numNodesPerCell; ++j)
+         int node1 = mesh1.getGlobalNodeId(faceId1, i);
+         for (int j=0; j<mesh2.numberOfNodesPerElement(); ++j)
          {
-            int node2 = mesh2.getFaceNodeId(faceId2, j);
+            int node2 = mesh2.getGlobalNodeId(faceId2, j);
             if (node1 == node2)
             {
               iPair.isContactCandidate = false;
@@ -79,8 +79,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    RealT m_nZ1, m_nZ2;
    if ( dim == 3 )
    {
-      m_nZ1 = mesh1.m_nZ[ faceId1 ];
-      m_nZ2 = mesh2.m_nZ[ faceId2 ];
+      m_nZ1 = mesh1.getElementNormals()[2][ faceId1 ];
+      m_nZ2 = mesh2.getElementNormals()[2][ faceId2 ];
    }
    else
    {
@@ -88,8 +88,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
       m_nZ2 = 0.;
    }
 
-   RealT nrmlCheck = mesh1.m_nX[faceId1] * mesh2.m_nX[faceId2] +
-                    mesh1.m_nY[faceId1] * mesh2.m_nY[faceId2] +
+   RealT nrmlCheck = mesh1.getElementNormals()[0][faceId1] * mesh2.getElementNormals()[0][faceId2] +
+                    mesh1.getElementNormals()[1][faceId1] * mesh2.getElementNormals()[1][faceId2] +
                     m_nZ1 * m_nZ2;
 
    // check normal projection against tolerance
@@ -112,8 +112,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    RealT offset_tol = 0.05;
    if (dim == 3)
    {
-      RealT r1 = mesh1.m_faceRadius[ faceId1 ];
-      RealT r2 = mesh2.m_faceRadius[ faceId2 ];
+      RealT r1 = mesh1.getFaceRadius()[ faceId1 ];
+      RealT r2 = mesh2.getFaceRadius()[ faceId2 ];
 
       // set maximum offset of face centroids for inclusion
       RealT distMax = r1 + r2; // default is sum of face radii
@@ -128,9 +128,9 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
       }
 
       // compute the distance between the two face centroids
-      RealT distX = mesh2.m_cX[ faceId2 ] - mesh1.m_cX[ faceId1 ];
-      RealT distY = mesh2.m_cY[ faceId2 ] - mesh1.m_cY[ faceId1 ];
-      RealT distZ = mesh2.m_cZ[ faceId2 ] - mesh1.m_cZ[ faceId1 ];
+      RealT distX = mesh2.getElementCentroids()[0][ faceId2 ] - mesh1.getElementCentroids()[0][ faceId1 ];
+      RealT distY = mesh2.getElementCentroids()[1][ faceId2 ] - mesh1.getElementCentroids()[1][ faceId1 ];
+      RealT distZ = mesh2.getElementCentroids()[2][ faceId2 ] - mesh1.getElementCentroids()[2][ faceId1 ];
 
       RealT distMag = magnitude(distX, distY, distZ );
 
@@ -142,8 +142,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    else if (dim == 2)
    {
       // get 1/2 edge length off the mesh data
-      RealT e1 = 0.5 * mesh1.m_area[ faceId1 ];
-      RealT e2 = 0.5 * mesh2.m_area[ faceId2 ];
+      RealT e1 = 0.5 * mesh1.getElementAreas()[ faceId1 ];
+      RealT e2 = 0.5 * mesh2.getElementAreas()[ faceId2 ];
 
       // set maximum offset of edge centroids for inclusion
       RealT distMax = e1 + e2; // default is sum of 1/2 edge lengths
@@ -158,8 +158,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
       }
 
       // compute the distance between the two edge centroids
-      RealT distX = mesh2.m_cX[ faceId2 ] - mesh1.m_cX[ faceId1 ];
-      RealT distY = mesh2.m_cY[ faceId2 ] - mesh1.m_cY[ faceId1 ];
+      RealT distX = mesh2.getElementCentroids()[0][ faceId2 ] - mesh1.getElementCentroids()[0][ faceId1 ];
+      RealT distY = mesh2.getElementCentroids()[1][ faceId2 ] - mesh1.getElementCentroids()[1][ faceId1 ];
 
       RealT distMag = magnitude(distX, distY);
 
@@ -208,8 +208,8 @@ public:
     */
    MeshWrapper(const MeshData* meshData)
       : m_meshData(meshData)
-      , m_vertSet(m_meshData->m_lengthNodalData)
-      , m_elemSet(m_meshData->m_numCells)
+      , m_vertSet(m_meshData->numberOfNodes())
+      , m_elemSet(m_meshData->numberOfElements())
    {
       // Generate connectivity relation for elements
       using BuilderType = typename ElemVertRelation::RelationBuilder;
@@ -218,10 +218,10 @@ public:
           .fromSet( &m_elemSet)
           .toSet( &m_vertSet)
           .begins( typename BuilderType::BeginsSetBuilder()
-                   .stride( m_meshData->m_numNodesPerCell))
+                   .stride( m_meshData->numberOfNodesPerElement()))
           .indices( typename BuilderType::IndicesSetBuilder()
-                    .size( m_elemSet.size() * m_meshData->m_numNodesPerCell)
-                    .data( m_meshData->m_connectivity ));
+                    .size( m_elemSet.size() * m_meshData->numberOfNodesPerElement())
+                    .data( m_meshData->getConnectivity().data() ));
    }
 
    /*!
@@ -232,9 +232,9 @@ public:
    PointType getVertex(IndexT vId)
    {
       return PointType::make_point(
-            static_cast<double>(m_meshData->m_positionX[vId]),
-            static_cast<double>(m_meshData->m_positionY[vId]),
-            (D == 3) ? static_cast<double>(m_meshData->m_positionZ[vId]) : double() );
+            static_cast<double>(m_meshData->getPosition()[0][vId]),
+            static_cast<double>(m_meshData->getPosition()[1][vId]),
+            (D == 3) ? static_cast<double>(m_meshData->getPosition()[2][vId]) : double() );
    }
 
    /*!
@@ -404,11 +404,11 @@ public:
 
       IndexT mesh_id1 = m_couplingScheme->getMeshId1();
       MeshData const & meshData1 = meshManager.at(mesh_id1);
-      int cellType1 = static_cast<int>(meshData1.m_elementType);
+      int cellType1 = static_cast<int>(meshData1.getElementType());
 
       IndexT mesh_id2 = m_couplingScheme->getMeshId2();
       MeshData const & meshData2 = meshManager.at(mesh_id2);
-      int cellType2 = static_cast<int>(meshData2.m_elementType);
+      int cellType2 = static_cast<int>(meshData2.getElementType());
 
       InterfacePairs* contactPairs = m_couplingScheme->getInterfacePairs();
 
@@ -493,11 +493,11 @@ private:
 
     IndexT mesh_id1 = cs->getMeshId1();
     MeshData const & meshData1 = meshManager.at(mesh_id1);
-    int mesh1NumElems = meshData1.m_numCells;
+    int mesh1NumElems = meshData1.numberOfElements();
 
     IndexT mesh_id2 = cs->getMeshId2();
     MeshData const & meshData2 = meshManager.at(mesh_id2);
-    int mesh2NumElems = meshData2.m_numCells;
+    int mesh2NumElems = meshData2.numberOfElements();
 
     int numPairs = mesh1NumElems * mesh2NumElems;
 
@@ -505,8 +505,8 @@ private:
     contactPairs->clear();
     contactPairs->reserve( numPairs );
 
-    int cellType1 = static_cast<int>(meshData1.m_elementType);
-    int cellType2 = static_cast<int>(meshData2.m_elementType);
+    int cellType1 = static_cast<int>(meshData1.getElementType());
+    int cellType2 = static_cast<int>(meshData2.getElementType());
 
     int k = 0;
     for(int fromIdx = 0; fromIdx < mesh1NumElems; ++fromIdx)

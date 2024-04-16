@@ -149,11 +149,8 @@ public:
       tribol::registerNodalResponse( mortarMeshId, fx1, fy1, fz1 );
       tribol::registerNodalResponse( nonmortarMeshId, fx2, fy2, fz2 );
 
-      // register nodal pressure and nodal gap array for the nonmortar mesh
-      RealT *gaps, *pressures;
-
-      gaps = new RealT [ this->numNodes ]; // length of total mesh to use global connectivity to index
-      pressures = new RealT [ this->numNodes ]; // length of total mesh to use global connectivity to index
+      gaps = tribol::ArrayT<RealT>(this->numNodes, this->numNodes); // length of total mesh to use global connectivity to index
+      pressures = tribol::ArrayT<RealT>(this->numNodes, this->numNodes); // length of total mesh to use global connectivity to index
 
       // initialize gaps and pressures. Initialize all 
       // nonmortar pressures to 1.0
@@ -164,8 +161,8 @@ public:
       }
 
       // register nodal gaps and pressures
-      tribol::registerMortarGaps( nonmortarMeshId, gaps );
-      tribol::registerMortarPressures( nonmortarMeshId, pressures );
+      tribol::registerMortarGaps( nonmortarMeshId, gaps.data() );
+      tribol::registerMortarPressures( nonmortarMeshId, pressures.data() );
 
       // register coupling scheme
       const int csIndex = 0;
@@ -254,6 +251,8 @@ protected:
    RealT* x {nullptr};
    RealT* y {nullptr};
    RealT* z {nullptr};
+   tribol::ArrayT<RealT> gaps;
+   tribol::ArrayT<RealT> pressures;
 
 };
 
@@ -329,23 +328,6 @@ TEST_F( MortarJacTest, jac_input_test )
    // get the number of columns and compare to expected
    int numCols = jac->NumCols();
    EXPECT_EQ( numCols, my_num_rows );
-
-   // delete the nonmortar mesh pressure and gap arrays. Normally the host code will 
-   // manage this memory
-   tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& nonmortarMesh = meshManager.at( 1 );
-
-   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
-   {
-      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
-      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
-   }
-
-   if (nonmortarMesh.m_nodalFields.m_node_pressure != nullptr)
-   {
-      delete [] nonmortarMesh.m_nodalFields.m_node_pressure; 
-      nonmortarMesh.m_nodalFields.m_node_pressure = nullptr;
-   }
 
    tribol::finalize();
 
@@ -442,23 +424,6 @@ TEST_F( MortarJacTest, update_jac_test )
    matrix.close();
 
    tribol::finalize();
-
-   // delete the nonmortar mesh pressure and gap arrays. Normally the host code will 
-   // manage this memory
-   tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& nonmortarMesh = meshManager.at( 1 );
-
-   if (nonmortarMesh.m_nodalFields.m_node_gap != nullptr)
-   {
-      delete [] nonmortarMesh.m_nodalFields.m_node_gap;
-      nonmortarMesh.m_nodalFields.m_node_gap = nullptr;
-   }
-
-   if (nonmortarMesh.m_nodalFields.m_node_pressure != nullptr)
-   {
-      delete [] nonmortarMesh.m_nodalFields.m_node_pressure; 
-      nonmortarMesh.m_nodalFields.m_node_pressure = nullptr;
-   }
 
    // delete the jacobian matrix
    delete jac;

@@ -425,16 +425,6 @@ TEST_F( MortarGeomTest, mortar_ironing )
   
    tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
-   tribol::IndexT const mortarId = couplingScheme->getMeshId1();
-   //tribol::IndexT const nonmortarId = couplingScheme->getMeshId2();
-   tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mortarMesh = meshManager.at( mortarId );
-
-   if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
-   {
-      mortarMesh.sortSurfaceNodeIds();
-   }
-
    //int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
 
    int *I = nullptr;

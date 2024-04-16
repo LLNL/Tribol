@@ -139,7 +139,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          int numPoints = 0;
          for (int i=0; i<cpSize; ++i)
          {
-            numPoints += mesh1.m_numNodesPerCell + mesh2.m_numNodesPerCell;
+            numPoints += mesh1.numberOfNodesPerElement() + mesh2.numberOfNodesPerElement();
          } // end i-loop over contact planes
 
          // output the number of points
@@ -170,22 +170,22 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
             else // print the current configuration faces
             {
-               for (int j=0; j<mesh1.m_numNodesPerCell; ++j)
+               for (int j=0; j<mesh1.numberOfNodesPerElement(); ++j)
                {
-                  const int nodeId = mesh1.getFaceNodeId(cpMgr.m_fId1[i], j);
+                  const int nodeId = mesh1.getGlobalNodeId(cpMgr.m_fId1[i], j);
                   fmt::print(faces, "{} {} {}\n",
-                     mesh1.m_positionX[nodeId],
-                     mesh1.m_positionY[nodeId],
-                     dim==3 ? mesh1.m_positionZ[nodeId] : 0.);
+                     mesh1.getPosition()[0][nodeId],
+                     mesh1.getPosition()[1][nodeId],
+                     dim==3 ? mesh1.getPosition()[2][nodeId] : 0.);
                }
 
-               for (int j=0; j<mesh2.m_numNodesPerCell; ++j)
+               for (int j=0; j<mesh2.numberOfNodesPerElement(); ++j)
                {
-                  const int nodeId = mesh2.getFaceNodeId(cpMgr.m_fId2[i], j);
+                  const int nodeId = mesh2.getGlobalNodeId(cpMgr.m_fId2[i], j);
                   fmt::print(faces, "{} {} {}\n",
-                     mesh2.m_positionX[nodeId],
-                     mesh2.m_positionY[nodeId],
-                     dim==3 ? mesh2.m_positionZ[nodeId] : 0.);
+                     mesh2.getPosition()[0][nodeId],
+                     mesh2.getPosition()[1][nodeId],
+                     dim==3 ? mesh2.getPosition()[2][nodeId] : 0.);
                }
             } // end else
          } // end i-loop over contact planes outputting face coordinates
@@ -200,8 +200,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
          // loop over contact plane instances and print current configuration
          // face polygon connectivity
-         const int nNodes1 = mesh1.m_numNodesPerCell;
-         const int nNodes2 = mesh2.m_numNodesPerCell;
+         const int nNodes1 = mesh1.numberOfNodesPerElement();
+         const int nNodes2 = mesh2.numberOfNodesPerElement();
          for (int i=0; i<cpSize; ++i)
          {
             fmt::print(faces, "{} {}\n", nNodes1, fmt::join(RSet(connIter, connIter+nNodes1), " "));
@@ -235,8 +235,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          {
             // print face areas
             fmt::print(faces, "{} {} ",
-               mesh1.m_area[cpMgr.m_fId1[i]],
-               mesh2.m_area[cpMgr.m_fId2[i]]);
+               mesh1.getElementAreas()[cpMgr.m_fId1[i]],
+               mesh2.getElementAreas()[cpMgr.m_fId2[i]]);
          } // end i-loop over contact planes
          faces << std::endl;
          faces.close();
@@ -404,60 +404,58 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       mesh << "COUPLING_SCHEME 1 1 int\n";
       mesh << cs_id << "\n";
 
-      int numTotalNodes = mesh1.m_lengthNodalData +
-                          mesh2.m_lengthNodalData;
+      int numTotalNodes = mesh1.numberOfNodes() +
+                          mesh2.numberOfNodes();
       mesh << "POINTS " << numTotalNodes << " float\n";
 
-      for (int i=0; i<mesh1.m_lengthNodalData; ++i)
+      for (int i=0; i<mesh1.numberOfNodes(); ++i)
       {
          fmt::print(mesh, "{} {} {}\n",
-            mesh1.m_positionX[i],
-            mesh1.m_positionY[i],
-            dim==3 ? mesh1.m_positionZ[i] : 0.);
+            mesh1.getPosition()[0][i],
+            mesh1.getPosition()[1][i],
+            dim==3 ? mesh1.getPosition()[2][i] : 0.);
       }
 
-      for (int i=0; i<mesh2.m_lengthNodalData; ++i)
+      for (int i=0; i<mesh2.numberOfNodes(); ++i)
       {
          fmt::print(mesh, "{} {} {}\n",
-            mesh2.m_positionX[i],
-            mesh2.m_positionY[i],
-            dim==3 ? mesh2.m_positionZ[i] : 0.);
+            mesh2.getPosition()[0][i],
+            mesh2.getPosition()[1][i],
+            dim==3 ? mesh2.getPosition()[2][i] : 0.);
       }
 
       // print mesh element connectivity
-      int numTotalElements = mesh1.m_numCells + mesh2.m_numCells;
-      int numSurfaceNodes = mesh1.m_numCells * mesh1.m_numNodesPerCell
-                          + mesh2.m_numCells * mesh2.m_numNodesPerCell;
+      int numTotalElements = mesh1.numberOfElements() + mesh2.numberOfElements();
+      int numSurfaceNodes = mesh1.numberOfElements() * mesh1.numberOfNodesPerElement()
+                          + mesh2.numberOfElements() * mesh2.numberOfNodesPerElement();
 
       fmt::print(mesh, "CELLS {} {}\n", numTotalElements, numTotalElements + numSurfaceNodes);
 
-      for (int i=0; i<mesh1.m_numCells; ++i)
+      for (int i=0; i<mesh1.numberOfElements(); ++i)
       {
-         mesh << mesh1.m_numNodesPerCell;
-         for (int a=0; a<mesh1.m_numNodesPerCell; ++a)
+         mesh << mesh1.numberOfNodesPerElement();
+         for (int a=0; a<mesh1.numberOfNodesPerElement(); ++a)
          {
-            int id = mesh1.m_numNodesPerCell * i + a;
-            mesh << " " << mesh1.m_connectivity[id];
+            mesh << " " << mesh1.getGlobalNodeId(i, a);
          } // end a-loop over nodes
          mesh << std::endl;
       } // end i-loop over cells
 
-      const int m2_offset = mesh1.m_lengthNodalData;
-      for (int i=0; i<mesh2.m_numCells; ++i)
+      const int m2_offset = mesh1.numberOfNodes();
+      for (int i=0; i<mesh2.numberOfElements(); ++i)
       {
-         mesh << mesh2.m_numNodesPerCell;
-         for (int a=0; a<mesh2.m_numNodesPerCell; ++a)
+         mesh << mesh2.numberOfNodesPerElement();
+         for (int a=0; a<mesh2.numberOfNodesPerElement(); ++a)
          {
-            int id = mesh2.m_numNodesPerCell * i + a;
-            mesh << " " << m2_offset + mesh2.m_connectivity[id];
+            mesh << " " << m2_offset + mesh2.getGlobalNodeId(i, a);
          } // end a-loop over nodes
          mesh << std::endl;
       } // end i-loop over cells
 
       // specify int id for each cell type.
       // For 4-node quad, id = 9.
-      const int mesh1_element_id = GetVtkElementId( mesh1.m_elementType );
-      const int mesh2_element_id = GetVtkElementId( mesh2.m_elementType );
+      const int mesh1_element_id = GetVtkElementId( mesh1.getElementType() );
+      const int mesh2_element_id = GetVtkElementId( mesh2.getElementType() );
 
       if (mesh1_element_id <= 0 || mesh2_element_id <= 0) {
          SLIC_ERROR("WriteInterfaceMeshToVtk(): " <<
@@ -465,11 +463,11 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       }
 
       mesh << "CELL_TYPES " << numTotalElements << std::endl;
-      for (int i=0; i<mesh1.m_numCells; ++i)
+      for (int i=0; i<mesh1.numberOfElements(); ++i)
       {
          fmt::print(mesh, "{} ", mesh1_element_id);
       }
-      for (int i=0; i<mesh2.m_numCells; ++i)
+      for (int i=0; i<mesh2.numberOfElements(); ++i)
       {
          fmt::print(mesh, "{} ", mesh2_element_id);
       }
@@ -480,12 +478,12 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       mesh << "CELL_DATA " << numTotalElements << std::endl;
       mesh << "SCALARS mesh_id int 1" << std::endl;
       mesh << "LOOKUP_TABLE default" << std::endl;
-      for (int i=0; i<mesh1.m_numCells; ++i)
+      for (int i=0; i<mesh1.numberOfElements(); ++i)
       {
          fmt::print(mesh,  "{} ", mesh_id1);
       }
 
-      for (int i=0; i<mesh2.m_numCells; ++i)
+      for (int i=0; i<mesh2.numberOfElements(); ++i)
       {
          fmt::print(mesh,  "{} ", mesh_id2);
       }
