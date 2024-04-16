@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: (MIT)
  
-#ifndef TRIBOL_LOOP_EXEC_HPP_
-#define TRIBOL_LOOP_EXEC_HPP_
+#ifndef SRC_COMMON_LOOPEXEC_HPP_
+#define SRC_COMMON_LOOPEXEC_HPP_
 
 // Tribol includes
 #include "tribol/types.hpp"
@@ -91,4 +91,4 @@ inline void ForallExec(const int N, DBODY&& d_body, HBODY&& h_body)
 } // namespace tribol
 
 
-#endif /* TRIBOL_LOOP_EXEC_HPP_ */
+#endif /* SRC_COMMON_LOOPEXEC_HPP_ */

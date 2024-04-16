@@ -16,6 +16,7 @@ endif()
 ## list of headers
 set(tribol_headers
 
+    common/LoopExec.hpp
     common/Parameters.hpp
 
     interface/mfem_tribol.hpp

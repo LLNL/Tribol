@@ -88,6 +88,22 @@ endif()
 
 
 #------------------------------------------------------------------------------
+# RAJA
+#------------------------------------------------------------------------------
+
+if (DEFINED RAJA_DIR)
+  message(STATUS "Setting up external RAJA TPL...")
+
+  include(${RAJA_DIR}/RAJATargets.cmake)
+
+  list(APPEND TPL_DEPS RAJA)
+  set(TRIBOL_USE_RAJA TRUE)
+else()
+  message(STATUS "RAJA support is OFF")
+endif()
+
+
+#------------------------------------------------------------------------------
 # Umpire
 #------------------------------------------------------------------------------
 
@@ -101,6 +117,7 @@ if (DEFINED UMPIRE_DIR)
 else()
   message(STATUS "Umpire support is OFF")
 endif()
+
 
 #------------------------------------------------------------------------------
 # Shroud - Generates C/Fortran/Python bindings
@@ -120,6 +137,7 @@ if(EXISTS ${SHROUD_EXECUTABLE})
 else()
     message(STATUS "Shroud support is OFF")
 endif()
+
 
 #---------------------------------------------------------------------------
 # Remove non-existant INTERFACE_INCLUDE_DIRECTORIES from imported targets
