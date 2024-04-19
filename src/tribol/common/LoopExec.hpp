@@ -21,7 +21,7 @@ namespace tribol
 
 // Check for compatibility with RAJA build configuration.
 // RAJA_ENABLE_CUDA and RAJA_ENABLE_OPENMP are defined in RAJA/config.hpp.
-#if defined(TRIBOL_ENABLE_CUDA) && !defined(RAJA_ENABLE_CUDA)
+#if defined(TRIBOL_USE_CUDA) && !defined(RAJA_ENABLE_CUDA)
 #error "ENABLE_CUDA was specified for tribol, but RAJA was built without RAJA_ENABLE_CUDA"
 #endif 
 
@@ -36,7 +36,7 @@ void RajaSeqExec(const int N, HBODY &&h_body)
    RAJA::forall<RAJA::loop_exec>(RAJA::RangeSegment(0,N), h_body);
 }
 
-#ifdef TRIBOL_ENABLE_CUDA
+#ifdef TRIBOL_USE_CUDA
 #define TRIBOL_CUDA_BLOCK_SIZE 256
 // This template executes a lambda executed in a parallel RAJA loop on the device
 template <const int BLOCK_SIZE=TRIBOL_CUDA_BLOCK_SIZE, typename DBODY>
@@ -65,13 +65,14 @@ void RajaOmpExec(const int N, HBODY &&h_body)
 template <typename DBODY, typename HBODY>
 inline void ForallExec(const int N, DBODY&& d_body, HBODY&& h_body)
 {
-#ifdef TRIBOL_ENABLE_CUDA
-   if (parameters_t::getInstance().exec_mode == CUDA_PARALLEL) { return RajaCudaExec(N, d_body); }
-#endif
-#ifdef TRIBOL_ENABLE_OPENMP
-   if (parameters_t::getInstance().exec_mode == OPENMP_PARALLEL) { return RajaOmpExec(N, h_body); }
-#endif
-   return RajaSeqExec(N, h_body); // Default
+  return RajaCudaExec(N, d_body);
+// #ifdef TRIBOL_USE_CUDA
+//    if (parameters_t::getInstance().exec_mode == CUDA_PARALLEL) { return RajaCudaExec(N, d_body); }
+// #endif
+// #ifdef TRIBOL_ENABLE_OPENMP
+//    if (parameters_t::getInstance().exec_mode == OPENMP_PARALLEL) { return RajaOmpExec(N, h_body); }
+// #endif
+//    return RajaSeqExec(N, h_body); // Default
 }
 
 /*!
@@ -83,10 +84,10 @@ inline void ForallExec(const int N, DBODY&& d_body, HBODY&& h_body)
    * \param [in] h_body lambda body to be executed on the host when parameters.exec_mode is OPENMP_PARALLEL or SEQUENTIAL
    *
    */
-#define TRIBOL_FORALL(i,N,...)                         \
-   ForallExec(N,                                       \
-             [=] TRIBOL_DEVICE (int i) {__VA_ARGS__},  \
-             [&] (int i) {__VA_ARGS__})
+#define TRIBOL_FORALL(i,N,...)                                  \
+   tribol::ForallExec(N,                                        \
+                      [=] TRIBOL_DEVICE (int i) {__VA_ARGS__},  \
+                      [&] (int i) {__VA_ARGS__})
 
 } // namespace tribol
 

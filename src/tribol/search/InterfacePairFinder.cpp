@@ -48,8 +48,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    MeshManager & meshManager = MeshManager::getInstance();
 
    // get instance of mesh data
-   MeshData& mesh1 = meshManager.at(mesh_id1);
-   MeshData& mesh2 = meshManager.at(mesh_id2);
+   MeshData& mesh1 = *meshManager.at(mesh_id1);
+   MeshData& mesh2 = *meshManager.at(mesh_id2);
    int dim = mesh1.dimension();
 
    /// CHECK #2: Check to make sure faces don't share a common
@@ -79,8 +79,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    RealT m_nZ1, m_nZ2;
    if ( dim == 3 )
    {
-      m_nZ1 = mesh1.getElementNormals()[2][ faceId1 ];
-      m_nZ2 = mesh2.getElementNormals()[2][ faceId2 ];
+      m_nZ1 = mesh1.getElementNormals(2)[ faceId1 ];
+      m_nZ2 = mesh2.getElementNormals(2)[ faceId2 ];
    }
    else
    {
@@ -88,8 +88,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
       m_nZ2 = 0.;
    }
 
-   RealT nrmlCheck = mesh1.getElementNormals()[0][faceId1] * mesh2.getElementNormals()[0][faceId2] +
-                    mesh1.getElementNormals()[1][faceId1] * mesh2.getElementNormals()[1][faceId2] +
+   RealT nrmlCheck = mesh1.getElementNormals(0)[faceId1] * mesh2.getElementNormals(0)[faceId2] +
+                    mesh1.getElementNormals(1)[faceId1] * mesh2.getElementNormals(1)[faceId2] +
                     m_nZ1 * m_nZ2;
 
    // check normal projection against tolerance
@@ -112,8 +112,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    RealT offset_tol = 0.05;
    if (dim == 3)
    {
-      RealT r1 = mesh1.getFaceRadius()[ faceId1 ];
-      RealT r2 = mesh2.getFaceRadius()[ faceId2 ];
+      RealT r1 = mesh1.getFaceRadiusData()[ faceId1 ];
+      RealT r2 = mesh2.getFaceRadiusData()[ faceId2 ];
 
       // set maximum offset of face centroids for inclusion
       RealT distMax = r1 + r2; // default is sum of face radii
@@ -128,9 +128,9 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
       }
 
       // compute the distance between the two face centroids
-      RealT distX = mesh2.getElementCentroids()[0][ faceId2 ] - mesh1.getElementCentroids()[0][ faceId1 ];
-      RealT distY = mesh2.getElementCentroids()[1][ faceId2 ] - mesh1.getElementCentroids()[1][ faceId1 ];
-      RealT distZ = mesh2.getElementCentroids()[2][ faceId2 ] - mesh1.getElementCentroids()[2][ faceId1 ];
+      RealT distX = mesh2.getElementCentroids(0)[ faceId2 ] - mesh1.getElementCentroids(0)[ faceId1 ];
+      RealT distY = mesh2.getElementCentroids(1)[ faceId2 ] - mesh1.getElementCentroids(1)[ faceId1 ];
+      RealT distZ = mesh2.getElementCentroids(2)[ faceId2 ] - mesh1.getElementCentroids(2)[ faceId1 ];
 
       RealT distMag = magnitude(distX, distY, distZ );
 
@@ -142,8 +142,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    else if (dim == 2)
    {
       // get 1/2 edge length off the mesh data
-      RealT e1 = 0.5 * mesh1.getElementAreas()[ faceId1 ];
-      RealT e2 = 0.5 * mesh2.getElementAreas()[ faceId2 ];
+      RealT e1 = 0.5 * mesh1.getElementAreaData()[ faceId1 ];
+      RealT e2 = 0.5 * mesh2.getElementAreaData()[ faceId2 ];
 
       // set maximum offset of edge centroids for inclusion
       RealT distMax = e1 + e2; // default is sum of 1/2 edge lengths
@@ -158,8 +158,8 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
       }
 
       // compute the distance between the two edge centroids
-      RealT distX = mesh2.getElementCentroids()[0][ faceId2 ] - mesh1.getElementCentroids()[0][ faceId1 ];
-      RealT distY = mesh2.getElementCentroids()[1][ faceId2 ] - mesh1.getElementCentroids()[1][ faceId1 ];
+      RealT distX = mesh2.getElementCentroids(0)[ faceId2 ] - mesh1.getElementCentroids(0)[ faceId1 ];
+      RealT distY = mesh2.getElementCentroids(1)[ faceId2 ] - mesh1.getElementCentroids(1)[ faceId1 ];
 
       RealT distMag = magnitude(distX, distY);
 
@@ -221,7 +221,7 @@ public:
                    .stride( m_meshData->numberOfNodesPerElement()))
           .indices( typename BuilderType::IndicesSetBuilder()
                     .size( m_elemSet.size() * m_meshData->numberOfNodesPerElement())
-                    .data( m_meshData->getConnectivity().data() ));
+                    .data( m_meshData->getConnectivityData() ));
    }
 
    /*!
@@ -232,9 +232,9 @@ public:
    PointType getVertex(IndexT vId)
    {
       return PointType::make_point(
-            static_cast<double>(m_meshData->getPosition()[0][vId]),
-            static_cast<double>(m_meshData->getPosition()[1][vId]),
-            (D == 3) ? static_cast<double>(m_meshData->getPosition()[2][vId]) : double() );
+            static_cast<double>(m_meshData->getPosition(0)[vId]),
+            static_cast<double>(m_meshData->getPosition(1)[vId]),
+            (D == 3) ? static_cast<double>(m_meshData->getPosition(2)[vId]) : double() );
    }
 
    /*!
@@ -300,11 +300,11 @@ public:
       MeshManager & meshManager = MeshManager::getInstance();
 
       IndexT mesh_id1 = m_couplingScheme->getMeshId1();
-      MeshData const & meshData1 = meshManager.at(mesh_id1);
+      MeshData const & meshData1 = *meshManager.at(mesh_id1);
       m_meshWrapper1 = MeshWrapper<D>(&meshData1);
 
       IndexT mesh_id2 = m_couplingScheme->getMeshId2();
-      MeshData const & meshData2 = meshManager.at(mesh_id2);
+      MeshData const & meshData2 = *meshManager.at(mesh_id2);
       m_meshWrapper2 = MeshWrapper<D>(&meshData2);
 
       m_couplingScheme->getInterfacePairs()->clear();
@@ -403,11 +403,11 @@ public:
       MeshManager & meshManager = MeshManager::getInstance();
 
       IndexT mesh_id1 = m_couplingScheme->getMeshId1();
-      MeshData const & meshData1 = meshManager.at(mesh_id1);
+      MeshData const & meshData1 = *meshManager.at(mesh_id1);
       int cellType1 = static_cast<int>(meshData1.getElementType());
 
       IndexT mesh_id2 = m_couplingScheme->getMeshId2();
-      MeshData const & meshData2 = meshManager.at(mesh_id2);
+      MeshData const & meshData2 = *meshManager.at(mesh_id2);
       int cellType2 = static_cast<int>(meshData2.getElementType());
 
       InterfacePairs* contactPairs = m_couplingScheme->getInterfacePairs();
@@ -492,11 +492,11 @@ private:
     MeshManager & meshManager = MeshManager::getInstance();
 
     IndexT mesh_id1 = cs->getMeshId1();
-    MeshData const & meshData1 = meshManager.at(mesh_id1);
+    MeshData const & meshData1 = *meshManager.at(mesh_id1);
     int mesh1NumElems = meshData1.numberOfElements();
 
     IndexT mesh_id2 = cs->getMeshId2();
-    MeshData const & meshData2 = meshManager.at(mesh_id2);
+    MeshData const & meshData2 = *meshManager.at(mesh_id2);
     int mesh2NumElems = meshData2.numberOfElements();
 
     int numPairs = mesh1NumElems * mesh2NumElems;

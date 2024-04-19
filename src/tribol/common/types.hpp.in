@@ -6,7 +6,6 @@
 #ifndef TRIBOL_TYPES_HPP_
 #define TRIBOL_TYPES_HPP_
 
-#include <axom/core/Types.hpp>
 #include <cstdint>
 #include <vector>
 
@@ -17,6 +16,8 @@
 #cmakedefine TRIBOL_USE_MPI
 #cmakedefine TRIBOL_USE_UMPIRE
 #cmakedefine TRIBOL_USE_RAJA
+#cmakedefine TRIBOL_USE_CUDA
+#cmakedefine TRIBOL_USE_HIP
 #cmakedefine BUILD_REDECOMP
 
 #ifdef TRIBOL_USE_MPI
@@ -54,14 +55,60 @@ using RealT = double;
 
 #endif
 
-template <typename T, int DIM = 1, axom::MemorySpace SPACE = axom::MemorySpace::Dynamic>
-using ArrayT = axom::Array<T, DIM, SPACE>;
+enum class MemorySpace
+{
+   HOST,
+   DEVICE,
+   UNIFIED,
+   DYNAMIC
+};
 
-template <typename T, int DIM = 1, axom::MemorySpace SPACE = axom::MemorySpace::Dynamic>
-using ArrayViewT = axom::ArrayView<T, DIM, SPACE>;
+template <MemorySpace MSPACE>
+struct toAxomMemorySpace
+{
+  static constexpr axom::MemorySpace value = axom::MemorySpace::Dynamic;
+};
 
-template <typename T, int N>
-using FixedArrayT = axom::StackArray<T, N>;
+#ifdef TRIBOL_USE_UMPIRE
+
+template <>
+struct toAxomMemorySpace<MemorySpace::HOST>
+{
+  static constexpr axom::MemorySpace value = axom::MemorySpace::Host;
+};
+
+template <>
+struct toAxomMemorySpace<MemorySpace::DEVICE>
+{
+  static constexpr axom::MemorySpace value = axom::MemorySpace::Device;
+};
+
+template <>
+struct toAxomMemorySpace<MemorySpace::UNIFIED>
+{
+  static constexpr axom::MemorySpace value = axom::MemorySpace::Unified;
+};
+
+#endif
+
+// Waiting for C++ 17...
+// template <MemorySpace MSPACE>
+// inline constexpr axom::MemorySpace axomMemorySpace = toAxomMemorySpace<MSPACE>::value;
+
+template <typename T, int DIM = 1, MemorySpace SPACE = MemorySpace::DYNAMIC>
+using ArrayT = axom::Array<T, DIM, toAxomMemorySpace<SPACE>::value>;
+
+template <typename T, int DIM = 1, MemorySpace SPACE = MemorySpace::DYNAMIC>
+using ArrayViewT = axom::ArrayView<T, DIM, toAxomMemorySpace<SPACE>::value>;
+
+template <typename T, MemorySpace SPACE = MemorySpace::DYNAMIC>
+using ScalarArray = ArrayT<T, 1, SPACE>;
+
+template <typename T, MemorySpace SPACE = MemorySpace::DYNAMIC>
+using VectorArray = ArrayT<ArrayT<T, 1, SPACE>, 1, SPACE>;
+
+template <typename T, MemorySpace SPACE = MemorySpace::DYNAMIC>
+using VectorArrayView = ArrayT<ArrayViewT<T, 1, SPACE>, 1, SPACE>;
 
 constexpr int MAX_NUM_POLY_VERT = 16;     ///< Maximum allowed number of polygon vertices per contact plane
 constexpr int MAX_NUM_CELL_NODES = 8;     ///< Maximum allowed number of nodes per cell
@@ -92,9 +139,9 @@ constexpr int MAX_NUM_CELL_NODES = 8;     ///< Maximum allowed number of nodes p
 #define TRIBOL_UNUSED_PARAM AXOM_UNUSED_PARAM
 
 // Execution space specifiers
-#ifdef TRIBOL_ENABLE_CUDA
+#ifdef TRIBOL_USE_CUDA
   #ifndef __device__
-    #error "TRIBOL_ENABLE_CUDA but __device__ is undefined.  Check include files"
+    #error "TRIBOL_USE_CUDA but __device__ is undefined.  Check include files"
   #endif
   #define TRIBOL_DEVICE __device__
   #define TRIBOL_HOST_DEVICE __host__ __device__

@@ -49,8 +49,8 @@ RealT ComputeGapRatePressure( ContactPlaneManager& cpMgr,
                              int dim, RatePenaltyCalculation rate_calc )
 {
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& m1 = meshManager.at( mesh_id1 );
-   MeshData& m2 = meshManager.at( mesh_id2 );
+   MeshData& m1 = *meshManager.at( mesh_id1 );
+   MeshData& m2 = *meshManager.at( mesh_id2 );
 
    // compute the correct rate_penalty
    RealT rate_penalty = 0.;
@@ -173,15 +173,27 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    const IndexT mesh_id1 = cs->getMeshId1();
    const IndexT mesh_id2 = cs->getMeshId2();
 
-   MeshData& mesh1 = meshManager.at( mesh_id1 );
-   MeshData& mesh2 = meshManager.at( mesh_id2 );
+   MeshData& mesh1 = *meshManager.at( mesh_id1 );
+   MeshData& mesh2 = *meshManager.at( mesh_id2 );
    const IndexT numNodesPerFace = mesh1.numberOfNodesPerElement();
 
-   auto& response1 = mesh1.getResponse();
-   const IndexT * const nodalConnectivity1 = mesh1.getConnectivity().data();
+   auto response1_x = mesh1.getResponse(0);
+   auto response1_y = mesh1.getResponse(1);
+   RealT* response1_z = nullptr;
+   if (mesh1.dimension() == 3)
+   {
+      response1_z = mesh1.getResponse(2);
+   }
+   const IndexT * const nodalConnectivity1 = mesh1.getConnectivityData();
 
-   auto& response2 = mesh2.getResponse();
-   const IndexT * nodalConnectivity2 = mesh2.getConnectivity().data();
+   auto response2_x = mesh2.getResponse(0);
+   auto response2_y = mesh2.getResponse(1);
+   RealT* response2_z = nullptr;
+   if (mesh2.dimension() == 3)
+   {
+      response2_z = mesh2.getResponse(2);
+   }
+   const IndexT * nodalConnectivity2 = mesh2.getConnectivityData();
 
 
    ///////////////////////////////
@@ -418,17 +430,17 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
         }
 
         // accumulate contributions in host code's registered nodal force arrays
-        response1[0][ node0 ] -= nodal_force_x1;
-        response2[0][ node1 ] += nodal_force_x2;
+        response1_x[ node0 ] -= nodal_force_x1;
+        response2_x[ node1 ] += nodal_force_x2;
 
-        response1[1][ node0 ] -= nodal_force_y1;
-        response2[1][ node1 ] += nodal_force_y2;
+        response1_y[ node0 ] -= nodal_force_y1;
+        response2_y[ node1 ] += nodal_force_y2;
 
         // there is no z component for 2D
-        if (response1.size() == 3)
+        if (mesh1.dimension() == 3)
         {
-           response1[2][ node0 ] -= nodal_force_z1;
-           response2[2][ node1 ] += nodal_force_z2;
+           response1_z[ node0 ] -= nodal_force_z1;
+           response2_z[ node1 ] += nodal_force_z2;
         }
       } // end for loop over face nodes
 

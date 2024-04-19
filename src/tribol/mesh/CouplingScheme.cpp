@@ -378,8 +378,8 @@ bool CouplingScheme::isValidCouplingScheme()
       return false;
    }
 
-   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
-   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
+   MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
 
    // check for invalid mesh topology matches in a coupling scheme
    if (mesh1.getElementType() != mesh2.getElementType())
@@ -525,8 +525,8 @@ bool CouplingScheme::isValidCase()
       params.auto_interpen_check = true;
 
       MeshManager & meshManager = MeshManager::getInstance(); 
-      MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
-      MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
+      MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
+      MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
 
       if (!mesh1.getElementData().m_is_element_thickness_set ||
           !mesh2.getElementData().m_is_element_thickness_set)
@@ -564,8 +564,8 @@ bool CouplingScheme::isValidMethod()
    }
 
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
-   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
+   MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
    int dim = this->spatialDimension();
 
    // check all methods for basic validity issues for non-null meshes
@@ -816,8 +816,8 @@ int CouplingScheme::checkEnforcementData()
 {
    
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
-   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
+   MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
    this->m_couplingSchemeErrors.cs_enforcement_data_error 
       = NO_ENFORCEMENT_DATA_ERROR; 
 
@@ -1041,11 +1041,11 @@ bool CouplingScheme::init()
 
       // compute the face data
       MeshManager & meshManager = MeshManager::getInstance(); 
-      MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+      MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
       mesh1.computeFaceData( mesh1.dimension() );
       if (this->m_mesh_id2 != this->m_mesh_id1)
       {
-         MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
+         MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
          mesh2.computeFaceData( mesh2.dimension() );
       }
 
@@ -1101,8 +1101,8 @@ void CouplingScheme::allocateMethodData()
    // Note: keep if-block for non-null meshes here. A valid coupling scheme 
    // may have null meshes, but we don't want to allocate unnecessary memory here.
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
-   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
+   MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
    if (mesh1.numberOfElements() > 0 && mesh2.numberOfElements() > 0)
    {
       this->m_numTotalNodes = mesh1.numberOfNodes();
@@ -1133,8 +1133,8 @@ void CouplingScheme::allocateMethodData()
 RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 {
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.at( m_mesh_id1 );
-   MeshData & mesh2 = meshManager.at( m_mesh_id2 );
+   MeshData & mesh1 = *meshManager.at( m_mesh_id1 );
+   MeshData & mesh2 = *meshManager.at( m_mesh_id2 );
    parameters_t& params = parameters_t::getInstance();
    RealT gap_tol = 0.;
 
@@ -1163,14 +1163,14 @@ RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 
             case TIED :
                gap_tol = params.gap_tied_tol *
-                         axom::utilities::max( mesh1.getFaceRadius()[fid1],
-                                               mesh2.getFaceRadius()[fid2] );
+                         axom::utilities::max( mesh1.getFaceRadiusData()[fid1],
+                                               mesh2.getFaceRadiusData()[fid2] );
                break;
 
             default :  
                gap_tol = -1. * params.gap_tol_ratio *  
-                         axom::utilities::max( mesh1.getFaceRadius()[fid1],
-                                               mesh2.getFaceRadius()[fid2] );
+                         axom::utilities::max( mesh1.getFaceRadiusData()[fid1],
+                                               mesh2.getFaceRadiusData()[fid2] );
                break;
 
          } // end switch over m_contactModel
@@ -1188,8 +1188,8 @@ void CouplingScheme::computeTimeStep(RealT &dt)
 {
    // make sure velocities are registered
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.at( m_mesh_id1 );
-   MeshData & mesh2 = meshManager.at( m_mesh_id2 );
+   MeshData & mesh1 = *meshManager.at( m_mesh_id1 );
+   MeshData & mesh2 = *meshManager.at( m_mesh_id2 );
 
    if (dt < 1.e-8)
    {
@@ -1197,7 +1197,7 @@ void CouplingScheme::computeTimeStep(RealT &dt)
       return;
    }
 
-   if (mesh1.getVelocity().empty() || mesh2.getVelocity().empty())
+   if (!mesh1.hasVelocity() || !mesh2.hasVelocity())
    {
       if (mesh1.numberOfElements() > 0 && mesh2.numberOfElements() > 0)
       {
@@ -1256,8 +1256,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
    // instabilities.
    
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = meshManager.at( m_mesh_id1 );
-   MeshData & mesh2 = meshManager.at( m_mesh_id2 );
+   MeshData & mesh1 = *meshManager.at( m_mesh_id1 );
+   MeshData & mesh2 = *meshManager.at( m_mesh_id2 );
 
    // issue warning that this timestep vote does not address 
    // contact instabilities that may present themselves with the use 

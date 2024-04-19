@@ -812,7 +812,7 @@ void ContactPlaneManager::getProjectedFaceCoords( int const id,
    }
 
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& mesh = meshManager.at( meshId );
+   MeshData& mesh = *meshManager.at( meshId );
 
    if ( faceId == 0 )
    {

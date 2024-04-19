@@ -11,7 +11,6 @@
 
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/MfemData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 
 #include "tribol/geom/ContactPlane.hpp"
@@ -225,7 +224,7 @@ void setContactAreaFrac( RealT frac )
 //------------------------------------------------------------------------------
 void setPenaltyScale( IndexT mesh_id, RealT scale )
 {
-   auto mesh = MeshManager::getInstance().findData(mesh_id);
+   auto& mesh = *MeshManager::getInstance().findData(mesh_id);
 
    SLIC_ERROR_ROOT_IF(!mesh, 
                       "tribol::setPenaltyScale(): " << 
@@ -362,11 +361,48 @@ void registerMesh( IndexT mesh_id,
                    int element_type,
                    const RealT* x,
                    const RealT* y,
-                   const RealT* z )
+                   const RealT* z,
+                   MemorySpace m_space )
 {
-   MeshManager::getInstance().addData(mesh_id, MeshData(
-      mesh_id, num_cells, num_nodes, connectivity, 
-      static_cast<InterfaceElementType>(element_type), x, y, z));
+   std::unique_ptr<MeshData> mesh_data(nullptr);
+   switch (m_space)
+   {
+      case MemorySpace::HOST:
+      {
+         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::HOST>>(
+            mesh_id, num_cells, num_nodes, connectivity, 
+            static_cast<InterfaceElementType>(element_type), x, y, z);
+         break;
+      }
+      case MemorySpace::DEVICE:
+      {
+         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::DEVICE>>(
+            mesh_id, num_cells, num_nodes, connectivity, 
+            static_cast<InterfaceElementType>(element_type), x, y, z);
+         break;
+      }
+      case MemorySpace::UNIFIED:
+      {
+         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::UNIFIED>>(
+            mesh_id, num_cells, num_nodes, connectivity, 
+            static_cast<InterfaceElementType>(element_type), x, y, z);
+         break;
+      }
+      case MemorySpace::DYNAMIC:
+      {
+         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::DYNAMIC>>(
+            mesh_id, num_cells, num_nodes, connectivity, 
+            static_cast<InterfaceElementType>(element_type), x, y, z);
+         break;
+      }
+      default:
+      {
+         SLIC_ERROR_ROOT("Unknown memory space for connectivity and coordinate "
+            "data. Mesh not registered.");
+         return;
+      }
+   }
+   MeshManager::getInstance().addData(mesh_id, std::move(mesh_data));
 } // end registerMesh()
 
 //------------------------------------------------------------------------------
@@ -375,7 +411,7 @@ void registerNodalDisplacements( IndexT mesh_id,
                                  const RealT* dy,
                                  const RealT* dz )
 {
-   auto mesh = MeshManager::getInstance().findData(mesh_id);
+   auto& mesh = *MeshManager::getInstance().findData(mesh_id);
 
    SLIC_ERROR_ROOT_IF(!mesh, "tribol::registerNodalDisplacements(): " << 
                       "no mesh with id, " << mesh_id << "exists.");
@@ -405,7 +441,7 @@ void registerNodalVelocities( IndexT mesh_id,
                               const RealT* vy,
                               const RealT* vz )
 {
-   auto mesh = MeshManager::getInstance().findData(mesh_id);
+   auto& mesh = *MeshManager::getInstance().findData(mesh_id);
 
    SLIC_ERROR_ROOT_IF(!mesh, "tribol::registerNodalVelocities(): " << 
                       "no mesh with id, " << mesh_id << "exists.");
@@ -435,7 +471,7 @@ void registerNodalResponse( IndexT mesh_id,
                             RealT* ry,
                             RealT* rz )
 {
-   auto mesh = MeshManager::getInstance().findData(mesh_id);
+   auto& mesh = *MeshManager::getInstance().findData(mesh_id);
 
    SLIC_ERROR_ROOT_IF(!mesh, "tribol::registerNodalResponse(): " << 
                       "no mesh with id, " << mesh_id << "exists.");
@@ -578,7 +614,7 @@ int getElementBlockJacobians( IndexT cs_id,
 void registerMortarGaps( IndexT mesh_id,
                          RealT * gaps )
 {
-   auto mesh = MeshManager::getInstance().findData(mesh_id);
+   auto& mesh = *MeshManager::getInstance().findData(mesh_id);
 
    SLIC_ERROR_ROOT_IF(!mesh, "tribol::registerMortarGaps(): " << 
                       "no mesh with id " << mesh_id << " exists.");
@@ -602,7 +638,7 @@ void registerMortarGaps( IndexT mesh_id,
 void registerMortarPressures( IndexT mesh_id,
                               const RealT * pressures )
 {
-   auto mesh = MeshManager::getInstance().findData(mesh_id);
+   auto& mesh = *MeshManager::getInstance().findData(mesh_id);
 
    SLIC_ERROR_ROOT_IF(!mesh, "tribol::registerMortarPressures(): " << 
                       "no mesh with id " << mesh_id << " exists.");
@@ -646,7 +682,7 @@ void registerRealElementField( IndexT mesh_id,
                                const RealElementFields field,
                                const RealT * fieldVariable )
 {
-   auto mesh = MeshManager::getInstance().findData(mesh_id);
+   auto& mesh = *MeshManager::getInstance().findData(mesh_id);
 
    SLIC_ERROR_IF(!mesh, "tribol::registerRealElementField(): " << 
                  "no mesh with id " << mesh_id << " exists.");

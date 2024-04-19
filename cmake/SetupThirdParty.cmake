@@ -16,10 +16,10 @@ include(CMakeFindDependencyMacro)
 #------------------------------------------------------------------------------
 # Create global variable to toggle between GPU targets
 #------------------------------------------------------------------------------
-if(TRIBOL_ENABLE_CUDA)
+if(TRIBOL_USE_CUDA)
   set(tribol_device_depends cuda CACHE STRING "" FORCE)
 endif()
-if(TRIBOL_ENABLE_HIP)
+if(TRIBOL_USE_HIP)
   set(tribol_device_depends blt::hip CACHE STRING "" FORCE)
 endif()
 

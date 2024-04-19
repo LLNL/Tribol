@@ -58,8 +58,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 {
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    MeshManager & meshManager = MeshManager::getInstance();
-   MeshData& mesh1 = meshManager.at(mesh_id1);
-   MeshData& mesh2 = meshManager.at(mesh_id2);
+   MeshData& mesh1 = *meshManager.at(mesh_id1);
+   MeshData& mesh2 = *meshManager.at(mesh_id2);
    CouplingScheme* couplingScheme  = CouplingSchemeManager::getInstance().findData(cs_id);
    SLIC_ERROR_ROOT_IF(!couplingScheme, "No coupling scheme registered with given cs_id.");
 
@@ -174,18 +174,18 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
                {
                   const int nodeId = mesh1.getGlobalNodeId(cpMgr.m_fId1[i], j);
                   fmt::print(faces, "{} {} {}\n",
-                     mesh1.getPosition()[0][nodeId],
-                     mesh1.getPosition()[1][nodeId],
-                     dim==3 ? mesh1.getPosition()[2][nodeId] : 0.);
+                     mesh1.getPosition(0)[nodeId],
+                     mesh1.getPosition(1)[nodeId],
+                     dim==3 ? mesh1.getPosition(2)[nodeId] : 0.);
                }
 
                for (int j=0; j<mesh2.numberOfNodesPerElement(); ++j)
                {
                   const int nodeId = mesh2.getGlobalNodeId(cpMgr.m_fId2[i], j);
                   fmt::print(faces, "{} {} {}\n",
-                     mesh2.getPosition()[0][nodeId],
-                     mesh2.getPosition()[1][nodeId],
-                     dim==3 ? mesh2.getPosition()[2][nodeId] : 0.);
+                     mesh2.getPosition(0)[nodeId],
+                     mesh2.getPosition(1)[nodeId],
+                     dim==3 ? mesh2.getPosition(2)[nodeId] : 0.);
                }
             } // end else
          } // end i-loop over contact planes outputting face coordinates
@@ -235,8 +235,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          {
             // print face areas
             fmt::print(faces, "{} {} ",
-               mesh1.getElementAreas()[cpMgr.m_fId1[i]],
-               mesh2.getElementAreas()[cpMgr.m_fId2[i]]);
+               mesh1.getElementAreaData()[cpMgr.m_fId1[i]],
+               mesh2.getElementAreaData()[cpMgr.m_fId2[i]]);
          } // end i-loop over contact planes
          faces << std::endl;
          faces.close();
@@ -411,17 +411,17 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       for (int i=0; i<mesh1.numberOfNodes(); ++i)
       {
          fmt::print(mesh, "{} {} {}\n",
-            mesh1.getPosition()[0][i],
-            mesh1.getPosition()[1][i],
-            dim==3 ? mesh1.getPosition()[2][i] : 0.);
+            mesh1.getPosition(0)[i],
+            mesh1.getPosition(1)[i],
+            dim==3 ? mesh1.getPosition(2)[i] : 0.);
       }
 
       for (int i=0; i<mesh2.numberOfNodes(); ++i)
       {
          fmt::print(mesh, "{} {} {}\n",
-            mesh2.getPosition()[0][i],
-            mesh2.getPosition()[1][i],
-            dim==3 ? mesh2.getPosition()[2][i] : 0.);
+            mesh2.getPosition(0)[i],
+            mesh2.getPosition(1)[i],
+            dim==3 ? mesh2.getPosition(2)[i] : 0.);
       }
 
       // print mesh element connectivity

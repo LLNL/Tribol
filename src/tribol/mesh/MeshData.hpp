@@ -87,141 +87,74 @@ struct MeshElemData
 class MeshData
 {
 public:
-  /*!
-  * \brief Constructor 
-  *
-  */
-  MeshData( IndexT mesh_id, IndexT num_elements, IndexT num_nodes,
-            const IndexT* connectivity, InterfaceElementType element_type,
-            const RealT* x, const RealT* y, const RealT* z );
+  virtual MemorySpace getMemorySpace() const = 0;
 
-  const ArrayT<ArrayViewT<const RealT>>& getPosition() const
-  {
-    return m_position;
-  }
-
-  const ArrayT<ArrayViewT<const RealT>>& getDisplacement() const
-  {
-    return m_disp;
-  }
-
-  const ArrayT<ArrayViewT<const RealT>>& getVelocity() const
-  {
-    return m_vel;
-  }
-
-  const ArrayT<ArrayViewT<RealT>>& getResponse() const
-  {
-    return m_response;
-  }
-
-  ArrayT<ArrayViewT<RealT>>& getResponse()
-  {
-    return m_response;
-  }
-
-  const ArrayT<ArrayT<RealT>>& getNodalNormals() const { return m_node_n; }
-
-  void setPosition( IndexT num_nodes,
-                    const RealT* x,
-                    const RealT* y,
-                    const RealT* z );
-
-  void setDisplacement( IndexT num_nodes,
-                        const RealT* ux,
-                        const RealT* uy,
-                        const RealT* uz );
-
-  void setVelocity( IndexT num_nodes,
-                    const RealT* vx,
-                    const RealT* vy,
-                    const RealT* vz );
-
-  void setResponse( IndexT num_nodes, RealT* rx, RealT* ry, RealT* rz );
-
-  const ArrayViewT<const IndexT, 2>& getConnectivity() const
-  {
-    return m_connectivity;
-  }
-
-  const ArrayT<IndexT>& getSortedSurfaceNodeIds() const 
-  { 
-    return m_sorted_surface_node_ids;
-  }
-
-  bool& isMeshValid() { return m_is_valid; }
-
-  int dimension() const { return m_dim; }
+  IndexT meshId() { return m_mesh_id; }
 
   InterfaceElementType getElementType() const { return m_element_type; }
 
-  IndexT numberOfNodes() const { return m_position[0].size(); }
+  int dimension() const { return m_dim; }
 
-  IndexT numberOfElements() const { return m_connectivity.shape()[0]; }
+  bool& isMeshValid() { return m_is_valid; }
 
-  IndexT numberOfNodesPerElement() const { return m_connectivity.shape()[1]; }
+  virtual IndexT numberOfNodes() const = 0;
 
-  IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
-  {
-    return m_connectivity(element_id, local_node_id);
-  }
+  virtual IndexT numberOfElements() const = 0;
+
+  virtual IndexT numberOfNodesPerElement() const = 0;
+
+  virtual IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const = 0;
+
+  virtual bool hasVelocity() const = 0;
+
+  virtual bool hasNodalNormals() const = 0;
+
+  virtual const RealT* getPosition( int dim ) const = 0;
+
+  virtual const RealT* getDisplacement( int dim ) const = 0;
+
+  virtual const RealT* getVelocity( int dim ) const = 0;
+
+  virtual RealT* getResponse( int dim ) const = 0;
+
+  virtual void setPosition( IndexT num_nodes,
+                            const RealT* x,
+                            const RealT* y,
+                            const RealT* z ) = 0;
+
+  virtual void setDisplacement( IndexT num_nodes,
+                                const RealT* ux,
+                                const RealT* uy,
+                                const RealT* uz ) = 0;
+
+  virtual void setVelocity( IndexT num_nodes,
+                            const RealT* ux,
+                            const RealT* uy,
+                            const RealT* uz ) = 0;
+                            
+  virtual void setResponse( IndexT num_nodes, RealT* rx, RealT* ry, RealT* rz ) = 0;
+
+  virtual const IndexT* getConnectivityData() const = 0;
+  
+  virtual const RealT* getNodalNormals(IndexT dim) const = 0;
+
+  virtual const IndexT* getSortedSurfaceNodeIdsData() const = 0;
+
+  virtual IndexT getSortedSurfaceNodeIdsSize() const = 0;
+
+  virtual const RealT* getElementNormals(IndexT dim) const = 0;
+
+  virtual const RealT* getElementCentroids(IndexT dim) const = 0;
+
+  virtual const RealT* getFaceRadiusData() const = 0;
+
+  virtual const RealT* getElementAreaData() const = 0;
 
   MeshNodalData& getNodalFields() { return m_nodal_fields; }
 
   MeshElemData& getElementData() { return m_element_data; }
 
   const MeshElemData& getElementData() const { return m_element_data; }
-
-  const ArrayT<ArrayT<RealT>>& getElementNormals() const { return m_n; }
-
-  const ArrayT<ArrayT<RealT>>& getElementCentroids() const { return m_c; }
-
-  const ArrayT<RealT>& getFaceRadius() const { return m_face_radius; }
-
-  const ArrayT<RealT>& getElementAreas() const { return m_area; }
-
-private:
-  int getDimFromElementType();
-
-  ArrayViewT<const IndexT, 2> createConnectivity( IndexT num_elements, 
-                                                  const IndexT* connectivity );
-
-  template <typename T>
-  ArrayT<ArrayViewT<T>> createNodalVector( IndexT num_nodes,
-                                           T* x, 
-                                           T* y,
-                                           T* z ) const;
-
-  /// sorts unique surface node ids from connectivity and stores them on the mesh object in ascending order
-  void sortSurfaceNodeIds();
-
-  IndexT m_mesh_id;                    ///< Mesh Id associated with this data
-  InterfaceElementType m_element_type; ///< Type of interface element in mesh
-  int m_dim;                           ///< Mesh dimension
-
-  // Nodal field data
-  ArrayT<ArrayViewT<const RealT>> m_position; ///< Coordinates of nodes in mesh
-  ArrayT<ArrayViewT<const RealT>> m_disp;     ///< Nodal displacements
-  ArrayT<ArrayViewT<const RealT>> m_vel;      ///< Nodal velocity
-
-  ArrayT<ArrayViewT<RealT>> m_response;       ///< Nodal responses (forces)
-  ArrayT<ArrayT<RealT>> m_node_n;             ///< Outward unit node normals
-
-  // Element field data
-  ArrayViewT<const IndexT, 2> m_connectivity; ///< Element connectivity arrays
-  ArrayT<IndexT> m_sorted_surface_node_ids;   ///< List of sorted node ids from connectivity w/o duplicates
-
-  ArrayT<ArrayT<RealT>> m_n;   ///< Outward unit element normals
-  ArrayT<ArrayT<RealT>> m_c;   ///< Vertex averaged element centroids
-  ArrayT<RealT> m_face_radius; ///< Face radius used in low level proximity check
-  ArrayT<RealT> m_area;        ///< Element areas
-  
-  bool m_is_valid;                     ///< True if the mesh is valid
-
-  MeshNodalData m_nodal_fields; ///< method specific nodal fields
-  MeshElemData  m_element_data; ///< method/enforcement specific element data
-
-public:
 
   /*!
   * \brief Checks for valid Lagrange multiplier enforcement data
@@ -236,6 +169,248 @@ public:
   */
   int checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options );
 
+  /*!
+  * \brief Computes the face normals and centroids for all faces in the mesh.
+  *
+  * \param [in] dim Dimension of the problem 
+  * \return true if face calculations do not encounter errors or warnings
+  * 
+  * This routine accounts for warped faces by computing an average normal.
+  */
+  virtual bool computeFaceData( int const dim ) = 0;
+  
+  /*!
+  * \brief Computes average nodal normals for use with mortar methods
+  *
+  * \note this routine computes average nodal normals for all nodes in the mesh.
+  *
+  * \param [in] dim Dimension of the problem
+  */
+  virtual void computeNodalNormals( int const dim ) = 0;
+  
+  /*!
+  *
+  * \brief returns pointer to array of stacked nodal coordinates for given face
+  *
+  * \param [in/out] coords pointer to an array of stacked (x,y,z) nodal coordinates
+  *
+  */
+  virtual void getFaceCoords( int const faceId, RealT * coords ) = 0;
+
+  /*!
+  *
+  * \brief returns pointer to array of stacked nodal velocities for given face
+  *
+  * \param [in/out] nodalVel pointer to an array of stacked (x,y,z) nodal velocities
+  *
+  */
+  virtual void getFaceNodalVelocities( int const faceId, RealT * nodalVel ) = 0;
+
+  /*!
+  *
+  * \brief returns pointer to array of stacked normal components 
+  *
+  * \param [in] faceId integer id of face
+  * \param [in] dim dimension of the problem
+  * \param [in/out] nrml pointer to array of stacked components of the face normal vector
+  *
+  */
+  virtual void getFaceNormal( int const faceId, int const dim, RealT * nrml ) = 0;
+
+  virtual void print(std::ostream& os) const = 0;
+
+protected:
+  MeshData( IndexT mesh_id, InterfaceElementType element_type );
+
+  int getDimFromElementType();
+
+  IndexT m_mesh_id;                    ///< Mesh Id associated with this data
+  InterfaceElementType m_element_type; ///< Type of interface element in mesh
+  int m_dim;                           ///< Mesh dimension
+  
+  bool m_is_valid;                     ///< True if the mesh is valid
+
+  MeshNodalData m_nodal_fields; ///< method specific nodal fields
+  MeshElemData  m_element_data; ///< method/enforcement specific element data
+};
+
+template <MemorySpace MSPACE = MemorySpace::HOST>
+class MeshDataBySpace : public MeshData
+{
+public:
+  /*!
+  * \brief Constructor 
+  *
+  */
+  MeshDataBySpace( IndexT mesh_id, IndexT num_elements, IndexT num_nodes,
+                   const IndexT* connectivity, InterfaceElementType element_type,
+                   const RealT* x, const RealT* y, const RealT* z );
+
+  MemorySpace getMemorySpace() const override { return MSPACE; }
+
+  bool hasVelocity() const override { return !m_vel.empty(); }
+
+  bool hasNodalNormals() const override { return !m_node_n.empty(); }
+
+  const RealT* getPosition(IndexT dim) const override
+  {
+    return dim >= m_position.size() ? nullptr : m_position[dim].data();
+  }
+
+  const VectorArrayView<const RealT, MSPACE>& getPosition() const 
+  {
+    return m_position;
+  }
+
+  const RealT* getDisplacement(IndexT dim) const override
+  {
+    return dim >= m_disp.size() ? nullptr : m_disp[dim].data();
+  }
+
+  const VectorArrayView<const RealT, MSPACE>& getDisplacement() const
+  { 
+    return m_disp;
+  }
+
+  const RealT* getVelocity(IndexT dim) const override
+  {
+    return dim >= m_vel.size() ? nullptr : m_vel[dim].data();
+  }
+
+  const VectorArrayView<const RealT, MSPACE>& getVelocity() const
+  { 
+    return m_vel;
+  }
+
+  RealT* getResponse(IndexT dim) const override
+  {
+    return dim >= m_response.size() ? nullptr : m_response[dim].data();
+  }
+
+  const VectorArrayView<RealT, MSPACE>& getResponse() const
+  {
+    return m_response;
+  }
+
+  VectorArrayView<RealT, MSPACE>& getResponse()
+  {
+    return m_response;
+  }
+
+  const RealT* getNodalNormals(IndexT dim) const override
+  {
+    return dim >= m_node_n.size() ? nullptr : m_node_n[dim].data();
+  }
+
+  const VectorArray<RealT, MSPACE>& getNodalNormals() const { return m_node_n; }
+
+  void setPosition( IndexT num_nodes,
+                    const RealT* x,
+                    const RealT* y,
+                    const RealT* z ) override;
+
+  void setDisplacement( IndexT num_nodes,
+                        const RealT* ux,
+                        const RealT* uy,
+                        const RealT* uz ) override;
+
+  void setVelocity( IndexT num_nodes,
+                    const RealT* vx,
+                    const RealT* vy,
+                    const RealT* vz ) override;
+
+  void setResponse( IndexT num_nodes, RealT* rx, RealT* ry, RealT* rz ) override;
+
+  const IndexT* getConnectivityData() const override { return m_connectivity.data(); }
+
+  const ArrayViewT<const IndexT, 2, MSPACE>& getConnectivity() const
+  {
+    return m_connectivity;
+  }
+
+  const IndexT* getSortedSurfaceNodeIdsData() const override
+  {
+    return m_sorted_surface_node_ids.data();
+  }
+
+  IndexT getSortedSurfaceNodeIdsSize() const override
+  {
+    return m_sorted_surface_node_ids.size();
+  }
+
+  const ArrayT<IndexT, 1, MSPACE>& getSortedSurfaceNodeIds() const 
+  { 
+    return m_sorted_surface_node_ids;
+  }
+
+  IndexT numberOfNodes() const override { return m_position[0].size(); }
+
+  IndexT numberOfElements() const override { return m_connectivity.shape()[0]; }
+
+  IndexT numberOfNodesPerElement() const override
+  { 
+    return m_connectivity.shape()[1];
+  }
+
+  IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const override
+  {
+    return m_connectivity(element_id, local_node_id);
+  }
+
+  const RealT* getElementNormals(IndexT dim) const override
+  {
+    return dim >= m_n.size() ? nullptr : m_n[dim].data();
+  }
+
+  const VectorArray<RealT, MSPACE>& getElementNormals() const { return m_n; }
+
+  const RealT* getElementCentroids(IndexT dim) const override
+  {
+    return dim >= m_c.size() ? nullptr : m_c[dim].data();
+  }
+
+  const VectorArray<RealT, MSPACE>& getElementCentroids() const { return m_c; }
+
+  const RealT* getFaceRadiusData() const override { return m_face_radius.data(); }
+
+  const ScalarArray<RealT, MSPACE>& getFaceRadius() const { return m_face_radius; }
+
+  const RealT* getElementAreaData() const override { return m_area.data(); }
+
+  const ScalarArray<RealT, MSPACE>& getElementAreas() const { return m_area; }
+
+private:
+  ArrayViewT<const IndexT, 2, MSPACE> createConnectivity( IndexT num_elements, 
+                                                  const IndexT* connectivity );
+
+  template <typename T>
+  VectorArrayView<T, MSPACE> createNodalVector( IndexT num_nodes,
+                                                T* x, 
+                                                T* y,
+                                                T* z ) const;
+
+  /// sorts unique surface node ids from connectivity and stores them on the mesh object in ascending order
+  void sortSurfaceNodeIds();
+
+  // Nodal field data
+  VectorArrayView<const RealT, MSPACE> m_position; ///< Coordinates of nodes in mesh
+  VectorArrayView<const RealT, MSPACE> m_disp;     ///< Nodal displacements
+  VectorArrayView<const RealT, MSPACE> m_vel;      ///< Nodal velocity
+
+  VectorArrayView<RealT, MSPACE> m_response;       ///< Nodal responses (forces)
+  VectorArray<RealT, MSPACE> m_node_n;             ///< Outward unit node normals
+
+  // Element field data
+  ArrayViewT<const IndexT, 2, MSPACE> m_connectivity;  ///< Element connectivity arrays
+  ArrayT<IndexT, 1, MSPACE> m_sorted_surface_node_ids; ///< List of sorted node ids from connectivity w/o duplicates
+
+  VectorArray<RealT, MSPACE> m_n;   ///< Outward unit element normals
+  VectorArray<RealT, MSPACE> m_c;   ///< Vertex averaged element centroids
+  ScalarArray<RealT, MSPACE> m_face_radius; ///< Face radius used in low level proximity check
+  ScalarArray<RealT, MSPACE> m_area;        ///< Element areas
+
+public:
+
 
   /*!
   * \brief Computes the face normals and centroids for all faces in the mesh.
@@ -245,7 +420,7 @@ public:
   * 
   * This routine accounts for warped faces by computing an average normal.
   */
-  bool computeFaceData( int const dim );
+  bool computeFaceData( int const dim ) override;
   
   /*!
   * \brief Computes average nodal normals for use with mortar methods
@@ -254,7 +429,7 @@ public:
   *
   * \param [in] dim Dimension of the problem
   */
-  void computeNodalNormals( int const dim );
+  void computeNodalNormals( int const dim ) override;
   
   /*!
   *
@@ -291,7 +466,7 @@ public:
   * \param [in/out] coords pointer to an array of stacked (x,y,z) nodal coordinates
   *
   */
-  void getFaceCoords( int const faceId, RealT * coords );
+  void getFaceCoords( int const faceId, RealT * coords ) override;
 
   /*!
   *
@@ -300,7 +475,7 @@ public:
   * \param [in/out] nodalVel pointer to an array of stacked (x,y,z) nodal velocities
   *
   */
-  void getFaceNodalVelocities( int const faceId, RealT * nodalVel );
+  void getFaceNodalVelocities( int const faceId, RealT * nodalVel ) override;
 
   /*!
   *
@@ -311,48 +486,32 @@ public:
   * \param [in/out] nrml pointer to array of stacked components of the face normal vector
   *
   */
-  void getFaceNormal( int const faceId, int const dim, RealT * nrml );
-
-  // Note, this routine is not used at the moment
-  int localIdFromConn( const int connectivityId );
-                    
-  /*!
-  * \brief Allocates storage space for face normals, centroids and areas.
-  *
-  * \note This routine assumes the m_numCells has been set to the number of 
-  * mesh cells.
-  * \param dimension The dimension of the mesh
-  * \pre dimension is 2 or 3
-  */
-  void allocateArrays(int dimension);
-  
-  /*!
-  * \brief Deallocates storage space for face normals, centroids and areas
-  */
-  void deallocateArrays();
+  void getFaceNormal( int const faceId, int const dim, RealT * nrml ) override;
 
   /// Prints information associated with this mesh to \a os
-  void print(std::ostream& os) const;
+  void print(std::ostream& os) const override;
 };
 
 //------------------------------------------------------------------------------
+template <MemorySpace MSPACE>
 template <typename T>
-ArrayT<ArrayViewT<T>> MeshData::createNodalVector( IndexT num_nodes,
-                                                   T* x,
-                                                   T* y,
-                                                   T* z ) const
+VectorArrayView<T, MSPACE> MeshDataBySpace<MSPACE>::createNodalVector( IndexT num_nodes,
+                                                                       T* x,
+                                                                       T* y,
+                                                                       T* z ) const
 {
-  ArrayT<ArrayViewT<T>> nodal_vector(m_dim, m_dim);
-  nodal_vector[0] = ArrayViewT<T>(x, num_nodes);
-  nodal_vector[1] = ArrayViewT<T>(y, num_nodes);
+  VectorArrayView<T, MSPACE> nodal_vector(m_dim, m_dim);
+  nodal_vector[0] = ArrayViewT<T, 1, MSPACE>(x, num_nodes);
+  nodal_vector[1] = ArrayViewT<T, 1, MSPACE>(y, num_nodes);
   if (m_dim == 3)
   {
-    nodal_vector[2] = ArrayViewT<T>(z, num_nodes);
+    nodal_vector[2] = ArrayViewT<T, 1, MSPACE>(z, num_nodes);
   }
   return nodal_vector;
 }
 
-using MeshManager = DataManager<MeshData>;
+// use a unique_ptr for polymorphism
+using MeshManager = DataManager<std::unique_ptr<MeshData>>;
 
 } // end namespace tribol
 

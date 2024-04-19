@@ -272,7 +272,7 @@ public:
     */
    MeshData& getCpMeshData(IndexT mesh_id)
       { MeshManager & meshManager = MeshManager::getInstance();
-        MeshData& mesh = meshManager.getData( mesh_id );
+        MeshData& mesh = *meshManager.getData( mesh_id );
         return mesh; }
    
    /*!

@@ -20,6 +20,13 @@
 namespace tribol
 {
 
+template <typename...> struct IsUniquePtr : std::false_type {};
+template<class T, typename... Args>
+struct IsUniquePtr<std::unique_ptr<T, Args...>> : std::true_type {};
+
+template<class T> struct RemoveUniquePtr { typedef T type; };
+template<class T> struct RemoveUniquePtr<std::unique_ptr<T>> { typedef T type; };
+
 template <typename T>
 class DataManager
 {

@@ -86,8 +86,8 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 {
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
-   const IndexT * const nonmortarConn = nonmortarMesh.getConnectivity().data();
+   MeshData& nonmortarMesh = *meshManager.at( elem.mesh_id2 );
+   const IndexT * const nonmortarConn = nonmortarMesh.getConnectivityData();
 
    SLIC_ERROR_IF(nonmortarMesh.getNodalFields().m_node_gap.empty(), 
                  "ComputeNodalGap< ALIGNED_MORTAR >: allocate gaps on mesh data object.");
@@ -119,11 +119,11 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
       // get global nonmortar node number from connectivity
       RealT nrml_a[elem.dim];
       int glbId = nonmortarConn[ elem.numFaceVert * elem.faceId2 + a ];
-      nrml_a[0] = nonmortarMesh.getNodalNormals()[0][ glbId ];
-      nrml_a[1] = nonmortarMesh.getNodalNormals()[1][ glbId ];
+      nrml_a[0] = nonmortarMesh.getNodalNormals(0)[ glbId ];
+      nrml_a[1] = nonmortarMesh.getNodalNormals(1)[ glbId ];
       if (elem.dim == 3 )
       {
-         nrml_a[2] = nonmortarMesh.getNodalNormals()[2][ glbId ];
+         nrml_a[2] = nonmortarMesh.getNodalNormals(2)[ glbId ];
       }
 
       //////////////////////////////////////////////
@@ -180,19 +180,19 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    const IndexT mortarId = cs->getMeshId1();
    const IndexT nonmortarId =  cs->getMeshId2();
 
-   MeshData& mortarMesh = meshManager.at( mortarId );
-   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
+   MeshData& mortarMesh = *meshManager.at( mortarId );
+   MeshData& nonmortarMesh  = *meshManager.at( nonmortarId );
    const IndexT numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
-   RealT const * const x1 = mortarMesh.getPosition()[0].data();
-   RealT const * const y1 = mortarMesh.getPosition()[1].data(); 
-   RealT const * const z1 = mortarMesh.getPosition()[2].data(); 
-   const IndexT * const mortarConn= mortarMesh.getConnectivity().data();
+   RealT const * const x1 = mortarMesh.getPosition(0);
+   RealT const * const y1 = mortarMesh.getPosition(1); 
+   RealT const * const z1 = mortarMesh.getPosition(2); 
+   const IndexT * const mortarConn= mortarMesh.getConnectivityData();
 
-   RealT const * const x2 = nonmortarMesh.getPosition()[0].data(); 
-   RealT const * const y2 = nonmortarMesh.getPosition()[1].data();
-   RealT const * const z2 = nonmortarMesh.getPosition()[2].data();
-   const IndexT * nonmortarConn = nonmortarMesh.getConnectivity().data();
+   RealT const * const x2 = nonmortarMesh.getPosition(0); 
+   RealT const * const y2 = nonmortarMesh.getPosition(1);
+   RealT const * const z2 = nonmortarMesh.getPosition(2);
+   const IndexT * nonmortarConn = nonmortarMesh.getConnectivityData();
 
    // compute nodal normals (do this outside the element loop)
    // This routine is guarded against a null mesh
@@ -294,25 +294,25 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    const IndexT mortarId = cs->getMeshId1();
    const IndexT nonmortarId =  cs->getMeshId2();
 
-   MeshData& mortarMesh = meshManager.at( mortarId );
-   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
+   MeshData& mortarMesh = *meshManager.at( mortarId );
+   MeshData& nonmortarMesh  = *meshManager.at( nonmortarId );
    const IndexT numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
-   RealT const * const x1 = mortarMesh.getPosition()[0].data();
-   RealT const * const y1 = mortarMesh.getPosition()[1].data(); 
-   RealT const * const z1 = mortarMesh.getPosition()[2].data(); 
-   RealT * const fx1 = mortarMesh.getResponse()[0].data();
-   RealT * const fy1 = mortarMesh.getResponse()[1].data(); 
-   RealT * const fz1 = mortarMesh.getResponse()[2].data(); 
-   const IndexT * const mortarConn= mortarMesh.getConnectivity().data();
+   RealT const * const x1 = mortarMesh.getPosition(0);
+   RealT const * const y1 = mortarMesh.getPosition(1); 
+   RealT const * const z1 = mortarMesh.getPosition(2); 
+   RealT * const fx1 = mortarMesh.getResponse(0);
+   RealT * const fy1 = mortarMesh.getResponse(1); 
+   RealT * const fz1 = mortarMesh.getResponse(2); 
+   const IndexT * const mortarConn= mortarMesh.getConnectivityData();
 
-   RealT const * const x2 = nonmortarMesh.getPosition()[0].data(); 
-   RealT const * const y2 = nonmortarMesh.getPosition()[1].data();
-   RealT const * const z2 = nonmortarMesh.getPosition()[2].data();
-   RealT * const fx2 = nonmortarMesh.getResponse()[0].data(); 
-   RealT * const fy2 = nonmortarMesh.getResponse()[1].data();
-   RealT * const fz2 = nonmortarMesh.getResponse()[2].data();
-   const IndexT * nonmortarConn = nonmortarMesh.getConnectivity().data();
+   RealT const * const x2 = nonmortarMesh.getPosition(0); 
+   RealT const * const y2 = nonmortarMesh.getPosition(1);
+   RealT const * const z2 = nonmortarMesh.getPosition(2);
+   RealT * const fx2 = nonmortarMesh.getResponse(0); 
+   RealT * const fy2 = nonmortarMesh.getResponse(1);
+   RealT * const fz2 = nonmortarMesh.getResponse(2);
+   const IndexT * nonmortarConn = nonmortarMesh.getConnectivityData();
 
    ///////////////////////////////////////////////////////
    //                                                   //
@@ -371,11 +371,11 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
          // sides for the aligned mortar case (i.e. no interpolation necessary for coincident 
          // mortar and nonmortar nodes).
          RealT forceX = nonmortarMesh.getNodalFields().m_node_pressure[ nonmortarIdA ] * 
-                       nonmortarMesh.getNodalNormals()[0][ nonmortarIdA ];
+                       nonmortarMesh.getNodalNormals(0)[ nonmortarIdA ];
          RealT forceY = nonmortarMesh.getNodalFields().m_node_pressure[ nonmortarIdA ] *
-                       nonmortarMesh.getNodalNormals()[1][ nonmortarIdA ];
+                       nonmortarMesh.getNodalNormals(1)[ nonmortarIdA ];
          RealT forceZ = nonmortarMesh.getNodalFields().m_node_pressure[ nonmortarIdA ] * 
-                       nonmortarMesh.getNodalNormals()[2][ nonmortarIdA ];
+                       nonmortarMesh.getNodalNormals(2)[ nonmortarIdA ];
 
          fx2[ nonmortarIdA ]  -= forceX;
          fy2[ nonmortarIdA ]  -= forceY;

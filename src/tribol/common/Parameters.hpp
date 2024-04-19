@@ -404,11 +404,12 @@ enum EnforcementInfo
 /*!
  * \brief Enumerates the available loop execution modes
  */
-enum class LoopExecMode
+enum class ExecutionSpace
 {
    SEQUENTIAL,                 ///! Execute serial (single-threaded) loops on CPU
    CUDA_PARALLEL,              ///! Execute parallel loops on GPU using CUDA
-   OPENMP_PARALLEL             ///! Execute parallel loops on CPU using OpenMP
+   OPENMP_PARALLEL,            ///! Execute parallel loops on CPU using OpenMP
+   UNDEFINED
 };
 
 /*!
@@ -501,8 +502,6 @@ struct parameters_t
   RealT projection_ratio;       ///! Ratio for defining nonzero projections
   RealT auto_contact_pen_frac;  ///! Max allowable interpenetration as percent of element thickness for contact candidacy
   RealT timestep_pen_frac;      ///! Max allowable interpenetration as percent of element thickness prior to triggering timestep vote
-
-  LoopExecMode exec_mode;        ///! mode for loop execution
 
   int vis_cycle_incr;            ///! Frequency for visualizations dumps
   VisType vis_type;              ///! Type of interface physics visualization output

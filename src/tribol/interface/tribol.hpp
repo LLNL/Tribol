@@ -193,6 +193,7 @@ void enableTimestepVote( const bool enable );
  * \param [in] x array of x-components of the mesh coordinates
  * \param [in] y array of y-components of the mesh coordinates
  * \param [in] z array of z-components of the mesh coordinates (3D only)
+ * \param [in] m_space Memory space of the connectivity and coordinate arrays
  *
  * \note numMeshNodes may be the number of nodes on the surface 
  *       (i.e. surface mesh only), or they may include nodes in the volume, 
@@ -211,7 +212,8 @@ void registerMesh( IndexT mesh_id,
                    int element_type,
                    const RealT* x,
                    const RealT* y,
-                   const RealT* z = nullptr );
+                   const RealT* z = nullptr,
+                   MemorySpace m_space = MemorySpace::DYNAMIC );
 
 /*!
  * \brief Registers nodal displacements on the contact surface.

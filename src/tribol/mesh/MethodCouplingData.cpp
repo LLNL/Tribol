@@ -271,8 +271,8 @@ void MortarData::assembleJacobian( SurfaceContactElem & elem, SparseMode s_mode 
    IndexT const mortarId = elem.mesh_id1;
    IndexT const nonmortarId  = elem.mesh_id2;
 
-   MeshData& mortarMesh = meshManager.at( mortarId );
-   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
+   MeshData& mortarMesh = *meshManager.at( mortarId );
+   MeshData& nonmortarMesh  = *meshManager.at( nonmortarId );
 
    // compute the pressure dof offset. 
    // Recall that the "equilibrium" 
@@ -428,8 +428,8 @@ void MortarData::assembleMortarWts( SurfaceContactElem & elem, SparseMode s_mode
    IndexT const mortarId = elem.mesh_id1;
    IndexT const nonmortarId  = elem.mesh_id2; 
 
-   MeshData& mortarMesh = meshManager.at( mortarId );
-   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
+   MeshData& mortarMesh = *meshManager.at( mortarId );
+   MeshData& nonmortarMesh  = *meshManager.at( nonmortarId );
 
    // Note: The node ids between the two are assumed to 
    // be unique and contiguous using the int ids in the 

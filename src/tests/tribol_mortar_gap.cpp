@@ -185,8 +185,8 @@ public:
 
       // get instance of meshes to compute face data required for other calculations
       tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-      tribol::MeshData& mortarMesh = meshManager.at( mortarMeshId );
-      tribol::MeshData& nonmortarMesh = meshManager.at( nonmortarMeshId );
+      tribol::MeshData& mortarMesh = *meshManager.at( mortarMeshId );
+      tribol::MeshData& nonmortarMesh = *meshManager.at( nonmortarMeshId );
 
       mortarMesh.computeFaceData(dim);
       nonmortarMesh.computeFaceData(dim);
@@ -481,7 +481,7 @@ TEST_F( MortarGapTest, parallel_misaligned )
    this->checkMortarGaps( &conn1[0], &conn2[0], tribol::SINGLE_MORTAR );
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& nonmortarMesh = meshManager.at( 1 );
+   tribol::MeshData& nonmortarMesh = *meshManager.at( 1 );
 
    // compute the sum of the nodal gaps
    RealT gap = 0.;
@@ -572,7 +572,7 @@ TEST_F( MortarGapTest, parallel_aligned )
    this->checkMortarGaps( &conn1[0], &conn2[0], tribol::SINGLE_MORTAR );
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& nonmortarMesh = meshManager.at( 1 );
+   tribol::MeshData& nonmortarMesh = *meshManager.at( 1 );
 
    // compute the sum of the nodal gaps
    RealT gap = 0.;
@@ -663,7 +663,7 @@ TEST_F( MortarGapTest, parallel_simple_aligned )
    this->checkMortarGaps( &conn1[0], &conn2[0], tribol::ALIGNED_MORTAR );
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& nonmortarMesh = meshManager.at( 1 );
+   tribol::MeshData& nonmortarMesh = *meshManager.at( 1 );
 
    // compute the sum of the nodal gaps
    RealT gap = 0.;
