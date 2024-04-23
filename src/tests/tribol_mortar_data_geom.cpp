@@ -468,6 +468,8 @@ TEST_F( MortarGeomTest, mortar_ironing )
 
    EXPECT_EQ( num_total_active_nodes, 54 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
