@@ -199,6 +199,9 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 36 );
+
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarGeomTest, mortar_bad_patch )
@@ -314,6 +317,8 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 36 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarGeomTest, mortar_ironing )
@@ -583,6 +588,8 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
 
    EXPECT_EQ( err, 0 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 int main(int argc, char* argv[])
