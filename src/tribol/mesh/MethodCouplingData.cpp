@@ -183,8 +183,7 @@ MethodData::MethodData()
       static_cast<axom::IndexType>(BlockSpace::NUM_BLOCK_SPACES)
    )
 {
-   // temporarily comment out this line to see if it causes the tests to fail
-   //m_blockJ.shrink();
+   m_blockJ.shrink();
 }
 
 //------------------------------------------------------------------------------
