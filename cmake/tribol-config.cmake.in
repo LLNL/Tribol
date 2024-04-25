@@ -48,7 +48,7 @@ if(NOT TRIBOL_FOUND)
   set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
   set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIBX32_PATHS TRUE)
 
-  # Tribol is optional
+  # Umpire is optional
   if(TRIBOL_USE_UMPIRE)
     set(TRIBOL_UMPIRE_DIR  "@UMPIRE_DIR@")
     if(NOT UMPIRE_DIR) 
