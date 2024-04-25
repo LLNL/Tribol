@@ -279,6 +279,8 @@ int main( int argc, char** argv )
 
   } // end of post Tribol scope
 
+  tribol::finalize();
+
   SLIC_INFO( "Example has run successfully." );
 
   axom::slic::flushStreams();

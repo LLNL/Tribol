@@ -15,8 +15,6 @@
 #include "axom/slic.hpp"
 #include "axom/fmt.hpp"
 
-namespace fmt = axom::fmt;
-
 namespace tribol
 {
 
@@ -929,41 +927,41 @@ void MeshData::print(std::ostream& os) const
    }
 
    os << "{\n";
-   os << fmt::format("  verts ({}) {{",num_verts);
+   os << axom::fmt::format("  verts ({}) {{",num_verts);
    // positions
-   os << fmt::format("\n\tx: {}", fmt::join(m_positionX, m_positionX+num_verts, ", "));
-   os << fmt::format("\n\ty: {}", fmt::join(m_positionY, m_positionY+num_verts, ", "));
+   os << axom::fmt::format("\n\tx: {}", axom::fmt::join(m_positionX, m_positionX+num_verts, ", "));
+   os << axom::fmt::format("\n\ty: {}", axom::fmt::join(m_positionY, m_positionY+num_verts, ", "));
    if(dim == 3)
    {  
-      os << fmt::format("\n\tz: {}", fmt::join(m_positionZ, m_positionZ+num_verts, ", "));
+      os << axom::fmt::format("\n\tz: {}", axom::fmt::join(m_positionZ, m_positionZ+num_verts, ", "));
    }
    // contact force
    if( m_forceX != nullptr )
    {
-      os << fmt::format("\n\tfx: {}", fmt::join(m_forceX, m_forceX+num_verts, ", "));
-      os << fmt::format("\n\tfy: {}", fmt::join(m_forceY, m_forceY+num_verts, ", "));
+      os << axom::fmt::format("\n\tfx: {}", axom::fmt::join(m_forceX, m_forceX+num_verts, ", "));
+      os << axom::fmt::format("\n\tfy: {}", axom::fmt::join(m_forceY, m_forceY+num_verts, ", "));
       if(dim == 3)
       {  
-         os << fmt::format("\n\tfz: {}", fmt::join(m_forceZ, m_forceZ+num_verts, ", "));
+         os << axom::fmt::format("\n\tfz: {}", axom::fmt::join(m_forceZ, m_forceZ+num_verts, ", "));
       }
    }
    os << "\n  }";
 
-   os << fmt::format("\n  elems ({}) {{", num_elem);  
+   os << axom::fmt::format("\n  elems ({}) {{", num_elem);  
    
    if( m_connectivity != nullptr )
    {
-      os << fmt::format("\n\tconnectivity: {{ {} }}", fmt::join(m_connectivity, m_connectivity+(num_elem*m_numNodesPerCell), ", "));
+      os << axom::fmt::format("\n\tconnectivity: {{ {} }}", axom::fmt::join(m_connectivity, m_connectivity+(num_elem*m_numNodesPerCell), ", "));
    }
 
    // normals
    if( m_nX != nullptr)
    {
-      os << fmt::format("\n\tnx: {}", fmt::join(m_nX, m_nX+num_elem, ", "));
-      os << fmt::format("\n\tny: {}", fmt::join(m_nY, m_nY+num_elem, ", "));
+      os << axom::fmt::format("\n\tnx: {}", axom::fmt::join(m_nX, m_nX+num_elem, ", "));
+      os << axom::fmt::format("\n\tny: {}", axom::fmt::join(m_nY, m_nY+num_elem, ", "));
       if(dim == 3)
       {  
-         os << fmt::format("\n\tnz: {}", fmt::join(m_nZ, m_nZ+num_elem, ", "));
+         os << axom::fmt::format("\n\tnz: {}", axom::fmt::join(m_nZ, m_nZ+num_elem, ", "));
       }
    }
    os << "\n  }";

@@ -60,15 +60,16 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
     # Basic dependencies
     depends_on("cmake@3.14:", type="build")
     depends_on("cmake@3.21:", type="build", when="+rocm")
+    depends_on("blt@0.6.2:", type="build")
 
     depends_on("mpi")
 
     # Other libraries
     depends_on("mfem+lapack")
-    depends_on("axom")
+    depends_on("axom@0.9:")
 
-    depends_on("raja", when="+raja")
-    depends_on("umpire", when="+umpire")
+    depends_on("raja@2024.02.0:", when="+raja")
+    depends_on("umpire@2024.02.0:", when="+umpire")
 
     with when("+redecomp"):
         depends_on("mfem+metis+mpi")
@@ -78,16 +79,18 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on("axom+umpire", when="+umpire")
 
     for val in CudaPackage.cuda_arch_values:
-        depends_on("mfem cuda_arch={0}".format(val), when="cuda_arch={0}".format(val))
-        depends_on("axom cuda_arch={0}".format(val), when="cuda_arch={0}".format(val))
-        depends_on("raja cuda_arch={0}".format(val), when="+raja cuda_arch={0}".format(val))
-        depends_on("umpire cuda_arch={0}".format(val), when="+umpire cuda_arch={0}".format(val))
+        ext_cuda_dep = f"+cuda cuda_arch={val}"
+        depends_on(f"mfem{ext_cuda_dep}", when=f"{ext_cuda_dep}")
+        depends_on(f"axom{ext_cuda_dep}", when=f"{ext_cuda_dep}")
+        depends_on(f"raja{ext_cuda_dep}", when=f"+raja{ext_cuda_dep}")
+        depends_on(f"umpire{ext_cuda_dep}", when=f"+umpire{ext_cuda_dep}")
 
     for val in ROCmPackage.amdgpu_targets:
-        depends_on("mfem amdgpu_target={0}".format(val), when="amdgpu_target={0}".format(val))
-        depends_on("axom amdgpu_target={0}".format(val), when="amdgpu_target={0}".format(val))
-        depends_on("raja amdgpu_target={0}".format(val), when="amdgpu_target={0}".format(val))
-        depends_on("umpire amdgpu_target={0}".format(val), when="amdgpu_target={0}".format(val))
+        ext_rocm_dep = f"+rocm amdgpu_target={val}"
+        depends_on(f"mfem{ext_rocm_dep}", when=f"{ext_rocm_dep}")
+        depends_on(f"axom{ext_rocm_dep}", when=f"{ext_rocm_dep}")
+        depends_on(f"raja{ext_rocm_dep}", when=f"+raja{ext_rocm_dep}")
+        depends_on(f"umpire{ext_rocm_dep}", when=f"+umpire{ext_rocm_dep}")
 
     depends_on("rocprim", when="+rocm")
     
@@ -166,8 +169,7 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
         # Add optimization flag workaround for Debug builds with
         # cray compiler or newer HIP
         if "+rocm" in spec:
-            if "crayCC" in self.compiler.cxx or spec.satisfies("%clang@16"):
-                entries.append(cmake_cache_string("CMAKE_CXX_FLAGS_DEBUG","-O1 -g -DNDEBUG"))
+            entries.append(cmake_cache_string("CMAKE_CXX_FLAGS_DEBUG","-O1 -g -DNDEBUG"))
 
         return entries
 
@@ -180,22 +182,12 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
             entries.append(cmake_cache_option("CMAKE_CUDA_SEPARABLE_COMPILATION", True))
 
             # CUDA_FLAGS
-            cudaflags = "-restrict --expt-extended-lambda "
+            cudaflags = "${CMAKE_CUDA_FLAGS} -restrict --expt-extended-lambda "
 
             # Pass through any cxxflags to the host compiler via nvcc's Xcompiler flag
-            host_cxx_flags = spec.compiler_flags['cxxflags']
-            cudaflags += ' '.join(['-Xcompiler=%s ' % flag for flag in host_cxx_flags])
-
-            if not spec.satisfies("cuda_arch=none"):
-                cuda_arch = spec.variants["cuda_arch"].value[0]
-                entries.append(cmake_cache_string("CMAKE_CUDA_ARCHITECTURES", cuda_arch))
-            else:
-                entries.append("# cuda_arch could not be determined\n\n")
-
-            if spec.satisfies("^blt@:0.5.1"):
-                # This is handled internally by BLT now
-                cudaflags += " -std=c++14"
-            entries.append(cmake_cache_string("CMAKE_CUDA_FLAGS", cudaflags))
+            host_cxx_flags = spec.compiler_flags["cxxflags"]
+            cudaflags += " ".join(["-Xcompiler=%s " % flag for flag in host_cxx_flags])
+            entries.append(cmake_cache_string("CMAKE_CUDA_FLAGS", cudaflags, force=True))
 
             entries.append("# nvcc does not like gtest's 'pthreads' flag\n")
             entries.append(cmake_cache_option("gtest_disable_pthreads", True))
@@ -387,8 +379,9 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
 
 
     def cmake_args(self):
-
         options = []
+
+        options.append("-DBLT_SOURCE_DIR:PATH={0}".format(self.spec["blt"].prefix))
 
         options.append(self.define_from_variant(
             'TRIBOL_ENABLE_EXAMPLES', 'examples'))
