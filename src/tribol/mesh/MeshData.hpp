@@ -6,7 +6,8 @@
 #ifndef SRC_MESH_MESHDATA_HPP_
 #define SRC_MESH_MESHDATA_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/common/ArrayTypes.hpp"
+#include "tribol/common/LoopExec.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/utils/DataManager.hpp"
 
@@ -97,13 +98,13 @@ public:
 
   bool& isMeshValid() { return m_is_valid; }
 
-  virtual IndexT numberOfNodes() const = 0;
+  IndexT numberOfNodes() const { return m_num_nodes; };
 
-  virtual IndexT numberOfElements() const = 0;
+  IndexT numberOfElements() const { return m_num_elements; };
 
-  virtual IndexT numberOfNodesPerElement() const = 0;
+  TRIBOL_HOST_DEVICE virtual IndexT numberOfNodesPerElement() const = 0;
 
-  virtual IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const = 0;
+  TRIBOL_HOST_DEVICE virtual IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const = 0;
 
   virtual bool hasVelocity() const = 0;
 
@@ -117,22 +118,19 @@ public:
 
   virtual RealT* getResponse( int dim ) const = 0;
 
-  virtual void setPosition( IndexT num_nodes,
-                            const RealT* x,
+  virtual void setPosition( const RealT* x,
                             const RealT* y,
                             const RealT* z ) = 0;
 
-  virtual void setDisplacement( IndexT num_nodes,
-                                const RealT* ux,
+  virtual void setDisplacement( const RealT* ux,
                                 const RealT* uy,
                                 const RealT* uz ) = 0;
 
-  virtual void setVelocity( IndexT num_nodes,
-                            const RealT* ux,
+  virtual void setVelocity( const RealT* ux,
                             const RealT* uy,
                             const RealT* uz ) = 0;
                             
-  virtual void setResponse( IndexT num_nodes, RealT* rx, RealT* ry, RealT* rz ) = 0;
+  virtual void setResponse( RealT* rx, RealT* ry, RealT* rz ) = 0;
 
   virtual const IndexT* getConnectivityData() const = 0;
   
@@ -177,7 +175,7 @@ public:
   * 
   * This routine accounts for warped faces by computing an average normal.
   */
-  virtual bool computeFaceData( int const dim ) = 0;
+  virtual bool computeFaceData() = 0;
   
   /*!
   * \brief Computes average nodal normals for use with mortar methods
@@ -220,13 +218,17 @@ public:
   virtual void print(std::ostream& os) const = 0;
 
 protected:
-  MeshData( IndexT mesh_id, InterfaceElementType element_type );
+  MeshData( IndexT mesh_id, InterfaceElementType element_type,
+    IndexT num_nodes, IndexT num_elements );
 
   int getDimFromElementType();
 
   IndexT m_mesh_id;                    ///< Mesh Id associated with this data
   InterfaceElementType m_element_type; ///< Type of interface element in mesh
   int m_dim;                           ///< Mesh dimension
+
+  IndexT m_num_nodes;                  ///< Number of nodes in the mesh
+  IndexT m_num_elements;               ///< Number of elements in the mesh
   
   bool m_is_valid;                     ///< True if the mesh is valid
 
@@ -234,7 +236,7 @@ protected:
   MeshElemData  m_element_data; ///< method/enforcement specific element data
 };
 
-template <MemorySpace MSPACE = MemorySpace::HOST>
+template <MemorySpace MSPACE = MemorySpace::Host>
 class MeshDataBySpace : public MeshData
 {
 public:
@@ -304,22 +306,19 @@ public:
 
   const VectorArray<RealT, MSPACE>& getNodalNormals() const { return m_node_n; }
 
-  void setPosition( IndexT num_nodes,
-                    const RealT* x,
+  void setPosition( const RealT* x,
                     const RealT* y,
                     const RealT* z ) override;
 
-  void setDisplacement( IndexT num_nodes,
-                        const RealT* ux,
+  void setDisplacement( const RealT* ux,
                         const RealT* uy,
                         const RealT* uz ) override;
 
-  void setVelocity( IndexT num_nodes,
-                    const RealT* vx,
+  void setVelocity( const RealT* vx,
                     const RealT* vy,
                     const RealT* vz ) override;
 
-  void setResponse( IndexT num_nodes, RealT* rx, RealT* ry, RealT* rz ) override;
+  void setResponse( RealT* rx, RealT* ry, RealT* rz ) override;
 
   const IndexT* getConnectivityData() const override { return m_connectivity.data(); }
 
@@ -343,16 +342,12 @@ public:
     return m_sorted_surface_node_ids;
   }
 
-  IndexT numberOfNodes() const override { return m_position[0].size(); }
-
-  IndexT numberOfElements() const override { return m_connectivity.shape()[0]; }
-
-  IndexT numberOfNodesPerElement() const override
+  TRIBOL_HOST_DEVICE IndexT numberOfNodesPerElement() const override
   { 
     return m_connectivity.shape()[1];
   }
 
-  IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const override
+  TRIBOL_HOST_DEVICE IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const override
   {
     return m_connectivity(element_id, local_node_id);
   }
@@ -381,13 +376,7 @@ public:
 
 private:
   ArrayViewT<const IndexT, 2, MSPACE> createConnectivity( IndexT num_elements, 
-                                                  const IndexT* connectivity );
-
-  template <typename T>
-  VectorArrayView<T, MSPACE> createNodalVector( IndexT num_nodes,
-                                                T* x, 
-                                                T* y,
-                                                T* z ) const;
+                                                          const IndexT* connectivity );
 
   /// sorts unique surface node ids from connectivity and stores them on the mesh object in ascending order
   void sortSurfaceNodeIds();
@@ -410,7 +399,10 @@ private:
   ScalarArray<RealT, MSPACE> m_area;        ///< Element areas
 
 public:
-
+  template <typename T>
+  VectorArrayView<T, MSPACE> createNodalVector( T* x, 
+                                                T* y,
+                                                T* z ) const;
 
   /*!
   * \brief Computes the face normals and centroids for all faces in the mesh.
@@ -420,7 +412,7 @@ public:
   * 
   * This routine accounts for warped faces by computing an average normal.
   */
-  bool computeFaceData( int const dim ) override;
+  bool computeFaceData() override;
   
   /*!
   * \brief Computes average nodal normals for use with mortar methods
@@ -446,7 +438,7 @@ public:
   *  of the tribol proximity check.
   *
   */
-  RealT computeFaceRadius( int faceId );
+  TRIBOL_HOST_DEVICE RealT computeFaceRadius( int faceId );
   
   /*!
   *
@@ -495,18 +487,31 @@ public:
 //------------------------------------------------------------------------------
 template <MemorySpace MSPACE>
 template <typename T>
-VectorArrayView<T, MSPACE> MeshDataBySpace<MSPACE>::createNodalVector( IndexT num_nodes,
-                                                                       T* x,
+VectorArrayView<T, MSPACE> MeshDataBySpace<MSPACE>::createNodalVector( T* x,
                                                                        T* y,
                                                                        T* z ) const
 {
   VectorArrayView<T, MSPACE> nodal_vector(m_dim, m_dim);
-  nodal_vector[0] = ArrayViewT<T, 1, MSPACE>(x, num_nodes);
-  nodal_vector[1] = ArrayViewT<T, 1, MSPACE>(y, num_nodes);
+  // auto nodal_vector_data = nodal_vector.data();
+  // T* vector_temp[3]{x, y, z};
+
+  // forAllExec<toExecutionMode<MSPACE>::value>(
+  //   m_dim,
+  //   [this, nodal_vector_data, vector_temp] TRIBOL_HOST_DEVICE (const IndexT i) {
+  //     axom::StackArray<IndexT, 1> num_nodes_array;
+  //     num_nodes_array[0] = numberOfNodes();
+  //     nodal_vector_data[i] = ArrayViewT<T, 1, MSPACE>(vector_temp[i], num_nodes_array);
+  //   }
+  // );
+  ArrayT<ArrayViewT<T, 1, MSPACE>, 1, MemorySpace::Dynamic> host_nodal_vector(m_dim, m_dim);
+  host_nodal_vector[0] = ArrayViewT<T, 1, MSPACE>(x, numberOfNodes());
+  host_nodal_vector[1] = ArrayViewT<T, 1, MSPACE>(y, numberOfNodes());
   if (m_dim == 3)
   {
-    nodal_vector[2] = ArrayViewT<T, 1, MSPACE>(z, num_nodes);
+    host_nodal_vector[2] = ArrayViewT<T, 1, MSPACE>(z, numberOfNodes());
   }
+  nodal_vector = std::move(host_nodal_vector);
+
   return nodal_vector;
 }
 

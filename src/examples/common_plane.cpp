@@ -5,7 +5,6 @@
 
 #include "examples_common.hpp" // for common functionality used in examples
 
-#include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/utils/TestUtils.hpp"
 #include "tribol/utils/Math.hpp"

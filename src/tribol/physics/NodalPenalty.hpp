@@ -6,7 +6,6 @@
 #ifndef SRC_PHYSICS_NODALPENALTY_HPP_
 #define SRC_PHYSICS_NODALPENALTY_HPP_
 
-#include "tribol/types.hpp"
 
 namespace tribol
 {

@@ -12,7 +12,6 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/interface/mfem_tribol.hpp"
-#include "tribol/types.hpp"
 
 // Redecomp includes
 #include "redecomp/redecomp.hpp"

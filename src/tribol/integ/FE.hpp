@@ -6,7 +6,6 @@
 #ifndef SRC_INTEG_FE_HPP_
 #define SRC_INTEG_FE_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 
 namespace tribol
@@ -31,7 +30,7 @@ namespace tribol
  * \pre z is nullptr for 2D
  *
  */
-void GalerkinEval( const RealT* const RESTRICT x, 
+void GalerkinEval( const RealT* const x, 
                    const RealT pX, const RealT pY, const RealT pZ, 
                    FaceOrderType order_type, BasisEvalType basis_type, 
                    int dim, int galerkinDim, RealT* nodeVals, RealT* galerkinVal );
@@ -52,7 +51,7 @@ void GalerkinEval( const RealT* const RESTRICT x,
  * \pre z is nullptr for 2D
  *
  */
-void EvalBasis( const RealT* const RESTRICT x, 
+void EvalBasis( const RealT* const x, 
                 const RealT pX, const RealT pY, const RealT pZ, 
                 const int numPoints, const int vertexId, 
                 RealT& phi );
@@ -74,7 +73,7 @@ void EvalBasis( const RealT* const RESTRICT x,
  * \note This is implicitly a 3D routine
  *
  */
-void WachspressBasis( const RealT* const RESTRICT x, 
+void WachspressBasis( const RealT* const x, 
                       const RealT pX, const RealT pY, const RealT pZ, 
                       const int numPoints, const int vertexId, RealT& phi );
 
@@ -92,7 +91,7 @@ void WachspressBasis( const RealT* const RESTRICT x,
  * \note This is implicitly a 2D routine
  *
  */
-void SegmentBasis( const RealT* const RESTRICT x, 
+void SegmentBasis( const RealT* const x, 
                    const RealT pX, const RealT pY,
                    const int numPoints, const int vertexId, 
                    RealT& phi );

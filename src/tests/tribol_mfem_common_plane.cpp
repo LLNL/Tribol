@@ -13,7 +13,6 @@
 #include "tribol/interface/tribol.hpp"
 #include "tribol/interface/mfem_tribol.hpp"
 #include "tribol/utils/TestUtils.hpp"
-#include "tribol/types.hpp"
 
 // Redecomp includes
 #include "redecomp/redecomp.hpp"

@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: (MIT)
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"

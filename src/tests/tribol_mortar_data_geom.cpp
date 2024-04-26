@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: (MIT)
 
 // Tribol includes
-#include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/interface/simple_tribol.hpp"
 

@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: (MIT)
 
 // Tribol includes
-#include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
@@ -57,7 +56,7 @@ public:
       tribol::MeshData& mesh = *meshManager.at( mesh_id );
 
       // compute the face data for this mesh
-      mesh.computeFaceData( dim );
+      mesh.computeFaceData();
 
       mesh.computeNodalNormals( dim );
 

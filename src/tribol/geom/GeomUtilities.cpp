@@ -64,11 +64,11 @@ void ProjectPointToSegment( const RealT x, const RealT y,
 
 //------------------------------------------------------------------------------
 void PolyInterYCentroid( const int namax,
-                         const RealT* const RESTRICT xa,
-                         const RealT* const RESTRICT ya,
+                         const RealT* const xa,
+                         const RealT* const ya,
                          const int nbmax,
-                         const RealT* const RESTRICT xb,
-                         const RealT* const RESTRICT yb,
+                         const RealT* const xb,
+                         const RealT* const yb,
                          const int isym,
                          RealT & area,
                          RealT & ycent )
@@ -318,14 +318,14 @@ void Local2DToGlobalCoords( RealT xloc, RealT yloc,
 } // end Local2DToGlobalCoords()
 
 //------------------------------------------------------------------------------
-void GlobalTo2DLocalCoords( const RealT* const RESTRICT pX, 
-                            const RealT* const RESTRICT pY, 
-                            const RealT* const RESTRICT pZ,
+void GlobalTo2DLocalCoords( const RealT* const pX, 
+                            const RealT* const pY, 
+                            const RealT* const pZ,
                             RealT e1X, RealT e1Y, RealT e1Z,
                             RealT e2X, RealT e2Y, RealT e2Z,
                             RealT cX, RealT cY, RealT cZ,
-                            RealT* const RESTRICT pLX, 
-                            RealT* const RESTRICT pLY, int size )
+                            RealT* const pLX, 
+                            RealT* const pLY, int size )
 {
 
    SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
@@ -372,9 +372,9 @@ void GlobalTo2DLocalCoords( RealT pX, RealT pY, RealT pZ,
 } // end GlobalTo2DLocalCoords()
 
 //------------------------------------------------------------------------------
-void VertexAvgCentroid( const RealT* const RESTRICT x, 
-                        const RealT* const RESTRICT y, 
-                        const RealT* const RESTRICT z, 
+void VertexAvgCentroid( const RealT* const x, 
+                        const RealT* const y, 
+                        const RealT* const z, 
                         const int numVert,
                         RealT& cX, RealT& cY, RealT& cZ )
 {
@@ -406,7 +406,7 @@ void VertexAvgCentroid( const RealT* const RESTRICT x,
 } // end VertexAvgCentroid()
 
 //------------------------------------------------------------------------------
-void VertexAvgCentroid( const RealT* const RESTRICT x, 
+void VertexAvgCentroid( const RealT* const x, 
                         const int dim,
                         const int numVert,
                         RealT& cX, RealT& cY, RealT& cZ )
@@ -439,7 +439,7 @@ void VertexAvgCentroid( const RealT* const RESTRICT x,
 } // end VertexAvgCentroid()
 
 //------------------------------------------------------------------------------
-void PolyAreaCentroid( const RealT* const RESTRICT x, 
+void PolyAreaCentroid( const RealT* const x, 
                        const int dim,
                        const int numVert,
                        RealT& cX, RealT& cY, RealT& cZ )
@@ -504,8 +504,8 @@ void PolyAreaCentroid( const RealT* const RESTRICT x,
 } // end PolyAreaCentroid()
 
 //------------------------------------------------------------------------------
-void PolyCentroid( const RealT* const RESTRICT x, 
-                   const RealT* const RESTRICT y,
+void PolyCentroid( const RealT* const x, 
+                   const RealT* const y,
                    const int numVert,
                    RealT& cX, RealT& cY )
 {
@@ -534,15 +534,15 @@ void PolyCentroid( const RealT* const RESTRICT x,
 } // end PolyCentroid()
 
 //------------------------------------------------------------------------------
-FaceGeomError Intersection2DPolygon( const RealT* const RESTRICT xA, 
-                                     const RealT* const RESTRICT yA, 
+FaceGeomError Intersection2DPolygon( const RealT* const xA, 
+                                     const RealT* const yA, 
                                      const int numVertexA, 
-                                     const RealT* const RESTRICT xB, 
-                                     const RealT* const RESTRICT yB, 
+                                     const RealT* const xB, 
+                                     const RealT* const yB, 
                                      const int numVertexB,
                                      RealT posTol, RealT lenTol, 
-                                     RealT* RESTRICT * RESTRICT polyX, 
-                                     RealT* RESTRICT * RESTRICT polyY, 
+                                     RealT* * polyX, 
+                                     RealT* * polyY, 
                                      int& numPolyVert, RealT& area, bool orientCheck )
 {
    // for tribol, if you have called this routine it is because a positive area of 
@@ -862,8 +862,8 @@ FaceGeomError Intersection2DPolygon( const RealT* const RESTRICT xA,
 } // end Intersection2DPolygon()
 
 //------------------------------------------------------------------------------
-bool CheckPolyOrientation( const RealT* const RESTRICT x, 
-                           const RealT* const RESTRICT y, 
+bool CheckPolyOrientation( const RealT* const x, 
+                           const RealT* const y, 
                            const int numVertex )
 {
    bool check = true;
@@ -906,8 +906,8 @@ bool CheckPolyOrientation( const RealT* const RESTRICT x,
 
 //------------------------------------------------------------------------------
 bool Point2DInFace( const RealT xPoint, const RealT yPoint, 
-                    const RealT* const RESTRICT xPoly, 
-                    const RealT* const RESTRICT yPoly,
+                    const RealT* const xPoly, 
+                    const RealT* const yPoly,
                     const RealT xC, const RealT yC, 
                     const int numPolyVert )
 {
@@ -954,8 +954,8 @@ bool Point2DInFace( const RealT xPoint, const RealT yPoint,
 
 //------------------------------------------------------------------------------
 bool Point2DInTri( const RealT xp, const RealT yp, 
-                   const RealT* const RESTRICT xTri, 
-                   const RealT* const RESTRICT yTri )
+                   const RealT* const xTri, 
+                   const RealT* const yTri )
 {
    bool inside = false;
 
@@ -998,8 +998,8 @@ bool Point2DInTri( const RealT xp, const RealT yp,
 } // end Point2DInTri()
 
 //------------------------------------------------------------------------------
-RealT Area2DPolygon( const RealT* const RESTRICT x, 
-                    const RealT* const RESTRICT y, 
+RealT Area2DPolygon( const RealT* const x, 
+                    const RealT* const y, 
                     const int numPolyVert )
 {
 
@@ -1026,9 +1026,9 @@ RealT Area2DPolygon( const RealT* const RESTRICT x,
 } // end Area2DPolygon()
 
 //------------------------------------------------------------------------------
-RealT Area3DTri( const RealT* const RESTRICT x,
-                const RealT* const RESTRICT y,
-                const RealT* const RESTRICT z )
+RealT Area3DTri( const RealT* const x,
+                const RealT* const y,
+                const RealT* const z )
 {
    RealT u[3] = { x[1] - x[0], y[1] - y[0], z[1] - z[0] };
    RealT v[3] = { x[2] - x[0], y[2] - y[0], z[2] - z[0] };
@@ -1040,7 +1040,7 @@ RealT Area3DTri( const RealT* const RESTRICT x,
 //------------------------------------------------------------------------------
 bool SegmentIntersection2D( const RealT xA1, const RealT yA1, const RealT xB1, const RealT yB1,
                             const RealT xA2, const RealT yA2, const RealT xB2, const RealT yB2,
-                            const bool* const RESTRICT interior, RealT& x, RealT& y, 
+                            const bool* const interior, RealT& x, RealT& y, 
                             bool& duplicate, const RealT tol )
 {
    // note 1: this routine computes a unique segment-segment intersection, where two 
@@ -1195,9 +1195,9 @@ bool SegmentIntersection2D( const RealT xA1, const RealT yA1, const RealT xB1, c
 } // end SegmentIntersection2D()
 
 //------------------------------------------------------------------------------
-FaceGeomError CheckPolySegs( const RealT* const RESTRICT x, const RealT* const RESTRICT y, 
+FaceGeomError CheckPolySegs( const RealT* const x, const RealT* const y, 
                              const int numPoints, const RealT tol, 
-                             RealT* RESTRICT * RESTRICT xnew, RealT* RESTRICT * RESTRICT ynew, 
+                             RealT* * xnew, RealT* * ynew, 
                              int& numNewPoints )
 {
    RealT newIDs[ numPoints ];
@@ -1266,7 +1266,7 @@ FaceGeomError CheckPolySegs( const RealT* const RESTRICT x, const RealT* const R
 } // end CheckPolySegs()
 
 //------------------------------------------------------------------------------
-void PolyReorder( RealT* const RESTRICT x, RealT* const RESTRICT y, const int numPoints )
+void PolyReorder( RealT* const x, RealT* const y, const int numPoints )
 {
 
    SLIC_ERROR_IF(numPoints<3, "PolyReorder: numPoints < 3.");
@@ -1443,7 +1443,7 @@ void PolyReorder( RealT* const RESTRICT x, RealT* const RESTRICT y, const int nu
 } // end PolyReorder()
 
 //------------------------------------------------------------------------------
-void PolyReverse( RealT* const RESTRICT x, RealT* const RESTRICT y, const int numPoints )
+void PolyReverse( RealT* const x, RealT* const y, const int numPoints )
 {
    RealT xtemp[ numPoints ];
    RealT ytemp[ numPoints ];
@@ -1463,9 +1463,9 @@ void PolyReverse( RealT* const RESTRICT x, RealT* const RESTRICT y, const int nu
 }
 
 //------------------------------------------------------------------------------
-void PolyReorderWithNormal( RealT* const RESTRICT x,
-                            RealT* const RESTRICT y,
-                            RealT* const RESTRICT z,
+void PolyReorderWithNormal( RealT* const x,
+                            RealT* const y,
+                            RealT* const z,
                             const int numPoints,
                             const RealT nX,
                             const RealT nY,
@@ -1631,8 +1631,8 @@ bool PlanePlaneIntersection( const RealT x1, const RealT y1, const RealT z1,
 } // end PlanePlaneIntersection()
 
 //------------------------------------------------------------------------------
-void Vertex2DOrderToCCW( const RealT* const RESTRICT x, const RealT* const RESTRICT y,
-                         RealT* RESTRICT xTemp, RealT* RESTRICT yTemp,
+void Vertex2DOrderToCCW( const RealT* const x, const RealT* const y,
+                         RealT* xTemp, RealT* yTemp,
                          const int numVert )
 {
    if (numVert <= 0)

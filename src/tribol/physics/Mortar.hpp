@@ -6,7 +6,6 @@
 #ifndef SRC_PHYSICS_MORTAR_HPP_
 #define SRC_PHYSICS_MORTAR_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "Physics.hpp"
 

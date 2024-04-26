@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: (MIT)
 
-#include "tribol/types.hpp"
 #include "tribol/utils/TestUtils.hpp"
 #include "tribol/utils/Math.hpp"
 

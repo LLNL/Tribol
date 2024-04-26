@@ -6,7 +6,7 @@
 #ifndef TRIBOL_HPP_
 #define TRIBOL_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
 #include "tribol/geom/ContactPlaneManager.hpp"
 
 #include <string>
@@ -213,7 +213,7 @@ void registerMesh( IndexT mesh_id,
                    const RealT* x,
                    const RealT* y,
                    const RealT* z = nullptr,
-                   MemorySpace m_space = MemorySpace::DYNAMIC );
+                   MemorySpace m_space = MemorySpace::Dynamic );
 
 /*!
  * \brief Registers nodal displacements on the contact surface.
@@ -428,6 +428,7 @@ void registerIntElementField( IndexT mesh_id,
  * \param [in] contact_model
  * \param [in] enforcement_method
  * \param [in] binning_method
+ * \param [in] exec_mode Execution mode for loops
  *
  * \note A mesh for the given contact surface must have already been registered
  *  prior to calling this method.
@@ -440,7 +441,8 @@ void registerCouplingScheme( IndexT cs_id,
                              int contact_method,
                              int contact_model,
                              int enforcement_method,
-                             int binning_method = DEFAULT_BINNING_METHOD);
+                             int binning_method = DEFAULT_BINNING_METHOD,
+                             ExecutionMode exec_mode = ExecutionMode::Dynamic);
 /// @}
 
 

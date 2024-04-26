@@ -6,7 +6,6 @@
 #ifndef SRC_INTEG_INTEGRATION_HPP_
 #define SRC_INTEG_INTEGRATION_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 
 namespace tribol

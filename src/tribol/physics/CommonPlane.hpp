@@ -6,7 +6,6 @@
 #ifndef SRC_PHYSICS_COMMONPLANE_HPP_
 #define SRC_PHYSICS_COMMONPLANE_HPP_
 
-#include "tribol/types.hpp"
 #include "Physics.hpp"
 
 namespace tribol

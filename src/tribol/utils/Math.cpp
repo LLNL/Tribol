@@ -14,7 +14,7 @@
 namespace tribol
 {
 
-RealT magnitude( RealT const vx, 
+TRIBOL_HOST_DEVICE RealT magnitude( RealT const vx, 
                 RealT const vy, 
                 RealT const vz )
 {
@@ -33,7 +33,7 @@ RealT magnitude( RealT const * const v, int const dim )
 }
 
 //------------------------------------------------------------------------------
-RealT magnitude( RealT const vx, RealT const vy )
+TRIBOL_HOST_DEVICE RealT magnitude( RealT const vx, RealT const vy )
 {
    return sqrt(vx * vx + vy * vy);
 }

@@ -6,7 +6,7 @@
 #ifndef SRC_GEOM_CONTACTPLANEMANAGER_HPP_
 #define SRC_GEOM_CONTACTPLANEMANAGER_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
 #include "tribol/geom/ContactPlane.hpp"
 
 namespace tribol

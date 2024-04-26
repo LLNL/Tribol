@@ -5,6 +5,8 @@
 
 ## examples
 set( contact_examples
+     gpu_test.cpp
+     common_plane_gpu.cpp
      common_plane.cpp
      mortar_lm_patch_test.cpp
      )

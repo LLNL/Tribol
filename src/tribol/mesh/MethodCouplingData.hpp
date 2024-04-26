@@ -6,7 +6,7 @@
 #ifndef SRC_MESH_METHODCOUPLINGDATA_HPP_
 #define SRC_MESH_METHODCOUPLINGDATA_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/common/ArrayTypes.hpp"
 #include "tribol/common/Parameters.hpp"
 
 // Axom includes

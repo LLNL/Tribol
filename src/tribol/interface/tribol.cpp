@@ -7,7 +7,6 @@
 
 // Tribol includes
 #include "tribol/common/Parameters.hpp"
-#include "tribol/types.hpp"
 
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
@@ -367,30 +366,30 @@ void registerMesh( IndexT mesh_id,
    std::unique_ptr<MeshData> mesh_data(nullptr);
    switch (m_space)
    {
-      case MemorySpace::HOST:
+      case MemorySpace::Host:
       {
-         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::HOST>>(
+         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::Host>>(
             mesh_id, num_cells, num_nodes, connectivity, 
             static_cast<InterfaceElementType>(element_type), x, y, z);
          break;
       }
-      case MemorySpace::DEVICE:
+      case MemorySpace::Device:
       {
-         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::DEVICE>>(
+         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::Device>>(
             mesh_id, num_cells, num_nodes, connectivity, 
             static_cast<InterfaceElementType>(element_type), x, y, z);
          break;
       }
-      case MemorySpace::UNIFIED:
+      case MemorySpace::Unified:
       {
-         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::UNIFIED>>(
+         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::Unified>>(
             mesh_id, num_cells, num_nodes, connectivity, 
             static_cast<InterfaceElementType>(element_type), x, y, z);
          break;
       }
-      case MemorySpace::DYNAMIC:
+      case MemorySpace::Dynamic:
       {
-         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::DYNAMIC>>(
+         mesh_data = std::make_unique<MeshDataBySpace<MemorySpace::Dynamic>>(
             mesh_id, num_cells, num_nodes, connectivity, 
             static_cast<InterfaceElementType>(element_type), x, y, z);
          break;
@@ -431,7 +430,7 @@ void registerNodalDisplacements( IndexT mesh_id,
       }
    }
 
-   mesh->setDisplacement(mesh->numberOfNodes(), dx, dy, dz);
+   mesh->setDisplacement(dx, dy, dz);
 
 } // end registerNodalDisplacements()
 
@@ -461,7 +460,7 @@ void registerNodalVelocities( IndexT mesh_id,
       }
    }
 
-   mesh->setVelocity(mesh->numberOfNodes(), vx, vy, vz);
+   mesh->setVelocity(vx, vy, vz);
 
 } // end registerNodalVelocities()
 
@@ -490,7 +489,7 @@ void registerNodalResponse( IndexT mesh_id,
       }
    }   
 
-   mesh->setResponse(mesh->numberOfNodes(), rx, ry, rz);
+   mesh->setResponse(rx, ry, rz);
 
 } // end registerNodalResponse()
 
@@ -887,7 +886,8 @@ void registerCouplingScheme( IndexT cs_id,
                              int contact_method,
                              int contact_model,
                              int enforcement_method,
-                             int binning_method )
+                             int binning_method,
+                             ExecutionMode TRIBOL_UNUSED_PARAM(exec) )
 {
    CouplingScheme scheme (cs_id,
                           mesh_id1,

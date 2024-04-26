@@ -6,7 +6,6 @@
 #ifndef SRC_PHYSICS_PHYSICS_HPP_
 #define SRC_PHYSICS_PHYSICS_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 
 namespace tribol

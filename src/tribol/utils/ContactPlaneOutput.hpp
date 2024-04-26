@@ -6,7 +6,7 @@
 #ifndef SRC_UTILS_CONTACTPLANEOUTPUT_HPP_
 #define SRC_UTILS_CONTACTPLANEOUTPUT_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
 #include "tribol/common/Parameters.hpp"
 
 // AXOM includes

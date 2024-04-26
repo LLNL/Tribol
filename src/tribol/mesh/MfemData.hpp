@@ -6,7 +6,7 @@
 #ifndef SRC_MESH_MFEMDATA_HPP_
 #define SRC_MESH_MFEMDATA_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
 
 #ifdef BUILD_REDECOMP
 

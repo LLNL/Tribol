@@ -7,11 +7,10 @@
 #define SRC_UTILS_DATAMANAGER_HPP_
 
 // C/C++ includes
-#include <memory>
 #include <unordered_map>
 
 // Tribol includes
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
 
 // Axom includes
 #include "axom/fmt.hpp"
@@ -19,13 +18,6 @@
 
 namespace tribol
 {
-
-template <typename...> struct IsUniquePtr : std::false_type {};
-template<class T, typename... Args>
-struct IsUniquePtr<std::unique_ptr<T, Args...>> : std::true_type {};
-
-template<class T> struct RemoveUniquePtr { typedef T type; };
-template<class T> struct RemoveUniquePtr<std::unique_ptr<T>> { typedef T type; };
 
 template <typename T>
 class DataManager

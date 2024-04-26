@@ -6,7 +6,6 @@
 // tribol includes
 #include "Physics.hpp"
 
-#include "tribol/types.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/geom/ContactPlaneManager.hpp"

@@ -6,7 +6,7 @@
 #ifndef MFEM_TRIBOL_HPP_
 #define MFEM_TRIBOL_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/config.hpp"
 
 #ifdef BUILD_REDECOMP
 

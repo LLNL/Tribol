@@ -3,11 +3,6 @@
 #
 # SPDX-License-Identifier: (MIT)
 
-## configure types.hpp
-set(TRIBOL_DATA_DIR ${PROJECT_SOURCE_DIR}/data)
-tribol_configure_file(common/types.hpp.in
-                      ${PROJECT_BINARY_DIR}/include/tribol/types.hpp )
-
 # Add targets to generate C and Fortran interfaces
 if (SHROUD_FOUND)
      add_subdirectory(interface)
@@ -16,6 +11,9 @@ endif()
 ## list of headers
 set(tribol_headers
 
+    common/ArrayTypes.hpp
+    common/BasicTypes.hpp
+    common/ExecModel.hpp
     common/LoopExec.hpp
     common/Parameters.hpp
 

@@ -6,7 +6,7 @@
 #define TRIBOL_COUPLINGSCHEME_HPP_
 
 // Tribol includes
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MfemData.hpp"
 #include "tribol/utils/DataManager.hpp"

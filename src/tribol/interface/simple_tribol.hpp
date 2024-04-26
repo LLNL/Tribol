@@ -6,7 +6,6 @@
 #ifndef SIMPLE_TRIBOL_HPP_
 #define SIMPLE_TRIBOL_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 
 #include <string>

@@ -5,7 +5,6 @@
 
 #include "AlignedMortar.hpp"
 
-#include "tribol/types.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"

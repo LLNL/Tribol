@@ -14,7 +14,6 @@
 #include "axom/fmt.hpp"
 
 // tribol includes
-#include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/utils/Math.hpp"
 #include "tribol/utils/TestUtils.hpp"

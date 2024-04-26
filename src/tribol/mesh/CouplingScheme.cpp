@@ -6,7 +6,6 @@
 #include "tribol/mesh/CouplingScheme.hpp"
 
 // Tribol includes
-#include "tribol/types.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
@@ -1042,11 +1041,11 @@ bool CouplingScheme::init()
       // compute the face data
       MeshManager & meshManager = MeshManager::getInstance(); 
       MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
-      mesh1.computeFaceData( mesh1.dimension() );
+      mesh1.computeFaceData();
       if (this->m_mesh_id2 != this->m_mesh_id1)
       {
          MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
-         mesh2.computeFaceData( mesh2.dimension() );
+         mesh2.computeFaceData();
       }
 
       return true;

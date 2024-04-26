@@ -5,7 +5,7 @@
 
 #include "tribol/search/InterfacePairFinder.hpp"
 
-#include "tribol/types.hpp"
+#include "tribol/common/ArrayTypes.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"

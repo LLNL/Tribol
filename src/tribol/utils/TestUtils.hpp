@@ -6,7 +6,6 @@
 #ifndef SRC_UTILS_TESTUTILS_HPP_
 #define SRC_UTILS_TESTUTILS_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 
 //MFEM includes

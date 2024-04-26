@@ -6,7 +6,7 @@
 #ifndef SRC_MESH_INTERFACE_PAIRS_HPP_
 #define SRC_MESH_INTERFACE_PAIRS_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/common/ArrayTypes.hpp"
 #include "tribol/common/Parameters.hpp"
 
 #include "axom/slic.hpp"

@@ -6,7 +6,6 @@
 #ifndef SRC_GEOM_CONTACTPLANE_HPP_
 #define SRC_GEOM_CONTACTPLANE_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
@@ -67,8 +66,8 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
 void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId,
                               RealT nrmlX, RealT nrmlY, RealT nrmlZ,
                               RealT cX, RealT cY, RealT cZ,
-                              RealT* RESTRICT pX, RealT* RESTRICT pY, 
-                              RealT* RESTRICT pZ );
+                              RealT* pX, RealT* pY, 
+                              RealT* pZ );
 
 /*!
  *
@@ -86,8 +85,8 @@ void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId,
  */
 void ProjectEdgeNodesToSegment( const MeshData& mesh, int edgeId, 
                                 RealT nrmlX, RealT nrmlY, RealT cX, 
-                                RealT cY, RealT* RESTRICT pX, 
-                                RealT* RESTRICT pY );
+                                RealT cY, RealT* pX, 
+                                RealT* pY );
 
 /*!
  * \brief checks if the vertices on face2 have interpenetrated the level set 
@@ -256,7 +255,7 @@ public:
     *
     * \param [in] cPlane Pointer to existing contact plane object to be copied
     */
-   virtual void copyContactPlane( ContactPlane* RESTRICT cPlane ) = 0 ;
+   virtual void copyContactPlane( ContactPlane* cPlane ) = 0 ;
 
    /// @}
 
@@ -522,9 +521,9 @@ public:
     * \pre length(pX), length(pY), length(pZ) >= size
     * \pre length(pLX), length(pLY) >= size
     */
-   void globalTo2DLocalCoords( RealT* RESTRICT pX, RealT* RESTRICT pY, 
-                               RealT* RESTRICT pZ, RealT* RESTRICT pLX, 
-                               RealT* RESTRICT pLY, int size );
+   void globalTo2DLocalCoords( RealT* pX, RealT* pY, 
+                               RealT* pZ, RealT* pLX, 
+                               RealT* pLY, int size );
    
    /*!
     * \brief Compute the local 2D coordinates of a point on the contact plane
@@ -551,8 +550,8 @@ public:
     *
     * \note Wrapper routine that calls the ALE3D polygon intersection routine
     */
-   void checkPolyOverlap( RealT* RESTRICT projLocX1, RealT* RESTRICT projLocY1, 
-                          RealT* RESTRICT projLocX2, RealT* RESTRICT projLocY2, 
+   void checkPolyOverlap( RealT* projLocX1, RealT* projLocY1, 
+                          RealT* projLocX2, RealT* projLocY2, 
                           const int isym);
 
    /*!
@@ -602,7 +601,7 @@ public:
     *        
     * \param [in] cPlane input contact plane object to be copied
     */
-   virtual void copyContactPlane( ContactPlane* RESTRICT cPlane );
+   virtual void copyContactPlane( ContactPlane* cPlane );
 
 };
 
@@ -711,14 +710,14 @@ public:
     *        
     * \param [in] cPlane input contact plane object to be copied
     */
-   virtual void copyContactPlane( ContactPlane* RESTRICT cPlane );
+   virtual void copyContactPlane( ContactPlane* cPlane );
 
    /*!
     * \brief Check whether two segments have a positive length of overlap 
     *
     */
-   void checkSegOverlap( const RealT* const RESTRICT pX1, const RealT* const RESTRICT pY1, 
-                         const RealT* const RESTRICT pX2, const RealT* const RESTRICT pY2, 
+   void checkSegOverlap( const RealT* const pX1, const RealT* const pY1, 
+                         const RealT* const pX2, const RealT* const pY2, 
                          const int nV1, const int nV2 );
 
 };

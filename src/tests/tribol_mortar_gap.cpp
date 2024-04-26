@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: (MIT)
 
 // Tribol includes
-#include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MeshData.hpp"
@@ -188,8 +187,8 @@ public:
       tribol::MeshData& mortarMesh = *meshManager.at( mortarMeshId );
       tribol::MeshData& nonmortarMesh = *meshManager.at( nonmortarMeshId );
 
-      mortarMesh.computeFaceData(dim);
-      nonmortarMesh.computeFaceData(dim);
+      mortarMesh.computeFaceData();
+      nonmortarMesh.computeFaceData();
 
       RealT* gaps;
       int size = 2*this->numNodesPerFace;

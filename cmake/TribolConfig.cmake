@@ -17,6 +17,7 @@ convert_to_native_escaped_file_path(${PROJECT_SOURCE_DIR} TRIBOL_REPO_DIR)
 convert_to_native_escaped_file_path(${CMAKE_BINARY_DIR}   TRIBOL_BIN_DIR)
 
 # Generate and install config header
+set(TRIBOL_DATA_DIR ${PROJECT_SOURCE_DIR}/data)
 tribol_configure_file(${PROJECT_SOURCE_DIR}/src/tribol/config.hpp.in
                       ${PROJECT_BINARY_DIR}/include/tribol/config.hpp)
 

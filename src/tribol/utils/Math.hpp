@@ -6,19 +6,19 @@
 #ifndef SRC_UTILS_MATH_HPP_
 #define SRC_UTILS_MATH_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
 
 namespace tribol
 {
 
 /// returns the magnitude of a 3-vector
-RealT magnitude( RealT const vx,  ///< [in] x-component of the input vector
+TRIBOL_HOST_DEVICE RealT magnitude( RealT const vx,  ///< [in] x-component of the input vector
                  RealT const vy,  ///< [in] y-component of the input vector
                  RealT const vz   ///< [in] z-component of the input vector
                );
 
 /// returns the magnitude of a 2-vector
-RealT magnitude( RealT const vx,  ///< [in] x-component of the input vector
+TRIBOL_HOST_DEVICE RealT magnitude( RealT const vx,  ///< [in] x-component of the input vector
                  RealT const vy   ///< [in] y-component of the input vector
                );
 

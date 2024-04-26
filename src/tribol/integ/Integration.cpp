@@ -5,7 +5,6 @@
 
 // tribol includes
 #include "Integration.hpp"
-#include "tribol/types.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/utils/Math.hpp"
 #include "tribol/integ/FE.hpp"

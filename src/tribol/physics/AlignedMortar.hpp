@@ -6,7 +6,6 @@
 #ifndef SRC_PHYSICS_ALIGNEDMORTAR_HPP_
 #define SRC_PHYSICS_ALIGNEDMORTAR_HPP_
 
-#include "tribol/types.hpp"
 #include "Mortar.hpp"
 #include "Physics.hpp"
 

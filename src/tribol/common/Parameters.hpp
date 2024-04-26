@@ -7,7 +7,7 @@
 #define TRIBOL_PARAMETERS_HPP_
 
 // Tribol includes
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
 
 #include <string>
 
@@ -399,17 +399,6 @@ enum EnforcementInfo
    SPECIFYING_NULL_ENFORCEMENT_WITH_REGISTERED_METHOD,
    NO_ENFORCEMENT_INFO,
    NUM_ENFORCEMENT_INFO
-};
-
-/*!
- * \brief Enumerates the available loop execution modes
- */
-enum class ExecutionSpace
-{
-   SEQUENTIAL,                 ///! Execute serial (single-threaded) loops on CPU
-   CUDA_PARALLEL,              ///! Execute parallel loops on GPU using CUDA
-   OPENMP_PARALLEL,            ///! Execute parallel loops on CPU using OpenMP
-   UNDEFINED
 };
 
 /*!

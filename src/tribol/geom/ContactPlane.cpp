@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: (MIT)
 
-#include "tribol/types.hpp"
 #include "ContactPlane.hpp"
 #include "ContactPlaneManager.hpp"
 #include "GeomUtilities.hpp"
@@ -326,8 +325,8 @@ bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
 void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId, 
                               RealT nrmlX, RealT nrmlY, RealT nrmlZ,
                               RealT cX, RealT cY, RealT cZ,
-                              RealT* RESTRICT pX, RealT* RESTRICT pY, 
-                              RealT* RESTRICT pZ )
+                              RealT* pX, RealT* pY, 
+                              RealT* pZ )
 {
 
    // loop over nodes and project onto the plane defined by the point-normal 
@@ -346,8 +345,8 @@ void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId,
 //------------------------------------------------------------------------------
 void ProjectEdgeNodesToSegment( const MeshData& mesh, int edgeId, 
                                 RealT nrmlX, RealT nrmlY, RealT cX, 
-                                RealT cY, RealT* RESTRICT pX, 
-                                RealT* RESTRICT pY )
+                                RealT cY, RealT* pX, 
+                                RealT* pY )
 {
    for (int i=0; i<mesh.numberOfNodesPerElement(); ++i)
    {
@@ -1126,9 +1125,9 @@ void ContactPlane3D::computeLocalBasis()
 } // end ContactPlane3D::computeLocalBasis()
 
 //------------------------------------------------------------------------------
-void ContactPlane3D::globalTo2DLocalCoords( RealT* RESTRICT pX, RealT* RESTRICT pY, 
-                                            RealT* RESTRICT pZ, RealT* RESTRICT pLX, 
-                                            RealT* RESTRICT pLY, int size )
+void ContactPlane3D::globalTo2DLocalCoords( RealT* pX, RealT* pY, 
+                                            RealT* pZ, RealT* pLX, 
+                                            RealT* pLY, int size )
 {
 
    // loop over projected nodes
@@ -1191,8 +1190,8 @@ void ContactPlane3D::computeAreaTol()
 } // end ContactPlane3D::computeAreaTol()
 
 //------------------------------------------------------------------------------
-void ContactPlane3D::checkPolyOverlap( RealT* RESTRICT projLocX1, RealT* RESTRICT projLocY1, 
-                                       RealT* RESTRICT projLocX2, RealT* RESTRICT projLocY2, 
+void ContactPlane3D::checkPolyOverlap( RealT* projLocX1, RealT* projLocY1, 
+                                       RealT* projLocX2, RealT* projLocY2, 
                                        const int isym )
 {
    MeshData& mesh1 = getCpMeshData( m_pair.mesh_id1 );
@@ -1698,7 +1697,7 @@ FaceGeomError ContactPlane3D::computeLocalInterpenOverlap( bool& interpen )
 } // end ContactPlane3D::computeLocalInterpenOverlap()
 
 //------------------------------------------------------------------------------
-void ContactPlane3D::copyContactPlane( ContactPlane* RESTRICT cPlane )
+void ContactPlane3D::copyContactPlane( ContactPlane* cPlane )
 {
    ContactPlane3D* cp = dynamic_cast<ContactPlane3D*>(cPlane);
 
@@ -2584,7 +2583,7 @@ void ContactPlane2D::planePointAndCentroidGap( RealT scale )
 } // end ContactPlane2D::planePointAndCentroidGap()
 
 //------------------------------------------------------------------------------
-void ContactPlane2D::copyContactPlane( ContactPlane* RESTRICT cPlane )
+void ContactPlane2D::copyContactPlane( ContactPlane* cPlane )
 {
    ContactPlane2D* cp = dynamic_cast<ContactPlane2D*>(cPlane);
 
@@ -2679,8 +2678,8 @@ void ContactPlane2D::copyContactPlane( ContactPlane* RESTRICT cPlane )
 } // end ContactPlane2D::copyContactPlane()
 
 //------------------------------------------------------------------------------
-void ContactPlane2D::checkSegOverlap( const RealT* const RESTRICT pX1, const RealT* const RESTRICT pY1, 
-                                      const RealT* const RESTRICT pX2, const RealT* const RESTRICT pY2, 
+void ContactPlane2D::checkSegOverlap( const RealT* const pX1, const RealT* const pY1, 
+                                      const RealT* const pX2, const RealT* const pY2, 
                                       const int nV1, const int nV2 )
 {
    parameters_t & parameters = parameters_t::getInstance();
