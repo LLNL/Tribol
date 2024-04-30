@@ -61,6 +61,4 @@ private:
 
 } // end namespace tribol
 
-
-
 #endif /* TRIBOL_INTERFACE_PAIR_FINDER_HPP_ */

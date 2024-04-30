@@ -75,14 +75,14 @@ class InterfacePairs
 {
 public:
   InterfacePairs()  = default;
-  ~InterfacePairs() = default;
+  InterfacePairs(MemorySpace mem_space);
 
   void clear();
   void reserve(int capacity);
 
-  void addInterfacePair( InterfacePair const& pair );
+  TRIBOL_HOST_DEVICE void addInterfacePair( InterfacePair const& pair );
 
-  void updateInterfacePair( InterfacePair const& pair,
+  TRIBOL_HOST_DEVICE void updateInterfacePair( InterfacePair const& pair,
                             int const idx );
 
   void setMeshId( int side, int id )
@@ -99,9 +99,9 @@ public:
      if (side == 2) m_pairType2 = type;
   }
 
-  InterfacePair getInterfacePair(IndexT idx) const;
+  TRIBOL_HOST_DEVICE InterfacePair getInterfacePair(IndexT idx) const;
 
-  IndexT getNumPairs() const { return static_cast<IndexT>(m_pairIndex1.size()); }
+  IndexT getNumPairs() const { return m_pairIndex1.size(); }
 
 private:
 
@@ -112,9 +112,11 @@ private:
   int m_pairType1;
   int m_pairType2;
 
+  int m_allocator_id;
+
   ArrayT<int> m_pairIndex1;
   ArrayT<int> m_pairIndex2;
-  ArrayT<bool>    m_isContactCandidate;
+  ArrayT<bool> m_isContactCandidate;
 };
 
 } /* namespace tribol */

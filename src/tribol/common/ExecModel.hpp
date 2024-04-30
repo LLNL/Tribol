@@ -74,11 +74,39 @@ struct toAxomMemorySpace<MemorySpace::Unified>
 // template <MemorySpace MSPACE>
 // inline constexpr axom::MemorySpace axomMemorySpaceV = toAxomMemorySpace<MSPACE>::value;
 
+#ifdef TRIBOL_USE_UMPIRE
+
+inline umpire::resource::MemoryResourceType toUmpireMemoryType(MemorySpace mem_space)
+{
+  switch (mem_space)
+  {
+    case MemorySpace::Host:
+      return umpire::resource::MemoryResourceType::Host;
+    case MemorySpace::Device:
+      return umpire::resource::MemoryResourceType::Device;
+    case MemorySpace::Unified:
+      return umpire::resource::MemoryResourceType::Unified;
+    default:
+      return umpire::resource::MemoryResourceType::Unknown;
+  }
+};
+
+#endif
+
+inline int getResourceAllocatorID(MemorySpace mem_space)
+{
+#ifdef TRIBOL_USE_UMPIRE
+  return axom::getUmpireResourceAllocatorID(toUmpireMemoryType(mem_space));
+#else
+  return 0;
+#endif
+}
+
 template <MemorySpace MSPACE>
 struct toExecutionMode
 {
 #ifdef TRIBOL_USE_RAJA
-  static constexpr ExecutionMode value = ExecutionMode::Dynamic;
+  static constexpr ExecutionMode value = ExecutionMode::Sequential;
 #else
   static constexpr ExecutionMode value = ExecutionMode::Sequential;
 #endif

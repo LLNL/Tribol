@@ -8,6 +8,7 @@
 // Tribol includes
 #include "tribol/common/BasicTypes.hpp"
 #include "tribol/common/Parameters.hpp"
+#include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/MfemData.hpp"
 #include "tribol/utils/DataManager.hpp"
 
@@ -124,10 +125,13 @@ public:
   /// \name Getters
   /// @{
 
+  int getId() const { return m_id; }
+
   int getMeshId1() const { return m_mesh_id1; }
   int getMeshId2() const { return m_mesh_id2; }
 
-  int getId() const { return m_id; }
+  const MeshData* getMesh1() const { return m_mesh1; }
+  const MeshData* getMesh2() const { return m_mesh2; }
 
   int getNumTotalNodes() const { return m_numTotalNodes; }
 
@@ -147,10 +151,11 @@ public:
   CouplingSchemeErrors& getCouplingSchemeErrors() { return m_couplingSchemeErrors; }
   CouplingSchemeInfo&   getCouplingSchemeInfo()   { return m_couplingSchemeInfo; }
 
-  int spatialDimension() const 
-  { 
-     parameters_t & params = parameters_t::getInstance();
-     return params.dimension; 
+  int spatialDimension() const
+  {
+    // same for both meshes since meshes are required to have the same element
+    // types
+    return m_mesh1->dimension();
   }
 
   /*!
@@ -193,18 +198,18 @@ public:
   bool hasFixedBinning() const { return m_fixedBinning; }
 
   /*!
-   * \brief Returns a pointer to the associated InterfacePairs
+   * \brief Returns a reference to the associated InterfacePairs
    *
-   * \return ptr pointer to the InterfacePairs instance.
+   * \return Reference to the InterfacePairs instance.
    */
-  InterfacePairs* getInterfacePairs( ) { return m_interfacePairs; }
+  InterfacePairs* getInterfacePairs( ) { return m_interfacePairs.get(); }
 
   /*!
-   * \brief Returns a pointer to the associated InterfacePairs
+   * \brief Returns a reference to the associated InterfacePairs
    *
-   * \return ptr pointer to the InterfacePairs instance.
+   * \return Reference to the InterfacePairs instance.
    */
-  InterfacePairs* getInterfacePairs( ) const { return m_interfacePairs; }
+  const InterfacePairs* getInterfacePairs( ) const { return m_interfacePairs.get(); }
 
   /// @}
 
@@ -556,6 +561,9 @@ private:
   IndexT m_mesh_id1; ///< Integer id for mesh 1
   IndexT m_mesh_id2; ///< Integer id for mesh 2
 
+  MeshData* m_mesh1; ///< Pointer to mesh 1 (reset every time init() is called)
+  MeshData* m_mesh2; ///< Pointer to mesh 2 (reset every time init() is called)
+
   bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
   bool m_isValid {true}; ///< False if the coupling scheme is not valid per call to init()
 
@@ -574,7 +582,7 @@ private:
   bool m_isBinned; ///< True if binning has occured 
   bool m_isTied; ///< True if surfaces have been "tied" (Tied contact only)
 
-  InterfacePairs* m_interfacePairs; ///< List of interface pairs
+  std::unique_ptr<InterfacePairs> m_interfacePairs; ///< List of interface pairs
 
   int m_numActivePairs; ///< number of active interface pairs from InterfacePairs list
 

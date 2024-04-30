@@ -295,18 +295,10 @@ public:
     * \pre couplingScheme is not null
     */
    GridSearch(CouplingScheme* couplingScheme)
-      : m_couplingScheme(couplingScheme)
+      : m_couplingScheme(couplingScheme),
+      m_meshWrapper1(m_couplingScheme->getMesh1()),
+      m_meshWrapper2(m_couplingScheme->getMesh2())
    {
-      MeshManager & meshManager = MeshManager::getInstance();
-
-      IndexT mesh_id1 = m_couplingScheme->getMeshId1();
-      MeshData const & meshData1 = *meshManager.at(mesh_id1);
-      m_meshWrapper1 = MeshWrapper<D>(&meshData1);
-
-      IndexT mesh_id2 = m_couplingScheme->getMeshId2();
-      MeshData const & meshData2 = *meshManager.at(mesh_id2);
-      m_meshWrapper2 = MeshWrapper<D>(&meshData2);
-
       m_couplingScheme->getInterfacePairs()->clear();
    }
 

@@ -425,23 +425,6 @@ public:
   
   /*!
   *
-  * \brief compute the approximate radius of the face's enclosing circle
-  *
-  * \param [in] faceId face id
-  *
-  * \return radius
-  *
-  * \note this routine finds the largest magnitude vector between a given 
-  *  face vertex and the vertex averaged centroid and uses this as the 
-  *  enclosing circle's radius. This is not necessarily the smallest 
-  *  enclosing circle, but this computation is fast and serves the purpose 
-  *  of the tribol proximity check.
-  *
-  */
-  TRIBOL_HOST_DEVICE RealT computeFaceRadius( int faceId );
-  
-  /*!
-  *
   * \brief compute the surface edge/segment length
   *
   * \param [in] edgeId edge id

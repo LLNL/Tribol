@@ -385,23 +385,19 @@ void MeshDataBySpace<MSPACE>::sortSurfaceNodeIds()
 template <MemorySpace MSPACE>
 bool MeshDataBySpace<MSPACE>::computeFaceData()
 {
-  bool faceDataOk = true;
-  constexpr RealT nrmlMagTol = 1.0e-15;
+  constexpr RealT nrml_mag_tol = 1.0e-15;
   const IndexT num_elements = numberOfElements();
 
   // allocate m_c
-  ArrayT<ArrayT<RealT, 1, MSPACE>, 1, MemorySpace::Dynamic> c_host(m_dim, m_dim);
+  ArrayT<ArrayT<RealT, 1, MSPACE>> c_host(m_dim, m_dim);
   for (auto& c_dim : c_host)
   {
     c_dim = ArrayT<RealT, 1, MSPACE>(num_elements, num_elements);
   }
   m_c = std::move(c_host);
 
-  // allocate face_radius
-  m_face_radius = ScalarArray<RealT, MSPACE>(num_elements, num_elements);
-
   // allocate m_n
-  ArrayT<ArrayT<RealT, 1, MSPACE>, 1, MemorySpace::Dynamic> n_host(m_dim, m_dim);
+  ArrayT<ArrayT<RealT, 1, MSPACE>> n_host(m_dim, m_dim);
   for (auto& n_dim : n_host)
   {
     n_dim = ArrayT<RealT, 1, MSPACE>(num_elements, num_elements);
@@ -411,210 +407,173 @@ bool MeshDataBySpace<MSPACE>::computeFaceData()
   // allocate m_area
   m_area = ScalarArray<RealT, MSPACE>(num_elements, num_elements);
 
+  // allocate face_radius
+  m_face_radius = ScalarArray<RealT, MSPACE>(num_elements, num_elements);
+
   // loop over all elements in the mesh
-  auto num_nodes_per_elem = numberOfNodesPerElement();
-  auto c_data = m_c.data();
-  auto position_data = m_position.data();
+  ArrayViewT<ArrayT<RealT, 1, MSPACE>, 1, MSPACE> c = m_c;
+  ArrayViewT<ArrayViewT<const RealT, 1, MSPACE>, 1, MSPACE> x = m_position;
+  ArrayViewT<ArrayT<RealT, 1, MSPACE>, 1, MSPACE> n = m_n;
+  ArrayViewT<RealT, 1, MSPACE> area = m_area;
+  ArrayViewT<RealT, 1, MSPACE> radius = m_face_radius;
   auto dim = m_dim;
+  auto conn = m_connectivity;
+  ArrayT<bool, 1, MSPACE> face_data_ok_data({true});
+  ArrayViewT<bool, 1, MSPACE> face_data_ok = face_data_ok_data;
   forAllExec<toExecutionMode<MSPACE>::value>(num_elements, 
-    [dim, num_nodes_per_elem, c_data, position_data] TRIBOL_HOST_DEVICE (const IndexT i) {
+    [dim, x, conn, c, n, area, radius, face_data_ok] TRIBOL_HOST_DEVICE (const IndexT i) {
 
-     // compute the vertex average centroid. This will lie in the 
-     // plane of the face for planar faces, and will be used as 
-     // an approximate centroid for warped faces, both in 3D.
+      // compute the vertex average centroid. This will lie in the 
+      // plane of the face for planar faces, and will be used as 
+      // an approximate centroid for warped faces, both in 3D.
 
-     // loop over the nodes per element
-     for (int j=0; j<num_nodes_per_elem; ++j) {
-        auto nodeId = 1;//getGlobalNodeId(i, j);
-        // always compute the x and y components for 2D and 3D
-        c_data[0][i] += position_data[0][ nodeId ];
-        c_data[1][i] += position_data[1][ nodeId ];
-     } // end loop over nodes
+      // loop over the nodes per element
+      auto num_nodes_per_elem = conn.shape()[1];
+      for (int j=0; j<num_nodes_per_elem; ++j) {
+        auto node_id = conn(i, j);
+        for (IndexT d{0}; d < dim; ++d)
+        {
+          c[d][i] += x[d][ node_id ];
+        }
+      } // end loop over nodes
      
-     RealT fac = 1.0 / num_nodes_per_elem;
-     c_data[0][i] = fac * c_data[0][i];
-     c_data[1][i] = fac * c_data[1][i];
+      RealT fac = 1.0 / num_nodes_per_elem;
+      for (IndexT d{0}; d < dim; ++d)
+      {
+        c[d][i] = fac * c[d][i];
+      }
 
-     if (dim == 3) {
-        for (int j=0; j<num_nodes_per_elem; ++j) {
-           auto nodeId = 1;//getGlobalNodeId(i, j);
-           c_data[2][i] += position_data[2][ nodeId ];
-        } // end loop over nodes
-        c_data[2][i] = fac * c_data[2][i];
-     } // end if-dim
+      // compute face radius for both 2D and 3D. For 2D, this is a duplicate of 
+      // the length, but allows for some uniformity in accessing this value 
+      // for tolerance ratios
+      // loop over nodes of the face and determine the maximum 
+      // "link" vector from the ith node to the face center
+      RealT sqr_radius = 0.0;
+      for (int j=0; j<num_nodes_per_elem; ++j) {
+        const int node_id = conn(i, j);
+        RealT sqr_link_mag = 0.0;
+        for (IndexT d{0}; d < dim; ++d)
+        {
+          RealT lv = x[d][node_id] - c[d][i];
+          sqr_link_mag += lv * lv;
+        }
+        if (sqr_link_mag > sqr_radius) {
+          sqr_radius = sqr_link_mag;
+        }
+      } 
+      radius[i] = sqrt(sqr_radius);
 
-    //  // compute the outward facing normal
-    //  if (m_dim == 2) {
+      // compute the outward facing normal
+      if (dim == 2) {
 
-    //     // the 2D calculation over a 2-node, 1D segment assumes a 
-    //     // counter-clockwise ordering of the quad4 area element
-    //     // to which the 1D line segment belongs. This is to properly 
-    //     // orient the normal outward
-    //     auto nodeId = getGlobalNodeId(i, 0);
-    //     auto nextNodeId = getGlobalNodeId(i, 1);
-    //     RealT lambdaX = position_data[0][ nextNodeId ] - position_data[0][ nodeId ];
-    //     RealT lambdaY = position_data[1][ nextNodeId ] - position_data[1][ nodeId ];
-   
-    //     m_n[0][i] = lambdaY;
-    //     m_n[1][i] = -lambdaX;
+        // the 2D calculation over a 2-node, 1D segment assumes a 
+        // counter-clockwise ordering of the quad4 area element
+        // to which the 1D line segment belongs. This is to properly 
+        // orient the normal outward
+        auto node_id = conn(i, 0);
+        auto next_node_id = conn(i, 1);
+        RealT lambdaX = x[0][ next_node_id ] - x[0][ node_id ];
+        RealT lambdaY = x[1][ next_node_id ] - x[1][ node_id ];
+  
+        n[0][i] = lambdaY;
+        n[1][i] = -lambdaX;
 
-    //     // compute the length of the segment
-    //     m_area[i] = magnitude( lambdaX, lambdaY );
+        // compute the length of the segment
+        area[i] = magnitude( lambdaX, lambdaY );
 
-    //     // normalize normal vector
-    //     auto mag = magnitude( m_n[0][i], m_n[1][i] );
-    //     auto invMag = nrmlMagTol;
-    //     if (mag >= nrmlMagTol) {
-    //        invMag = 1.0 / mag;
-    //     } else {
-    //        //faceDataOk = false;
-    //     }
-    //     m_n[0][i] *= invMag;
-    //     m_n[1][i] *= invMag;
+        // normalize normal vector
+        auto mag = magnitude( n[0][i], n[1][i] );
+        auto inv_mag = nrml_mag_tol;
+        if (mag >= nrml_mag_tol) {
+          inv_mag = 1.0 / mag;
+        } else {
+          face_data_ok[0] = false;
+        }
+        n[0][i] *= inv_mag;
+        n[1][i] *= inv_mag;
 
-    //  }
-        
-    //  // compute face radius for both 2D and 3D. For 2D, this is a duplicate of 
-    //  // the length, but allows for some uniformity in accessing this value 
-    //  // for tolerance ratios
-    //  m_face_radius[i] = this->computeFaceRadius(i);
+      }
+      else if (dim == 3) {
 
-    //  if (m_dim == 3) {
+        // this method of computing an outward unit normal breaks the 
+        // face into triangular pallets by connecting two consecutive 
+        // nodes with the approximate centroid.
+        // The average outward unit normal for the face is the average of 
+        // those of the pallets. This is exact for non-warped faces. To 
+        // compute the pallet normal, you only need edge vectors for the 
+        // pallet. These are constructed from the face centroid and the face 
+        // edge's first node and the face edge's two nodes
 
-    //     // this method of computing an outward unit normal breaks the 
-    //     // face into triangular pallets by connecting two consecutive 
-    //     // nodes with the approximate centroid.
-    //     // The average outward unit normal for the face is the average of 
-    //     // those of the pallets. This is exact for non-warped faces. To 
-    //     // compute the pallet normal, you only need edge vectors for the 
-    //     // pallet. These are constructed from the face centroid and the face 
-    //     // edge's first node and the face edge's two nodes
-
-    //     // declare triangle edge vector components and normal components
-    //     RealT vX1, vY1, vZ1;
-    //     RealT vX2, vY2, vZ2;
-    //     RealT nX, nY, nZ; 
-
-    //     // loop over num_nodes_per_elem-1 element edges and compute pallet normal
-    //     for (int j=0; j<(num_nodes_per_elem-1); ++j) 
-    //     {
-    //        auto nodeId = getGlobalNodeId(i, j);
-    //        auto nextNodeId = getGlobalNodeId(i, j+1);
-    //        // first triangle edge vector between the face's two 
-    //        // edge nodes
-    //        vX1 = position_data[0][ nextNodeId ] - position_data[0][ nodeId ];
-    //        vY1 = position_data[1][ nextNodeId ] - position_data[1][ nodeId ];
-    //        vZ1 = position_data[2][ nextNodeId ] - position_data[2][ nodeId ];
+        // loop over num_nodes_per_elem-1 element edges and compute pallet
+        // normal
+        for (int j=0; j<num_nodes_per_elem; ++j) 
+        {
+          auto node_id = conn(i, j);
+          auto next_node_id = conn(i, 0);
+          if (j < num_nodes_per_elem - 1)
+          {
+            next_node_id = conn(i, j+1);
+          }
+          // first triangle edge vector between the face's two edge nodes
+          auto vX1 = x[0][ next_node_id ] - x[0][ node_id ];
+          auto vY1 = x[1][ next_node_id ] - x[1][ node_id ];
+          auto vZ1 = x[2][ next_node_id ] - x[2][ node_id ];
           
-    //        // second triangle edge vector between the face centroid 
-    //        // and the face edge's first node
-    //        vX2 = m_c[0][i] - position_data[0][ nodeId ];
-    //        vY2 = m_c[1][i] - position_data[1][ nodeId ];
-    //        vZ2 = m_c[2][i] - position_data[2][ nodeId ];
+          // second triangle edge vector between the face centroid 
+          // and the face edge's first node
+          auto vX2 = c[0][i] - x[0][ node_id ];
+          auto vY2 = c[1][i] - x[1][ node_id ];
+          auto vZ2 = c[2][i] - x[2][ node_id ];
 
-    //        // compute the contribution to the pallet normal as v1 x v2. Sum 
-    //        // these into the face normal component variables stored on the mesh data 
-    //        // object
-    //        nX = (vY1 * vZ2) - (vZ1 * vY2);
-    //        nY = (vZ1 * vX2) - (vX1 * vZ2);
-    //        nZ = (vX1 * vY2) - (vY1 * vX2);
+          // compute the contribution to the pallet normal as v1 x v2. Sum these
+          // into the face normal component variables stored on the mesh data
+          // object
+          auto nX = (vY1 * vZ2) - (vZ1 * vY2);
+          auto nY = (vZ1 * vX2) - (vX1 * vZ2);
+          auto nZ = (vX1 * vY2) - (vY1 * vX2);
 
-    //        // sum the normal component contributions into the component variables
-    //        m_n[0][i] += nX;
-    //        m_n[1][i] += nY;
-    //        m_n[2][i] += nZ;
+          // sum the normal component contributions into the component variables
+          n[0][i] += nX;
+          n[1][i] += nY;
+          n[2][i] += nZ;
 
-    //        // half the magnitude of the computed normal is the pallet area. Note: this is exact 
-    //        // for planar faces and approximate for warped faces. Face areas are used in a general 
-    //        // sense to create a face-overlap tolerance
-    //        m_area[i] += 0.5 * magnitude( nX, nY, nZ );
-    //     }
+          // half the magnitude of the computed normal is the pallet area. Note:
+          // this is exact for planar faces and approximate for warped faces.
+          // Face areas are used in a general sense to create a face-overlap
+          // tolerance
+          area[i] += 0.5 * magnitude( nX, nY, nZ );
+        }
 
-    //     // compute the pallet normal contribution for the last pallet
-    //     auto nodeId = getGlobalNodeId(i, 0);
-    //     auto nextNodeId = m_connectivity(i, num_nodes_per_elem - 1);
-    //     vX1 = position_data[0][ nodeId ] - position_data[0][ nextNodeId ];
-    //     vY1 = position_data[1][ nodeId ] - position_data[1][ nextNodeId ];
-    //     vZ1 = position_data[2][ nodeId ] - position_data[2][ nextNodeId ];
+        // multiply the pallet normal components by fac to obtain avg.
+        n[0][i] = fac * n[0][i];
+        n[1][i] = fac * n[1][i];
+        n[2][i] = fac * n[2][i];
 
-    //     vX2 = m_c[0][i] - position_data[0][ nextNodeId ];
-    //     vY2 = m_c[1][i] - position_data[1][ nextNodeId ];
-    //     vZ2 = m_c[2][i] - position_data[2][ nextNodeId ];
-        
-    //     nX = (vY1 * vZ2) - (vZ1 * vY2);
-    //     nY = (vZ1 * vX2) - (vX1 * vZ2);
-    //     nZ = (vX1 * vY2) - (vY1 * vX2);
+        // compute the magnitude of the average pallet normal
+        auto mag = magnitude(n[0][i], n[1][i], n[2][i] );
+        auto inv_mag = nrml_mag_tol;
+        if (mag >= nrml_mag_tol) {
+          inv_mag = 1.0 / mag;
+        } else {
+          face_data_ok[0] = false;
+        }
 
-    //     // sum the normal component contributions into the component variables
-    //     m_n[0][i] += nX;
-    //     m_n[1][i] += nY;
-    //     m_n[2][i] += nZ;
+        // normalize the average normal
+        n[0][i] *= inv_mag;
+        n[1][i] *= inv_mag;
+        n[2][i] *= inv_mag;
 
-    //     // half the magnitude of the computed normal is the pallet area. Note: this is exact 
-    //     // for planar faces and approximate for warped faces. Face areas are used in a general 
-    //     // sense to create a face-overlap tolerance
-    //     m_area[i] += 0.5 * magnitude( nX, nY, nZ );
-
-    //     // multiply the pallet normal components by fac to obtain avg.
-    //     m_n[0][i] = fac * m_n[0][i];
-    //     m_n[1][i] = fac * m_n[1][i];
-    //     m_n[2][i] = fac * m_n[2][i];
-
-    //     // compute the magnitude of the average pallet normal
-    //     auto mag = magnitude(m_n[0][i], m_n[1][i], m_n[2][i] );
-    //     auto invMag = nrmlMagTol;
-    //     if (mag >= nrmlMagTol) {
-    //        invMag = 1.0 / mag;
-    //     } else {
-    //        //faceDataOk = false;
-    //     }
-
-    //     // normalize the average normal
-    //     m_n[0][i] *= invMag;
-    //     m_n[1][i] *= invMag;
-    //     m_n[2][i] *= invMag;
-
-    //  } // end if (dim == 3)
+      } // end if (dim == 3)
 
   }); // end element loop
 
-  SLIC_WARNING_IF(!faceDataOk, 
-      fmt::format("There are faces with a normal magnitude less than tolerance ({:e}).", nrmlMagTol));
+  ArrayT<bool, 1, MemorySpace::Host> face_data_ok_host(face_data_ok_data);
+  SLIC_WARNING_IF(!face_data_ok_host[0], 
+      fmt::format("There are faces with a normal magnitude less than tolerance ({:e}).", nrml_mag_tol));
 
-  return faceDataOk; 
+  return face_data_ok_host[0];
 
 } // end MeshData::computeFaceData()
-
-//------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-TRIBOL_HOST_DEVICE RealT MeshDataBySpace<MSPACE>::computeFaceRadius( int faceId ) 
-{
-   // loop over nodes of the face and determine the maximum 
-   // "link" vector from the ith node to the face center
-   RealT sqrRadius = 0.0;
-   for (int i=0; i<numberOfNodesPerElement(); ++i) {
-      const int nodeId = getGlobalNodeId(faceId, i);
-      RealT lvx = m_position[0][nodeId] - m_c[0][faceId];
-      RealT lvy = m_position[1][nodeId] - m_c[1][faceId];
-
-      RealT lvz;
-      if (m_dim == 3) { // for 3D
-         lvz = m_position[2][nodeId] - m_c[2][faceId];
-      }
-      else {
-         lvz = 0.0;
-      }
-
-      RealT sqrLinkMag = lvx * lvx + lvy * lvy + lvz * lvz;   
-     
-      if (sqrLinkMag > sqrRadius) {
-         sqrRadius = sqrLinkMag;
-      }
-   } 
-
-   return sqrt(sqrRadius);
-
-} // end MeshData::computeFaceRadius()
 
 //------------------------------------------------------------------------------
 template <MemorySpace MSPACE>

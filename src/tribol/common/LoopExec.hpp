@@ -51,11 +51,11 @@ namespace detail
 {
   // SFINAE type for choosing correct RAJA::forall policy
   template <ExecutionMode T>
-  struct forallType {};
+  struct forAllType {};
 
 #ifdef TRIBOL_USE_RAJA
   template <ExecutionMode EXEC, typename BODY>
-  void forAllImpl(forallType<EXEC>, const IndexT, BODY&&)
+  void forAllImpl(forAllType<EXEC>, const IndexT, BODY&&)
   {
     SLIC_ERROR_ROOT("forAllExec not defined for the given ExecutionMode.");
   }
@@ -64,14 +64,14 @@ namespace detail
 #ifndef TRIBOL_USE_RAJA
 // ExecutionMode::Dynamic maps to ExecutionMode::Sequential without RAJA
   template <typename BODY>
-  void forAllImpl(forallType<ExecutionMode::Dynamic>, const IndexT N, BODY&& body)
+  void forAllImpl(forAllType<ExecutionMode::Dynamic>, const IndexT N, BODY&& body)
   {
-    forAllImpl(forallType<ExecutionMode::Sequential>(), N, std::move(body));
+    forAllImpl(forAllType<ExecutionMode::Sequential>(), N, std::move(body));
   }
 #endif
 
   template <typename BODY>
-  void forAllImpl(forallType<ExecutionMode::Sequential>, const IndexT N, BODY&& body)
+  void forAllImpl(forAllType<ExecutionMode::Sequential>, const IndexT N, BODY&& body)
   {
 #ifdef TRIBOL_USE_RAJA
     RAJA::forall<RAJA::loop_exec>(RAJA::RangeSegment(0, N), std::move(body));
@@ -92,7 +92,7 @@ namespace detail
   }
 
   template <typename BODY>
-  void forAllImpl(forallType<ExecutionMode::Cuda>, const IndexT N, BODY&& body)
+  void forAllImpl(forAllType<ExecutionMode::Cuda>, const IndexT N, BODY&& body)
   {
     forAllCudaImpl<TRIBOL_CUDA_BLOCK_SIZE>(N, std::move(body));
   }
@@ -101,7 +101,7 @@ namespace detail
 #ifdef TRIBOL_USE_HIP
 #define TRIBOL_HIP_BLOCK_SIZE 256
   template <typename BODY>
-  void forAllImpl(forallType<ExecutionMode::Hip>, const IndexT N, BODY&& body)
+  void forAllImpl(forAllType<ExecutionMode::Hip>, const IndexT N, BODY&& body)
   {
     forAllHipImpl<TRIBOL_HIP_BLOCK_SIZE>(N, std::move(body));
   }
@@ -115,7 +115,7 @@ namespace detail
 
 #ifdef TRIBOL_USE_OPENMP
   template <typename BODY>
-  void forAllImpl(forallType<ExecutionMode::SharedMemParallel>, const IndexT N, BODY&& body)
+  void forAllImpl(forAllType<ExecutionMode::SharedMemParallel>, const IndexT N, BODY&& body)
   {
     RAJA::forall<RAJA::omp_parallel_for_exec>(RAJA::RangeSegment(0, N), std::move(body));
   }
@@ -125,7 +125,38 @@ namespace detail
 template <ExecutionMode EXEC, typename BODY>
 void forAllExec(const IndexT N, BODY&& body)
 {
-  detail::forAllImpl(detail::forallType<EXEC>(), N, std::move(body));
+  detail::forAllImpl(detail::forAllType<EXEC>(), N, std::move(body));
+}
+
+template <typename BODY>
+void forAllExec(ExecutionMode exec_mode, const IndexT N, BODY&& body)
+{
+  switch (exec_mode)
+  {
+    case ExecutionMode::Sequential:
+      return detail::forAllImpl(detail::forAllType<ExecutionMode::Sequential>(), 
+        N, std::move(body));
+#ifdef TRIBOL_USE_RAJA
+#ifdef TRIBOL_USE_OPENMP
+    case ExecutionMode::SharedMemParallel:
+      return detail::forAllImpl(
+        detail::forAllType<ExecutionMode::SharedMemParallel>(), N, std::move(body));
+#endif
+#ifdef TRIBOL_USE_CUDA
+    case ExecutionMode::Cuda:
+      return detail::forAllImpl(
+        detail::forAllType<ExecutionMode::Cuda>(), N, std::move(body));
+#endif
+#ifdef TRIBOL_USE_HIP
+    case ExecutionMode::Hip:
+      return detail::forAllImpl(
+        detail::forAllType<ExecutionMode::Hip>(), N, std::move(body));
+#endif
+#endif
+    default:
+      SLIC_ERROR_ROOT("Unsupported execution mode in a forAllExec loop.");
+      return;
+  }
 }
 
 } // namespace tribol

@@ -4,9 +4,18 @@
 // SPDX-License-Identifier: (MIT)
 
 #include "tribol/mesh/InterfacePairs.hpp"
+#include "tribol/common/ExecModel.hpp"
+#include <axom/core/memory_management.hpp>
 
 namespace tribol
 {
+
+InterfacePairs::InterfacePairs(MemorySpace mem_space)
+: m_allocator_id(getResourceAllocatorID(mem_space)),
+  m_pairIndex1(0, 0, m_allocator_id),
+  m_pairIndex2(0, 0, m_allocator_id),
+  m_isContactCandidate(0, 0, m_allocator_id)
+{}
 
 void InterfacePairs::reserve(int new_size)
 {
@@ -23,16 +32,17 @@ void InterfacePairs::clear()
 }
 
 
-void InterfacePairs::addInterfacePair( InterfacePair const& pair )
+TRIBOL_HOST_DEVICE void InterfacePairs::addInterfacePair( InterfacePair const& pair )
 {
    // set mesh ids and pair types. This is redundant since these 
    // only need to be set once.
-   m_mesh_id1 = pair.mesh_id1;
-   m_mesh_id2 = pair.mesh_id2;
-   m_pairType1 = pair.pairType1;
-   m_pairType2 = pair.pairType2;
+  //  m_mesh_id1 = pair.mesh_id1;
+  //  m_mesh_id2 = pair.mesh_id2;
+  //  m_pairType1 = pair.pairType1;
+  //  m_pairType2 = pair.pairType2;
 
    // add face ids to containers
+   m_pairIndex1.resize(m_pairIndex1.size() + 1, pair.pairIndex1);
    m_pairIndex1.push_back(pair.pairIndex1);
    m_pairIndex2.push_back(pair.pairIndex2);
 
@@ -40,16 +50,14 @@ void InterfacePairs::addInterfacePair( InterfacePair const& pair )
    m_isContactCandidate.push_back(pair.isContactCandidate);
 }
 
-void InterfacePairs::updateInterfacePair( InterfacePair const& pair, 
+TRIBOL_HOST_DEVICE void InterfacePairs::updateInterfacePair( InterfacePair const& pair, 
                                           int const idx )
 {
    m_isContactCandidate[ idx ] = pair.isContactCandidate;
 }
 
-InterfacePair InterfacePairs::getInterfacePair(IndexT idx) const
+TRIBOL_HOST_DEVICE InterfacePair InterfacePairs::getInterfacePair(IndexT idx) const
 {
-   SLIC_ERROR_IF(idx >= getNumPairs(), "Index out of range.");
-
    return InterfacePair {
       m_mesh_id1, m_pairType1, m_pairIndex1[idx],
       m_mesh_id2, m_pairType2, m_pairIndex2[idx], 

@@ -6,6 +6,7 @@
 #include "tribol/mesh/CouplingScheme.hpp"
 
 // Tribol includes
+#include "tribol/common/ExecModel.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
@@ -24,6 +25,7 @@
 #include "mfem.hpp"
 
 // C++ includes
+#include <axom/core/memory_management.hpp>
 #include <cmath>
 
 namespace tribol
@@ -324,6 +326,7 @@ CouplingScheme::CouplingScheme( IndexT cs_id,
    , m_fixedBinning         ( false )
    , m_isBinned             ( false )
    , m_isTied               ( false )
+   , m_interfacePairs       ( new InterfacePairs() )
    , m_numActivePairs       ( 0 )
    , m_methodData           ( nullptr )
 {
@@ -361,9 +364,6 @@ CouplingScheme::CouplingScheme( IndexT cs_id,
 
   m_loggingLevel = TRIBOL_UNDEFINED;
 
-  // STEP 0: create contact-pairs object associated with this coupling scheme
-  m_interfacePairs = new InterfacePairs( );
-
 } // end CouplingScheme::CouplingScheme()
 
 //------------------------------------------------------------------------------
@@ -383,8 +383,16 @@ bool CouplingScheme::isValidCouplingScheme()
    // check for invalid mesh topology matches in a coupling scheme
    if (mesh1.getElementType() != mesh2.getElementType())
    {
-      SLIC_WARNING_ROOT("Coupling scheme, " << this->m_id << ", does not support meshes with " << 
+      SLIC_WARNING_ROOT("Coupling scheme " << this->m_id << " does not support meshes with " << 
                         "different surface element types.");
+      mesh1.isMeshValid() = false;
+      mesh2.isMeshValid() = false;
+   }
+
+   if (mesh1.getMemorySpace() != mesh2.getMemorySpace())
+   {
+      SLIC_WARNING_ROOT("Coupling scheme " << this->m_id << ": Paired meshes reside in " << 
+                        "different memory spaces.");
       mesh1.isMeshValid() = false;
       mesh2.isMeshValid() = false;
    }
@@ -888,7 +896,8 @@ void CouplingScheme::performBinning()
    {
       if( !this->hasFixedBinning() ) 
       {
-         m_interfacePairs->clear();
+         // create interface pairs based on allocator id
+         m_interfacePairs = std::make_unique<InterfacePairs>(m_mesh1->getMemorySpace());
 
          InterfacePairFinder finder(this);
          finder.initialize();
@@ -1034,18 +1043,20 @@ bool CouplingScheme::init()
    this->m_isValid = valid;
    if (this->m_isValid)
    {
+      // set mesh pointers
+      MeshManager & meshManager = MeshManager::getInstance(); 
+      m_mesh1 = meshManager.at( this->m_mesh_id1 ).get();
+      m_mesh2 = meshManager.at( this->m_mesh_id2 ).get();
+
       // set individual coupling scheme logging level
       this->setSlicLoggingLevel();
       this->allocateMethodData();
 
       // compute the face data
-      MeshManager & meshManager = MeshManager::getInstance(); 
-      MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
-      mesh1.computeFaceData();
+      m_mesh1->computeFaceData();
       if (this->m_mesh_id2 != this->m_mesh_id1)
       {
-         MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
-         mesh2.computeFaceData();
+         m_mesh2->computeFaceData();
       }
 
       return true;
@@ -1099,12 +1110,9 @@ void CouplingScheme::allocateMethodData()
    // check for valid coupling schemes for those with non-null meshes.
    // Note: keep if-block for non-null meshes here. A valid coupling scheme 
    // may have null meshes, but we don't want to allocate unnecessary memory here.
-   MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
-   MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
-   if (mesh1.numberOfElements() > 0 && mesh2.numberOfElements() > 0)
+   if (m_mesh1->numberOfElements() > 0 && m_mesh2->numberOfElements() > 0)
    {
-      this->m_numTotalNodes = mesh1.numberOfNodes();
+      this->m_numTotalNodes = m_mesh1->numberOfNodes();
 
       // dynamically allocate method data object for mortar method
       switch (this->m_contactMethod)
@@ -1131,9 +1139,6 @@ void CouplingScheme::allocateMethodData()
 //------------------------------------------------------------------------------
 RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 {
-   MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = *meshManager.at( m_mesh_id1 );
-   MeshData & mesh2 = *meshManager.at( m_mesh_id2 );
    parameters_t& params = parameters_t::getInstance();
    RealT gap_tol = 0.;
 
@@ -1162,14 +1167,14 @@ RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 
             case TIED :
                gap_tol = params.gap_tied_tol *
-                         axom::utilities::max( mesh1.getFaceRadiusData()[fid1],
-                                               mesh2.getFaceRadiusData()[fid2] );
+                         axom::utilities::max( m_mesh1->getFaceRadiusData()[fid1],
+                                               m_mesh2->getFaceRadiusData()[fid2] );
                break;
 
             default :  
                gap_tol = -1. * params.gap_tol_ratio *  
-                         axom::utilities::max( mesh1.getFaceRadiusData()[fid1],
-                                               mesh2.getFaceRadiusData()[fid2] );
+                         axom::utilities::max( m_mesh1->getFaceRadiusData()[fid1],
+                                               m_mesh2->getFaceRadiusData()[fid2] );
                break;
 
          } // end switch over m_contactModel
@@ -1185,20 +1190,16 @@ RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 //------------------------------------------------------------------------------
 void CouplingScheme::computeTimeStep(RealT &dt)
 {
-   // make sure velocities are registered
-   MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = *meshManager.at( m_mesh_id1 );
-   MeshData & mesh2 = *meshManager.at( m_mesh_id2 );
-
    if (dt < 1.e-8)
    {
       // current timestep too small for Tribol vote. Leave unchanged and return
       return;
    }
 
-   if (!mesh1.hasVelocity() || !mesh2.hasVelocity())
+   // make sure velocities are registered
+   if (!m_mesh1->hasVelocity() || !m_mesh2->hasVelocity())
    {
-      if (mesh1.numberOfElements() > 0 && mesh2.numberOfElements() > 0)
+      if (m_mesh1->numberOfElements() > 0 && m_mesh2->numberOfElements() > 0)
       {
          // invalid registration of nodal velocities for non-null meshes
          dt = -1.0;
@@ -1253,10 +1254,6 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
    // catches the case where too large of a timestep results in too 
    // much face-pair interpenetration, which may also lead to contact 
    // instabilities.
-   
-   MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = *meshManager.at( m_mesh_id1 );
-   MeshData & mesh2 = *meshManager.at( m_mesh_id2 );
 
    // issue warning that this timestep vote does not address 
    // contact instabilities that may present themselves with the use 
@@ -1276,8 +1273,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    //int num_sides = 2; // always 2 sides in a single coupling scheme
    int dim = this->spatialDimension();
-   int numNodesPerCell1 = mesh1.numberOfNodesPerElement();
-   int numNodesPerCell2 = mesh2.numberOfNodesPerElement();
+   int numNodesPerCell1 = m_mesh1->numberOfNodesPerElement();
+   int numNodesPerCell2 = m_mesh2->numberOfNodesPerElement();
 
    // loop over each interface pair. Even if pair is not in contact, 
    // we still do a velocity projection for that proximate face-pair 
@@ -1302,13 +1299,13 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
    
       RealT x1[dim * numNodesPerCell1];
       RealT v1[dim * numNodesPerCell1];
-      mesh1.getFaceCoords( pair.pairIndex1, &x1[0] );
-      mesh1.getFaceNodalVelocities( pair.pairIndex1, &v1[0] );
+      m_mesh1->getFaceCoords( pair.pairIndex1, &x1[0] );
+      m_mesh1->getFaceNodalVelocities( pair.pairIndex1, &v1[0] );
 
       RealT x2[dim * numNodesPerCell2];
       RealT v2[dim * numNodesPerCell2];
-      mesh2.getFaceCoords( pair.pairIndex2, &x2[0] );
-      mesh2.getFaceNodalVelocities( pair.pairIndex2, &v2[0] );
+      m_mesh2->getFaceCoords( pair.pairIndex2, &x2[0] );
+      m_mesh2->getFaceNodalVelocities( pair.pairIndex2, &v2[0] );
 
       /////////////////////////////////////////////////////////////
       // calculate face velocities at projected overlap centroid //
@@ -1358,8 +1355,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 
       // get face normals
       RealT fn1[dim], fn2[dim];
-      mesh1.getFaceNormal( pair.pairIndex1, dim, &fn1[0] );
-      mesh2.getFaceNormal( pair.pairIndex2, dim, &fn2[0] );
+      m_mesh1->getFaceNormal( pair.pairIndex1, dim, &fn1[0] );
+      m_mesh2->getFaceNormal( pair.pairIndex2, dim, &fn2[0] );
 
       // compute projections
       v1_dot_n  = dotProd( &vel_f1[0], &overlapNormal[0], dim );
@@ -1402,8 +1399,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 
       // get volume element thicknesses associated with each 
       // face in this pair and find minimum
-      RealT t1 = mesh1.getElementData().m_thickness[pair.pairIndex1];
-      RealT t2 = mesh2.getElementData().m_thickness[pair.pairIndex2];
+      RealT t1 = m_mesh1->getElementData().m_thickness[pair.pairIndex1];
+      RealT t2 = m_mesh2->getElementData().m_thickness[pair.pairIndex2];
 
       // compute the gap vector (recall gap is x1-x2 by convention)
       RealT gapVec[dim];
