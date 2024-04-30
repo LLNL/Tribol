@@ -1,19 +1,24 @@
-// Copyright (c) 2017-2023, Lawrence Livermore National Security, LLC and
-// other Tribol Project Developers. See the top-level LICENSE file for details.
-//
-// SPDX-License-Identifier: (MIT)
-#ifndef TRIBOL_INTERFACE_PAIR_FINDER_HPP_
-#define TRIBOL_INTERFACE_PAIR_FINDER_HPP_
+/*
+ *******************************************************************************
+ * Copyright (c) 2017-2020, Lawrence Livermore National Security, LLC.
+ *
+ * Produced at the Lawrence Livermore National Laboratory
+ *
+ *******************************************************************************
+ */
+#ifndef TRIBOL_SEARCH_INTERFACE_PAIR_FINDER_HPP_
+#define TRIBOL_SEARCH_INTERFACE_PAIR_FINDER_HPP_
 
 #include "tribol/common/Parameters.hpp"
+#include "tribol/mesh/MeshData.hpp"
 
 namespace tribol
 {
 
 // Forward Declarations
 class CouplingScheme;
-template<int D> class GridSearch;
 struct InterfacePair;
+class SearchBase;
 
 
 /// Free functions
@@ -21,11 +26,20 @@ struct InterfacePair;
 /*!
  * \brief Basic geometry/proximity checks for face pairs
  *
- * \param [in] iPair InterfacePair struct for two faces
+ * \param [in] pairIndex1 index of 1st element in pair
+ * \param [in] pairIndex2 index of 2nd element in pair
+ * \param [in] meshId1 mesh ID for 1st element in pair
+ * \param [in] meshId2 mesh ID for 2nd element in pair
+ * \param [in] pMesh1 pointer to data for mesh with ID meshId1
+ * \param [in] pMesh2 pointer to data for mesh with ID meshId2
  * \param [in] mode ContactMode
  *
  */
-bool geomFilter( InterfacePair & iPair, ContactMode const mode );
+//bool geomFilter( InterfacePair const & iPair, ContactMode const mode );
+TRIBOL_HOST_DEVICE bool geomFilter( const integer pairIndex1, const integer pairIndex2,
+                                    const integer meshId1, const integer meshId2, 
+                                    const MeshData* const pMesh1, const MeshData* const pMesh2,
+                                    ContactMode const mode );
 
 /*!
  * \class InterfacePairFinder
@@ -54,11 +68,11 @@ public:
 private:
 
    CouplingScheme* m_couplingScheme;
-
-   GridSearch<2>* m_gridSearch2D;
-   GridSearch<3>* m_gridSearch3D;
+   SearchBase* m_search;  // The search strategy
 };
 
 } // end namespace tribol
 
-#endif /* TRIBOL_INTERFACE_PAIR_FINDER_HPP_ */
+
+
+#endif /* TRIBOL_SEARCH_INTERFACE_PAIR_FINDER_HPP_ */
