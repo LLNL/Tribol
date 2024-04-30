@@ -318,10 +318,12 @@ CouplingScheme::CouplingScheme( IndexT cs_id,
                                 int contact_method,
                                 int contact_model,
                                 int enforcement_method,
-                                int binning_method )
+                                int binning_method,
+                                ExecutionMode given_exec_mode )
    : m_id                   ( cs_id ) 
    , m_mesh_id1             ( mesh_id1 )
    , m_mesh_id2             ( mesh_id2 )
+   , m_given_exec_mode      ( given_exec_mode )
    , m_numTotalNodes        ( 0 )
    , m_fixedBinning         ( false )
    , m_isBinned             ( false )
@@ -377,8 +379,8 @@ bool CouplingScheme::isValidCouplingScheme()
       return false;
    }
 
-   MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
-   MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
+   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
 
    // check for invalid mesh topology matches in a coupling scheme
    if (mesh1.getElementType() != mesh2.getElementType())
@@ -532,8 +534,8 @@ bool CouplingScheme::isValidCase()
       params.auto_interpen_check = true;
 
       MeshManager & meshManager = MeshManager::getInstance(); 
-      MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
-      MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
+      MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+      MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
 
       if (!mesh1.getElementData().m_is_element_thickness_set ||
           !mesh2.getElementData().m_is_element_thickness_set)
@@ -571,8 +573,8 @@ bool CouplingScheme::isValidMethod()
    }
 
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
-   MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
+   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
    int dim = this->spatialDimension();
 
    // check all methods for basic validity issues for non-null meshes
@@ -823,8 +825,8 @@ int CouplingScheme::checkEnforcementData()
 {
    
    MeshManager & meshManager = MeshManager::getInstance(); 
-   MeshData & mesh1 = *meshManager.at( this->m_mesh_id1 );
-   MeshData & mesh2 = *meshManager.at( this->m_mesh_id2 );
+   MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
+   MeshData & mesh2 = meshManager.at( this->m_mesh_id2 );
    this->m_couplingSchemeErrors.cs_enforcement_data_error 
       = NO_ENFORCEMENT_DATA_ERROR; 
 
@@ -1044,9 +1046,65 @@ bool CouplingScheme::init()
    if (this->m_isValid)
    {
       // set mesh pointers
-      MeshManager & meshManager = MeshManager::getInstance(); 
-      m_mesh1 = meshManager.at( this->m_mesh_id1 ).get();
-      m_mesh2 = meshManager.at( this->m_mesh_id2 ).get();
+      m_mesh1 = &MeshManager::getInstance().at( this->m_mesh_id1 );
+      m_mesh2 = &MeshManager::getInstance().at( this->m_mesh_id2 );
+
+      // determine execution mode for kernels (already verified the memory
+      // spaces of each mesh match in isValidCouplingScheme())
+#ifdef TRIBOL_USE_RAJA
+      switch (m_mesh1->getMemorySpace())
+      {
+        case MemorySpace::Dynamic:
+  #ifdef TRIBOL_USE_UMPIRE
+          // trust the user here...
+          m_exec_mode = m_given_exec_mode;
+  #else
+          // if we have RAJA but no Umpire, execute serially on host
+          m_exec_mode = ExecutionMode::Sequential;
+  #endif
+          break;
+  #ifdef TRIBOL_USE_UMPIRE
+        case MemorySpace::Unified:
+          // this should be able to run anywhere. let the user decide.
+          m_exec_mode = m_given_exec_mode;
+        case MemorySpace::Host:
+          switch (m_given_exec_mode)
+          {
+            case ExecutionMode::Sequential:
+    #ifdef TRIBOL_USE_OPENMP
+            case ExecutionMode::OpenMP:
+    #endif
+              m_exec_mode = m_given_exec_mode;
+              break;
+            default:
+              SLIC_WARNING_ROOT("Unsupported execution mode for host memory. "
+                "Switching to sequential execution.");
+              m_exec_mode = ExecutionMode::Sequential;
+              break;
+          }
+        case MemorySpace::Device:
+          switch (m_given_exec_mode)
+          {
+    #ifdef TRIBOL_USE_CUDA
+            case ExecutionMode::Cuda:
+    #endif
+    #ifdef TRIBOL_USE_HIP
+            case ExecutionMode::Hip:
+    #endif
+              m_exec_mode = m_given_exec_mode;
+              break;
+            default:
+              SLIC_WARNING_ROOT("Unknown execution mode for device memory. "
+                "Trying host sequential execution.");
+              m_exec_mode = ExecutionMode::Sequential;
+              break;
+          }
+  #endif
+      }
+#else
+      m_exec_mode = ExecutionMode::Sequential;
+#endif
+      m_allocator_id = m_mesh1->getAllocatorId();
 
       // set individual coupling scheme logging level
       this->setSlicLoggingLevel();
@@ -1167,14 +1225,14 @@ RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 
             case TIED :
                gap_tol = params.gap_tied_tol *
-                         axom::utilities::max( m_mesh1->getFaceRadiusData()[fid1],
-                                               m_mesh2->getFaceRadiusData()[fid2] );
+                         axom::utilities::max( m_mesh1->getFaceRadius()[fid1],
+                                               m_mesh2->getFaceRadius()[fid2] );
                break;
 
             default :  
                gap_tol = -1. * params.gap_tol_ratio *  
-                         axom::utilities::max( m_mesh1->getFaceRadiusData()[fid1],
-                                               m_mesh2->getFaceRadiusData()[fid2] );
+                         axom::utilities::max( m_mesh1->getFaceRadius()[fid1],
+                                               m_mesh2->getFaceRadius()[fid2] );
                break;
 
          } // end switch over m_contactModel

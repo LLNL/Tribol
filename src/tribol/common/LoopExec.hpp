@@ -115,7 +115,7 @@ namespace detail
 
 #ifdef TRIBOL_USE_OPENMP
   template <typename BODY>
-  void forAllImpl(forAllType<ExecutionMode::SharedMemParallel>, const IndexT N, BODY&& body)
+  void forAllImpl(forAllType<ExecutionMode::OpenMP>, const IndexT N, BODY&& body)
   {
     RAJA::forall<RAJA::omp_parallel_for_exec>(RAJA::RangeSegment(0, N), std::move(body));
   }
@@ -138,9 +138,9 @@ void forAllExec(ExecutionMode exec_mode, const IndexT N, BODY&& body)
         N, std::move(body));
 #ifdef TRIBOL_USE_RAJA
 #ifdef TRIBOL_USE_OPENMP
-    case ExecutionMode::SharedMemParallel:
+    case ExecutionMode::OpenMP:
       return detail::forAllImpl(
-        detail::forAllType<ExecutionMode::SharedMemParallel>(), N, std::move(body));
+        detail::forAllType<ExecutionMode::OpenMP>(), N, std::move(body));
 #endif
 #ifdef TRIBOL_USE_CUDA
     case ExecutionMode::Cuda:

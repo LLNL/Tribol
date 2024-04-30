@@ -428,7 +428,7 @@ void registerIntElementField( IndexT mesh_id,
  * \param [in] contact_model
  * \param [in] enforcement_method
  * \param [in] binning_method
- * \param [in] exec_mode Execution mode for loops
+ * \param [in] given_exec_mode Preferred execution mode for RAJA kernels
  *
  * \note A mesh for the given contact surface must have already been registered
  *  prior to calling this method.

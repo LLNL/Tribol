@@ -5,7 +5,6 @@
 
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/common/ExecModel.hpp"
-#include <axom/core/memory_management.hpp>
 
 namespace tribol
 {

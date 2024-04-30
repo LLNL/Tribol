@@ -36,8 +36,8 @@ class SearchBase;
  *
  */
 //bool geomFilter( InterfacePair const & iPair, ContactMode const mode );
-TRIBOL_HOST_DEVICE bool geomFilter( const integer pairIndex1, const integer pairIndex2,
-                                    const integer meshId1, const integer meshId2, 
+TRIBOL_HOST_DEVICE bool geomFilter( const IndexT pairIndex1, const IndexT pairIndex2,
+                                    const IndexT meshId1, const IndexT meshId2, 
                                     const MeshData* const pMesh1, const MeshData* const pMesh2,
                                     ContactMode const mode );
 

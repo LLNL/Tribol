@@ -7,6 +7,7 @@
 
 // Tribol includes
 #include "tribol/common/BasicTypes.hpp"
+#include "tribol/common/ExecModel.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/MfemData.hpp"
@@ -113,7 +114,8 @@ public:
                   int contact_method,
                   int contact_model,
                   int enforcement_method,
-                  int binning_method);
+                  int binning_method,
+                  ExecutionMode given_exec_mode );
 
   // Prevent copying
   CouplingScheme(const CouplingScheme& other) = delete;
@@ -132,6 +134,9 @@ public:
 
   const MeshData* getMesh1() const { return m_mesh1; }
   const MeshData* getMesh2() const { return m_mesh2; }
+
+  ExecutionMode getExecutionMode() const { return m_exec_mode; }
+  int getAllocatorId() const { return m_allocator_id; }
 
   int getNumTotalNodes() const { return m_numTotalNodes; }
 
@@ -563,6 +568,11 @@ private:
 
   MeshData* m_mesh1; ///< Pointer to mesh 1 (reset every time init() is called)
   MeshData* m_mesh2; ///< Pointer to mesh 2 (reset every time init() is called)
+
+  const ExecutionMode m_given_exec_mode; ///< User preferred execution mode (set by ctor)
+
+  ExecutionMode m_exec_mode; ///< Execution mode for kernels (set when init() is called)
+  int m_allocator_id; ///< Allocator for arrays used in kernels (set when init() is called)
 
   bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
   bool m_isValid {true}; ///< False if the coupling scheme is not valid per call to init()

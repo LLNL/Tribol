@@ -11,6 +11,7 @@
 
 // Axom includes
 #include "axom/core/memory_management.hpp"
+#include "axom/slic.hpp"
 
 namespace tribol
 {
@@ -30,7 +31,7 @@ enum class ExecutionMode
    Sequential,
 #ifdef TRIBOL_USE_RAJA
 #ifdef TRIBOL_USE_OPENMP
-   SharedMemParallel,
+   OpenMP,
 #endif
 #ifdef TRIBOL_USE_CUDA
    Cuda,
@@ -131,6 +132,36 @@ struct toExecutionMode<MemorySpace::Device>
 // Waiting for C++ 17...
 // template <MemorySpace MSPACE>
 // inline constexpr ExecutionMode ExecutionModeV = toExecutionMode<MSPACE>::value;
+
+inline ExecutionMode getExecutionMode(MemorySpace mem_space)
+{
+  switch (mem_space)
+  {
+#ifdef TRIBOL_USE_UMPIRE
+    case MemorySpace::Device:
+  #ifdef TRIBOL_USE_RAJA
+    #if defined(TRIBOL_USE_CUDA)
+      return ExecutionMode::Cuda;
+    #elif defined(TRIBOL_USE_HIP)
+      return ExecutionMode::Hip;
+    #else
+      SLIC_WARNING_ROOT("No device execution mode available. "
+        "Trying to run sequentially on host...");
+      return ExecutionMode::Sequential;
+    #endif
+  #endif
+    case MemorySpace::Unified:
+#endif
+    case MemorySpace::Dynamic:
+#ifdef TRIBOL_USE_UMPIRE
+      SLIC_WARNING_ROOT("Dynamic or unified memory does not correspond to an execution space. "
+        "Trying to run sequentially on host...");
+    case MemorySpace::Host:
+#endif
+    default:
+      return ExecutionMode::Sequential;
+  }
+}
 
 } // namespace tribol
 

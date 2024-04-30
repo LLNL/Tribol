@@ -196,22 +196,18 @@ bool MeshElemData::isValidRatePenalty( PenaltyEnforcementOptions& pen_options )
 // Routines for MeshData class //
 //                             //
 /////////////////////////////////
-MeshData::MeshData( IndexT mesh_id, InterfaceElementType element_type,
-    IndexT num_nodes, IndexT num_elements )
+MeshData::MeshData( IndexT mesh_id, IndexT num_elements, IndexT num_nodes,
+                    const IndexT* connectivity, InterfaceElementType element_type,
+                    const RealT* x, const RealT* y, const RealT* z,
+                    MemorySpace mem_space )
   : m_mesh_id( mesh_id )
   , m_element_type( element_type )
   , m_dim( getDimFromElementType() )
   , m_num_nodes( num_nodes )
   , m_num_elements( num_elements )
   , m_is_valid( true )
-{}
-
-
-template <MemorySpace MSPACE>
-MeshDataBySpace<MSPACE>::MeshDataBySpace( IndexT mesh_id, IndexT num_elements, IndexT num_nodes,
-                    const IndexT* connectivity, InterfaceElementType element_type,
-                    const RealT* x, const RealT* y, const RealT* z )
-  : MeshData( mesh_id, element_type, num_nodes, num_elements )
+  , m_mem_space( mem_space )
+  , m_allocator_id( getResourceAllocatorID(mem_space) )
   , m_position( createNodalVector(x, y, z) )
   , m_connectivity( createConnectivity(num_elements, connectivity) )
 {
@@ -240,12 +236,9 @@ MeshDataBySpace<MSPACE>::MeshDataBySpace( IndexT mesh_id, IndexT num_elements, I
   }
 
   // Find unique surface node ids
-  if (MSPACE == MemorySpace::Host)
+  if (mem_space != MemorySpace::Device && num_elements > 0)
   {
-    if (num_elements > 0)
-    {
-      sortSurfaceNodeIds();
-    }
+    sortSurfaceNodeIds();
   }
 
   getElementData().m_num_cells = num_elements;
@@ -253,43 +246,39 @@ MeshDataBySpace<MSPACE>::MeshDataBySpace( IndexT mesh_id, IndexT num_elements, I
 }
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::setPosition( const RealT* x,
-                                           const RealT* y,
-                                           const RealT* z )
+void MeshData::setPosition( const RealT* x,
+                            const RealT* y,
+                            const RealT* z )
 {
   m_position = createNodalVector(x, y, z);
 }
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::setDisplacement( const RealT* ux,
-                                               const RealT* uy,
-                                               const RealT* uz )
+void MeshData::setDisplacement( const RealT* ux,
+                                const RealT* uy,
+                                const RealT* uz )
 {
   m_disp = createNodalVector(ux, uy, uz);
 }
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::setVelocity( const RealT* vx,
-                                           const RealT* vy,
-                                           const RealT* vz )
+void MeshData::setVelocity( const RealT* vx,
+                            const RealT* vy,
+                            const RealT* vz )
 {
   m_vel = createNodalVector(vx, vy, vz);
 }
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::setResponse( RealT* rx,
-                                           RealT* ry,
-                                           RealT* rz )
+void MeshData::setResponse( RealT* rx,
+                            RealT* ry,
+                            RealT* rz )
 {
   m_response = createNodalVector(rx, ry, rz);
 }
 
 //------------------------------------------------------------------------------
-int MeshData::getDimFromElementType()
+int MeshData::getDimFromElementType() const
 {
   switch (m_element_type)
   {
@@ -311,34 +300,32 @@ int MeshData::getDimFromElementType()
 }
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-ArrayViewT<const IndexT, 2, MSPACE> MeshDataBySpace<MSPACE>::createConnectivity(IndexT num_elements, const IndexT* connectivity)
+ArrayViewT<const IndexT, 2> MeshData::createConnectivity(IndexT num_elements, const IndexT* connectivity)
 {
   switch (m_element_type)
   {
     case LINEAR_EDGE:
     {
-      return ArrayViewT<const IndexT, 2, MSPACE>(connectivity, {num_elements, 2});
+      return ArrayViewT<const IndexT, 2>(connectivity, {num_elements, 2});
     }
     case LINEAR_TRIANGLE:
     {
-      return ArrayViewT<const IndexT, 2, MSPACE>(connectivity, {num_elements, 3});
+      return ArrayViewT<const IndexT, 2>(connectivity, {num_elements, 3});
     }
     case LINEAR_QUAD:
     {
-      return ArrayViewT<const IndexT, 2, MSPACE>(connectivity, {num_elements, 4});
+      return ArrayViewT<const IndexT, 2>(connectivity, {num_elements, 4});
     }
     default:
     {
       SLIC_ERROR_ROOT("Unsupported element type for a contact mesh.");
-      return ArrayViewT<const IndexT, 2, MSPACE>(connectivity, {num_elements, 0});
+      return ArrayViewT<const IndexT, 2>(connectivity, {num_elements, 0});
     }
   }
 }
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::sortSurfaceNodeIds()
+void MeshData::sortSurfaceNodeIds()
 {
   ArrayT<IndexT> sorted_conn(0, m_connectivity.size());
   for (auto node_id : m_connectivity)
@@ -382,46 +369,45 @@ void MeshDataBySpace<MSPACE>::sortSurfaceNodeIds()
 } // end MeshData::sortSurfaceNodeIds()
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-bool MeshDataBySpace<MSPACE>::computeFaceData()
+bool MeshData::computeFaceData()
 {
   constexpr RealT nrml_mag_tol = 1.0e-15;
   const IndexT num_elements = numberOfElements();
 
   // allocate m_c
-  ArrayT<ArrayT<RealT, 1, MSPACE>> c_host(m_dim, m_dim);
+  VectorArray<RealT> c_host(m_dim, m_dim);
   for (auto& c_dim : c_host)
   {
-    c_dim = ArrayT<RealT, 1, MSPACE>(num_elements, num_elements);
+    c_dim = ArrayT<RealT>(num_elements, num_elements, m_allocator_id);
   }
-  m_c = std::move(c_host);
+  m_c = VectorArray<RealT>(c_host, m_allocator_id);
 
   // allocate m_n
-  ArrayT<ArrayT<RealT, 1, MSPACE>> n_host(m_dim, m_dim);
+  VectorArray<RealT> n_host(m_dim, m_dim);
   for (auto& n_dim : n_host)
   {
-    n_dim = ArrayT<RealT, 1, MSPACE>(num_elements, num_elements);
+    n_dim = ArrayT<RealT>(num_elements, num_elements, m_allocator_id);
   }
-  m_n = std::move(n_host);
+  m_n = VectorArray<RealT>(n_host, m_allocator_id);
 
   // allocate m_area
-  m_area = ScalarArray<RealT, MSPACE>(num_elements, num_elements);
+  m_area = ScalarArray<RealT>(num_elements, num_elements, m_allocator_id);
 
   // allocate face_radius
-  m_face_radius = ScalarArray<RealT, MSPACE>(num_elements, num_elements);
+  m_face_radius = ScalarArray<RealT>(num_elements, num_elements, m_allocator_id);
 
   // loop over all elements in the mesh
-  ArrayViewT<ArrayT<RealT, 1, MSPACE>, 1, MSPACE> c = m_c;
-  ArrayViewT<ArrayViewT<const RealT, 1, MSPACE>, 1, MSPACE> x = m_position;
-  ArrayViewT<ArrayT<RealT, 1, MSPACE>, 1, MSPACE> n = m_n;
-  ArrayViewT<RealT, 1, MSPACE> area = m_area;
-  ArrayViewT<RealT, 1, MSPACE> radius = m_face_radius;
+  ArrayViewT<ArrayT<RealT>> c = m_c;
+  ArrayViewT<ArrayViewT<const RealT>> x = m_position;
+  ArrayViewT<ArrayT<RealT>> n = m_n;
+  ArrayViewT<RealT> area = m_area;
+  ArrayViewT<RealT> radius = m_face_radius;
   auto dim = m_dim;
   auto conn = m_connectivity;
-  ArrayT<bool, 1, MSPACE> face_data_ok_data({true});
-  ArrayViewT<bool, 1, MSPACE> face_data_ok = face_data_ok_data;
-  forAllExec<toExecutionMode<MSPACE>::value>(num_elements, 
-    [dim, x, conn, c, n, area, radius, face_data_ok] TRIBOL_HOST_DEVICE (const IndexT i) {
+  ArrayT<bool> face_data_ok_data({true}, m_allocator_id);
+  ArrayViewT<bool> face_data_ok = face_data_ok_data;
+  forAllExec(getExecutionMode(m_mem_space), num_elements, 
+    [dim, conn, c, x, n, area, radius, face_data_ok] TRIBOL_HOST_DEVICE (const IndexT i) {
 
       // compute the vertex average centroid. This will lie in the 
       // plane of the face for planar faces, and will be used as 
@@ -576,8 +562,7 @@ bool MeshDataBySpace<MSPACE>::computeFaceData()
 } // end MeshData::computeFaceData()
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-RealT MeshDataBySpace<MSPACE>::computeEdgeLength( int faceId ) 
+RealT MeshData::computeEdgeLength( int faceId ) 
 {
    // compute the length of the edge as the magnitude of 
    // the vector defined between the two edge vertices
@@ -593,8 +578,7 @@ RealT MeshDataBySpace<MSPACE>::computeEdgeLength( int faceId )
 } // end MeshData::computeEdgeLength()
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::getFaceCoords( int const faceId, RealT * coords )
+void MeshData::getFaceCoords( int const faceId, RealT * coords )
 {
 
    for (IndexT a=0; a<numberOfNodesPerElement(); ++a)
@@ -615,8 +599,7 @@ void MeshDataBySpace<MSPACE>::getFaceCoords( int const faceId, RealT * coords )
 }  // end MeshData::getFaceCoords()
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::getFaceNodalVelocities( int const faceId, RealT * nodalVel )
+void MeshData::getFaceNodalVelocities( int const faceId, RealT * nodalVel )
 {
    if (m_vel.empty())
    {
@@ -642,8 +625,7 @@ void MeshDataBySpace<MSPACE>::getFaceNodalVelocities( int const faceId, RealT * 
 }  // end MeshData::getFaceNodalVelocities()
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::computeNodalNormals( int const dim )
+void MeshData::computeNodalNormals( int const dim )
 {
    int * numFaceNrmlsToNodes;
    if (this->numberOfElements() > 0)
@@ -655,10 +637,10 @@ void MeshDataBySpace<MSPACE>::computeNodalNormals( int const dim )
          SLIC_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
       }
 
-      m_node_n = VectorArray<RealT, MSPACE>(m_dim, m_dim);
+      m_node_n = VectorArray<RealT>(m_dim, m_dim, m_allocator_id);
       for (IndexT i{0}; i < m_dim; ++i)
       {
-        m_node_n[i] = ArrayT<RealT, 1, MSPACE>(numberOfNodes(), numberOfNodes());
+        m_node_n[i] = ArrayT<RealT>(numberOfNodes(), numberOfNodes(), m_allocator_id);
       }
 
       // allocate space for nodal normal array
@@ -750,8 +732,7 @@ void MeshDataBySpace<MSPACE>::computeNodalNormals( int const dim )
 } // end MeshData::computeNodalNormals()
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::getFaceNormal( int const faceId, int const dim, RealT * nrml )
+void MeshData::getFaceNormal( int const faceId, int const dim, RealT * nrml )
 {
    nrml[0] = this->m_n[0][ faceId ];
    nrml[1] = this->m_n[1][ faceId ];
@@ -826,8 +807,7 @@ int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
 } // end MeshData::checkPenaltyData()
 
 //------------------------------------------------------------------------------
-template <MemorySpace MSPACE>
-void MeshDataBySpace<MSPACE>::print(std::ostream& os) const
+void MeshData::print(std::ostream& os) const
 {
    const int num_verts = numberOfNodes();
    const int num_elem = numberOfElements();
@@ -880,14 +860,6 @@ void MeshDataBySpace<MSPACE>::print(std::ostream& os) const
 
    os << "\n}";
 }
-
-//------------------------------------------------------------------------------
-template class MeshDataBySpace<MemorySpace::Dynamic>;
-#ifdef TRIBOL_USE_UMPIRE
-template class MeshDataBySpace<MemorySpace::Host>;
-template class MeshDataBySpace<MemorySpace::Device>;
-template class MeshDataBySpace<MemorySpace::Unified>;
-#endif
 
 } // end tribol namespace
 
