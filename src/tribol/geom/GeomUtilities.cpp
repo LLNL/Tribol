@@ -827,25 +827,28 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
       }
    }
 
-   // order the unordered vertices (in counter clockwise fashion)
-   PolyReorder( polyXTemp, polyYTemp, numPolyVert );
-
-   // check length of segs against tolerance and collapse short segments if necessary
-   // This is where polyX and polyY get allocated.
-   int numFinalVert = 0; 
-
-   FaceGeomError segErr = CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
-                                         lenTol, polyX, polyY, numFinalVert );
-
-   if (segErr != 0)
+   // reorder the unordered vertices and check segment length against tolerance for edge collapse.
+   // Only do this for overlaps with 3 or more vertices. We skip any overlap that degenerates to <3 vertices
+   if (numPolyVert>2)
    {
-      return segErr;
+      // order the unordered vertices (in counter clockwise fashion)
+      PolyReorder( polyXTemp, polyYTemp, numPolyVert );
+
+      // check length of segs against tolerance and collapse short segments if necessary
+      // This is where polyX and polyY get allocated.
+      int numFinalVert = 0; 
+
+      FaceGeomError segErr = CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
+                                            lenTol, polyX, polyY, numFinalVert );
+
+      if (segErr != 0)
+      {
+         return segErr;
+      }
+
+      numPolyVert = numFinalVert;
    }
-
-   numPolyVert = numFinalVert;
-
-   // check to see if numPolyVert has degenerated to less than a triangle
-   if (numPolyVert < 3)
+   else
    {
       area = 0.0;
       return NO_FACE_GEOM_ERROR; // don't return error here. We should tolerate 'collapsed' (zero area) overlaps
@@ -1269,7 +1272,11 @@ FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RES
 void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numPoints )
 {
 
-   SLIC_ERROR_IF(numPoints<3, "PolyReorder: numPoints < 3.");
+   if (numPoints<3)
+   {
+      SLIC_DEBUG("PolyReorder: numPoints (" << numPoints << ") < 3.");
+      return;
+   }
 
    real xC, yC, zC;
    real * z = nullptr;
