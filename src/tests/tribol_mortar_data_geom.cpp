@@ -162,9 +162,6 @@ TEST_F( MortarGeomTest, mortar_good_patch )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3 );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -186,7 +183,7 @@ TEST_F( MortarGeomTest, mortar_good_patch )
                         pressures);
 
    RealT dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -196,6 +193,9 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 36 );
+
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarGeomTest, mortar_bad_patch )
@@ -276,9 +276,6 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3 );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -300,7 +297,7 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
                         pressures);
 
    RealT dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -311,6 +308,8 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 36 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarGeomTest, mortar_ironing )
@@ -391,9 +390,6 @@ TEST_F( MortarGeomTest, mortar_ironing )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3 );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -415,7 +411,7 @@ TEST_F( MortarGeomTest, mortar_ironing )
                         pressures);
 
    RealT dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ( err, 0 );
 
@@ -455,6 +451,8 @@ TEST_F( MortarGeomTest, mortar_ironing )
 
    EXPECT_EQ( num_total_active_nodes, 54 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
@@ -540,9 +538,6 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3 );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -564,10 +559,12 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
                         pressures);
 
    RealT dt = 1.0; 
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ( err, 0 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 int main(int argc, char* argv[])
@@ -575,6 +572,9 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+  // Initialize Tribol via simple Tribol interface
+  Initialize(3);
 
 #ifdef TRIBOL_USE_UMPIRE
   umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
@@ -584,6 +584,9 @@ int main(int argc, char* argv[])
   tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
 
   result = RUN_ALL_TESTS();
+
+  // Finalize Tribol via simple Tribol interface
+  Finalize();
 
   return result;
 }

@@ -73,6 +73,7 @@ endif()
 #------------------------------------------------------------------------------
 include(cmake/TribolMacros.cmake)
 include(cmake/Options.cmake)
+include(cmake/TribolCompilerFlags.cmake)
 
 #------------------------------------------------------------------------------
 # Add TPLs and source directories

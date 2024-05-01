@@ -212,9 +212,6 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3 );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -236,7 +233,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
                         pressures);
 
    RealT dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -246,6 +243,8 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
    tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
    TestMortarWeights( couplingScheme, 2.256, 1.e-3 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
@@ -326,9 +325,6 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3 );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -350,7 +346,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
                         pressures);
 
    RealT dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -360,6 +356,8 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
    tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
    TestMortarWeights( couplingScheme, 2.260, 1.e-1 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
@@ -440,9 +438,6 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3 );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -464,7 +459,7 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
                         pressures);
 
    RealT dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -474,6 +469,8 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
    tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
    TestMortarWeights( couplingScheme, 20., 1.e-3 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 int main(int argc, char* argv[])
@@ -481,6 +478,9 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+  // Initialize Tribol via simple Tribol interface
+  Initialize(3);
 
 #ifdef TRIBOL_USE_UMPIRE
   umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
@@ -490,6 +490,9 @@ int main(int argc, char* argv[])
   tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
 
   result = RUN_ALL_TESTS();
+
+  // Finalize Tribol via simple Tribol interface
+  Finalize();
 
   return result;
 }

@@ -16,8 +16,6 @@
 #include "axom/slic.hpp"
 #include "axom/fmt.hpp"
 
-namespace fmt = axom::fmt;
-
 namespace tribol
 {
 
@@ -819,41 +817,41 @@ void MeshData::print(std::ostream& os) const
    }
 
    os << "{\n";
-   os << fmt::format("  verts ({}) {{",num_verts);
+   os << axom::fmt::format("  verts ({}) {{",num_verts);
    // positions
-   os << fmt::format("\n\tx: {}", fmt::join(m_position[0].data(), m_position[0].data()+num_verts, ", "));
-   os << fmt::format("\n\ty: {}", fmt::join(m_position[1].data(), m_position[1].data()+num_verts, ", "));
+   os << axom::fmt::format("\n\tx: {}", axom::fmt::join(m_position[0].data(), m_position[0].data()+num_verts, ", "));
+   os << axom::fmt::format("\n\ty: {}", axom::fmt::join(m_position[1].data(), m_position[1].data()+num_verts, ", "));
    if(m_dim == 3)
    {  
-      os << fmt::format("\n\tz: {}", fmt::join(m_position[2].data(), m_position[2].data()+num_verts, ", "));
+      os << axom::fmt::format("\n\tz: {}", axom::fmt::join(m_position[2].data(), m_position[2].data()+num_verts, ", "));
    }
    // contact response (force)
    if( !m_response.empty() )
    {
-      os << fmt::format("\n\tfx: {}", fmt::join(m_response[0].data(), m_response[0].data()+num_verts, ", "));
-      os << fmt::format("\n\tfy: {}", fmt::join(m_response[1].data(), m_response[1].data()+num_verts, ", "));
+      os << axom::fmt::format("\n\tfx: {}", axom::fmt::join(m_response[0].data(), m_response[0].data()+num_verts, ", "));
+      os << axom::fmt::format("\n\tfy: {}", axom::fmt::join(m_response[1].data(), m_response[1].data()+num_verts, ", "));
       if(m_dim == 3)
       {  
-         os << fmt::format("\n\tfz: {}", fmt::join(m_response[2].data(), m_response[2].data()+num_verts, ", "));
+         os << axom::fmt::format("\n\tfz: {}", axom::fmt::join(m_response[2].data(), m_response[2].data()+num_verts, ", "));
       }
    }
    os << "\n  }";
 
-   os << fmt::format("\n  elems ({}) {{", num_elem);  
+   os << axom::fmt::format("\n  elems ({}) {{", num_elem);  
    
    if( !m_connectivity.empty() )
    {
-      os << fmt::format("\n\tconnectivity: {{ {} }}", fmt::join(m_connectivity.data(), m_connectivity.data()+(num_elem*numberOfNodesPerElement()), ", "));
+      os << axom::fmt::format("\n\tconnectivity: {{ {} }}", axom::fmt::join(m_connectivity.data(), m_connectivity.data()+(num_elem*numberOfNodesPerElement()), ", "));
    }
 
    // normals
    if( !m_n.empty() )
    {
-      os << fmt::format("\n\tnx: {}", fmt::join(m_n[0].data(), m_n[0].data()+num_elem, ", "));
-      os << fmt::format("\n\tny: {}", fmt::join(m_n[1].data(), m_n[1].data()+num_elem, ", "));
+      os << axom::fmt::format("\n\tnx: {}", axom::fmt::join(m_n[0].data(), m_n[0].data()+num_elem, ", "));
+      os << axom::fmt::format("\n\tny: {}", axom::fmt::join(m_n[1].data(), m_n[1].data()+num_elem, ", "));
       if(m_dim == 3)
       {  
-         os << fmt::format("\n\tnz: {}", fmt::join(m_n[2].data(), m_n[2].data()+num_elem, ", "));
+         os << axom::fmt::format("\n\tnz: {}", axom::fmt::join(m_n[2].data(), m_n[2].data()+num_elem, ", "));
       }
    }
    os << "\n  }";
