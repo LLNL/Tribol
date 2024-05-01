@@ -10,6 +10,7 @@
 #include "partition/PartitionElements.hpp"
 #include "partition/RCB.hpp"
 #include "transfer/MatrixTransfer.hpp"
+#include "transfer/SparseMatrixTransfer.hpp"
 
 #include "MultiRedecomp.hpp"
 #include "RedecompTransfer.hpp"

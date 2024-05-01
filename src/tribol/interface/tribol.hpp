@@ -87,14 +87,28 @@ void setRatePercentPenalty( int meshId, double r_p );
 
 /*!
  *
- * \brief sets the contact interpen fraction on the parameters struct
+ * \brief sets the auto-contact interpen fraction on the parameters struct
  *
- * \param [in] frac the maximum allowable interpenetration factor
+ * \param [in] scale the scale applied to the element thickness to determine the auto-contact length scale 
  *
- * \note this is only used for common-plane with penalty enforcement
+ * \note this is only used for common-plane with penalty enforcement. A sacle < 1.0 may 
+ * result in missed contact face-pairs in softer contact responses
+ *     
  *
  */
-void setContactPenFrac( double frac );
+void setAutoContactPenScale( double scale );
+
+/*!
+ *
+ * \brief sets the timestep interpen fraction on the parameters struct
+ *
+ * \param [in] frac the maximum allowable interpenetration factor triggering a timestep vote
+ *
+ * \note this is only used for common-plane with penalty enforcement. This is the 
+ * fraction of the element thickness that is allowed prior to triggering a timestep vote.
+ *
+ */
+void setTimestepPenFrac( double frac );
 
 /*!
  * \brief Sets the area fraction for inclusion of a contact overlap 
@@ -152,6 +166,16 @@ void setOutputDirectory( const std::string& dir );
  * \note this overrides the logging level set in initialize().
  */
 void setLoggingLevel( int csId, LoggingLevel log_level );
+
+/*!
+ * \brief Enable the contact timestep vote 
+ *
+ * \param [in] enable the timestep vote will be calculated and returned if true
+ *
+ * \note default behavior is to not enable timestep calculation
+ *
+ */
+void enableTimestepVote( const bool enable );
 
 /// @}
 

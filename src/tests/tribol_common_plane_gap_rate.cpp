@@ -46,7 +46,7 @@ void compareGaps( tribol::CouplingScheme const * cs,
    {
       tribol::InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -151,7 +151,7 @@ void checkPressures( tribol::CouplingScheme const * cs,
    {
       tribol::InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -310,7 +310,7 @@ TEST_F( CommonPlaneTest, constant_rate_penetration )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -407,7 +407,7 @@ TEST_F( CommonPlaneTest, constant_rate_separation )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -503,7 +503,7 @@ TEST_F( CommonPlaneTest, no_gap_constant_rate_penetration )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -596,7 +596,7 @@ TEST_F( CommonPlaneTest, percent_rate_penetration )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -622,7 +622,8 @@ TEST_F( CommonPlaneTest, percent_rate_penetration )
    // check the gaps, pressures, and force sense
    //real gap = z_min2 - z_max1;
    real rate_gap = velZ2 - velZ1;
-   real pressure = (rate_gap < 0.) ? penalty * rate_gap : 0.;
+   real stiffness = tribol::ComputePenaltyStiffnessPerArea( penalty, penalty );
+   real pressure = (rate_gap < 0.) ? stiffness * rate_gap : 0.;
    compareGaps( couplingScheme, rate_gap, 1.E-8, "rate_penetration" );
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions are not separated
@@ -694,7 +695,7 @@ TEST_F( CommonPlaneTest, percent_rate_separation )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -790,7 +791,7 @@ TEST_F( CommonPlaneTest, no_gap_percent_rate_penetration )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 

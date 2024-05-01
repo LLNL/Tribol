@@ -131,7 +131,7 @@ void MortarLMPatchTest::computeContactSolution( int nMortarElemsX, int nMortarEl
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( method, tribol::LAGRANGE_MULTIPLIER, 
-                                         tribol::FRICTIONLESS, vis, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, vis, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 

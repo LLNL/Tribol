@@ -10,28 +10,58 @@
 message(STATUS "Configuring TPLs...\n"
                "----------------------")
 
-set(TPL_DEPS)
+set(EXPORTED_TPL_DEPS)
 include(CMakeFindDependencyMacro)
 
 #------------------------------------------------------------------------------
 # Create global variable to toggle between GPU targets
 #------------------------------------------------------------------------------
 if(TRIBOL_ENABLE_CUDA)
-  set(tribol_device_depends cuda CACHE STRING "" FORCE)
+  set(tribol_device_depends blt::cuda CACHE STRING "" FORCE)
 endif()
 if(TRIBOL_ENABLE_HIP)
   set(tribol_device_depends blt::hip CACHE STRING "" FORCE)
 endif()
 
+
+#------------------------------------------------------------------------------
+# Umpire
+#------------------------------------------------------------------------------
+
+if (DEFINED UMPIRE_DIR)
+  message(STATUS "Setting up external Umpire TPL...")
+
+  set(umpire_DIR ${UMPIRE_DIR})
+  find_dependency(umpire REQUIRED PATHS "${UMPIRE_DIR}")
+
+  set(TRIBOL_USE_UMPIRE TRUE)
+else()
+  message(STATUS "Umpire support is OFF")
+endif()
+
+
 #------------------------------------------------------------------------------
 # axom
 #------------------------------------------------------------------------------
-if (DEFINED AXOM_DIR)
+if (TARGET axom)
+    # Case: Tribol included in project that also creates an axom target, no need to recreate axom
+    message(STATUS "Axom support is ON, using existing axom target")
+
+    # Add components and dependencies of axom to this export set but don't prefix it with tribol::
+    # NOTE(chapman39@llnl.gov): Cannot simply install axom, since it is an imported library
+    set(_axom_exported_targets ${axom_exported_targets})
+    list(REMOVE_ITEM _axom_exported_targets openmp)
+    install(TARGETS              ${_axom_exported_targets}
+            EXPORT               tribol-targets
+            DESTINATION          lib)
+    unset(_axom_exported_targets)
+
+    set(AXOM_FOUND TRUE CACHE BOOL "" FORCE)
+
+elseif (DEFINED AXOM_DIR)
   message(STATUS "Setting up external Axom TPL...")
-  include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupAxom.cmake)
-
-  list(APPEND TPL_DEPS axom)
-
+  tribol_assert_path_exists( ${AXOM_DIR} )
+  find_dependency(axom REQUIRED PATHS "${AXOM_DIR}/lib/cmake")
 else()
   message(FATAL_ERROR 
      "Axom is a required dependency for tribol. "
@@ -48,38 +78,29 @@ if (TARGET mfem)
     # Note - white238: I can't seem to get this to pass install testing due to mfem being included
     # in multiple export sets
     message(STATUS "MFEM support is ON, using existing mfem target")
+
     # Add it to this export set but don't prefix it with tribol::
-    install(TARGETS              mfem
-            EXPORT               tribol-targets
-            DESTINATION          lib)
+    # NOTE: imported targets cannot be part of an export set
+    get_target_property(_is_imported mfem IMPORTED)
+    if(NOT "${_is_imported}")
+        install(TARGETS              mfem
+                EXPORT               tribol-targets
+                DESTINATION          lib)
+    endif()
+
     set(MFEM_FOUND TRUE CACHE BOOL "" FORCE)
 elseif (DEFINED MFEM_DIR)
   message(STATUS "Setting up external MFEM TPL...")
 
   include(${PROJECT_SOURCE_DIR}/cmake/thirdparty/SetupMFEM.cmake)
 
-  list(APPEND TPL_DEPS mfem)
+  list(APPEND EXPORTED_TPL_DEPS mfem)
 else()
   message(FATAL_ERROR 
      "MFEM is a required dependency for tribol. "
      "Please configure tribol with a path to MFEM via the MFEM_DIR variable.")
 endif()
 
-
-#------------------------------------------------------------------------------
-# Umpire
-#------------------------------------------------------------------------------
-
-if (DEFINED UMPIRE_DIR)
-  message(STATUS "Setting up external Umpire TPL...")
-
-  include(${UMPIRE_DIR}/lib/cmake/umpire/umpire-targets.cmake)
-
-  list(APPEND TPL_DEPS umpire)
-  set(TRIBOL_USE_UMPIRE TRUE)
-else()
-  message(STATUS "Umpire support is OFF")
-endif()
 
 #------------------------------------------------------------------------------
 # Shroud - Generates C/Fortran/Python bindings
@@ -134,7 +155,7 @@ foreach(_target ${_imported_targets})
 endforeach()
 
 # export tribol-targets
-foreach(dep ${TPL_DEPS})
+foreach(dep ${EXPORTED_TPL_DEPS})
   # If the target is EXPORTABLE, add it to the export set
   get_target_property(_is_imported ${dep} IMPORTED)
   if(NOT ${_is_imported})
@@ -145,9 +166,6 @@ foreach(dep ${TPL_DEPS})
       set_target_properties(${dep} PROPERTIES EXPORT_NAME tribol::${dep})
   endif()
 endforeach()
-
-# export BLT targets
-blt_export_tpl_targets(EXPORT tribol-targets NAMESPACE tribol)
 
 message(STATUS "--------------------------\n"
                "Finished configuring TPLs")

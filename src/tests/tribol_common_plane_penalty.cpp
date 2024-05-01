@@ -46,7 +46,7 @@ void compareGaps( tribol::CouplingScheme const * cs,
    {
       tribol::InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -150,7 +150,7 @@ void checkPressures( tribol::CouplingScheme const * cs,
    {
       tribol::InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -294,7 +294,7 @@ TEST_F( CommonPlaneTest, penetration_gap_check )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY,
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -357,7 +357,7 @@ TEST_F( CommonPlaneTest, separation_gap_check )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -419,7 +419,7 @@ TEST_F( CommonPlaneTest, constant_penalty_check )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -434,7 +434,7 @@ TEST_F( CommonPlaneTest, constant_penalty_check )
 
    // check the pressures
    real gap = z_min2 - z_max1;
-   real pressure = parameters.const_penalty * gap;
+   real pressure = tribol::ComputePenaltyStiffnessPerArea( parameters.const_penalty, parameters.const_penalty ) * gap;
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme );
 
@@ -504,14 +504,13 @@ TEST_F( CommonPlaneTest, element_penalty_check )
 
    // call tribol setup and update
    tribol::TestControlParameters parameters; 
-   parameters.contact_pen_frac = 0.29;
    parameters.penalty_ratio = true;
    parameters.const_penalty = 0.75;
    parameters.dt = dt;
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -582,7 +581,7 @@ TEST_F( CommonPlaneTest, tied_contact_check )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::TIED, false, parameters );
+                                         tribol::TIED, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -594,7 +593,7 @@ TEST_F( CommonPlaneTest, tied_contact_check )
 
    // check the pressures
    real gap = z_min2 - z_max1;
-   real pressure = parameters.const_penalty * gap;
+   real pressure = tribol::ComputePenaltyStiffnessPerArea( parameters.const_penalty, parameters.const_penalty ) * gap;
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme, true );
 

@@ -111,7 +111,7 @@ TEST_F( CompGeomTest, common_plane_check )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, true, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, true, parameters );
  
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -168,7 +168,7 @@ TEST_F( CompGeomTest, single_mortar_check )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::SINGLE_MORTAR, tribol::LAGRANGE_MULTIPLIER, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -189,8 +189,8 @@ TEST_F( CompGeomTest, poly_area_centroid_1 )
    // vs. the vertex average centroid calculation for a 
    // rectangular quadrilateral. The expectation is that 
    // the results are the same
-   int dim = 3;
-   int numVerts = 4;
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
    real x[ dim * numVerts ];
 
    for (int i=0; i<dim*numVerts; ++i)
@@ -237,8 +237,8 @@ TEST_F( CompGeomTest, poly_area_centroid_2 )
    // This test checks the area centroid calculation 
    // the centroid calculation for a non-self-intersecting, 
    // closed polygon
-   int dim = 3;
-   int numVerts = 4;
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
    real x[ numVerts ];
    real y[ numVerts ];
    real z[ numVerts ];
@@ -297,11 +297,10 @@ TEST_F( CompGeomTest, poly_area_centroid_2 )
 
 TEST_F( CompGeomTest, 2d_projections_1 )
 {
-   int dim = 2;
-   int numVerts = 2;
+   constexpr int dim = 2;
+   constexpr int numVerts = 2;
    real xy1[dim*numVerts];
    real xy2[dim*numVerts];
-
 
 // Notice how the face vertices are flipped between register mesh and the segment basis eval!
 
@@ -419,14 +418,13 @@ TEST_F( CompGeomTest, 2d_projections_1 )
 
    tribol::registerCouplingScheme( 0, 0, 1,
                                    tribol::SURFACE_TO_SURFACE,
-                                   tribol::AUTO,
+                                   tribol::NO_CASE,
                                    tribol::COMMON_PLANE,
                                    tribol::FRICTIONLESS,
                                    tribol::PENALTY,
                                    tribol::BINNING_GRID );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT );
-   tribol::setContactPenFrac(0.5);
    tribol::setContactAreaFrac(1.e-4);
 
    // TODO check penetration and overlap tolerance with what is being used in host-code
@@ -440,8 +438,8 @@ TEST_F( CompGeomTest, 2d_projections_1 )
 
 TEST_F( CompGeomTest, 2d_projections_2 )
 {
-   int dim = 2;
-   int numVerts = 2;
+   constexpr int dim = 2;
+   constexpr int numVerts = 2;
    real xy1[dim*numVerts];
    real xy2[dim*numVerts];
 
@@ -500,6 +498,393 @@ TEST_F( CompGeomTest, 2d_projections_2 )
    EXPECT_LE(diffy1, 1.e-6); 
    EXPECT_LE(diffx2, 1.e-6); 
    EXPECT_LE(diffy2, 1.e-6); 
+}
+
+TEST_F( CompGeomTest, codirectional_normals_3d )
+{
+   // this test ensures that faces in a given face-pair with nearly co-directional 
+   // normals is not actually included as a contact candidate
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
+   constexpr int numCells = 2;
+   constexpr int lengthNodalData = numCells * numVerts;
+   real element_thickness[numCells];
+   real x[lengthNodalData];
+   real y[lengthNodalData];
+   real z[lengthNodalData];
+
+   for (int i=0; i<numCells; ++i)
+   {
+      element_thickness[i] = 1.0;
+   }
+
+   // coordinates for face 1
+   x[0] = 0.; 
+   x[1] = 1.; 
+   x[2] = 1.; 
+   x[3] = 0.; 
+
+   y[0] = 0.; 
+   y[1] = 0.; 
+   y[2] = 1.; 
+   y[3] = 1.; 
+
+   z[0] = 0.; 
+   z[1] = 0.; 
+   z[2] = 0.; 
+   z[3] = 0.; 
+
+   // coordinates for face 2
+   x[4] = 0.; 
+   x[5] = 1.; 
+   x[6] = 1.; 
+   x[7] = 0.; 
+
+   y[4] = 0.; 
+   y[5] = 0.; 
+   y[6] = 1.; 
+   y[7] = 1.; 
+
+   // amount of interpenetration in the z-direction
+   z[4] = -0.300001*element_thickness[1];
+   z[5] = -0.300001*element_thickness[1];
+   z[6] = -0.300001*element_thickness[1];
+   z[7] = -0.300001*element_thickness[1];
+
+   // initialize tribol
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( dim, problem_comm );
+
+   // register contact mesh
+   int meshId = 0;
+   tribol::IndexType conn[8] = {0,1,2,3,4,5,6,7}; // hard coded for a two face problem
+   tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+
+   tribol::enableTimestepVote(true);
+
+   real *fx;
+   real *fy;
+   real *fz; 
+   tribol::allocRealArray( &fx, lengthNodalData, 0. );
+   tribol::allocRealArray( &fy, lengthNodalData, 0. );
+   tribol::allocRealArray( &fz, lengthNodalData, 0. );
+
+   tribol::registerNodalResponse( meshId, fx, fy, fz );
+
+   real *vx;
+   real *vy;
+   real *vz; 
+   real vel0 = -1.e-15;
+   tribol::allocRealArray( &vx, lengthNodalData, 0. );
+   tribol::allocRealArray( &vy, lengthNodalData, 0. );
+   tribol::allocRealArray( &vz, lengthNodalData, vel0 );
+
+   // set second face to impacting velocity
+   real vel2 = 1.e-15;
+   vz[4] = vel2;
+   vz[5] = vel2;
+   vz[6] = vel2;
+   vz[7] = vel2;
+
+   tribol::registerNodalVelocities( meshId, vx, vy, vz );
+
+   real bulk_mod = 1.;
+   tribol::registerRealElementField( meshId, tribol::BULK_MODULUS, &bulk_mod );
+   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
+
+   int csIndex = 0;
+   tribol::registerCouplingScheme( csIndex, meshId, meshId,
+                                   tribol::SURFACE_TO_SURFACE,
+                                   tribol::AUTO,
+                                   tribol::COMMON_PLANE,
+                                   tribol::FRICTIONLESS,
+                                   tribol::PENALTY,
+                                   tribol::BINNING_CARTESIAN_PRODUCT );
+
+   tribol::setLoggingLevel( csIndex, tribol::TRIBOL_DEBUG );
+
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_ELEMENT, tribol::NO_RATE_PENALTY );
+
+   real dt = 1.0;
+   int err = tribol::update( 1, 1., dt );
+ 
+   EXPECT_EQ( err, 0 );
+   EXPECT_EQ( dt, 1.0 );
+
+   tribol::CouplingSchemeManager& couplingSchemeManager = 
+         tribol::CouplingSchemeManager::getInstance();
+  
+   tribol::CouplingScheme* couplingScheme = 
+      couplingSchemeManager.getCoupling( csIndex );
+
+   EXPECT_EQ( couplingScheme->getNumActivePairs(), 0 );
+
+   delete [] fx;
+   delete [] fy;
+   delete [] fz;
+   delete [] vx;
+   delete [] vy;
+   delete [] vz;
+}
+
+TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
+{
+   // This test uses auto-contact and checks that the face-pair
+   // is included as a conatct candidate, and is in fact in contact 
+   // when the interpenetration is less than the maximum allowable
+   // for auto contact
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
+   constexpr int numCells = 2;
+   constexpr int lengthNodalData = numCells * numVerts;
+   real element_thickness[numCells];
+   real x[lengthNodalData];
+   real y[lengthNodalData];
+   real z[lengthNodalData];
+
+   for (int i=0; i<numCells; ++i)
+   {
+      element_thickness[i] = 1.0;
+   }
+
+   // coordinates for face 1
+   x[0] = 0.; 
+   x[1] = 1.; 
+   x[2] = 1.; 
+   x[3] = 0.; 
+
+   y[0] = 0.; 
+   y[1] = 0.; 
+   y[2] = 1.; 
+   y[3] = 1.; 
+
+   z[0] = 0.; 
+   z[1] = 0.; 
+   z[2] = 0.; 
+   z[3] = 0.; 
+
+   // coordinates for face 2
+   x[4] = 0.; 
+   x[5] = 1.; 
+   x[6] = 1.; 
+   x[7] = 0.; 
+
+   y[4] = 0.; 
+   y[5] = 0.; 
+   y[6] = 1.; 
+   y[7] = 1.; 
+
+   // amount of interpenetration in the z-direction
+   real max_interpen_frac = 1.0;
+   tribol::setAutoContactPenScale( max_interpen_frac );
+   real test_ratio = 0.90; // fraction of max interpen frac used for this test
+   z[4] = -test_ratio * max_interpen_frac * element_thickness[1]; 
+   z[5] = -test_ratio * max_interpen_frac * element_thickness[1]; 
+   z[6] = -test_ratio * max_interpen_frac * element_thickness[1]; 
+   z[7] = -test_ratio * max_interpen_frac * element_thickness[1]; 
+
+   // initialize tribol
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( dim, problem_comm );
+
+   // register contact mesh
+   int meshId = 0;
+   tribol::IndexType conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
+   tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+
+   tribol::enableTimestepVote(true);
+
+   real *fx;
+   real *fy;
+   real *fz; 
+   tribol::allocRealArray( &fx, lengthNodalData, 0. );
+   tribol::allocRealArray( &fy, lengthNodalData, 0. );
+   tribol::allocRealArray( &fz, lengthNodalData, 0. );
+
+   tribol::registerNodalResponse( meshId, fx, fy, fz );
+
+   real *vx;
+   real *vy;
+   real *vz; 
+   real vel0 = -1.;
+   tribol::allocRealArray( &vx, lengthNodalData, 0. );
+   tribol::allocRealArray( &vy, lengthNodalData, 0. );
+   tribol::allocRealArray( &vz, lengthNodalData, vel0 );
+
+   // set second face to impacting velocity
+   real vel2 = 1.0;
+   vz[4] = vel2;
+   vz[5] = vel2;
+   vz[6] = vel2;
+   vz[7] = vel2;
+
+   tribol::registerNodalVelocities( meshId, vx, vy, vz );
+
+   // register element thickness for use with auto contact
+   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
+
+   int csIndex = 0;
+   tribol::registerCouplingScheme( csIndex, meshId, meshId,
+                                   tribol::SURFACE_TO_SURFACE,
+                                   tribol::AUTO,
+                                   tribol::COMMON_PLANE,
+                                   tribol::FRICTIONLESS,
+                                   tribol::PENALTY,
+                                   tribol::BINNING_CARTESIAN_PRODUCT );
+
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT, tribol::NO_RATE_PENALTY );
+
+   tribol::setKinematicConstantPenalty( meshId, 1.0 );
+
+   real dt = 1.0;
+   int err = tribol::update( 1, 1., dt );
+ 
+   EXPECT_EQ( err, 0 );
+
+   tribol::CouplingSchemeManager& couplingSchemeManager = 
+         tribol::CouplingSchemeManager::getInstance();
+  
+   tribol::CouplingScheme* couplingScheme = 
+      couplingSchemeManager.getCoupling( csIndex );
+
+   EXPECT_EQ( couplingScheme->getNumActivePairs(), 1 );
+
+   delete [] fx;
+   delete [] fy;
+   delete [] fz;
+   delete [] vx;
+   delete [] vy;
+   delete [] vz;
+}
+
+TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
+{
+   // This test uses auto-contact and checks that the face-pair
+   // is included as a contact candidate, and is in fact in contact 
+   // when the interpenetration is less than the maximum allowable
+   // for auto contact
+   constexpr int dim = 3;
+   constexpr int numVerts = 4;
+   constexpr int numCells = 2;
+   constexpr int lengthNodalData = numCells * numVerts;
+   real element_thickness[numCells];
+   real x[lengthNodalData];
+   real y[lengthNodalData];
+   real z[lengthNodalData];
+
+   for (int i=0; i<numCells; ++i)
+   {
+      element_thickness[i] = 1.0;
+   }
+
+   // coordinates for face 1
+   x[0] = 0.; 
+   x[1] = 1.; 
+   x[2] = 1.; 
+   x[3] = 0.; 
+
+   y[0] = 0.; 
+   y[1] = 0.; 
+   y[2] = 1.; 
+   y[3] = 1.; 
+
+   z[0] = 0.; 
+   z[1] = 0.; 
+   z[2] = 0.; 
+   z[3] = 0.; 
+
+   // coordinates for face 2
+   x[4] = 0.; 
+   x[5] = 1.; 
+   x[6] = 1.; 
+   x[7] = 0.; 
+
+   y[4] = 0.; 
+   y[5] = 0.; 
+   y[6] = 1.; 
+   y[7] = 1.; 
+
+   // amount of interpenetration in the z-direction
+   real max_interpen_frac = 1.0;
+   tribol::setAutoContactPenScale( max_interpen_frac );
+   real test_ratio = 1.01; // fraction of max interpen frac used for this test
+   z[4] = -test_ratio * max_interpen_frac * element_thickness[1]; 
+   z[5] = -test_ratio * max_interpen_frac * element_thickness[1]; 
+   z[6] = -test_ratio * max_interpen_frac * element_thickness[1]; 
+   z[7] = -test_ratio * max_interpen_frac * element_thickness[1]; 
+
+   // initialize tribol
+   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+   tribol::initialize( dim, problem_comm );
+
+   // register contact mesh
+   int meshId = 0;
+   tribol::IndexType conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
+   tribol::registerMesh( meshId, numCells, numVerts, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+
+   tribol::enableTimestepVote(true);
+
+   real *fx;
+   real *fy;
+   real *fz; 
+   tribol::allocRealArray( &fx, lengthNodalData, 0. );
+   tribol::allocRealArray( &fy, lengthNodalData, 0. );
+   tribol::allocRealArray( &fz, lengthNodalData, 0. );
+
+   tribol::registerNodalResponse( meshId, fx, fy, fz );
+
+   real *vx;
+   real *vy;
+   real *vz; 
+   real vel0 = -1.;
+   tribol::allocRealArray( &vx, lengthNodalData, 0. );
+   tribol::allocRealArray( &vy, lengthNodalData, 0. );
+   tribol::allocRealArray( &vz, lengthNodalData, vel0 );
+
+   // set second face to impacting velocity
+   real vel2 = 1.0;
+   vz[4] = vel2;
+   vz[5] = vel2;
+   vz[6] = vel2;
+   vz[7] = vel2;
+
+   tribol::registerNodalVelocities( meshId, vx, vy, vz );
+
+   // register element thickness for use with auto contact
+   tribol::registerRealElementField( meshId, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
+
+   int csIndex = 0;
+   tribol::registerCouplingScheme( csIndex, meshId, meshId,
+                                   tribol::SURFACE_TO_SURFACE,
+                                   tribol::AUTO,
+                                   tribol::COMMON_PLANE,
+                                   tribol::FRICTIONLESS,
+                                   tribol::PENALTY,
+                                   tribol::BINNING_CARTESIAN_PRODUCT );
+
+   tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT, tribol::NO_RATE_PENALTY );
+
+   tribol::setKinematicConstantPenalty( meshId, 1.0 );
+
+   real dt = 1.0;
+   int err = tribol::update( 1, 1., dt );
+ 
+   EXPECT_EQ( err, 0 );
+
+   tribol::CouplingSchemeManager& couplingSchemeManager = 
+         tribol::CouplingSchemeManager::getInstance();
+  
+   tribol::CouplingScheme* couplingScheme = 
+      couplingSchemeManager.getCoupling( csIndex );
+
+   EXPECT_EQ( couplingScheme->getNumActivePairs(), 0 );
+
+   delete [] fx;
+   delete [] fy;
+   delete [] fz;
+   delete [] vx;
+   delete [] vy;
+   delete [] vz;
 }
 
 int main(int argc, char* argv[])

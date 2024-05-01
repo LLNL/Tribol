@@ -75,6 +75,8 @@ struct MeshElemData
    bool m_is_rate_constant_penalty_set      {false}; ///< True if the constant rate penalty is set
    bool m_is_rate_percent_penalty_set       {false}; ///< True if the rate percent penalty is set
 
+   bool m_is_element_thickness_set          {false}; ///< True if element thickness is set
+
   /*!
    * \brief Checks if the kinematic penalty data is valid
    *
@@ -162,6 +164,12 @@ public:
 public:
 
   /*!
+   * \brief Checks for valid Lagrange multiplier enforcement data
+   *
+   */
+   int checkLagrangeMultiplierData();
+
+  /*!
    * \brief Checks for valid penalty enforcement data 
    *
    * \param [in] p_enfrc_options penalty enforcement options guiding check
@@ -176,10 +184,11 @@ public:
    * \brief Computes the face normals and centroids for all faces in the mesh.
    *
    * \param [in] dim Dimension of the problem 
+   * \return true if face calculations do not encounter errors or warnings
    * 
    * This routine accounts for warped faces by computing an average normal.
    */
-  void computeFaceData( int const dim );
+  bool computeFaceData( int const dim );
   
   /*!
    * \brief Computes average nodal normals for use with mortar methods

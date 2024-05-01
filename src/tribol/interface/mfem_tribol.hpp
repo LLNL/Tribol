@@ -217,17 +217,25 @@ void getMfemResponse( integer cs_id, mfem::Vector& r );
 /**
  * @brief Get assembled contact contributions for the Jacobian matrix
  *
- * @pre Coupling scheme cs_id must be registered using
- * registerMfemCouplingScheme()
- * @pre Redecomp mesh must be created and up to date by calling
- * updateMfemParallelDecomposition()
+ * @pre Coupling scheme cs_id must be registered using registerMfemCouplingScheme()
+ * @pre Redecomp mesh must be created and up to date by calling updateMfemParallelDecomposition()
  * @pre Tribol data must be up to date for current geometry by calling update()
  *
- * This method requires registration of an mfem::ParMesh with the coupling
- * scheme. The Jacobian contributions are split into a 2x2 block structure. The
- * first row (or column) block is associated with the coordinate grid function
- * degrees of freedom and the second row (or column) block is associated with
- * the Lagrange multiplier degrees of freedom.
+ * This method requires registration of an mfem::ParMesh with the coupling scheme. The Jacobian contributions are split
+ * into a 2x2 block structure. The first row (or column) block is associated with the coordinate grid function degrees
+ * of freedom and the second row (or column) block is associated with the Lagrange multiplier (pressure) degrees of
+ * freedom. Specifically, the blocks are as follows (f = force, u = displacement, g = gap, p = pressure):
+ *
+ *   df/du | df/dp
+ *  ---------------
+ *   dg/du | dg/dp
+ *
+ * Note, for contact methods with Lagrange multiplier constraint enforcement, Tribol will have contact contribution
+ * placeholders for nodes on both contact surfaces. For instance, in a mortar method, both mortar and nonmortar nodes
+ * will have placeholders in the contact contribution data structures. If, however, SINGLE_MORTAR is used as the
+ * ContactMethod, the gap/pressure degrees of freedom are ONLY on the nonmortar surface. As a result, Tribol will return
+ * Jacobian blocks that have empty rows of dg/du and empty columns of df/dp and ones on the diagonal of the dg/dp block
+ * for all mortar node placeholders.
  *
  * @param csId Coupling scheme id with a registered MFEM mesh
  * @return Jacobian contributions as an mfem::BlockOperator

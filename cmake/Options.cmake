@@ -14,6 +14,9 @@ cmake_dependent_option(TRIBOL_ENABLE_DOCS "Enables Tribol Docs" ON "ENABLE_DOCS"
 option(TRIBOL_USE_SINGLE_PRECISION "Use single-precision floating point" OFF)
 option(TRIBOL_USE_64BIT_INDEXTYPE "Use 64-bit index type" OFF)
 
-option(TRIBOL_ENABLE_SIDRE "Enables use of Sidre" OFF)
-option(TRIBOL_ENABLE_SLIC "Enables use of Slic" ON)
-
+option(TRIBOL_ENABLE_ASAN "Enable AddressSanitizer for memory checking (Clang or GCC only)" OFF)
+if(TRIBOL_ENABLE_ASAN)
+    if(NOT (C_COMPILER_FAMILY_IS_CLANG OR C_COMPILER_FAMILY_IS_GNU))
+        message(FATAL_ERROR "ENABLE_ASAN only supports Clang and GCC")
+    endif()
+endif()

@@ -197,6 +197,7 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
 
    // compute nodal normals (do this outside the element loop)
+   // This routine is guarded against a null mesh
    nonmortarMesh.computeNodalNormals( dim );
  
    // declare local variables to hold face nodal coordinates
@@ -205,15 +206,15 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    real nonmortarX[ dim * numNodesPerFace ];
    real* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
 
-   ////////////////////////
+   ////////////////////////////
    // compute nonmortar gaps //
-   ////////////////////////
+   ////////////////////////////
    int cpID = 0;
    for (IndexType kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -315,16 +316,22 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    real * const fz2 = nonmortarMesh.m_forceZ;
    IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
 
-   ////////////////////////////////
-   //                            //
-   // compute single mortar gaps //
-   //                            //
-   ////////////////////////////////
+   ///////////////////////////////////////////////////////
+   //                                                   //
+   //            compute single mortar gaps             //
+   //                                                   //
+   // Note, this routine is guarded against a null mesh //
+   ///////////////////////////////////////////////////////
    ComputeAlignedMortarGaps( cs );
 
-   int numTotalNodes = cs->getNumTotalNodes();
-   int numRows = dim * numTotalNodes + numTotalNodes;
-   static_cast<MortarData*>( cs->getMethodData() )->allocateMfemSparseMatrix( numRows );
+   int numTotalNodes;
+   int numRows;
+   if (!cs->nullMeshes())
+   {
+      numTotalNodes = cs->getNumTotalNodes();
+      numRows = dim * numTotalNodes + numTotalNodes;
+      static_cast<MortarData*>( cs->getMethodData() )->allocateMfemSparseMatrix( numRows );
+   }
 
    ////////////////////////////////////////////////////////////////
    // compute equilibrium residual and/or Jacobian contributions //
@@ -334,7 +341,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }

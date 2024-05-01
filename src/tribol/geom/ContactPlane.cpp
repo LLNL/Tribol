@@ -29,9 +29,9 @@ namespace tribol
 FaceGeomError CheckInterfacePair( InterfacePair& pair,
                                   ContactMethod const cMethod,
                                   ContactCase const TRIBOL_UNUSED_PARAM(cCase),
-                                  bool& inContact )
+                                  bool& isInteracting )
 {
-   inContact = false;
+   isInteracting = false;
 
    // note: will likely need the ContactCase for specialized 
    // geometry check(s)/routine(s)
@@ -63,18 +63,20 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
            ContactPlane3D cpTemp( pair, areaFrac, interpenOverlap, intermediatePlane, 3 );
            FaceGeomError face_err = CheckFacePair( pair, full, cpTemp );
 
+           SLIC_DEBUG("face_err: " << face_err );
+
            if (face_err != NO_FACE_GEOM_ERROR)
            {
-              inContact = false;
+              isInteracting = false;
            }
            else if (cpTemp.m_inContact)
            {
               cpMgr.addContactPlane( cpTemp ); 
-              inContact = true;
+              isInteracting = true;
            }
            else
            {
-              inContact = false;
+              isInteracting = false;
            }
            return face_err;
          }
@@ -85,16 +87,16 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
 
            if (edge_err != NO_FACE_GEOM_ERROR)
            {
-              inContact = false;
+              isInteracting = false;
            }
            else if (cpTemp.m_inContact)
            {
               cpMgr.addContactPlane( cpTemp ); 
-              inContact = true;
+              isInteracting = true;
            }
            else
            {
-              inContact = false;
+              isInteracting = false;
            }
            return edge_err;
          }
@@ -117,11 +119,11 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
             if (cpTemp.m_inContact)
             {
                cpMgr.addContactPlane( cpTemp );
-               inContact = true;
+               isInteracting = true;
             }
             else
             {
-               inContact = false;
+               isInteracting = false;
             }
             return NO_FACE_GEOM_ERROR;
          }
@@ -302,6 +304,25 @@ bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
 } // end EdgeInterCheck()
 
 //------------------------------------------------------------------------------
+bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
+                             const int faceId1, const int faceId2, const real gap )
+{
+   parameters_t& params = parameters_t::getInstance();
+   if (params.auto_interpen_check)
+   {
+      real max_interpen = -1. * params.auto_contact_pen_frac * 
+                          axom::utilities::min( meshDat1.m_elemData.m_thickness[ faceId1 ],
+                                                meshDat2.m_elemData.m_thickness[ faceId2 ] );
+
+      if (gap < max_interpen)
+      {
+         return true;
+      }
+   }
+   return false;
+}
+
+//------------------------------------------------------------------------------
 void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId, 
                               real nrmlX, real nrmlY, real nrmlZ,
                               real cX, real cY, real cZ,
@@ -355,9 +376,9 @@ ContactPlane3D::ContactPlane3D( InterfacePair& pair, real areaFrac,
    m_pair.meshId2    = pair.meshId2;
    m_pair.pairType2  = pair.pairType2;
    m_pair.pairIndex2 = pair.pairIndex2;
-
    m_pair.pairId     = pair.pairId;
-   m_pair.inContact  = pair.inContact;
+
+   m_pair.isContactCandidate = pair.isContactCandidate;
 
    m_intermediatePlane = (interPlane) ? true : false;
 
@@ -521,9 +542,7 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
    // CHECK #5: check if the nodes of face2 interpenetrate the 
    // plane defined by face1 AND vice-versa. For proximate faces 
    // that pass check #3 this check may easily indicate that the faces 
-   // do in fact intersect. Note, the separation tolerance is 1/2 the longest 
-   // dimension of the face element. A larger tolerance allowing for separation 
-   // is per testing of the mortar method.
+   // do in fact intersect. 
    real separationTol = params.gap_separation_ratio * 
                         axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                                               mesh2.m_faceRadius[ faceId2 ] );
@@ -619,7 +638,8 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
  
       // assuming each face's vertices are ordered WRT that face's outward unit normal,
       // reorder face 2 vertices to be consistent with face 1. DO NOT CALL POLYREORDER() 
-      // to do this.
+      // to do this. // TODO debug this; this may affect calculations later on. We may 
+      // have to unreverse the ordering.
       PolyReverse( X2, Y2, mesh2.m_numNodesPerCell );
 
       // compute intersection polygon and area. Note, the polygon centroid 
@@ -784,16 +804,32 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
       axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                             mesh2.m_faceRadius[ faceId2 ] ));
 
-   // The gap tolerance allows separation up to 50% the largest face-radius.
-   // This is conservative and allows for possible over-inclusion. This is done 
-   // for the mortar method per testing.
+   // The gap tolerance allows separation up to the separation ratio of the 
+   // largest face-radius. This is conservative and allows for possible 
+   // over-inclusion. This is done for the mortar method per testing.
    cp.m_gapTol = params.gap_separation_ratio * 
                  axom::utilities::max( mesh1.m_faceRadius[ faceId1 ], 
                                        mesh2.m_faceRadius[ faceId2 ] );
+
    if (cp.m_gap > cp.m_gapTol)
    {
       cp.m_inContact = false;
       return NO_FACE_GEOM_ERROR;
+   }
+
+   // for auto-contact, remove contact candidacy for full-overlap 
+   // face-pairs with interpenetration exceeding contact penetration fraction. 
+   // Note, this check is solely meant to exclude face-pairs composed of faces 
+   // on opposite sides of thin structures/plates
+   //
+   // Recall that interpen gaps are negative
+   if (fullOverlap)
+   {
+      if (ExceedsMaxAutoInterpen( mesh1, mesh2, faceId1, faceId2, cp.m_gap ))
+      {
+         cp.m_inContact = false;
+         return NO_FACE_GEOM_ERROR;
+      }
    }
    
    // if fullOverlap is used, REPROJECT the overlapping polygon 
@@ -893,6 +929,18 @@ ContactPlane3D CheckAlignedFacePair( InterfacePair& pair )
 
    // perform gap check
    if (scalarGap > cp.m_gapTol)
+   {
+      cp.m_inContact = false;
+      return cp;
+   }
+
+   // for auto-contact, remove contact candidacy for face-pairs with 
+   // interpenetration exceeding contact penetration fraction. 
+   // Note, this check is solely meant to exclude face-pairs composed of faces 
+   // on opposite sides of thin structures/plates
+   //
+   // Recall that interpen gaps are negative
+   if (ExceedsMaxAutoInterpen( mesh1, mesh2, faceId1, faceId2, scalarGap ))
    {
       cp.m_inContact = false;
       return cp;
@@ -1813,9 +1861,9 @@ ContactPlane2D::ContactPlane2D( InterfacePair& pair, real lenFrac,
    m_pair.meshId2    = pair.meshId2;
    m_pair.pairType2  = pair.pairType2;
    m_pair.pairIndex2 = pair.pairIndex2;
-
    m_pair.pairId     = pair.pairId;
-   m_pair.inContact  = pair.inContact;
+
+   m_pair.isContactCandidate = pair.isContactCandidate;
 
    m_inContact = false;
    m_interpenOverlap = interpenOverlap;
@@ -1949,7 +1997,7 @@ FaceGeomError CheckEdgePair( InterfacePair& pair,
    // a fullOverlap computation, but we don't know if there is a positive 
    // length of overlap and will have to construct the contact plane 
    // (contact segment) and perform this check. Note, this tolerance is 
-   // inclusive up to a separation of the edge-radius.
+   // inclusive up to a separation of a fraction of the edge-radius.
    // This is done for the mortar method per 3D testing.
    real separationTol = params.gap_separation_ratio * 
                         axom::utilities::max( mesh1.m_faceRadius[ edgeId1 ], 
@@ -2048,6 +2096,21 @@ FaceGeomError CheckEdgePair( InterfacePair& pair,
    {
       cp.m_inContact = false;
       return NO_FACE_GEOM_ERROR;
+   }
+
+   // for auto-contact, remove contact candidacy for full-overlap 
+   // face-pairs with interpenetration exceeding contact penetration fraction. 
+   // Note, this check is solely meant to exclude face-pairs composed of faces 
+   // on opposite sides of thin structures/plates
+   //
+   // Recall that interpen gaps are negative
+   if (fullOverlap)
+   {
+      if (ExceedsMaxAutoInterpen( mesh1, mesh2, edgeId1, edgeId2, cp.m_gap ))
+      {
+         cp.m_inContact = false;
+         return NO_FACE_GEOM_ERROR;
+      }
    }
 
    // for the full overlap case we need to project the overlap segment

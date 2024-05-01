@@ -30,7 +30,10 @@ class ContactPlaneManager;
  * \param [in] pair interface pair containing pair related indices
  * \param [in] cMethod the Tribol contact method
  * \param [in] cCase the Tribol contact Case
- * \param [in] inContact true if pair are in contact per CG routines
+ * \param [in] isInteracting true if pair passes all computational geometry filters 
+ *
+ * \note isInteracting is true indicating a contact candidate for intersecting or 
+ *       nearly intersecting face-pairs with a positive area of overlap
  *
  * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
  *
@@ -40,7 +43,7 @@ class ContactPlaneManager;
 FaceGeomError CheckInterfacePair( InterfacePair& pair,
                                   ContactMethod const cMethod,
                                   ContactCase const cCase,
-                                  bool& inContact );
+                                  bool& isInteracting );
 
 /*!
  *
@@ -126,6 +129,25 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
  */
 bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2, 
                      int eId1, int eId2, real tol, bool& allVerts );
+
+/*!
+ *
+ * \brief checks the contact plane gap against the maximum allowable interpenetration 
+ *
+ * \param [in] meshDat1 MeshData object for mesh 1
+ * \param [in] meshDat2 MeshData object for mesh 2
+ * \param [in] faceId1 face id for face belonging to mesh 1
+ * \param [in] faceId2 face id for face belonging to mesh 2
+ * \param [in] gap the contact plane gap
+ *
+ * \return true if the gap exceeds the max allowable interpenetration
+ *
+ * \pre this function is for use with ContactCase = AUTO to preclude face-pairs on opposite
+ *      sides of thin structures/plates
+ *
+ */
+bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
+                             const int faceId1, const int faceId2, const real gap );
 
 //-----------------------------------------------------------------------------
 // Contact Plane base class
