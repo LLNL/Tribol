@@ -304,10 +304,10 @@ spack:
       - spec: python@3.10.10
         prefix: /collab/usr/gapps/axom/devtools/toss_4_x86_64_ib/latest/python-3.10.10
 
-    # Globally lock version of third party libraries
+    # Globally lock version of third party libraries that work on this platform
     conduit:
-      require: "@0.8.8~shared~test~examples~utilities"
+      variants: ~shared~test~examples~utilities
     raja:
-      require: "@2023.06.0~shared~examples~exercises~openmp"
+      require: "@2024.02.0~shared~examples~exercises~openmp"
     umpire:
-      require: "@2023.06.0~shared~examples~openmp"
+      require: "@2024.02.0~shared~examples~openmp"

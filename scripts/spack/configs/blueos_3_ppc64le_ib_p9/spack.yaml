@@ -230,18 +230,16 @@ spack:
       - spec: py-sphinx@6.1.3
         prefix: /collab/usr/gapps/axom/devtools/blueos_3_ppc64le_ib_p9/latest/python-3.10.10
 
-    # Globally lock version of third party libraries
+    # Globally lock version of third party libraries that work on this platform
     axom:
       variants: ~examples~fortran~lua~tools~openmp
     camp:
-      require: "@2023.06.0"
+      require: "@2024.02.0"
     conduit:
-      require: "@0.8.8~shared~test~examples~utilities"
+      require: "@0.9.1~shared~test~examples~utilities"
     hdf5:
       variants: ~shared~mpi
-    hypre:
-      version: [2.24.0]
     raja:
-      require: "@2023.06.0~openmp~shared~examples~exercises"
+      require: "@2024.02.0~openmp~shared~examples~exercises"
     umpire:
-      require: "@2023.06.0~openmp~shared~examples"
+      require: "@2024.02.0~openmp~shared~examples"
