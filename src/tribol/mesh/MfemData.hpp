@@ -63,37 +63,56 @@ public:
    * @param submesh_src Source higher-order grid function on the parent-linked
    * boundary submesh
    */
-  void TransferToLORGridFn(
-    const mfem::ParGridFunction& submesh_src
-  );
+  void TransferToLORGridFn(const mfem::ParGridFunction& submesh_src);
 
   /**
-   * @brief Transfers data to a higher-order grid function on a parent-linked
-   * boundary submesh
+   * @brief Transfers data to a higher-order vector on a parent-linked boundary submesh
    *
-   * Data must be stored in the low-order grid function on the LOR mesh accessed
-   * using GetLORGridFn().
+   * Data must be stored in the low-order vector on the LOR mesh accessed using GetLORVector().
    *
-   * @param submesh_dst Destination higher-order grid function on the
-   * parent-linked boundary submesh
+   * @param submesh_dst Destination higher-order vector on the parent-linked boundary submesh
    */
-  void TransferFromLORGridFn(
-    mfem::ParGridFunction& submesh_dst
-  ) const;
+  void TransferFromLORVector(mfem::Vector& submesh_dst) const;
+
+  /**
+   * @brief Transfer grid function on parent-linked boundary submesh to grid
+   * function on LOR mesh
+   *
+   * @param [in] submesh_src Grid function on parent-linked boundary submesh
+   * @param [out] lor_dst Zero-valued grid function on LOR mesh
+   */
+  void SubmeshToLOR(
+    const mfem::ParGridFunction& submesh_src,
+    mfem::ParGridFunction& lor_dst
+  );
 
   /**
    * @brief Access the local low-order grid function on the LOR mesh
    * 
    * @return mfem::ParGridFunction& 
    */
-  mfem::ParGridFunction& GetLORGridFn() { return lor_gridfn_; }
+  mfem::ParGridFunction& GetLORGridFn() { return *lor_gridfn_; }
 
   /**
    * @brief Access the local low-order grid function on the LOR mesh
    * 
-   * @return const mfem::ParGridFunction& 
+   * @return mfem::ParGridFunction& 
    */
-  const mfem::ParGridFunction& GetLORGridFn() const { return lor_gridfn_; }
+  const mfem::ParGridFunction& GetLORGridFn() const { return *lor_gridfn_; }
+
+  /**
+   * @brief Access the local low-order vector on the LOR mesh
+   * 
+   * @return mfem::Vector& 
+   */
+  mfem::Vector& GetLORVector() { return *lor_gridfn_; }
+
+  /**
+   * @brief Access the local low-order vector on the LOR mesh
+   * 
+   * @return const mfem::Vector& 
+   */
+  const mfem::Vector& GetLORVector() const { return *lor_gridfn_; }
 
 private:
   /**
@@ -104,7 +123,7 @@ private:
   * @param vdim Vector dimension of the grid function
   * @return mfem::ParGridFunction on lor_mesh, with lor_fec and vdim specified
   */
-  static mfem::ParGridFunction CreateLORGridFunction(
+  static std::unique_ptr<mfem::ParGridFunction> CreateLORGridFunction(
     mfem::ParMesh& lor_mesh,
     std::unique_ptr<mfem::FiniteElementCollection> lor_fec,
     integer vdim
@@ -113,7 +132,7 @@ private:
   /**
    * @brief Local low-order grid function on the LOR mesh 
    */
-  mfem::ParGridFunction lor_gridfn_;
+  std::unique_ptr<mfem::ParGridFunction> lor_gridfn_;
 
   /**
    * @brief Low-order refined <-> higher-order coarse transfer object
@@ -167,16 +186,18 @@ public:
   ) const;
 
   /**
-   * @brief Transfer grid function on redecomp mesh to grid function on
-   * parent-linked boundary submesh
+   * @brief Transfer grid function on redecomp mesh to vector on parent-linked boundary submesh
+   *
+   * @note The redecomp_src GridFunction is expected to have values at shared DOFs equal.  The submesh_dst will need
+   * parallel summation for shared DOF values to be equal.  This arrangement of DOF values is in line with dual vectors
+   * in MFEM.
    *
    * @param redecomp_src Grid function on redecomp mesh
-   * @param submesh_dst Zero-valued grid function on parent-linked boundary
-   * submesh
+   * @param submesh_dst Zero-valued vector on parent-linked boundary submesh
    */
   void RedecompToSubmesh(
     const mfem::GridFunction& redecomp_src,
-    mfem::ParGridFunction& submesh_dst
+    mfem::Vector& submesh_dst
   ) const;
 
   /**
@@ -284,16 +305,16 @@ public:
   ) const;
   
   /**
-   * @brief Transfer grid function on redecomp mesh to grid function on parent
-   * mesh
+   * @brief Transfer grid function on redecomp mesh to vector on parent mesh
+   *
+   * @note The redecomp_src GridFunction is expected to have values at shared DOFs equal.  The parallel_dst will need
+   * parallel summation for shared DOF values to be equal.  This arrangement of DOF values is in line with dual vectors
+   * in MFEM.
    *
    * @param [in] redecomp_src Grid function on RedecompMesh
-   * @param [out] parent_dst Zero-valued grid function on parent mesh
+   * @param [out] parent_dst Zero-valued vector on parent mesh
    */
-  void RedecompToParent(
-    const mfem::GridFunction& redecomp_src, 
-    mfem::ParGridFunction& parent_dst
-  ) const;
+  void RedecompToParent(const mfem::GridFunction& redecomp_src, mfem::Vector& parent_dst) const;
 
   /**
    * @brief Get the parent-linked boundary submesh finite element space
@@ -682,7 +703,7 @@ public:
    */
   integer GetMesh1NE() const
   { 
-    return GetUpdateData().conn_1_.size() / num_verts_per_elem_;
+    return GetUpdateData().conn_1_.size() / GetUpdateData().num_verts_per_elem_;
   }
 
   /**
@@ -692,7 +713,7 @@ public:
    */
   integer GetMesh2NE() const
   {
-    return GetUpdateData().conn_2_.size() / num_verts_per_elem_;
+    return GetUpdateData().conn_2_.size() / GetUpdateData().num_verts_per_elem_;
   }
 
   /**
@@ -727,7 +748,7 @@ public:
    *
    * @return integer 
    */
-  integer GetElemType() const { return elem_type_; }
+  InterfaceElementType GetElemType() const { return GetUpdateData().elem_type_; }
 
   /**
    * @brief Get pointers to component arrays of the coordinates on the
@@ -768,8 +789,10 @@ public:
   /**
    * @brief Get the nodal response vector on the parent mesh
    *
-   * @param [out] r Pre-allocated, initialized mfem::Vector to which response
-   * vector is added
+   * @note This is stored as an MFEM dual vector, meaning the shared DOFs are expected to be summed over all ranks to
+   * obtain their value.
+   *
+   * @param [out] r Pre-allocated, initialized mfem::Vector to which response vector is added
    */
   void GetParentResponse(mfem::Vector& r) const;
 
@@ -808,6 +831,192 @@ public:
   std::vector<const real*> GetRedecompVelocityPtrs() const
   {
     return velocity_->GetRedecompFieldPtrs();
+  }
+
+  /**
+   * @brief Clears all kinematic and rate penalty data
+   */
+  void ClearAllPenaltyData();
+
+  /**
+   * @brief Clears rate penalty data
+   */
+  void ClearRatePenaltyData();
+
+  /**
+   * @brief Sets the kinematic constant penalty parameter for the first registered Tribol mesh
+   * 
+   * @param penalty Penalty value for the first registered Tribol mesh
+   */
+  void SetMesh1KinematicConstantPenalty(real penalty)
+  { 
+    kinematic_constant_penalty_1_ = std::make_unique<double>(penalty);
+  }
+
+  /**
+   * @brief Sets the kinematic constant penalty parameter for the second registered Tribol mesh
+   * 
+   * @param penalty Penalty value for the second registered Tribol mesh
+   */
+  void SetMesh2KinematicConstantPenalty(real penalty)
+  { 
+    kinematic_constant_penalty_2_ = std::make_unique<double>(penalty);
+  }
+
+  /**
+   * @brief Get the kinematic constant penalty parameter for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1KinematicConstantPenalty() const
+  { 
+    return kinematic_constant_penalty_1_.get();
+  }
+
+  /**
+   * @brief Get the kinematic constant penalty parameter for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2KinematicConstantPenalty() const
+  { 
+    return kinematic_constant_penalty_2_.get();
+  }
+
+  /**
+   * @brief Sets the kinematic penalty scale for the first registered Tribol mesh
+   * 
+   * @param scale Penalty scale value for the first registered Tribol mesh
+   */
+  void SetMesh1KinematicPenaltyScale(real scale)
+  {
+    kinematic_penalty_scale_1_ = std::make_unique<double>(scale);
+  }
+
+  /**
+   * @brief Sets the kinematic penalty scale for the second registered Tribol mesh
+   * 
+   * @param scale Penalty scale value for the second registered Tribol mesh
+   */
+  void SetMesh2KinematicPenaltyScale(real scale)
+  {
+    kinematic_penalty_scale_2_ = std::make_unique<double>(scale);
+  }
+
+  /**
+   * @brief Get the kinematic penalty scale for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1KinematicPenaltyScale() const { return kinematic_penalty_scale_1_.get(); }
+
+  /**
+   * @brief Get the kinematic penalty scale for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2KinematicPenaltyScale() const { return kinematic_penalty_scale_2_.get(); }
+
+  /**
+   * @brief Sets the rate constant penalty for the first registered Tribol mesh
+   * 
+   * @param penalty Rate constant penalty value for the first registered Tribol mesh
+   */
+  void SetMesh1RateConstantPenalty(real penalty) { rate_constant_penalty_1_ = std::make_unique<double>(penalty); }
+
+  /**
+   * @brief Sets the rate constant penalty for the second registered Tribol mesh
+   * 
+   * @param penalty Rate penalty value for the second registered Tribol mesh
+   */
+  void SetMesh2RateConstantPenalty(real penalty) { rate_constant_penalty_2_ = std::make_unique<double>(penalty); }
+
+  /**
+   * @brief Get the rate constant penalty for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1RateConstantPenalty() const { return rate_constant_penalty_1_.get(); }
+
+  /**
+   * @brief Get the rate constant penalty for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2RateConstantPenalty() const { return rate_constant_penalty_2_.get(); }
+
+  /**
+   * @brief Sets the rate penalty as a ratio of the kinematic penalty for the
+   * first registered Tribol mesh
+   *
+   * @param ratio Rate ratio for the first registered Tribol mesh
+   */
+  void SetMesh1RatePercentPenalty(real ratio) { rate_percent_ratio_1_ = std::make_unique<double>(ratio); }
+
+  /**
+   * @brief Sets the rate penalty as a ratio of the kinematic penalty for the
+   * second registered Tribol mesh
+   * 
+   * @param ratio Rate ratio for the second registered Tribol mesh
+   */
+  void SetMesh2RatePercentPenalty(real ratio) { rate_percent_ratio_2_ = std::make_unique<double>(ratio); }
+
+  /**
+   * @brief Get the rate penalty ratio for the first registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh1RatePercentPenalty() const { return rate_percent_ratio_1_.get(); }
+
+  /**
+   * @brief Get the rate penalty ratio for the second registered Tribol mesh
+   *
+   * @return const real* 
+   */
+  const real* GetMesh2RatePercentPenalty() const { return rate_percent_ratio_2_.get(); }
+
+  /**
+   * @brief Get a pointer to the element thickness array for the first Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompElemThickness1() const
+  {
+    return tribol_elem_thickness_1_->data();
+  }
+
+  /**
+   * @brief Get a pointer to the element thickness array for the second Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompElemThickness2() const
+  {
+    return tribol_elem_thickness_2_->data();
+  }
+
+  /**
+   * @brief Get a pointer to the material modulus array for the first Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompMaterialModulus1() const
+  {
+    return tribol_material_modulus_1_->data();
+  }
+
+  /**
+   * @brief Get a pointer to the material modulus array for the second Tribol
+   * registered mesh
+   *
+   * @return const real* 
+   */
+  const real* GetRedecompMaterialModulus2() const
+  {
+    return tribol_material_modulus_2_->data();
   }
 
   /**
@@ -875,6 +1084,22 @@ public:
   {
     return GetUpdateData().redecomp_mesh_;
   }
+  
+  /**
+   * @brief Get the set of boundary attributes on the parent mesh corresponding
+   * to surface elements contained in the first Tribol registered mesh
+   *
+   * @return Set of boundary attributes
+   */
+  const std::set<int>& GetBoundaryAttribs1() const { return attributes_1_; }
+
+  /**
+   * @brief Get the set of boundary attributes on the parent mesh corresponding
+   * to surface elements contained in the second Tribol registered mesh
+   *
+   * @return Set of boundary attributes
+   */
+  const std::set<int>& GetBoundaryAttribs2() const { return attributes_2_; }
 
   /**
    * @brief Get the finite element space on the parent-linked boundary submesh
@@ -904,6 +1129,19 @@ public:
    * @param lor_factor Number of element subdivisions per dimension
    */
   void SetLORFactor(integer lor_factor);
+
+  /**
+   * @brief Computes element thicknesses for volume elements attached to the contact surface
+   */
+  void ComputeElementThicknesses();
+
+  /**
+   * @brief Compute material modulus field at each element
+   *
+   * @param modulus_field An mfem::Coefficient which spatially evaluates to the material modulus value
+   */
+  void SetMaterialModulus(mfem::Coefficient& modulus_field);
+
 private:
   /**
    * @brief Creates and stores data that changes when the RedecompMesh is
@@ -926,7 +1164,6 @@ private:
      * the first Tribol registered mesh
      * @param attributes_2 Set of boundary attributes identifying elements in
      * the second Tribol registered mesh
-     * @param num_verts_per_elem Number of vertices on each element
      */
     UpdateData(
       mfem::ParSubMesh& submesh,
@@ -935,8 +1172,7 @@ private:
       mfem::ParGridFunction& submesh_gridfn,
       SubmeshLORTransfer* submesh_lor_xfer,
       const std::set<integer>& attributes_1,
-      const std::set<integer>& attributes_2,
-      integer num_verts_per_elem
+      const std::set<integer>& attributes_2
     );
 
     /**
@@ -973,6 +1209,16 @@ private:
      */
     std::vector<integer> elem_map_2_;
 
+    /**
+    * @brief Type of elements on the contact meshes
+    */
+    InterfaceElementType elem_type_;
+
+    /**
+    * @brief Number of vertices on each element in the contact meshes
+    */
+    integer num_verts_per_elem_;
+
   private:
     /**
      * @brief Builds connectivity arrays and redecomp mesh to Tribol registered
@@ -982,13 +1228,16 @@ private:
      * registered mesh
      * @param attributes_2 Set of boundary attributes for the second Tribol
      * registered mesh
-     * @param num_verts_per_elem Number of vertices on each element
      */
     void UpdateConnectivity(
       const std::set<integer>& attributes_1,
-      const std::set<integer>& attributes_2,
-      integer num_verts_per_elem
+      const std::set<integer>& attributes_2
     );
+
+    /**
+     * @brief Sets the number of vertices per element and the element type for the redecomp mesh
+     */
+    void SetElementData();
   };
   
   /**
@@ -1019,18 +1268,6 @@ private:
     const mfem::ParMesh& parent_mesh,
     const std::set<integer>& attributes_1,
     const std::set<integer>& attributes_2
-  );
-
-  /**
-   * @brief Create a grid function on the given parent-linked boundary submesh
-   *
-   * @param submesh Parent-linked boundary submesh
-   * @param parent_fes Finite element space on the parent mesh
-   * @return mfem::ParGridFunction 
-   */
-  static mfem::ParGridFunction CreateSubmeshGridFn(
-    mfem::ParSubMesh& submesh,
-    mfem::ParFiniteElementSpace& parent_fes
   );
 
   /**
@@ -1091,20 +1328,94 @@ private:
   std::unique_ptr<SubmeshLORTransfer> submesh_lor_xfer_;
 
   /**
-   * @brief Type of elements on the contact meshes
-   */
-  InterfaceElementType elem_type_;
-
-  /**
-   * @brief Number of vertices on each element in the contact meshes
-   */
-  integer num_verts_per_elem_;
-
-  /**
    * @brief Contains velocity grid function and transfer operators if set;
    * nullptr otherwise
    */
   std::unique_ptr<ParentField> velocity_;
+
+  /**
+   * @brief Kinematic constant contact penalty for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> kinematic_constant_penalty_1_;
+
+  /**
+   * @brief Kinematic constant contact penalty for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> kinematic_constant_penalty_2_;
+
+  /**
+   * @brief Scaling of kinematic penalty for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> kinematic_penalty_scale_1_;
+
+  /**
+   * @brief Scaling of kinematic penalty for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> kinematic_penalty_scale_2_;
+
+  /**
+   * @brief Rate constant contact penalty for the first Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_constant_penalty_1_;
+
+  /**
+   * @brief Rate constant contact penalty for the second Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_constant_penalty_2_;
+
+  /**
+   * @brief Rate percent penalty as a ratio of kinematic penalty for the first
+   * Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_percent_ratio_1_;
+
+  /**
+   * @brief Rate percent penalty as a ratio of kinematic penalty for the second
+   * Tribol registered mesh
+   */
+  std::unique_ptr<real> rate_percent_ratio_2_;
+
+  /**
+   * @brief Stores element thicknesses for element-based penalty calculations on
+   * the submesh or the LOR mesh (if it exists); nullptr otherwise
+   */
+  std::unique_ptr<mfem::QuadratureFunction> elem_thickness_;
+
+  /**
+   * @brief Element thickness stored on the redecomp mesh
+   */
+  std::unique_ptr<mfem::QuadratureFunction> redecomp_elem_thickness_;
+
+  /**
+   * @brief Element thicknesses for the first Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_elem_thickness_1_;
+
+  /**
+   * @brief Element thicknesses for the second Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_elem_thickness_2_;
+
+  /**
+   * @brief Stores material moduli for element-based penalty calculations on
+   * the submesh or the LOR mesh (if it exists); nullptr otherwise
+   */
+  std::unique_ptr<mfem::QuadratureFunction> material_modulus_;
+
+  /**
+   * @brief Material modulus stored on the redecomp mesh
+   */
+  std::unique_ptr<mfem::QuadratureFunction> redecomp_material_modulus_;
+
+  /**
+   * @brief Material moduli for the first Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_material_modulus_1_;
+
+  /**
+   * @brief Material moduli for the second Tribol registered mesh
+   */
+  std::unique_ptr<axom::Array<real>> tribol_material_modulus_2_;
 
   /**
    * @brief UpdateData object created upon call to UpdateMeshData()
@@ -1243,6 +1554,9 @@ public:
   /**
    * @brief Get the gap vector on the parent-linked boundary submesh
    *
+   * @note This is stored as an MFEM dual vector, meaning the shared DOFs are expected to be summed over all ranks to
+   * obtain their value.
+   *
    * @param [out] g Un-initialized mfem::Vector holding the nodal gap values
    */
   void GetSubmeshGap(mfem::Vector& g) const;
@@ -1363,7 +1677,8 @@ public:
    */
   MfemJacobianData(
     const MfemMeshData& parent_data,
-    const MfemSubmeshData& submesh_data
+    const MfemSubmeshData& submesh_data,
+    ContactMethod contact_method
   );
 
   /**
@@ -1439,6 +1754,11 @@ private:
    * @brief List giving global parent vdof given the submesh vdof
    */
   mfem::Array<int> submesh2parent_vdof_list_;
+
+  /**
+   * @brief List of submesh true dofs that only exist on the mortar surface
+   */
+  mfem::Array<int> mortar_tdof_list_;
 
   /**
    * @brief UpdateData object created upon calling UpdateMatrixXfer()

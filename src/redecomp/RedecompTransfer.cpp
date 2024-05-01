@@ -51,10 +51,10 @@ void RedecompTransfer::TransferToSerial(
 {
   // checks to make sure src and dst are valid
   auto redecomp = dynamic_cast<RedecompMesh*>(dst.GetSpace()->GetMesh());
-  SLIC_ASSERT_MSG(redecomp != nullptr,
+  SLIC_ERROR_ROOT_IF(redecomp == nullptr,
     "The Mesh of QuadratureFunction dst must be a Redecomp mesh.");
-  SLIC_ASSERT_MSG(src.GetSpace()->GetMesh() == &redecomp->getParent(),
-    "The Meshes of the specified QuadratureFunctions are not related in a"
+  SLIC_ERROR_ROOT_IF(src.GetSpace()->GetMesh() != &redecomp->getParent(),
+    "The Meshes of the specified QuadratureFunctions are not related in a "
     "Redecomp -> ParMesh relationship.");
 
   // send and receive quadrature point values from other ranks
@@ -107,10 +107,10 @@ void RedecompTransfer::TransferToParallel(
 {
   // checks to make sure src and dst are valid
   auto redecomp = dynamic_cast<RedecompMesh*>(src.GetSpace()->GetMesh());
-  SLIC_ASSERT_MSG(redecomp != nullptr,
+  SLIC_ERROR_ROOT_IF(redecomp == nullptr,
     "The Mesh of QuadratureFunction src must be a Redecomp mesh.");
-  SLIC_ASSERT_MSG(dst.GetSpace()->GetMesh() == &redecomp->getParent(),
-    "The Meshes of the specified QuadratureFunctions are not related in a"
+  SLIC_ERROR_ROOT_IF(dst.GetSpace()->GetMesh() != &redecomp->getParent(),
+    "The Meshes of the specified QuadratureFunctions are not related in a "
     "Redecomp -> ParMesh relationship.");
 
   // send and receive quadrature point values from other ranks

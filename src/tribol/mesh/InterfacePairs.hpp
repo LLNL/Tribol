@@ -21,22 +21,31 @@ struct InterfacePair
       : pairId(-1)
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
-      , inContact(false)  {}
+      , isContactCandidate(true) {}
 
-   // overload constructor
+   // overload constructor with pair id
    InterfacePair( integer m1, integer t1, integer i1,
                   integer m2, integer t2, integer i2,
-                  bool contacting, integer id )
+                  integer id )
       : pairId(id)
       , meshId1(m1), pairType1(t1), pairIndex1(i1)
       , meshId2(m2), pairType2(t2), pairIndex2(i2) 
-      , inContact(contacting) {}
+      , isContactCandidate(true) {}
+
+   // overload constructor with boolean indicating contact candidacy
+   InterfacePair( integer m1, integer t1, integer i1,
+                  integer m2, integer t2, integer i2,
+                  bool isCandidate, integer id )
+      : pairId(id)
+      , meshId1(m1), pairType1(t1), pairIndex1(i1)
+      , meshId2(m2), pairType2(t2), pairIndex2(i2) 
+      , isContactCandidate(isCandidate) {}
 
    // overload constructor to handle zero input arguments
    InterfacePair() : pairId(-1)
                    , meshId1(-1), pairType1(-1), pairIndex1(-1)
                    , meshId2(-1), pairType2(-1), pairIndex2(-1)
-                   , inContact(false)  {}
+                   , isContactCandidate(true) {}
 
    // pair id
    integer pairId;
@@ -51,10 +60,16 @@ struct InterfacePair
    integer pairType2;
    integer pairIndex2;
 
-   // boolean to hold whether pair is in contact or not in contact
-   bool inContact;
+   // boolean indicating if a binned pair is a contact candidate.
+   // A contact candidate is defined as a face-pair that is deemed geometrically proximate 
+   // by the binning coarse search, and one that passes the finer computational geometry 
+   // (CG) filter/checks. These finer checks identify face-pairs that are intersecting or 
+   // nearly intersecting with positive areas of overlap. These checks do not indicate 
+   // whether a face-pair is contacting, since the definition of 'contacting' is specific 
+   // to a particular contact method and its enforced contstraints. Rather, the CG filter
+   // identifies contact candidacy, or face-pairs likely in contact.
+   bool isContactCandidate;
 };
-
 
 class InterfacePairs
 {
@@ -84,15 +99,7 @@ public:
      if (side == 2) m_pairType2 = type;
   }
 
-  InterfacePair getInterfacePair(IndexType idx) const
-  {
-     SLIC_ERROR_IF(idx >= getNumPairs(), "Index out of range.");
-
-     return InterfacePair {
-        m_meshId1, m_pairType1, m_pairIndex1[idx],
-        m_meshId2, m_pairType2, m_pairIndex2[idx], 
-        m_inContact[idx], idx };
-  }
+  InterfacePair getInterfacePair(IndexType idx) const;
 
   IndexType getNumPairs() const { return static_cast<IndexType>(m_pairIndex1.size()); }
 
@@ -107,7 +114,7 @@ private:
 
   containerArray<integer> m_pairIndex1;
   containerArray<integer> m_pairIndex2;
-  containerArray<bool>    m_inContact;
+  containerArray<bool>    m_isContactCandidate;
 };
 
 } /* namespace tribol */

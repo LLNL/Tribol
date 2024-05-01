@@ -69,18 +69,16 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
 
    EXPECT_EQ( csr_err, 0 );
 
-   if (I == nullptr)
-   {
-      SLIC_ERROR("Mortar wts test, I is null.");
-   }
+   SLIC_ERROR_IF(I==nullptr, "Mortar wts test, I is null.");
 
    // get mortar node id offset to distinguish mortar from nonmortar column contributions
    if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
    {
-      SLIC_INFO("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
+      SLIC_DEBUG("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
       mortarMesh.sortSurfaceNodeIds();
    }
-   int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
+
+   // int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
 
    double area = 0.;
    int numTotalNodes = static_cast<tribol::MortarData*>( cs->getMethodData() )->m_numTotalNodes;
@@ -91,21 +89,17 @@ void TestMortarWeights( tribol::CouplingScheme const * cs, double exact_area, do
       {
          area += wts[b];
           
-         if ( J[b] < nodeOffset ) // nonmortar/mortar  weight
-         {
-//            SLIC_INFO("nonmortar/mortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
-         }
-         else // nonmortar/nonmortar weight
-         {
-//            SLIC_INFO("nonmortar/nonmortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
-         } // end if-block
+         // nonmortar/mortar weight
+         //SLIC_DEBUG_IF(J[b] < nodeOffset, "nonmortar/mortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
+         //nonmortar/nonmortar weight
+         //SLIC_DEBUG_IF(J[b] >= nodeOffset, "nonmortar/nonmortar weight for nonmortar node, " << a << " and mortar node, " << J[b] << ".");
 
       } // end loop over nonzero columns, I[a]
    } // end loop over matrix rows
 
    area /= 2.;
 
-   SLIC_INFO("area: " << area << ".");
+   SLIC_DEBUG("area: " << area << ".");
 
    double diff = std::abs( area - exact_area );
    EXPECT_LE( diff, tol );
@@ -205,7 +199,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
    i_ys.close();
    i_zs.close();
 
-   SLIC_INFO("After loading mesh data and constructing mfem vectors.");
+   SLIC_DEBUG("After loading mesh data and constructing mfem vectors.");
 
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
@@ -233,9 +227,6 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3, true );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -257,7 +248,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
                         pressures);
 
    double dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -267,6 +258,8 @@ TEST_F( MortarSparseWtsTest, mortar_sphere )
    tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
    TestMortarWeights( couplingScheme, 2.256, 1.e-3 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
@@ -319,7 +312,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
    i_ys.close();
    i_zs.close();
 
-   SLIC_INFO("After loading mesh data and constructing mfem vectors.");
+   SLIC_DEBUG("After loading mesh data and constructing mfem vectors.");
 
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
@@ -347,9 +340,6 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3, true );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -371,7 +361,7 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
                         pressures);
 
    double dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -381,6 +371,8 @@ TEST_F( MortarSparseWtsTest, mortar_sphere_offset )
    tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
    TestMortarWeights( couplingScheme, 2.260, 1.e-1 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
@@ -433,7 +425,7 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
    i_ys.close();
    i_zs.close();
 
-   SLIC_INFO("After loading mesh data and constructing mfem vectors.");
+   SLIC_DEBUG("After loading mesh data and constructing mfem vectors.");
 
    // get pointers to mfem vector data
    int* ixm_data   = this->v_ixm.GetData();
@@ -461,9 +453,6 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3, true );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
                         (int)(tribol::LINEAR_QUAD),
@@ -485,7 +474,7 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
                         pressures);
 
    double dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -495,6 +484,8 @@ TEST_F( MortarSparseWtsTest, mortar_one_seg_rotated )
    tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
    TestMortarWeights( couplingScheme, 20., 1.e-3 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 int main(int argc, char* argv[])
@@ -502,6 +493,9 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+  // Initialize Tribol via simple Tribol interface
+  Initialize(3);
 
 #ifdef TRIBOL_USE_UMPIRE
   umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
@@ -511,6 +505,9 @@ int main(int argc, char* argv[])
   tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
 
   result = RUN_ALL_TESTS();
+
+  // Finalize Tribol via simple Tribol interface
+  Finalize();
 
   return result;
 }

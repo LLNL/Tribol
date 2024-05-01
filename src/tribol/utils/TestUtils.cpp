@@ -773,9 +773,9 @@ void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real 
    // Check that mesh ids are not the same. The TestMesh class was built around 
    // testing the mortar method with Lagrange multiplier enforcement, which does not 
    // support auto contact.
-   SLIC_WARNING_IF( this->mortarMeshId == this->nonmortarMeshId, 
-                    "TestMesh::allocateAndSetVelocities(): please set unique " << 
-                    "mortarMeshId and nonmortarMeshId prior to calling this routine.");
+   SLIC_ERROR_IF( this->mortarMeshId == this->nonmortarMeshId, 
+                  "TestMesh::allocateAndSetVelocities(): please set unique " << 
+                  "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
    // check to see if pointers have been set
    bool deleteVels = false;
@@ -833,8 +833,8 @@ void TestMesh::allocateAndSetVelocities( int meshId, real valX, real valY, real 
                   "not a valid mesh id." );
    }
 
-   SLIC_INFO_IF( deleteVels, "TestMesh::allocateAndSetVelocities(): " << 
-                 "a velocity array has been deleted and reallocated." );
+   SLIC_DEBUG_IF( deleteVels, "TestMesh::allocateAndSetVelocities(): " << 
+                       "a velocity array has been deleted and reallocated." );
 
 } // end TestMesh::allocateAndSetVelocities()
 
@@ -844,9 +844,9 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
    // Check that mesh ids are the same. The TestMesh class was built around 
    // testing the mortar method with Lagrange multiplier enforcement, which does 
    // not support auto contact.
-   SLIC_WARNING_IF( this->mortarMeshId == this->nonmortarMeshId, 
-                    "TestMesh::allocateAndSetVelocities(): please set unique " << 
-                    "mortarMeshId and nonmortarMeshId prior to calling this routine.");
+   SLIC_ERROR_IF( this->mortarMeshId == this->nonmortarMeshId, 
+                  "TestMesh::allocateAndSetVelocities(): please set unique " << 
+                  "mortarMeshId and nonmortarMeshId prior to calling this routine.");
 
    // check to see if pointers have been set
    bool deleteData = false;
@@ -876,8 +876,8 @@ void TestMesh::allocateAndSetBulkModulus( int meshId, real val )
                   "not a valid mesh id." );
    }
 
-   SLIC_INFO_IF( deleteData, "TestMesh::allocateAndSetBulkModulus(): " << 
-                 "a bulk modulus array has been deleted and reallocated." );
+   SLIC_DEBUG_IF( deleteData, "TestMesh::allocateAndSetBulkModulus(): " << 
+                  "a bulk modulus array has been deleted and reallocated." );
 
 } // end TestMesh::allocateAndSetBulkModulus()
 
@@ -912,8 +912,8 @@ void TestMesh::allocateAndSetElementThickness( int meshId, real t )
                   "not a valid mesh id." );
    }
 
-   SLIC_INFO_IF( deleteData, "TestMesh::allocateAndSetElementThickness(): " << 
-                 "an element thickness array has been deleted and reallocated." );
+   SLIC_DEBUG_IF( deleteData, "TestMesh::allocateAndSetElementThickness(): " << 
+                  "an element thickness array has been deleted and reallocated." );
 
 } // end TestMesh::allocateAndSetElementThickness()
 
@@ -921,6 +921,7 @@ void TestMesh::allocateAndSetElementThickness( int meshId, real t )
 int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
                                           EnforcementMethod TRIBOL_UNUSED_PARAM(enforcement),
                                           ContactModel TRIBOL_UNUSED_PARAM(model),
+                                          ContactCase TRIBOL_UNUSED_PARAM(contact_case),
                                           bool TRIBOL_UNUSED_PARAM(visualization),
                                           TestControlParameters& params )
 {
@@ -983,6 +984,7 @@ int TestMesh::simpleTribolSetupAndUpdate( ContactMethod method,
 int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                                     EnforcementMethod enforcement,
                                     ContactModel model,
+                                    ContactCase contact_case,
                                     bool visualization,
                                     TestControlParameters& params )
 {
@@ -1003,6 +1005,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    registerMesh( this->nonmortarMeshId, this->numNonmortarFaces, 
                  this->numTotalNodes,
                  this->faceConn2, this->cellType, x, y, z );
+
+   enableTimestepVote(params.enable_timestep_vote);
 
    // register nodal forces. Note, I was getting a seg fault when 
    // registering the same pointer to a single set of force arrays 
@@ -1085,8 +1089,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
       {
          if (this->mortar_bulk_mod == nullptr)
          {
-            SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "mortar_bulk_mod not set; registering default value." );
+            SLIC_DEBUG_ROOT( "TestMesh::tribolSetupAndUpdate(): " <<
+                             "mortar_bulk_mod not set; registering default value." );
             this->mortar_bulk_mod = new real[ this->numMortarFaces ];
             for (int i=0; i<this->numMortarFaces; ++i)
             {
@@ -1095,8 +1099,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
          }
          if (this->mortar_element_thickness == nullptr)
          {
-            SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "mortar_element_thickness not set; registering default value." );
+            SLIC_DEBUG_ROOT( "TestMesh::tribolSetupAndUpdate(): " <<
+                             "mortar_element_thickness not set; registering default value." );
             this->mortar_element_thickness = new real[ this->numMortarFaces ];
             for (int i=0; i<this->numMortarFaces; ++i)
             {
@@ -1106,8 +1110,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
 
          if (this->nonmortar_bulk_mod == nullptr)
          { 
-            SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "nonmortar_bulk_mod not set; registering default value." );
+            SLIC_DEBUG_ROOT( "TestMesh::tribolSetupAndUpdate(): " <<
+                             "nonmortar_bulk_mod not set; registering default value." );
             this->nonmortar_bulk_mod = new real[ this->numNonmortarFaces ];
             for (int i=0; i<this->numNonmortarFaces; ++i)
             {
@@ -1116,8 +1120,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
          }
          if (this->nonmortar_element_thickness == nullptr)
          {  
-            SLIC_INFO( "TestMesh::tribolSetupAndUpdate(): " <<
-                       "nonmortar_element_thickness not set; registering default value." );
+            SLIC_DEBUG_ROOT( "TestMesh::tribolSetupAndUpdate(): " <<
+                             "nonmortar_element_thickness not set; registering default value." );
             this->nonmortar_element_thickness = new real[ this->numNonmortarFaces ];
             for (int i=0; i<this->numNonmortarFaces; ++i)
             {
@@ -1151,7 +1155,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
       }
 
       // set the penetration fraction for timestep votes computed with penalty enforcements
-      setContactPenFrac( params.contact_pen_frac );
+      setAutoContactPenScale( params.auto_contact_pen_frac );
 
    } // end if-penalty
 
@@ -1168,11 +1172,13 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                            this->mortarMeshId,
                            this->nonmortarMeshId,
                            SURFACE_TO_SURFACE,
-                           AUTO,
+                           contact_case,
                            method,
                            model,
                            enforcement,
                            BINNING_GRID );
+
+   setLoggingLevel(csIndex, TRIBOL_WARNING);
 
    if (method == COMMON_PLANE && enforcement == PENALTY)
    {
@@ -1469,20 +1475,15 @@ void TestMesh::setupMfemMesh( bool fix_orientation )
    SLIC_ERROR_IF( this->dim != 3, "TestMesh::setupMfemMesh(): Mfem meshes of dimension, " << 
                   this->dim << ", are not supported at this time." );
 
-   SLIC_INFO( "Setting up 3D linear mfem mesh." );
-
    // construct new mfem mesh
    if (this->mfem_mesh != nullptr)
    {
-      SLIC_WARNING( "TestMesh::setupMfemMesh(): deleting previously constructed mesh." );
       this->mfem_mesh->Clear();
    }
 
    this->mfem_mesh = new mfem::Mesh( this->dim,
                                      this->numTotalNodes,
                                      this->numTotalElements );
-
-   SLIC_INFO("After calling mfem mesh constructor.");
 
    // add mortar elements and vertices. Not sure if order of adding 
    // elements matters, but adding vertices should probably correspond 
@@ -1585,8 +1586,6 @@ void TestMesh::setupMfemMesh( bool fix_orientation )
          break;
       }
    } // end switch on surface cell type
-
-   SLIC_INFO( "3D linear mfem mesh finalized." );
 
 } // end setupMfemMesh()
 
@@ -2085,15 +2084,14 @@ void ExplicitMechanics::Mult(
    elasticity.Mult(u, f_int);
    f.Add(-1.0, f_int);
 
+   f.Add(1.0, f_ext);
+
    // sum forces over ranks
    auto& fespace = *elasticity.ParFESpace();
    const Operator& P = *fespace.GetProlongationMatrix();
    mfem::Vector f_true {fespace.GetTrueVSize()};
    P.MultTranspose(f, f_true);
    P.Mult(f_true, f);
-
-   // external force already summed over ranks
-   f.Add(1.0, f_ext);
 
    for (int i {0}; i < inv_lumped_mass.Size(); ++i)
    {

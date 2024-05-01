@@ -7,6 +7,16 @@
 
 #include <gtest/gtest.h>
 
+// Tribol includes
+#include "tribol/config.hpp"
+#include "tribol/common/Parameters.hpp"
+#include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
+#include "tribol/types.hpp"
+
+// Redecomp includes
+#include "redecomp/redecomp.hpp"
+
 #ifdef TRIBOL_USE_UMPIRE
 // Umpire includes
 #include "umpire/ResourceManager.hpp"
@@ -18,15 +28,6 @@
 // Axom includes
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
-
-// Redecomp includes
-#include "redecomp/redecomp.hpp"
-
-// Tribol includes
-#include "tribol/common/Parameters.hpp"
-#include "tribol/config.hpp"
-#include "tribol/interface/tribol.hpp"
-#include "tribol/interface/mfem_tribol.hpp"
 
 /**
  * @brief This tests the Tribol MFEM interface running a contact patch test.
@@ -191,11 +192,11 @@ protected:
     mfem::ParGridFunction g;
     tribol::getMfemGap(0, g);
 
-  // restriction operator on submesh: maps dofs stored in g to tdofs stored in G
+  // prolongation transpose operator on submesh: maps dofs stored in g to tdofs stored in G
     {
       auto& G = B_blk.GetBlock(1);
-      auto& R_submesh = *tribol::getMfemPressure(0).ParFESpace()->GetRestrictionOperator();
-      R_submesh.Mult(g, G);
+      auto& P_submesh = *tribol::getMfemPressure(0).ParFESpace()->GetProlongationMatrix();
+      P_submesh.MultTranspose(g, G);
     }
 
     // solve for X_blk
@@ -228,7 +229,7 @@ TEST_P(MfemCommonPlaneTest, mass_matrix_transfer)
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(1));
+INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(2));
 
 //------------------------------------------------------------------------------
 #include "axom/slic/core/SimpleLogger.hpp"

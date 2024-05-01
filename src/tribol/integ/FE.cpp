@@ -6,7 +6,6 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/integ/FE.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
-#include "tribol/common/logger.hpp"
 
 #include "axom/slic.hpp" 
 
@@ -60,25 +59,10 @@ void GalerkinEval( const real* const RESTRICT x,
                    InterfaceElementType elem_type, BasisEvalType basis_type, 
                    int galerkinDim, real* nodeVals, real* galerkinVal )
 {
-   if (x == nullptr)
-   {
-      SLIC_ERROR("GalerkinEval(): input pointer, x, is NULL.");
-   }
-
-   if (nodeVals == nullptr)
-   {
-      SLIC_ERROR("GalerkinEval(): input pointer, nodeVals, is NULL.");
-   }
-
-   if (galerkinVal == nullptr)
-   {
-      SLIC_ERROR("GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
-   }
-
-   if (galerkinDim < 1)
-   {
-      SLIC_ERROR( "GalerkinEval(): scalar approximations not yet supported." );
-   }
+   SLIC_ERROR_IF(x==nullptr, "GalerkinEval(): input pointer, x, is NULL.");
+   SLIC_ERROR_IF(nodeVals==nullptr, "GalerkinEval(): input pointer, nodeVals, is NULL.");
+   SLIC_ERROR_IF(galerkinVal==nullptr, "GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
+   SLIC_ERROR_IF(galerkinDim<1, "GalerkinEval(): scalar approximations not yet supported." );
 
    int numNodes = GetNumElemNodes( elem_type );
    switch (basis_type)
@@ -200,18 +184,12 @@ void SegmentBasis( const real* const RESTRICT x,
                    const int numPoints, const int vertexId, 
                    real& phi )
 {
-   if (numPoints != 2)
-   {
-      TRIBOL_ERROR("SegmentBasis: numPoints is " << numPoints 
-                    << " but should be 2.");
-   }
+   SLIC_ERROR_IF(numPoints != 2, "SegmentBasis: numPoints is " << numPoints <<
+                 " but should be 2.");
 
    // note, vertexId is the index, 0 or 1.
-   if (vertexId > numPoints-1)
-   {
-      TRIBOL_ERROR("SegmentBasis: vertexId is " << vertexId
-                    << " but should be 0 or 1.");
-   }
+   SLIC_ERROR_IF(vertexId > numPoints-1, "SegmentBasis: vertexId is " << vertexId << 
+                 " but should be 0 or 1.");
 
    // compute length of segment
    real vx = x[numPoints*1] - x[numPoints*0];
@@ -224,14 +202,31 @@ void SegmentBasis( const real* const RESTRICT x,
 
    real magW = magnitude( wx, wy );
 
-   phi = 1.0 / lambda * (lambda - magW);
+   phi = 1.0 / lambda * (lambda - magW); // this calculation is inverted, (phi_a is actually phi_b and vice versa)
 
-   // debug 
-   if (phi > 1.0 || phi < 0.0)
-   {
-      TRIBOL_ERROR("SegmentBasis: phi is " << phi 
-                   << " but needs to be between 0. and 1." );
-   }
+   // TODO verify this code as a bugfix to fix flipping of nodes a and b
+   // when evaluating basis. Suppress error for now.
+   //if (std::abs(lambda-magW)/lambda < 1.E-2)
+   //{
+   //   phi=1.;
+   //}
+   //else if (magW<1.e-5)
+   //{
+   //   phi=0.;
+   //}
+   //else
+   //{
+   //   //phi = 1.0 / lambda * (lambda - magW); // this calculation is inverted, (phi_a is actually phi_b and vice versa)
+   //                                           // this will shift nodal contributions over one node
+   //   phi = 1.0 / lambda * magW;
+   //}
+
+   //if (phi > 1.0 || phi < 0.0)
+   //{
+   //   SLIC_INFO("(x0,y0) and (x1,y1): " << "(" << x[0] << ", " << x[1] << "), " << "(" << x[2] << ", " << x[3] << ").");
+   //   SLIC_INFO("(px,py): " << "(" << pX << ", " << pY << ")");
+   //}
+   //SLIC_ERROR_IF(phi > 1.0 || phi < 0.0, "SegmentBasis: phi is " << phi << " not between 0. and 1." );
 
    return;
 }
@@ -241,10 +236,7 @@ void WachspressBasis( const real* const RESTRICT x,
                       const real pX, const real pY, const real pZ, 
                       const int numPoints, const int vertexId, real& phi )
 {
-   if (numPoints < 3)
-   {
-      TRIBOL_ERROR("WachspressBasis: numPoints < 3.");
-   }
+   SLIC_ERROR_IF(numPoints<3, "WachspressBasis: numPoints < 3.");
 
    // first compute the areas of all the triangles formed by the i-1,i,i+1 vertices.
    // These consist of all the numerators in the Wachspress formulation
@@ -325,7 +317,6 @@ void WachspressBasis( const real* const RESTRICT x,
 
    phi = myWeight / weightSum;
 
-   // debug error statement
    if (phi <= 0. || phi > 1.)
    {
       SLIC_ERROR("Wachspress Basis: phi is not between 0 and 1.");
@@ -344,10 +335,7 @@ void InvIso( const real  x[3],
 {
 
    // TODO generalize for linear triangles and linear quads? SRW
-   if (numNodes != 4)
-   {
-      TRIBOL_ERROR("InvIso: routine only for 4 node quads.");
-   }
+   SLIC_ERROR_IF(numNodes!=4, "InvIso: routine only for 4 node quads.");
 
    bool convrg = false;
    int kmax = 15;
@@ -470,22 +458,15 @@ void InvIso( const real  x[3],
            }
          }
 
-         if (!in_quad)
-         {
-            SLIC_ERROR("InvIso(): (xi,eta) coordinate does not lie " << 
+         SLIC_ERROR_IF(!in_quad, "InvIso(): (xi,eta) coordinate does not lie " << 
                        "inside isoparametric quad.");
-         }
 
-//       SLIC_INFO("InvIso(): total iteration count, " << k );
          return; 
       }
 
    }
 
-   if (!convrg)
-   {
-      TRIBOL_ERROR("InvIso: Newtons method did not converge.");
-   }
+   SLIC_ERROR_IF(!convrg, "InvIso: Newtons method did not converge.");
 
    return;
 }
@@ -582,7 +563,7 @@ void LinIsoTriShapeFunc( const real xi,
          phi = eta;
          break;
       default:
-         TRIBOL_ERROR("LinIsoTriShapeFunc: node id is not between 0 and 2.");
+         SLIC_ERROR("LinIsoTriShapeFunc: node id is not between 0 and 2.");
          break;
    }
 
@@ -615,11 +596,13 @@ void LinIsoQuadShapeFunc( const real xi,
          eta_node = -1.;
          break;
       default:
-         TRIBOL_ERROR("LinIsoQuadShapeFunc: node id is not between 0 and 3.");
+         SLIC_ERROR("LinIsoQuadShapeFunc: node id is not between 0 and 3.");
          return;
    }
 
    phi = 0.25 * (1. + xi_node * xi) * ( 1. + eta_node * eta);
+
+   SLIC_ERROR_IF(phi > 1.0 || phi < 0.0, "LinIsoQuadShapeFunc: phi is " << phi << " not between 0. and 1." );
 
    return;
 }

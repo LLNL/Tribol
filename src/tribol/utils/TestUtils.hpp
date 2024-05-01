@@ -52,6 +52,7 @@ struct TestControlParameters
       , rate_penalty             (1.0)
       , rate_penalty_ratio       (0.0)
       , const_penalty            (1.0)
+      , enable_timestep_vote     (false)
    {}
 
    ~TestControlParameters() 
@@ -60,7 +61,7 @@ struct TestControlParameters
    }
 
    real dt {0.};
-   real contact_pen_frac {0.30};
+   real auto_contact_pen_frac {0.95};
 
    // penalty control parameters
    bool penalty_ratio;
@@ -69,6 +70,7 @@ struct TestControlParameters
    real rate_penalty;
    real rate_penalty_ratio;
    real const_penalty;
+   bool enable_timestep_vote;
 };
 
 /*!
@@ -91,6 +93,7 @@ public:
    int tribolSetupAndUpdate( ContactMethod method,           ///< contact method
                              EnforcementMethod enforcement,  ///< constraint enforcement method
                              ContactModel model,             ///< contact model 
+                             ContactCase contact_case,       ///< contact case
                              bool visualization,             ///< true if visualization
                              TestControlParameters & params  ///< control parameters struct
                            );
@@ -99,6 +102,7 @@ public:
    int simpleTribolSetupAndUpdate( ContactMethod method,           ///< contact method
                                    EnforcementMethod enforcement,  ///< constraint enforcement method
                                    ContactModel model,             ///< contact model 
+                                   ContactCase contact_case,       ///< contact case
                                    bool visualization,             ///< true if visualization
                                    TestControlParameters & params  ///< control parameters struct
                                  );
@@ -513,6 +517,8 @@ public:
       mfem::Coefficient& lambda,
       mfem::Coefficient& mu
    );
+
+   using mfem::SecondOrderTimeDependentOperator::Mult;
 
    /**
     * @brief Compute acceleration given displacement and velocity

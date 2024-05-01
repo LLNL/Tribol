@@ -5,3 +5,4 @@
 /spack*
 /*.cmake
 .vscode/
+__pycache__/

@@ -7,7 +7,6 @@
 
 // Tribol includes
 #include "tribol/interface/simple_tribol.hpp"
-#include "tribol/common/logger.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/types.hpp"
 
@@ -34,15 +33,15 @@ namespace numerics = axom::numerics;
 int Initialize(const int dim, bool init_slic)
 {
    // initialize slic
-   if(init_slic)
+   if (init_slic)
    {
       axom::slic::finalize();
       axom::slic::initialize();
       std::string format = "[<LEVEL>]: <MESSAGE> \n";
       axom::slic::setLoggingMsgLevel( axom::slic::message::Info );
-
+     
       axom::slic::addStreamToAllMsgLevels(
-         new axom::slic::GenericOutputStream( &std::cout,format) );
+         new axom::slic::GenericOutputStream( &std::cout,format ) );
    }
 
    // Initialize tribol

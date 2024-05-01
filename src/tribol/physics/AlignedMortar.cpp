@@ -19,7 +19,6 @@
 #include "tribol/integ/FE.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 #include "tribol/utils/Math.hpp"
-#include "tribol/common/logger.hpp" 
 
 #include <fstream>
 #include <iostream>
@@ -69,12 +68,8 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
             int mortarNonmortarId = elem.numFaceVert * elem.numFaceVert + 
                                 elem.numFaceVert * a + b;
  
-            #ifdef TRIBOL_DEBUG_LOG
-               if (nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts)
-               {
-                  TRIBOL_ERROR("ComputeAlignedMortarWeights: integer ids for weights exceed elem.numWts");
-               }
-            #endif /* TRIBOL_DEBUG_LOG */
+            SLIC_ERROR_IF(nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts,
+                          "ComputeAlignedMortarWeights: integer ids for weights exceed elem.numWts");
 
             // compute nonmortar/nonmortar mortar weight
             elem.mortarWts[ nonmortarNonmortarId ]  += integ.wts[ip] * phiNonmortarA * phiNonmortarB;
@@ -92,32 +87,13 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
 template< >
 void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 {
-   // check to make sure mortar weights have been computed locally 
-   // for the SurfaceContactElem object
-   #ifdef TRIBOL_DEBUG_LOG
-      if (elem.mortarWts == nullptr)
-      {
-         TRIBOL_ERROR("ComputeNodalGap< ALIGNED_MORTAR >: compute local weights on input struct first.");
-      }
-   #endif /* TRIBOL_DEBUG_LOG */
-
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
    MeshData& nonmortarMesh = meshManager.GetMeshInstance( elem.meshId2 );
    IndexType const * const nonmortarConn = nonmortarMesh.m_connectivity;
 
-
-   #ifdef TRIBOL_DEBUG_LOG
-      // will populate local gaps on nonmortar face on nonmortar mesh data object
-      real* meshGaps = nonmortarMesh.m_nodalFields.m_node_gap;
-      if (meshGaps == nullptr)
-      {
-         TRIBOL_ERROR("ComputeNodalGap< ALIGNED_MORTAR >: allocate gaps on mesh data object.");   
-      }
-   #endif /* TRIBOL_DEBUG_LOG */
-
-   // allocate local space for local gap computation on nonmortar face
-//   real localGaps[ elem.numFaceVert ];
+   SLIC_ERROR_IF(nonmortarMesh.m_nodalFields.m_node_gap == nullptr, 
+                 "ComputeNodalGap< ALIGNED_MORTAR >: allocate gaps on mesh data object.");
 
    // compute gap contributions associated with face 2 on the SurfaceContactElem 
    // (i.e. nonmortar surface)
@@ -222,6 +198,7 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
 
    // compute nodal normals (do this outside the element loop)
+   // This routine is guarded against a null mesh
    nonmortarMesh.computeNodalNormals( dim );
  
    // declare local variables to hold face nodal coordinates
@@ -230,15 +207,15 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    real nonmortarX[ dim * numNodesPerFace ];
    real* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
 
-   ////////////////////////
+   ////////////////////////////
    // compute nonmortar gaps //
-   ////////////////////////
+   ////////////////////////////
    int cpID = 0;
    for (IndexType kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -340,16 +317,22 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    real * const fz2 = nonmortarMesh.m_forceZ;
    IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
 
-   ////////////////////////////////
-   //                            //
-   // compute single mortar gaps //
-   //                            //
-   ////////////////////////////////
+   ///////////////////////////////////////////////////////
+   //                                                   //
+   //            compute single mortar gaps             //
+   //                                                   //
+   // Note, this routine is guarded against a null mesh //
+   ///////////////////////////////////////////////////////
    ComputeAlignedMortarGaps( cs );
 
-   int numTotalNodes = cs->getNumTotalNodes();
-   int numRows = dim * numTotalNodes + numTotalNodes;
-   static_cast<MortarData*>( cs->getMethodData() )->allocateMfemSparseMatrix( numRows );
+   int numTotalNodes;
+   int numRows;
+   if (!cs->nullMeshes())
+   {
+      numTotalNodes = cs->getNumTotalNodes();
+      numRows = dim * numTotalNodes + numTotalNodes;
+      static_cast<MortarData*>( cs->getMethodData() )->allocateMfemSparseMatrix( numRows );
+   }
 
    ////////////////////////////////////////////////////////////////
    // compute equilibrium residual and/or Jacobian contributions //
@@ -359,7 +342,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }

@@ -31,6 +31,19 @@ inline bool in_range( integer target, integer N )
 constexpr integer ANY_MESH = -1;
 
 /*!
+ * \brief Enumerates the logging level options
+ */
+enum LoggingLevel
+{
+   TRIBOL_UNDEFINED, ///! Undefined 
+   TRIBOL_DEBUG,     ///! Debug and higher
+   TRIBOL_INFO,      ///! Info and higher
+   TRIBOL_WARNING,   ///! Warning and higher
+   TRIBOL_ERROR,     ///! Errors only
+   NUM_LOGGING_LEVELS = TRIBOL_ERROR
+};
+
+/*!
  * \brief Enumerates the interface element types  
  */
 enum InterfaceElementType
@@ -263,6 +276,19 @@ enum BasisEvalType
 };
 
 /*!
+ * \brief Enumerates face-pair computational geometry errors
+ */
+enum FaceGeomError
+{
+   NO_FACE_GEOM_ERROR,                         ///! No face geometry error
+   FACE_ORIENTATION,                           ///! Face vertices not ordered consistent with outward unit normal
+   INVALID_FACE_INPUT,                         ///! Invalid input
+   DEGENERATE_OVERLAP,                         ///! Issues with overlap calculation resulting in degenerate overlap
+   FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES, ///! Very specific debug indexing error where face vertex count exceeds overlap vertex count in cg routine
+   NUM_FACE_GEOM_ERRORS
+};
+
+/*!
  * \brief Enumerates ContactMode errors
  */
 enum ModeError
@@ -280,6 +306,7 @@ enum CaseError
 {
    INVALID_CASE,
    NO_CASE_IMPLEMENTATION,
+   INVALID_CASE_DATA,
    NO_CASE_ERROR,
    NUM_CASE_ERRORS
 };
@@ -449,11 +476,16 @@ struct parameters_t
   double gap_tied_tol;           ///! Ratio for determining max separation tied contact can support
   double len_collapse_ratio;     ///! Ratio of face length providing topology collapse length tolerance
   double projection_ratio;       ///! Ratio for defining nonzero projections
-  double contact_pen_frac;       ///! Ratio for amount of allowable interpen in a cycle
+  double auto_contact_pen_frac;  ///! Max allowable interpenetration as percent of element thickness for contact candidacy
+  double timestep_pen_frac;      ///! Max allowable interpenetration as percent of element thickness prior to triggering timestep vote
 
   int vis_cycle_incr;            ///! Frequency for visualizations dumps
   VisType vis_type;              ///! Type of interface physics visualization output
   std::string output_directory;  ///! Output directory for visualization dumps
+  bool enable_timestep_vote;     ///! True if host-code desires the timestep vote to be calculated and returned
+
+  double auto_contact_len_scale_factor; ///! Sacle factor applied to element thickness for auto contact length scale
+  bool auto_interpen_check;             ///! True if the auto-contact interpenetration check is used for full-overlap pairs
 
 private:
 

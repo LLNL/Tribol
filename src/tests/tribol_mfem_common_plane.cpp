@@ -3,10 +3,20 @@
 //
 // SPDX-License-Identifier: (MIT)
 
-#include <mpi.h>
 #include <set>
 
 #include <gtest/gtest.h>
+
+// Tribol includes
+#include "tribol/config.hpp"
+#include "tribol/common/Parameters.hpp"
+#include "tribol/interface/tribol.hpp"
+#include "tribol/interface/mfem_tribol.hpp"
+#include "tribol/utils/TestUtils.hpp"
+#include "tribol/types.hpp"
+
+// Redecomp includes
+#include "redecomp/redecomp.hpp"
 
 #ifdef TRIBOL_USE_UMPIRE
 // Umpire includes
@@ -20,23 +30,15 @@
 #include "axom/CLI11.hpp"
 #include "axom/slic.hpp"
 
-// Redecomp includes
-#include "redecomp/redecomp.hpp"
-
-// Tribol includes
-#include "tribol/common/Parameters.hpp"
-#include "tribol/config.hpp"
-#include "tribol/interface/tribol.hpp"
-#include "tribol/interface/mfem_tribol.hpp"
-#include "tribol/utils/TestUtils.hpp"
-
 /**
- * @brief This tests the Tribol MFEM interface running a small common plane
- * explicit contact example using a central difference explicit time integration
- * scheme.
+ * @brief This tests the Tribol MFEM interface running a small common plane explicit contact example using a central
+ * difference explicit time integration scheme.
+ *
+ * Both the element penalty and a constant penalty are tested, with the constant penalty tuned to match the element
+ * penalty for this case.  As a result, the test comparisons are the same for both penalty types.
  *
  */
-class MfemCommonPlaneTest : public testing::TestWithParam<int> {
+class MfemCommonPlaneTest : public testing::TestWithParam<std::pair<int, tribol::KinematicPenaltyCalculation>> {
 protected:
   double max_disp_;
   void SetUp() override
@@ -45,21 +47,22 @@ protected:
     // parallel mesh
     int ref_levels = 2;
     // polynomial order of the finite element discretization
-    int order = GetParam();
+    int order = GetParam().first;
     // initial velocity
     double initial_v = 0.02;
     // timestep size
     double dt = 0.001;
     // end time
     double t_end = 2.0;
-    // kinematic penalty
-    double p_kine = 10000.0;
     // material density
     double rho = 1000.0;
     // lame parameter
     double lambda = 100000.0;
     // lame parameter (shear modulus)
     double mu = 100000.0;
+    // kinematic constant penalty stiffness equivalent to the element-wise calculation, 
+    // which is bulk-modulus over element thickness.
+    double p_kine = (lambda + 2.0 / 3.0 * mu) / (1.0 / std::pow(2.0, ref_levels));
 
     // fixed options
     // location of mesh file. TRIBOL_REPO_DIR is defined in tribol/config.hpp
@@ -199,12 +202,17 @@ protected:
       tribol::BINNING_GRID
     );
     tribol::registerMfemVelocity(0, v);
-    tribol::setPenaltyOptions(
-      0,
-      tribol::KINEMATIC,
-      tribol::KINEMATIC_CONSTANT,
-      tribol::NO_RATE_PENALTY
-    );
+    if (GetParam().second == tribol::KINEMATIC_CONSTANT)
+    {
+      tribol::setMfemKinematicConstantPenalty(coupling_scheme_id, p_kine, p_kine);
+    }
+    else
+    {
+      mfem::Vector bulk_moduli_by_bdry_attrib(pmesh->bdr_attributes.Max());
+      bulk_moduli_by_bdry_attrib = lambda + 2.0 / 3.0 * mu;
+      mfem::PWConstCoefficient mat_coeff(bulk_moduli_by_bdry_attrib);
+      tribol::setMfemKinematicElementPenalty(coupling_scheme_id, mat_coeff);
+    }
 
     int cycle {0};
     for (double t {0.0}; t < t_end; t+=dt)
@@ -212,8 +220,6 @@ protected:
       // build new parallel decomposed redecomp mesh and update grid functions
       // on each mesh
       tribol::updateMfemParallelDecomposition();
-      tribol::setKinematicConstantPenalty(0, p_kine);
-      tribol::setKinematicConstantPenalty(1, p_kine);
       tribol::update(cycle, t, dt);
       op.f_ext = 0.0;
       tribol::getMfemResponse(0, op.f_ext);
@@ -236,14 +242,17 @@ protected:
   }
 };
 
-TEST_P(MfemCommonPlaneTest, mass_matrix_transfer)
+TEST_P(MfemCommonPlaneTest, common_plane)
 {
-  EXPECT_LT(std::abs(max_disp_ - 0.0000033982222612802126), 1.0e-8);
+  EXPECT_LT(std::abs(max_disp_ - 0.013637427890739103), 1.5e-6);
 
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(1));
+INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(std::make_pair(1, tribol::KINEMATIC_CONSTANT),
+                                                                      std::make_pair(1, tribol::KINEMATIC_ELEMENT),
+                                                                      std::make_pair(2, tribol::KINEMATIC_CONSTANT),
+                                                                      std::make_pair(2, tribol::KINEMATIC_ELEMENT)));
 
 //------------------------------------------------------------------------------
 int main(int argc, char* argv[])

@@ -22,40 +22,46 @@ SubmeshLORTransfer::SubmeshLORTransfer(
     std::make_unique<mfem::H1_FECollection>(1, lor_mesh.SpaceDimension()),
     submesh_fes.GetVDim()
   ) },
-  lor_xfer_ { submesh_fes, *lor_gridfn_.ParFESpace() }
-{
-  SLIC_WARNING_ROOT("LOR support is experimental at this time.");
-}
+  lor_xfer_ { submesh_fes, *lor_gridfn_->ParFESpace() }
+{}
 
 void SubmeshLORTransfer::TransferToLORGridFn(
   const mfem::ParGridFunction& submesh_src
 )
 {
-  lor_xfer_.ForwardOperator().Mult(submesh_src, lor_gridfn_);
+  SubmeshToLOR(submesh_src, *lor_gridfn_);
 }
 
-void SubmeshLORTransfer::TransferFromLORGridFn(
-  mfem::ParGridFunction& submesh_dst
+void SubmeshLORTransfer::TransferFromLORVector(
+  mfem::Vector& submesh_dst
 ) const
 {
-  lor_xfer_.ForwardOperator().MultTranspose(lor_gridfn_, submesh_dst);
+  lor_xfer_.ForwardOperator().MultTranspose(*lor_gridfn_, submesh_dst);
 }
 
-mfem::ParGridFunction SubmeshLORTransfer::CreateLORGridFunction(
+void SubmeshLORTransfer::SubmeshToLOR(
+  const mfem::ParGridFunction& submesh_src,
+  mfem::ParGridFunction& lor_dst
+)
+{
+  lor_xfer_.ForwardOperator().Mult(submesh_src, lor_dst);
+}
+
+std::unique_ptr<mfem::ParGridFunction> SubmeshLORTransfer::CreateLORGridFunction(
   mfem::ParMesh& lor_mesh,
   std::unique_ptr<mfem::FiniteElementCollection> lor_fec,
   integer vdim
 )
 {
-  mfem::ParGridFunction lor_gridfn {
+  auto lor_gridfn = std::make_unique<mfem::ParGridFunction>( 
     new mfem::ParFiniteElementSpace(
       &lor_mesh,
       lor_fec.get(),
       vdim,
       mfem::Ordering::byNODES
     )
-  };
-  lor_gridfn.MakeOwner(lor_fec.release());
+  );
+  lor_gridfn->MakeOwner(lor_fec.release());
   return lor_gridfn;
 }
 
@@ -106,22 +112,45 @@ void SubmeshRedecompTransfer::SubmeshToRedecomp(
 
 void SubmeshRedecompTransfer::RedecompToSubmesh(
   const mfem::GridFunction& redecomp_src,
-  mfem::ParGridFunction& submesh_dst
+  mfem::Vector& submesh_dst
 ) const
 {
   auto dst_ptr = &submesh_dst;
+  auto dst_fespace_ptr = &submesh_fes_;
   // first initialize LOR grid function (if using LOR)
   if (submesh_lor_xfer_)
   {
-    submesh_lor_xfer_->GetLORGridFn() = 0.0;
-    dst_ptr = &submesh_lor_xfer_->GetLORGridFn();
+    submesh_lor_xfer_->GetLORVector() = 0.0;
+    dst_ptr = &submesh_lor_xfer_->GetLORVector();
+    dst_fespace_ptr = submesh_lor_xfer_->GetLORGridFn().ParFESpace();
   }
   // transfer data from redecomp mesh
-  redecomp_xfer_.TransferToParallel(redecomp_src, *dst_ptr);
+  mfem::ParGridFunction dst_gridfn(dst_fespace_ptr, *dst_ptr);
+  redecomp_xfer_.TransferToParallel(redecomp_src, dst_gridfn);
+
+  // using redecomp, shared dof values are set equal (i.e. a ParGridFunction), but we want the sum of shared dof values
+  // to equal the actual dof value when transferring dual fields (i.e. force and gap) back to the parallel mesh
+  // following MFEMs convention.  set non-owned DOF values to zero.
+  
+  // P_I is the row index vector on the MFEM prolongation matrix. If there are no column entries for the row, then the
+  // DOF is owned by another rank.
+  auto P_I = dst_fespace_ptr->Dof_TrueDof_Matrix()->GetDiagMemoryI();
+  HYPRE_Int tdof_ct {0};
+  for (int i{0}; i < dst_fespace_ptr->GetVSize(); ++i)
+  {
+    if (P_I[i+1] != tdof_ct)
+    {
+      ++tdof_ct;
+    }
+    else
+    {
+      (*dst_ptr)[i] = 0.0;
+    }
+  }
   // if using LOR, transfer data from LOR mesh to submesh
   if (submesh_lor_xfer_)
   {
-    submesh_lor_xfer_->TransferFromLORGridFn(submesh_dst);
+    submesh_lor_xfer_->TransferFromLORVector(submesh_dst);
   }
 }
 
@@ -175,12 +204,14 @@ void ParentRedecompTransfer::ParentToRedecomp(
 
 void ParentRedecompTransfer::RedecompToParent(
   const mfem::GridFunction& redecomp_src,
-  mfem::ParGridFunction& parent_dst
+  mfem::Vector& parent_dst
 ) const
 {
   submesh_gridfn_ = 0.0;
   submesh_redecomp_xfer_.RedecompToSubmesh(redecomp_src, submesh_gridfn_);
-  submesh_redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, parent_dst);
+  // submesh transfer requires a grid function.  create one using parent_dst's data
+  mfem::ParGridFunction parent_gridfn(&parent_fes_, parent_dst);
+  submesh_redecomp_xfer_.GetSubmesh().Transfer(submesh_gridfn_, parent_gridfn);
 }
 
 ParentField::ParentField(
@@ -344,6 +375,9 @@ MfemMeshData::MfemMeshData(
   coords_ { current_coords },
   lor_factor_ { 0 }
 {
+  // make sure a grid function exists on the submesh
+  submesh_.EnsureNodes();
+
   // create submesh grid function
   std::unique_ptr<mfem::FiniteElementCollection> submesh_fec {
     current_coords.ParFESpace()->FEColl()->Clone(
@@ -365,42 +399,6 @@ MfemMeshData::MfemMeshData(
   {
     SetLORFactor(current_coords.FESpace()->FEColl()->GetOrder());
   }
-
-  // set the element type
-  mfem::Element::Type element_type = mfem::Element::QUADRILATERAL;
-  if (submesh_.GetNE() > 0)
-  {
-    element_type = submesh_.GetElementType(0);
-  }
-
-  switch (element_type) 
-  {
-    case mfem::Element::SEGMENT:
-      elem_type_ = LINEAR_EDGE;
-      break;
-    case mfem::Element::TRIANGLE:
-      elem_type_ = LINEAR_TRIANGLE;
-      break;
-    case mfem::Element::QUADRILATERAL:
-      elem_type_ = LINEAR_QUAD;
-      break;
-    case mfem::Element::TETRAHEDRON:
-      elem_type_ = LINEAR_TET;
-      break;
-    case mfem::Element::HEXAHEDRON:
-      elem_type_ = LINEAR_HEX;
-      break;
-
-    case mfem::Element::POINT:
-      SLIC_ERROR_ROOT("Unsupported element type!");
-      break;
-
-    default:
-      SLIC_ERROR_ROOT("Unknown element type!");
-      break;
-  }
-
-  num_verts_per_elem_ = mfem::Geometry::NumVerts[element_type];
 }
 
 void MfemMeshData::SetParentCoords(const mfem::ParGridFunction& current_coords)
@@ -410,6 +408,16 @@ void MfemMeshData::SetParentCoords(const mfem::ParGridFunction& current_coords)
 
 void MfemMeshData::UpdateMfemMeshData()
 {
+  // update coordinates of submesh and LOR mesh
+  auto submesh_nodes = dynamic_cast<mfem::ParGridFunction*>(submesh_.GetNodes());
+  SLIC_ERROR_ROOT_IF(!submesh_nodes, "submesh_ Nodes is not a ParGridFunction.");
+  submesh_.Transfer(coords_.GetParentGridFn(), *submesh_nodes);
+  if (lor_mesh_.get())
+  {
+    auto lor_nodes = dynamic_cast<mfem::ParGridFunction*>(lor_mesh_->GetNodes());
+    SLIC_ERROR_ROOT_IF(!lor_nodes, "lor_mesh_ Nodes is not a ParGridFunction.");
+    submesh_lor_xfer_->SubmeshToLOR(*submesh_nodes, *lor_nodes);
+  }
   update_data_ = std::make_unique<UpdateData>(
     submesh_,
     lor_mesh_.get(),
@@ -417,8 +425,7 @@ void MfemMeshData::UpdateMfemMeshData()
     submesh_xfer_gridfn_,
     submesh_lor_xfer_.get(),
     attributes_1_, 
-    attributes_2_, 
-    num_verts_per_elem_
+    attributes_2_
   );
   coords_.UpdateField(update_data_->vector_xfer_);
   redecomp_response_.SetSpace(coords_.GetRedecompGridFn().FESpace());
@@ -427,12 +434,68 @@ void MfemMeshData::UpdateMfemMeshData()
   {
     velocity_->UpdateField(update_data_->vector_xfer_);
   }
+  if (elem_thickness_)
+  {
+    if (!material_modulus_)
+    {
+      SLIC_ERROR_ROOT("Kinematic element penalty requires material modulus information. "
+                      "Call registerMfemMaterialModulus() to set this.");
+    }
+    redecomp::RedecompTransfer redecomp_xfer;
+    // set element thickness on redecomp mesh
+    redecomp_elem_thickness_ = std::make_unique<mfem::QuadratureFunction>(
+      new mfem::QuadratureSpace(&GetRedecompMesh(), 0)
+    );
+    redecomp_elem_thickness_->SetOwnsSpace(true);
+    *redecomp_elem_thickness_ = 0.0;
+    redecomp_xfer.TransferToSerial(*elem_thickness_, *redecomp_elem_thickness_);
+    // set element thickness on tribol mesh
+    tribol_elem_thickness_1_ = std::make_unique<axom::Array<double>>(
+      0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
+    for (auto redecomp_e : GetElemMap1())
+    {
+      mfem::Vector quad_val;
+      redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
+      tribol_elem_thickness_1_->push_back(quad_val[0]);
+    }
+    tribol_elem_thickness_2_ = std::make_unique<axom::Array<double>>(
+      0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
+    for (auto redecomp_e : GetElemMap2())
+    {
+      mfem::Vector quad_val;
+      redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
+      tribol_elem_thickness_2_->push_back(quad_val[0]);
+    }
+    // set material modulus on redecomp mesh
+    redecomp_material_modulus_ = std::make_unique<mfem::QuadratureFunction>(
+      new mfem::QuadratureSpace(&GetRedecompMesh(), 0)
+    );
+    redecomp_material_modulus_->SetOwnsSpace(true);
+    *redecomp_material_modulus_ = 0.0;
+    redecomp_xfer.TransferToSerial(*material_modulus_, *redecomp_material_modulus_);
+    // set material modulus on tribol mesh
+    tribol_material_modulus_1_ = std::make_unique<axom::Array<double>>(
+      0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
+    for (auto redecomp_e : GetElemMap1())
+    {
+      mfem::Vector quad_val;
+      redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
+      tribol_material_modulus_1_->push_back(quad_val[0]);
+    }
+    tribol_material_modulus_2_ = std::make_unique<axom::Array<double>>(
+      0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
+    for (auto redecomp_e : GetElemMap2())
+    {
+      mfem::Vector quad_val;
+      redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
+      tribol_material_modulus_2_->push_back(quad_val[0]);
+    }
+  }
 }
 
 void MfemMeshData::GetParentResponse(mfem::Vector& r) const
 {
-    mfem::ParGridFunction r_gridfn(coords_.GetParentGridFn().ParFESpace(), r);
-    GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r_gridfn);
+  GetParentRedecompTransfer().RedecompToParent(redecomp_response_, r);
 }
 
 void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
@@ -445,6 +508,31 @@ void MfemMeshData::SetParentVelocity(const mfem::ParGridFunction& velocity)
   {
     velocity_ = std::make_unique<ParentField>(velocity);
   }
+}
+
+void MfemMeshData::ClearAllPenaltyData()
+{
+  ClearRatePenaltyData();
+  kinematic_constant_penalty_1_.reset(nullptr);
+  kinematic_constant_penalty_2_.reset(nullptr);
+  kinematic_penalty_scale_1_.reset(nullptr);
+  kinematic_penalty_scale_2_.reset(nullptr);
+  elem_thickness_.reset(nullptr);
+  redecomp_elem_thickness_.reset(nullptr);
+  tribol_elem_thickness_1_.reset(nullptr);
+  tribol_elem_thickness_2_.reset(nullptr);
+  material_modulus_.reset(nullptr);
+  redecomp_material_modulus_.reset(nullptr);
+  tribol_material_modulus_1_.reset(nullptr);
+  tribol_material_modulus_2_.reset(nullptr);
+}
+
+void MfemMeshData::ClearRatePenaltyData()
+{
+  rate_constant_penalty_1_.reset(nullptr);
+  rate_constant_penalty_2_.reset(nullptr);
+  rate_percent_ratio_1_.reset(nullptr);
+  rate_percent_ratio_2_.reset(nullptr);
 }
 
 void MfemMeshData::SetLORFactor(integer lor_factor)
@@ -465,10 +553,104 @@ void MfemMeshData::SetLORFactor(integer lor_factor)
   lor_mesh_ = std::make_unique<mfem::ParMesh>(mfem::ParMesh::MakeRefined(
     submesh_, lor_factor, mfem::BasisType::ClosedUniform
   ));
+  lor_mesh_->EnsureNodes();
   submesh_lor_xfer_ = std::make_unique<SubmeshLORTransfer>(
     *submesh_xfer_gridfn_.ParFESpace(),
     *lor_mesh_
   );
+}
+
+void MfemMeshData::ComputeElementThicknesses()
+{
+  auto submesh_thickness = std::make_unique<mfem::QuadratureFunction>(
+    new mfem::QuadratureSpace(&submesh_, 0)
+  );
+  submesh_thickness->SetOwnsSpace(true);
+  // All the elements in the submesh are on the contact surface. The algorithm
+  // works as follows:
+  // 1) For each submesh element, find the corresponding parent volume element
+  // 2) Compute the thickness of the parent volume element (det J at element
+  //    centroid)
+  // 3) If no LOR mesh, store this on a quadrature function on the submesh
+  // 4) If there is an LOR mesh, use the CoarseFineTransformation to find the
+  //    LOR elements linked to the HO mesh and store the thickness of the HO
+  //    element on all of its linked LOR elements.
+  for (int submesh_e{0}; submesh_e < submesh_.GetNE(); ++submesh_e)
+  {
+    // Step 1
+    auto parent_bdr_e = submesh_.GetParentElementIDMap()[submesh_e];
+    auto& parent_mesh = const_cast<mfem::ParMesh&>(parent_mesh_);
+    auto& face_el_tr = *parent_mesh.GetBdrFaceTransformations(parent_bdr_e);
+    auto mask = face_el_tr.GetConfigurationMask();
+    auto parent_e = (mask & mfem::FaceElementTransformations::HAVE_ELEM1) ?
+      face_el_tr.Elem1No :
+      face_el_tr.Elem2No;
+    
+    // Step 2 
+    // normal = (dx/dxi x dx/deta) / || dx/dxi x dx/deta || on parent volume boundary element centroid
+    auto& parent_fes = *coords_.GetParentGridFn().ParFESpace();
+    mfem::Array<int> be_dofs;
+    parent_fes.GetBdrElementDofs(parent_bdr_e, be_dofs);
+    mfem::DenseMatrix elem_coords(parent_mesh_.Dimension(), be_dofs.Size());
+    for (int d{0}; d < parent_mesh_.Dimension(); ++d)
+    {
+      mfem::Array<int> be_vdofs(be_dofs);
+      parent_fes.DofsToVDofs(d, be_vdofs);
+      mfem::Vector elemvect(be_dofs.Size());
+      coords_.GetParentGridFn().GetSubVector(be_vdofs, elemvect);
+      elem_coords.SetRow(d, elemvect);
+    }
+    auto& be = *parent_fes.GetBE(parent_bdr_e);
+    // create an integration point at the element centroid
+    mfem::IntegrationPoint ip;
+    ip.Init(0);
+    mfem::DenseMatrix dshape(be_dofs.Size(), submesh_.Dimension());
+    // calculate shape function derivatives at the surface element centroid
+    be.CalcDShape(ip, dshape);
+    mfem::DenseMatrix dxdxi_mat(parent_mesh_.Dimension(), submesh_.Dimension());
+    mfem::Mult(elem_coords, dshape, dxdxi_mat);
+    mfem::Vector norm(parent_mesh_.Dimension());
+    mfem::CalcOrtho(dxdxi_mat, norm);
+    double h = parent_mesh.GetElementSize(parent_e, norm);
+
+    // Step 3
+    mfem::Vector quad_val;
+    submesh_thickness->GetValues(submesh_e, quad_val);
+    quad_val[0] = h;
+  }
+
+  // Step 4
+  if (GetLORMesh())
+  {
+    elem_thickness_ = std::make_unique<mfem::QuadratureFunction>(
+      new mfem::QuadratureSpace(GetLORMesh(), 0)
+    );
+    elem_thickness_->SetOwnsSpace(true);
+    for (int lor_e{0}; lor_e < GetLORMesh()->GetNE(); ++lor_e)
+    {
+      auto submesh_e = GetLORMesh()->GetRefinementTransforms()
+        .embeddings[lor_e].parent;
+      mfem::Vector submesh_val;
+      submesh_thickness->GetValues(submesh_e, submesh_val);
+      mfem::Vector lor_val;
+      elem_thickness_->GetValues(lor_e, lor_val);
+      lor_val[0] = submesh_val[0];
+    }
+  }
+  else
+  {
+    elem_thickness_ = std::move(submesh_thickness);
+  }
+}
+
+void MfemMeshData::SetMaterialModulus(mfem::Coefficient& modulus_field)
+{
+  material_modulus_ = std::make_unique<mfem::QuadratureFunction>(
+    new mfem::QuadratureSpace(GetLORMesh() ? GetLORMesh() : &submesh_, 0)
+  );
+  material_modulus_->SetOwnsSpace(true);
+  // TODO: why isn't Project() const?
+  modulus_field.Project(*material_modulus_);
 }
 
 MfemMeshData::UpdateData::UpdateData(
@@ -478,8 +660,7 @@ MfemMeshData::UpdateData::UpdateData(
   mfem::ParGridFunction& submesh_gridfn,
   SubmeshLORTransfer* submesh_lor_xfer,
   const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2,
-  integer num_verts_per_elem
+  const std::set<integer>& attributes_2
 )
 : redecomp_mesh_ { lor_mesh ? 
     redecomp::RedecompMesh(*lor_mesh) :
@@ -487,18 +668,19 @@ MfemMeshData::UpdateData::UpdateData(
   },
   vector_xfer_ { parent_fes, submesh_gridfn, submesh_lor_xfer, redecomp_mesh_ }
 {
+  // set element type based on redecomp mesh
+  SetElementData();
   // updates the connectivity of the tribol surface mesh
-  UpdateConnectivity(attributes_1, attributes_2, num_verts_per_elem);
+  UpdateConnectivity(attributes_1, attributes_2);
 }
 
 void MfemMeshData::UpdateData::UpdateConnectivity(
   const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2,
-  integer num_verts_per_elem
+  const std::set<integer>& attributes_2
 )
 {
-  conn_1_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem);
-  conn_2_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem);
+  conn_1_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem_);
+  conn_2_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem_);
   elem_map_1_.reserve(static_cast<size_t>(redecomp_mesh_.GetNE()));
   elem_map_2_.reserve(static_cast<size_t>(redecomp_mesh_.GetNE()));
   for (int e{}; e < redecomp_mesh_.GetNE(); ++e)
@@ -512,8 +694,8 @@ void MfemMeshData::UpdateData::UpdateConnectivity(
       if (attribute_1 == elem_attrib)
       {
         elem_map_1_.push_back(e);
-        conn_1_.resize(elem_map_1_.size(), num_verts_per_elem);
-        for (int v{}; v < num_verts_per_elem; ++v)
+        conn_1_.resize(elem_map_1_.size(), num_verts_per_elem_);
+        for (int v{}; v < num_verts_per_elem_; ++v)
         {
           conn_1_(elem_map_1_.size() - 1, v) = elem_conn[v];
         }
@@ -528,8 +710,8 @@ void MfemMeshData::UpdateData::UpdateConnectivity(
         if (attribute_2 == elem_attrib)
         {
           elem_map_2_.push_back(e);
-          conn_2_.resize(elem_map_2_.size(), num_verts_per_elem);
-          for (int v{}; v < num_verts_per_elem; ++v)
+          conn_2_.resize(elem_map_2_.size(), num_verts_per_elem_);
+          for (int v{}; v < num_verts_per_elem_; ++v)
           {
             conn_2_(elem_map_2_.size() - 1, v) = elem_conn[v];
           }
@@ -580,6 +762,49 @@ mfem::ParSubMesh MfemMeshData::CreateSubmesh(
   );
 }
 
+void MfemMeshData::UpdateData::SetElementData()
+{
+  if (redecomp_mesh_.GetNE() > 0)
+  {
+    auto element_type = redecomp_mesh_.GetElementType(0);
+
+    switch (element_type) 
+    {
+      case mfem::Element::SEGMENT:
+        elem_type_ = LINEAR_EDGE;
+        break;
+      case mfem::Element::TRIANGLE:
+        elem_type_ = LINEAR_TRIANGLE;
+        break;
+      case mfem::Element::QUADRILATERAL:
+        elem_type_ = LINEAR_QUAD;
+        break;
+      case mfem::Element::TETRAHEDRON:
+        elem_type_ = LINEAR_TET;
+        break;
+      case mfem::Element::HEXAHEDRON:
+        elem_type_ = LINEAR_HEX;
+        break;
+
+      case mfem::Element::POINT:
+        SLIC_ERROR_ROOT("Unsupported element type!");
+        break;
+
+      default:
+        SLIC_ERROR_ROOT("Unknown element type!");
+        break;
+    }
+
+    num_verts_per_elem_ = mfem::Geometry::NumVerts[element_type];
+  }
+  else
+  {
+    // just put something here so Tribol will not give a warning for zero element meshes
+    elem_type_ = LINEAR_EDGE;
+    num_verts_per_elem_ = 2;
+  }
+}
+
 MfemSubmeshData::MfemSubmeshData(
   mfem::ParSubMesh& submesh,
   mfem::ParMesh* lor_mesh,
@@ -621,9 +846,8 @@ void MfemSubmeshData::UpdateMfemSubmeshData(redecomp::RedecompMesh& redecomp_mes
 void MfemSubmeshData::GetSubmeshGap(mfem::Vector& g) const
 {
   g.SetSize(submesh_pressure_.ParFESpace()->GetVSize());
-  mfem::ParGridFunction g_gridfn(submesh_pressure_.ParFESpace(), g);
-  g_gridfn = 0.0;
-  GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g_gridfn);
+  g = 0.0;
+  GetPressureTransfer().RedecompToSubmesh(redecomp_gap_, g);
 }
 
 MfemSubmeshData::UpdateData::UpdateData(
@@ -654,7 +878,8 @@ const MfemSubmeshData::UpdateData& MfemSubmeshData::GetUpdateData() const
 
 MfemJacobianData::MfemJacobianData(
   const MfemMeshData& parent_data,
-  const MfemSubmeshData& submesh_data
+  const MfemSubmeshData& submesh_data,
+  ContactMethod contact_method
 )
 : parent_data_ { parent_data },
   submesh_data_ { submesh_data },
@@ -691,6 +916,45 @@ MfemJacobianData::MfemJacobianData(
   block_offsets_[0] = 0;
   block_offsets_[1] = disp_size;
   block_offsets_[2] = disp_size + lm_size;
+
+  // Rows/columns of pressure/gap DOFs only on the mortar surface need to be
+  // eliminated from the Jacobian when using single mortar. The code in this
+  // block creates a list of the true DOFs only on the mortar surface.
+  if (contact_method == SINGLE_MORTAR)
+  {
+    // Get submesh
+    auto& submesh_fe_space = submesh_data_.GetSubmeshFESpace();
+    auto& submesh = parent_data_.GetSubmesh();
+    // Create marker of attributes for faster querying
+    mfem::Array<int> attr_marker(submesh.attributes.Max());
+    attr_marker = 0;
+    for (auto nonmortar_attr : parent_data_.GetBoundaryAttribs2())
+    {
+      attr_marker[nonmortar_attr - 1] = 1;
+    }
+    // Create marker of dofs only on mortar surface
+    mfem::Array<int> mortar_dof_marker(submesh_fe_space.GetVSize());
+    mortar_dof_marker = 1;
+    for (int e{0}; e < submesh.GetNE(); ++e)
+    {
+      if (attr_marker[submesh_fe_space.GetAttribute(e) - 1])
+      {
+        mfem::Array<int> vdofs;
+        submesh_fe_space.GetElementVDofs(e, vdofs);
+        for (int d{0}; d < vdofs.Size(); ++d)
+        {
+          int k = vdofs[d];
+          if (k < 0) { k = -1 - k; }
+          mortar_dof_marker[k] = 0;
+        }
+      }
+    }
+    // Convert marker of dofs to marker of tdofs
+    mfem::Array<int> mortar_tdof_marker(submesh_fe_space.GetTrueVSize());
+    submesh_fe_space.GetRestrictionMatrix()->BooleanMult(mortar_dof_marker, mortar_tdof_marker);
+    // Convert markers of tdofs only on mortar surface to a list
+    mfem::FiniteElementSpace::MarkerToList(mortar_tdof_marker, mortar_tdof_list_);
+  }
 }
 
 void MfemJacobianData::UpdateJacobianXfer()
@@ -704,7 +968,7 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
 {
   // 0 = displacement DOFs, 1 = lagrange multiplier DOFs
   // (0,0) block is empty (for now using SINGLE_MORTAR with approximate tangent)
-  // (1,1) block is empty
+  // (1,1) block is a diagonal matrix with ones on the diagonal of submesh nodes without a Lagrange multiplier DOF
   // (0,1) and (1,0) are symmetric (for now using SINGLE_MORTAR with approximate tangent)
   const auto& elem_map_1 = parent_data_.GetElemMap1();
   const auto& elem_map_2 = parent_data_.GetElemMap2();
@@ -717,7 +981,8 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   auto elem_J_2_ptr = std::make_unique<axom::Array<mfem::DenseMatrix>>(0, 0);
   const axom::Array<mfem::DenseMatrix>* elem_J_1 = elem_J_1_ptr.get();
   const axom::Array<mfem::DenseMatrix>* elem_J_2 = elem_J_2_ptr.get();
-  if (method_data != nullptr) // this means no meshes on the rank
+  // this means both of the meshes exist
+  if (method_data != nullptr && !elem_map_1.empty() && !elem_map_2.empty())
   {
     mortar_elems = method_data
       ->getBlockJElementIds()[static_cast<int>(BlockSpace::MORTAR)];
@@ -850,21 +1115,56 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
 
   // fill block operator
   auto mpi_comm = parameters_t::getInstance().problem_comm;
-  auto parent_test_fes = submesh_data_.GetSubmeshPressure().ParFESpace();
-  auto parent_trial_fes = parent_data_.GetParentCoords().ParFESpace();
+  auto& submesh_fes = submesh_data_.GetSubmeshFESpace();
+  auto& parent_trial_fes = *parent_data_.GetParentCoords().ParFESpace();
   auto J_full = std::make_unique<mfem::HypreParMatrix>(
-    mpi_comm, parent_test_fes->GetVSize(), 
-    parent_test_fes->GlobalVSize(), parent_trial_fes->GlobalVSize(),
+    mpi_comm, submesh_fes.GetVSize(), 
+    submesh_fes.GlobalVSize(), parent_trial_fes.GlobalVSize(),
     submesh_J.GetI(), submesh_J.GetJ(), submesh_J.GetData(),
-    parent_test_fes->GetDofOffsets(), parent_trial_fes->GetDofOffsets()
+    submesh_fes.GetDofOffsets(), parent_trial_fes.GetDofOffsets()
   );
   auto J_true = std::unique_ptr<mfem::HypreParMatrix>(mfem::RAP(
-    parent_test_fes->Dof_TrueDof_Matrix(),
+    submesh_fes.Dof_TrueDof_Matrix(),
     J_full.get(),
-    parent_trial_fes->Dof_TrueDof_Matrix()
+    parent_trial_fes.Dof_TrueDof_Matrix()
   ));
-  block_J->SetBlock(0, 1, new mfem::TransposeOperator(J_true.get()));
+  
+  // Create ones on diagonal of eliminated mortar tdofs (CSR sparse matrix -> HypreParMatrix)
+  // I vector
+  mfem::Array<int> rows(submesh_fes.GetTrueVSize() + 1);
+  rows = 0;
+  auto mortar_tdofs_ct = 0;
+  for (int i{0}; i < submesh_fes.GetTrueVSize(); ++i)
+  {
+    if (mortar_tdofs_ct < mortar_tdof_list_.Size() && mortar_tdof_list_[mortar_tdofs_ct] == i)
+    {
+      ++mortar_tdofs_ct;
+    }
+    rows[i + 1] = mortar_tdofs_ct;
+  }
+  // J vector
+  mfem::Array<int> mortar_tdofs(mortar_tdof_list_);
+  // data vector
+  mfem::Vector ones(mortar_tdofs_ct);
+  ones = 1.0;
+  mfem::SparseMatrix inactive_sm(
+    rows.GetData(), mortar_tdofs.GetData(), ones.GetData(),
+    submesh_fes.GetTrueVSize(), submesh_fes.GetTrueVSize(),
+    false, false, true
+  );
+  auto inactive_hpm = std::make_unique<mfem::HypreParMatrix>(
+    J_true->GetComm(), J_true->GetGlobalNumRows(), J_true->GetRowStarts(), &inactive_sm
+  );
+  // Have the mfem::HypreParMatrix manage the data pointers
+  rows.GetMemory().SetHostPtrOwner(false);
+  mortar_tdofs.GetMemory().SetHostPtrOwner(false);
+  ones.GetMemory().SetHostPtrOwner(false);
+  inactive_sm.SetDataOwner(false);
+  inactive_hpm->SetOwnerFlags(3, 3, 1);
+
+  block_J->SetBlock(0, 1, J_true->Transpose());
   block_J->SetBlock(1, 0, J_true.release());
+  block_J->SetBlock(1, 1, inactive_hpm.release());
 
   return block_J;
 }

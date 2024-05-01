@@ -12,6 +12,18 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
 - Added coupling scheme tests with null pointer registration.
 - Multi-rank contact API using MFEM data structures.
 - New API calls for MFEM data structures (see `interface/mfem_tribol.hpp`).
+- Updated the penalty stiffness calculation using the `KINEMATIC_CONSTANT` option
+  to follow the `springs-in-serial` stiffness model used for `KINEMATIC_ELEMENT`.
+- API function to support turning on or off the timestep calculation for 
+  the common plane method.
+- Added a `timestep_pen_frac` separate from the `contact_pen_frac` for the purposes 
+  of triggering a timestep vote calculation when the gap is beyond a fixed percentage of the element thickness
+- Added use of `contact_pen_frac` to determine maximum allowable interpen as a fraction
+  of element thickness when using auto contact.
+- Added coupling scheme tests testing auto contact
+- Added computational geometry tests testing the maximum allowable interpen when using auto contact.
+- API function to set the timestep interpenetration factor as percentage of element thickness used
+  to trigger a timestep vote.
 
 ### Changed
 - Return negative timestep vote for non-null meshes with null velocity pointers.
@@ -20,9 +32,23 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
 - Renamed getMfemSparseMatrix() to getJacobianSparseMatrix() and getCSRMatrix()
   to getJacobianCSRMatrix() to avoid confusion with the separate new MFEM
   interface.
+- Logging refactor using SLIC macros. Lots of warnings were demoted to DEBUG level.
+- Changed various computational geometry routines to return a FaceGeomError enum error handling
+- Changed LoggingLevel enum names by appending a TRIBOL prefix to avoid MACRO conflicts
+  with host codes.
+- Removed nullptr errors to allow more function call uniformity for ranks with null meshes. 
+  Also removed any `continue` statements for null meshes.
+- Updated logging in timestep vote by removing logging macro calls inside the interface pairs 
+  loop; don't error out in the presence of a bad dt vote, but issue debug print.
+- Updated logging of face geometry issues to `SLIC_INFO()` and don't error out in presence of
+  geometry issue.
+- Changed `setContactPenFrac()` to `setAutoContactPenScale()`, which better describes when and
+  how this scale factor is used.
   
 ### Fixed
 - Allow null velocity and response pointers for various use cases
+- Tolerancing bug that produced negative timestep estimates in the presence of numerically
+  zero face velocities.
 
 ## [Version 0.1.0] - Release date 2023-04-21
 

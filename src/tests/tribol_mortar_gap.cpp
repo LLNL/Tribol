@@ -149,7 +149,7 @@ public:
       } // end loop over nodes
 
       // register the mesh with tribol
-      int cellType;
+      int cellType = static_cast<int>(tribol::UNDEFINED_ELEMENT);
       switch (this->numNodesPerFace)
       {
          case 4:
@@ -163,6 +163,10 @@ public:
          }
       }
 
+      int dim = 3;
+      tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+      tribol::initialize( dim, problem_comm );
+
       const int mortarMeshId = 0;
       const int nonmortarMeshId = 1;
 
@@ -174,6 +178,14 @@ public:
                             this->numNodesPerFace,
                             conn2, cellType,
                             x2, y2, z2 );
+
+      // get instance of meshes to compute face data required for other calculations
+      tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
+      tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarMeshId );
+      tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarMeshId );
+
+      mortarMesh.computeFaceData(dim);
+      nonmortarMesh.computeFaceData(dim);
 
       real* gaps;
       int size = 2*this->numNodesPerFace;
@@ -208,10 +220,6 @@ public:
          break;
       }
 
-      // get instance of mesh in order to compute nodal gaps
-      tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-      tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarMeshId );
-
       nonmortarMesh.computeNodalNormals( this->dim );
 
       switch (method)
@@ -226,6 +234,8 @@ public:
          SLIC_ERROR("Unsupported contact method");
          break;
       }
+
+      tribol::finalize();
    }
 
 protected:
