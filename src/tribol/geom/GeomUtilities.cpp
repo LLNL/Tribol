@@ -1249,7 +1249,7 @@ FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RES
       }
    }
 
-   // check to make sure numNewPoints > 3 for valid overlap polygons prior
+   // check to make sure numNewPoints >= 3 for valid overlap polygons prior
    // to memory allocation
    if (numNewPoints < 3)
    {
