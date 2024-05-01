@@ -119,8 +119,8 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = *meshManager.at( elem.mesh_id2 );
-   IndexT const * const nonmortarConn = nonmortarMesh.getConnectivityData();
+   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
+   IndexT const * const nonmortarConn = nonmortarMesh.getConnectivity().data();;
 
    // will populate local gaps on nonmortar face on nonmortar mesh data object
    SLIC_ERROR_IF(nonmortarMesh.getNodalFields().m_node_gap.empty(),
@@ -142,11 +142,11 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
       // get global nonmortar node number from connectivity
       RealT nrml_a[elem.dim];
       int glbId = nonmortarConn[ elem.numFaceVert * elem.faceId2 + a ];
-      nrml_a[0] = nonmortarMesh.getNodalNormals(0)[ glbId ];
-      nrml_a[1] = nonmortarMesh.getNodalNormals(1)[ glbId ];
+      nrml_a[0] = nonmortarMesh.getNodalNormals()[0][ glbId ];
+      nrml_a[1] = nonmortarMesh.getNodalNormals()[1][ glbId ];
       if (elem.dim == 3 )
       {
-         nrml_a[2] = nonmortarMesh.getNodalNormals(2)[ glbId ];
+         nrml_a[2] = nonmortarMesh.getNodalNormals()[2][ glbId ];
       }
 
       // sum contributions from both sides
@@ -192,19 +192,19 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
    IndexT const mortarId = cs->getMeshId1();
    IndexT const nonmortarId = cs->getMeshId2();
 
-   MeshData& mortarMesh = *meshManager.at( mortarId );
-   MeshData& nonmortarMesh = *meshManager.at( nonmortarId );
+   MeshData& mortarMesh = meshManager.at( mortarId );
+   MeshData& nonmortarMesh = meshManager.at( nonmortarId );
    IndexT const numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
-   RealT const * const x1 = mortarMesh.getPosition(0);
-   RealT const * const y1 = mortarMesh.getPosition(1); 
-   RealT const * const z1 = mortarMesh.getPosition(2); 
-   IndexT const * const mortarConn= mortarMesh.getConnectivityData();
+   RealT const * const x1 = mortarMesh.getPosition()[0].data();
+   RealT const * const y1 = mortarMesh.getPosition()[1].data(); 
+   RealT const * const z1 = mortarMesh.getPosition()[2].data(); 
+   IndexT const * const mortarConn= mortarMesh.getConnectivity().data();
 
-   RealT const * const x2 = nonmortarMesh.getPosition(0); 
-   RealT const * const y2 = nonmortarMesh.getPosition(1);
-   RealT const * const z2 = nonmortarMesh.getPosition(2);
-   IndexT const * nonmortarConn = nonmortarMesh.getConnectivityData();
+   RealT const * const x2 = nonmortarMesh.getPosition()[0].data(); 
+   RealT const * const y2 = nonmortarMesh.getPosition()[1].data();
+   RealT const * const z2 = nonmortarMesh.getPosition()[2].data();
+   IndexT const * nonmortarConn = nonmortarMesh.getConnectivity().data();
 
    // compute nodal normals (do this outside the element loop)
    // Note, this is guarded against zero element meshes
@@ -329,25 +329,25 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    IndexT const mortarId = cs->getMeshId1();
    IndexT const nonmortarId = cs->getMeshId2();
 
-   MeshData& mortarMesh = *meshManager.at( mortarId );
-   MeshData& nonmortarMesh = *meshManager.at( nonmortarId );
+   MeshData& mortarMesh = meshManager.at( mortarId );
+   MeshData& nonmortarMesh = meshManager.at( nonmortarId );
    IndexT const numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
-   RealT const * const x1 = mortarMesh.getPosition(0);
-   RealT const * const y1 = mortarMesh.getPosition(1); 
-   RealT const * const z1 = mortarMesh.getPosition(2); 
-   RealT * const fx1 = mortarMesh.getResponse(0);
-   RealT * const fy1 = mortarMesh.getResponse(1); 
-   RealT * const fz1 = mortarMesh.getResponse(2); 
-   IndexT const * const mortarConn= mortarMesh.getConnectivityData();
+   RealT const * const x1 = mortarMesh.getPosition()[0].data();
+   RealT const * const y1 = mortarMesh.getPosition()[1].data();
+   RealT const * const z1 = mortarMesh.getPosition()[2].data();
+   RealT * const fx1 = mortarMesh.getResponse()[0].data();
+   RealT * const fy1 = mortarMesh.getResponse()[1].data(); 
+   RealT * const fz1 = mortarMesh.getResponse()[2].data(); 
+   IndexT const * const mortarConn= mortarMesh.getConnectivity().data();;
 
-   RealT const * const x2 = nonmortarMesh.getPosition(0); 
-   RealT const * const y2 = nonmortarMesh.getPosition(1);
-   RealT const * const z2 = nonmortarMesh.getPosition(2);
-   RealT * const fx2 = nonmortarMesh.getResponse(0); 
-   RealT * const fy2 = nonmortarMesh.getResponse(1);
-   RealT * const fz2 = nonmortarMesh.getResponse(2);
-   IndexT const * nonmortarConn = nonmortarMesh.getConnectivityData();
+   RealT const * const x2 = nonmortarMesh.getPosition()[0].data();
+   RealT const * const y2 = nonmortarMesh.getPosition()[1].data();
+   RealT const * const z2 = nonmortarMesh.getPosition()[2].data();
+   RealT * const fx2 = nonmortarMesh.getResponse()[0].data(); 
+   RealT * const fy2 = nonmortarMesh.getResponse()[1].data();
+   RealT * const fz2 = nonmortarMesh.getResponse()[2].data();
+   IndexT const * nonmortarConn = nonmortarMesh.getConnectivity().data();;
 
    // projected coords
    RealT mortarX_bar[ dim * numNodesPerFace ];
@@ -471,11 +471,11 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
             // activity based on the gap AND the pressure solution
 
             RealT forceX = nonmortarMesh.getNodalFields().m_node_pressure[ nonmortarIdB ] * 
-                          nonmortarMesh.getNodalNormals(0)[ nonmortarIdB ];
+                          nonmortarMesh.getNodalNormals()[0][ nonmortarIdB ];
             RealT forceY = nonmortarMesh.getNodalFields().m_node_pressure[ nonmortarIdB ] * 
-                          nonmortarMesh.getNodalNormals(1)[ nonmortarIdB ];
+                          nonmortarMesh.getNodalNormals()[1][ nonmortarIdB ];
             RealT forceZ = nonmortarMesh.getNodalFields().m_node_pressure[ nonmortarIdB ] * 
-                          nonmortarMesh.getNodalNormals(2)[ nonmortarIdB ];
+                          nonmortarMesh.getNodalNormals()[2][ nonmortarIdB ];
 
             // contact nodal force is the interpolated force using mortar 
             // weights n_ab, where "a" is mortar or nonmortar node and "b" is 
@@ -542,8 +542,8 @@ template< >
 void ComputeResidualJacobian< SINGLE_MORTAR, DUAL >( SurfaceContactElem & elem )
 {
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = *meshManager.at( elem.mesh_id2 );
-   IndexT const * const nonmortarConn = nonmortarMesh.getConnectivityData();
+   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
+   IndexT const * const nonmortarConn = nonmortarMesh.getConnectivity().data();
 
    // loop over "a" nodes accumulating sums of mortar/nonmortar 
    // and nonmortar/nonmortar weights
@@ -564,11 +564,11 @@ void ComputeResidualJacobian< SINGLE_MORTAR, DUAL >( SurfaceContactElem & elem )
          // filtering and use the gap AND the pressure solution to determine 
          // contact activity
 
-         nrml_b[0] = nonmortarMesh.getNodalNormals(0)[ glbId ];
-         nrml_b[1] = nonmortarMesh.getNodalNormals(1)[ glbId ];
+         nrml_b[0] = nonmortarMesh.getNodalNormals()[0][ glbId ];
+         nrml_b[1] = nonmortarMesh.getNodalNormals()[1][ glbId ];
          if (elem.dim == 3 )
          {
-            nrml_b[2] = nonmortarMesh.getNodalNormals(2)[ glbId ];
+            nrml_b[2] = nonmortarMesh.getNodalNormals()[2][ glbId ];
          }
 
          // get mortar-nonmortar and nonmortar-nonmortar mortar weights
@@ -618,8 +618,8 @@ template< >
 void ComputeConstraintJacobian< SINGLE_MORTAR, PRIMAL >( SurfaceContactElem & elem )
 {
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = *meshManager.at( elem.mesh_id2 );
-   IndexT const * const nonmortarConn = nonmortarMesh.getConnectivityData();
+   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
+   IndexT const * const nonmortarConn = nonmortarMesh.getConnectivity().data();
 
    // loop over nonmortar nodes for which we are accumulating Jacobian 
    // contributions
@@ -636,11 +636,11 @@ void ComputeConstraintJacobian< SINGLE_MORTAR, PRIMAL >( SurfaceContactElem & el
       // geometric filtering. Contact activity is judged based on gaps AND 
       // the pressure solution.
 
-      nrml_a[0] = nonmortarMesh.getNodalNormals(0)[ glbId ];
-      nrml_a[1] = nonmortarMesh.getNodalNormals(1)[ glbId ];
+      nrml_a[0] = nonmortarMesh.getNodalNormals()[0][ glbId ];
+      nrml_a[1] = nonmortarMesh.getNodalNormals()[1][ glbId ];
       if (elem.dim == 3 )
       {
-         nrml_a[2] = nonmortarMesh.getNodalNormals(2)[ glbId ];
+         nrml_a[2] = nonmortarMesh.getNodalNormals()[2][ glbId ];
       }
 
       // single loop over "b" nodes accumulating sums of 
@@ -732,7 +732,7 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
    IndexT const mortarId = cs->getMeshId1();
    IndexT const nonmortarId = cs->getMeshId2();
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& mortarMesh = *meshManager.at( mortarId );
+   MeshData& mortarMesh = meshManager.at( mortarId );
    IndexT const numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
    ////////////////////////////////

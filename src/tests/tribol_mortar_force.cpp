@@ -188,8 +188,8 @@ public:
 
       // diagnostics
       tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-      tribol::MeshData& mortarMesh = *meshManager.at( mortarMeshId );
-      tribol::MeshData& nonmortarMesh = *meshManager.at( nonmortarMeshId );
+      tribol::MeshData& mortarMesh = meshManager.at( mortarMeshId );
+      tribol::MeshData& nonmortarMesh = meshManager.at( nonmortarMeshId );
 
       // compute the sum of the nodal forces
       RealT fx1Sum = 0.;
@@ -204,13 +204,13 @@ public:
          int nonmortarNodeId = nonmortarMesh.getGlobalNodeId( 0, i );
          int mortarNodeId = mortarMesh.getGlobalNodeId( 0, i );
 
-         fx2Sum += nonmortarMesh.getResponse(0)[ nonmortarNodeId ];
-         fy2Sum += nonmortarMesh.getResponse(1)[ nonmortarNodeId ];
-         fz2Sum += nonmortarMesh.getResponse(2)[ nonmortarNodeId ];
+         fx2Sum += nonmortarMesh.getResponse()[0][ nonmortarNodeId ];
+         fy2Sum += nonmortarMesh.getResponse()[1][ nonmortarNodeId ];
+         fz2Sum += nonmortarMesh.getResponse()[2][ nonmortarNodeId ];
 
-         fx1Sum += mortarMesh.getResponse(0)[ mortarNodeId ];
-         fy1Sum += mortarMesh.getResponse(1)[ mortarNodeId ];
-         fz1Sum += mortarMesh.getResponse(2)[ mortarNodeId ];
+         fx1Sum += mortarMesh.getResponse()[0][ mortarNodeId ];
+         fy1Sum += mortarMesh.getResponse()[1][ mortarNodeId ];
+         fz1Sum += mortarMesh.getResponse()[2][ mortarNodeId ];
       }
 
       // sum nonmortar pressure

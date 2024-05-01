@@ -103,8 +103,8 @@ void checkMeshPenalties( tribol::CouplingScheme const * cs,
    const tribol::IndexT mesh_id2 = cs->getMeshId2();
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mesh1 = *meshManager.at( mesh_id1 );
-   tribol::MeshData& mesh2 = *meshManager.at( mesh_id2 );
+   tribol::MeshData& mesh1 = meshManager.at( mesh_id1 );
+   tribol::MeshData& mesh2 = meshManager.at( mesh_id2 );
 
    if ( std::strcmp( penaltyType, "constant" ) == 0 )
    {
@@ -192,8 +192,8 @@ void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
    tribol::IndexT const meshId2 = cs->getMeshId2();
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mesh1 = *meshManager.at( meshId1 );
-   tribol::MeshData& mesh2 = *meshManager.at( meshId2 );
+   tribol::MeshData& mesh1 = meshManager.at( meshId1 );
+   tribol::MeshData& mesh2 = meshManager.at( meshId2 );
 
    for (int i=0; i<2; ++i) // loop over meshes
    { 
@@ -205,9 +205,9 @@ void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
          for (tribol::IndexT a = 0; a<mesh.numberOfNodesPerElement(); ++a)
          {
             int node_id = mesh.getGlobalNodeId(kf, a);
-            RealT force_mag = tribol::dotProd( mesh.getResponse(0)[ node_id ],
-                                              mesh.getResponse(1)[ node_id ], 
-                                              mesh.getResponse(2)[ node_id ],
+            RealT force_mag = tribol::dotProd( mesh.getResponse()[0][ node_id ],
+                                              mesh.getResponse()[1][ node_id ], 
+                                              mesh.getResponse()[2][ node_id ],
                                               mesh.getElementNormals(0)[ kf ],
                                               mesh.getElementNormals(1)[ kf ],
                                               mesh.getElementNormals(2)[ kf ] );

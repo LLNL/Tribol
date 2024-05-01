@@ -176,7 +176,7 @@ private:
    using ElemSet = slam::PositionSet<IndexT>;
    using RTStride = slam::policies::RuntimeStride<IndexT>;
    using Card = slam::policies::ConstantCardinality<IndexT, RTStride>;
-   using Ind = slam::policies::ArrayIndirection<IndexT, const IndexT>;
+   using Ind = slam::policies::ArrayIndirection<IndexT, IndexT>;
    using ElemVertRelation = slam::StaticRelation<IndexT, IndexT, Card, Ind,ElemSet,VertSet>;
 
 public:
@@ -197,6 +197,7 @@ public:
    {
       // Generate connectivity relation for elements
       using BuilderType = typename ElemVertRelation::RelationBuilder;
+      axom::Array<IndexT> conn;
 
       m_elemVertConnectivity = BuilderType()
           .fromSet( &m_elemSet)
@@ -205,7 +206,7 @@ public:
                    .stride( m_meshData->numberOfNodesPerElement()))
           .indices( typename BuilderType::IndicesSetBuilder()
                     .size( m_elemSet.size() * m_meshData->numberOfNodesPerElement())
-                    .data( m_meshData->getConnectivity().data() ));
+                    .data( &conn ));
    }
 
    /*!
@@ -668,7 +669,6 @@ public:
       , m_boxes2(nullptr)
       , m_offsets(nullptr)
       , m_counts(nullptr)
-      , m_candidates(nullptr)
       , m_contact(nullptr)
       , m_idx(nullptr)
    {}
@@ -686,7 +686,6 @@ public:
          allocator.deallocate(m_boxes2);
          allocator.deallocate(m_offsets);
          allocator.deallocate(m_counts);
-         allocator.deallocate(m_candidates);
          allocator.deallocate(m_contact);
          allocator.deallocate(m_idx);
       }
@@ -718,12 +717,8 @@ public:
       const int NUM_CELL_NODES1 = m_mesh1->numberOfNodesPerElement();
       m_boxes1 = boxAllocator.allocate(N1);
 
-      #ifdef __NVCC__   // Workaround for compiler issues
-      TRIBOL_FORALL(i, N1, 
-      #else
       using EXEC_POL = typename axom::execution_space<ExecSpace>::loop_policy;
       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, N1), [=] (int i)
-      #endif
       {
          BoxType box;
          for(int j=0; j<NUM_CELL_NODES1; ++j)
@@ -752,11 +747,7 @@ public:
       const int N2 = m_mesh2->numberOfElements();
       const int NUM_CELL_NODES2 = m_mesh2->numberOfNodesPerElement();
       m_boxes2 = boxAllocator.allocate(N2);
-      #ifdef __NVCC__   // Workaround for compiler issues
-      TRIBOL_FORALL(i, N2, 
-      #else
       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, N2), [=] (int i)
-      #endif
       {
          BoxType box;
          for(int j=0; j<NUM_CELL_NODES2; ++j)
@@ -840,7 +831,7 @@ public:
       // Query the BVH to find intersections between elements of mesh 1
       // and mesh2.
       {
-         bvh.findBoundingBoxes(m_offsets, m_counts, m_candidates, N2, m_boxes2);
+         bvh.findBoundingBoxes(axom::ArrayView<IndexT>(m_offsets, N2), axom::ArrayView<IndexT>(m_counts, N2), m_candidates, N2, m_boxes2);
       }
 
       #ifdef TRIBOL_DEBUG_BVH
@@ -865,11 +856,7 @@ public:
       using EXEC_POL = typename axom::execution_space<ExecSpace>::loop_policy;
       using REDUCE_POL = typename axom::execution_space<ExecSpace>::reduce_policy;
       RAJA::ReduceSum<REDUCE_POL, int> candTotal(0);
-      #ifdef __NVCC__   // Workaround for compiler issues
-      TRIBOL_FORALL(i, N2, 
-      #else
       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, N2), [=] (int i)
-      #endif
       {
          candTotal += static_cast<int>(m_counts[i]); 
       });
@@ -879,7 +866,7 @@ public:
       {
          return;
       }
-      SLIC_ERROR_IF((m_candidates == nullptr), "Empty candidates array");
+      SLIC_ERROR_IF((m_candidates.empty()), "Empty candidates array");
       auto& rm = umpire::ResourceManager::getInstance();
       umpire::Allocator allocator = rm.getAllocator(m_allocatorId);
       umpire::TypedAllocator<IndexT> idxAllocator{allocator};
@@ -894,11 +881,7 @@ public:
       const ContactMode cmode = m_couplingScheme->getContactMode();
       {
          // FIXME: This kernel is susceptible to thread divergence
-         #ifdef __NVCC__   // Workaround for compiler issues
-         TRIBOL_FORALL(toIdx, N2, 
-         #else
          RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, N2), [=] (int toIdx)
-         #endif
          {
             for (IndexT k=0; k<m_counts[toIdx]; k++) 
             {
@@ -952,11 +935,7 @@ public:
       IndexT* const pidx1 = contactPairs->getPairIndex1Array();
       IndexT* const pidx2 = contactPairs->getPairIndex2Array();
       bool* const contact = contactPairs->getContactArray();
-      #ifdef __NVCC__   // Workaround for compiler issues
-      TRIBOL_FORALL(toIdx, N2, 
-      #else
       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, N2), [=] (int toIdx)
-      #endif
       {
          for (IndexT k=0; k<m_counts[toIdx]; k++) 
          {
@@ -1013,7 +992,7 @@ private:
    BoxType* m_boxes2;
    IndexT* m_offsets;
    IndexT* m_counts;
-   IndexT* m_candidates;
+   axom::Array<IndexT> m_candidates;
    IndexT* m_contact;
    IndexT* m_idx;
 };  // End of BvhSearch class definition

@@ -16,7 +16,7 @@ namespace tribol
 
 struct InterfacePair
 {
-   InterfacePair( int m1, int t1, int i1,
+   TRIBOL_HOST_DEVICE InterfacePair( int m1, int t1, int i1,
                   int m2, int t2, int i2 )
       : pairId(-1)
       , mesh_id1(m1), pairType1(t1), pairIndex1(i1)
@@ -24,7 +24,7 @@ struct InterfacePair
       , isContactCandidate(true) {}
 
    // overload constructor with pair id
-   InterfacePair( int m1, int t1, int i1,
+   TRIBOL_HOST_DEVICE InterfacePair( int m1, int t1, int i1,
                   int m2, int t2, int i2,
                   int id )
       : pairId(id)
@@ -33,7 +33,7 @@ struct InterfacePair
       , isContactCandidate(true) {}
 
    // overload constructor with boolean indicating contact candidacy
-   InterfacePair( int m1, int t1, int i1,
+   TRIBOL_HOST_DEVICE InterfacePair( int m1, int t1, int i1,
                   int m2, int t2, int i2,
                   bool isCandidate, int id )
       : pairId(id)
@@ -42,7 +42,7 @@ struct InterfacePair
       , isContactCandidate(isCandidate) {}
 
    // overload constructor to handle zero input arguments
-   InterfacePair() : pairId(-1)
+   TRIBOL_HOST_DEVICE InterfacePair() : pairId(-1)
                    , mesh_id1(-1), pairType1(-1), pairIndex1(-1)
                    , mesh_id2(-1), pairType2(-1), pairIndex2(-1)
                    , isContactCandidate(true) {}
@@ -75,24 +75,40 @@ class InterfacePairs
 {
 public:
   InterfacePairs()  = default;
-  InterfacePairs(MemorySpace mem_space);
+  InterfacePairs(int allocator_id);
 
   void clear();
-  void reserve(int capacity);
+  void reserve(IndexT capacity);
+  void resize(IndexT new_size);
 
-  TRIBOL_HOST_DEVICE void addInterfacePair( InterfacePair const& pair );
+  void addInterfacePair( InterfacePair const& pair );
+
+  int* getPairIndex1Array()
+  {
+     return m_pairIndex1.data();
+  } 
+
+  int* getPairIndex2Array()
+  {
+     return m_pairIndex2.data();
+  } 
+
+  bool* getContactArray()
+  {
+     return m_isContactCandidate.data();
+  } 
 
   TRIBOL_HOST_DEVICE void updateInterfacePair( InterfacePair const& pair,
                             int const idx );
 
-  void setMeshId( int side, int id )
+  TRIBOL_HOST_DEVICE void setMeshId( int side, int id )
   {
      SLIC_ERROR_IF( side !=1 && side !=2, "mesh side not 1 or 2.");
      if (side == 1) m_mesh_id1 = id;
      if (side == 2) m_mesh_id2 = id;
   }
 
-  void setPairType( int side, int type )
+  TRIBOL_HOST_DEVICE void setPairType( int side, int type )
   {
      SLIC_ERROR_IF( side !=1 && side !=2, "mesh side not 1 or 2.");
      if (side == 1) m_pairType1 = type;
@@ -101,7 +117,7 @@ public:
 
   TRIBOL_HOST_DEVICE InterfacePair getInterfacePair(IndexT idx) const;
 
-  IndexT getNumPairs() const { return m_pairIndex1.size(); }
+  TRIBOL_HOST_DEVICE IndexT getNumPairs() const { return m_pairIndex1.size(); }
 
 private:
 

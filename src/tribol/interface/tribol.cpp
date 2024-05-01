@@ -880,6 +880,7 @@ void setInterfacePairs( IndexT cs_id,
                         IndexT const * const pairType2,
                         IndexT const * const pairIndex2 )
 {
+   MeshManager& meshManager = MeshManager::getInstance();
    // get access to coupling scheme
    auto couplingScheme = CouplingSchemeManager::getInstance().findData(cs_id);
 
@@ -901,7 +902,11 @@ void setInterfacePairs( IndexT cs_id,
       // to interface pair manager. Note, further computational geometry 
       // filtering will be performed on each face-pair indendifying 
       // contact candidates.
-      bool check = geomFilter( pair, mode );
+      const MeshData* pMesh1 = &meshManager.getData(mesh_id1[i]);
+      const MeshData* pMesh2 = &meshManager.getData(mesh_id2[i]);
+      bool check = geomFilter( pairIndex1[i], pairIndex2[i],
+                               mesh_id1[i], mesh_id2[i],
+                               pMesh1, pMesh2, mode );
 
       if (check)
       {

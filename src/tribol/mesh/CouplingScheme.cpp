@@ -899,7 +899,7 @@ void CouplingScheme::performBinning()
       if( !this->hasFixedBinning() ) 
       {
          // create interface pairs based on allocator id
-         m_interfacePairs = std::make_unique<InterfacePairs>(m_mesh1->getMemorySpace());
+         m_interfacePairs = std::make_unique<InterfacePairs>(m_mesh1->getAllocatorId());
 
          InterfacePairFinder finder(this);
          finder.initialize();

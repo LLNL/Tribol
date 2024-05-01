@@ -9,18 +9,25 @@
 namespace tribol
 {
 
-InterfacePairs::InterfacePairs(MemorySpace mem_space)
-: m_allocator_id(getResourceAllocatorID(mem_space)),
+InterfacePairs::InterfacePairs(int allocator_id)
+: m_allocator_id(allocator_id),
   m_pairIndex1(0, 0, m_allocator_id),
   m_pairIndex2(0, 0, m_allocator_id),
   m_isContactCandidate(0, 0, m_allocator_id)
 {}
 
-void InterfacePairs::reserve(int new_size)
+void InterfacePairs::reserve(IndexT capacity)
 {
-   m_pairIndex1.reserve(new_size);
-   m_pairIndex2.reserve(new_size);
-   m_isContactCandidate.reserve(new_size);
+   m_pairIndex1.reserve(capacity);
+   m_pairIndex2.reserve(capacity);
+   m_isContactCandidate.reserve(capacity);
+}
+
+void InterfacePairs::resize(IndexT new_size)
+{
+   m_pairIndex1.resize(new_size);
+   m_pairIndex2.resize(new_size);
+   m_isContactCandidate.resize(new_size);
 }
 
 void InterfacePairs::clear()

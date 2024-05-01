@@ -49,8 +49,8 @@ RealT ComputeGapRatePressure( ContactPlaneManager& cpMgr,
                              int dim, RatePenaltyCalculation rate_calc )
 {
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& m1 = *meshManager.at( mesh_id1 );
-   MeshData& m2 = *meshManager.at( mesh_id2 );
+   MeshData& m1 = meshManager.at( mesh_id1 );
+   MeshData& m2 = meshManager.at( mesh_id2 );
 
    // compute the correct rate_penalty
    RealT rate_penalty = 0.;
@@ -173,27 +173,27 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    const IndexT mesh_id1 = cs->getMeshId1();
    const IndexT mesh_id2 = cs->getMeshId2();
 
-   MeshData& mesh1 = *meshManager.at( mesh_id1 );
-   MeshData& mesh2 = *meshManager.at( mesh_id2 );
+   MeshData& mesh1 = meshManager.at( mesh_id1 );
+   MeshData& mesh2 = meshManager.at( mesh_id2 );
    const IndexT numNodesPerFace = mesh1.numberOfNodesPerElement();
 
-   auto response1_x = mesh1.getResponse(0);
-   auto response1_y = mesh1.getResponse(1);
+   auto response1_x = mesh1.getResponse()[0].data();
+   auto response1_y = mesh1.getResponse()[1].data();
    RealT* response1_z = nullptr;
    if (mesh1.dimension() == 3)
    {
-      response1_z = mesh1.getResponse(2);
+      response1_z = mesh1.getResponse()[2].data();
    }
-   const IndexT * const nodalConnectivity1 = mesh1.getConnectivityData();
+   const IndexT * const nodalConnectivity1 = mesh1.getConnectivity().data();
 
-   auto response2_x = mesh2.getResponse(0);
-   auto response2_y = mesh2.getResponse(1);
+   auto response2_x = mesh2.getResponse()[0].data();
+   auto response2_y = mesh2.getResponse()[1].data();
    RealT* response2_z = nullptr;
    if (mesh2.dimension() == 3)
    {
-      response2_z = mesh2.getResponse(2);
+      response2_z = mesh2.getResponse()[2].data();
    }
-   const IndexT * nodalConnectivity2 = mesh2.getConnectivityData();
+   const IndexT * nodalConnectivity2 = mesh2.getConnectivity().data();
 
 
    ///////////////////////////////

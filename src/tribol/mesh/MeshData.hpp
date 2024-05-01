@@ -101,7 +101,7 @@ public:
 
   InterfaceElementType getElementType() const { return m_element_type; }
 
-  int dimension() const { return m_dim; }
+  TRIBOL_HOST_DEVICE int dimension() const { return m_dim; }
 
   IndexT numberOfNodes() const { return m_num_nodes; };
 
@@ -164,6 +164,11 @@ public:
     return m_connectivity;
   }
 
+  ArrayViewT<const IndexT, 2>& getConnectivity()
+  {
+    return m_connectivity;
+  }
+
   const ArrayT<IndexT, 1>& getSortedSurfaceNodeIds() const 
   { 
     return m_sorted_surface_node_ids;
@@ -179,13 +184,13 @@ public:
     return m_connectivity(element_id, local_node_id);
   }
 
-  const VectorArray<RealT>& getElementNormals() const { return m_n; }
+  TRIBOL_HOST_DEVICE const VectorArray<RealT>& getElementNormals() const { return m_n; }
 
-  const VectorArray<RealT>& getElementCentroids() const { return m_c; }
+  TRIBOL_HOST_DEVICE const VectorArray<RealT>& getElementCentroids() const { return m_c; }
 
-  const ScalarArray<RealT>& getFaceRadius() const { return m_face_radius; }
+  TRIBOL_HOST_DEVICE const ScalarArray<RealT>& getFaceRadius() const { return m_face_radius; }
 
-  const ScalarArray<RealT>& getElementAreas() const { return m_area; }
+  TRIBOL_HOST_DEVICE const ScalarArray<RealT>& getElementAreas() const { return m_area; }
 
 private:
   int getDimFromElementType() const;
