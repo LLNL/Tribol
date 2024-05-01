@@ -835,15 +835,24 @@ FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA,
       PolyReorder( polyXTemp, polyYTemp, numPolyVert );
 
       // check length of segs against tolerance and collapse short segments if necessary
-      // This is where polyX and polyY get allocated.
+      // This is where polyX and polyY get allocated for any overlap that remains with 
+      // > 3 vertices
       int numFinalVert = 0; 
 
       FaceGeomError segErr = CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
                                             lenTol, polyX, polyY, numFinalVert );
 
+      // check for an error in the segment check routine
       if (segErr != 0)
       {
          return segErr;
+      }
+ 
+      // check to see if the overlap was degenerated to have 2 or less vertices.
+      if (numFinalVert<3)
+      {
+         area = 0.0;
+         return NO_FACE_GEOM_ERROR; // punt on degenerated or collapsed overlaps
       }
 
       numPolyVert = numFinalVert;
@@ -1238,6 +1247,14 @@ FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RES
       {
          ++numNewPoints;
       }
+   }
+
+   // check to make sure numNewPoints > 3 for valid overlap polygons prior
+   // to memory allocation
+   if (numNewPoints < 3)
+   {
+      // return and degenerated polygon will be skipped over. 
+      return NO_FACE_GEOM_ERROR;
    }
 
    // allocate space for xnew and ynew. These are the input/output pointers 
