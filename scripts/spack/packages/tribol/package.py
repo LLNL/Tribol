@@ -74,7 +74,8 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
     with when("+redecomp"):
         depends_on("mfem+metis+mpi")
         depends_on("mfem+raja", when="+raja")
-        depends_on("mfem+umpire", when="+umpire")
+        # MFEM is not yet aware of umpire's fmt dependency
+        # depends_on("mfem+umpire", when="+umpire")
         depends_on("axom+raja", when="+raja")
         depends_on("axom+umpire", when="+umpire")
 
