@@ -31,7 +31,7 @@ endif()
 if (DEFINED RAJA_DIR)
   message(STATUS "Setting up external RAJA TPL...")
 
-  include(${RAJA_DIR}/RAJATargets.cmake)
+  include(${RAJA_DIR}/lib/cmake/raja/RAJATargets.cmake)
 
   list(APPEND TPL_DEPS RAJA)
   set(TRIBOL_USE_RAJA TRUE)

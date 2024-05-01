@@ -115,7 +115,7 @@ public:
                   int contact_model,
                   int enforcement_method,
                   int binning_method,
-                  ExecutionMode given_exec_mode );
+                  ExecutionMode given_exec_mode = ExecutionMode::Dynamic );
 
   // Prevent copying
   CouplingScheme(const CouplingScheme& other) = delete;

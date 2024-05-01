@@ -443,7 +443,7 @@ template<int D>
 class GridSearch : public SearchBase
 {
 public:
-   using ImplicitGridType = spin::ImplicitGrid<D,int>;
+   using ImplicitGridType = spin::ImplicitGrid<D,axom::SEQ_EXEC,int>;
    using SpacePoint = typename ImplicitGridType::SpacePoint;
    using SpaceVec = typename ImplicitGridType::SpaceVec;
    using SpatialBoundingBox = typename ImplicitGridType::SpatialBoundingBox;
@@ -669,7 +669,6 @@ public:
       , m_boxes2(nullptr)
       , m_offsets(nullptr)
       , m_counts(nullptr)
-      , m_contact(nullptr)
       , m_idx(nullptr)
    {}
 
@@ -686,7 +685,6 @@ public:
          allocator.deallocate(m_boxes2);
          allocator.deallocate(m_offsets);
          allocator.deallocate(m_counts);
-         allocator.deallocate(m_contact);
          allocator.deallocate(m_idx);
       }
    }
@@ -870,7 +868,7 @@ public:
       auto& rm = umpire::ResourceManager::getInstance();
       umpire::Allocator allocator = rm.getAllocator(m_allocatorId);
       umpire::TypedAllocator<IndexT> idxAllocator{allocator};
-      m_contact = idxAllocator.allocate(ncand);
+      m_contact.reserve(ncand);
       m_idx = idxAllocator.allocate(ncand);
 
       IndexT meshId1 = m_couplingScheme->getMeshId1();
@@ -905,10 +903,9 @@ public:
       // that the filtered pair index is given by m_idx[pairIdx].
       // Note that m_idx is the cumulative sum of m_contact.
       // 
-      RAJA::exclusive_scan<EXEC_POL>(m_contact, 
-                                     m_contact+ncand,
-                                     m_idx, 
-                                     RAJA::operators::plus<IndexT>{});
+      // RAJA::exclusive_scan<EXEC_POL>(m_contact, 
+      //                                m_contact,
+      //                                m_idx);
 
       const IndexT contact_total = m_idx[ncand-1] + 1;
       SLIC_INFO("Found " << contact_total << " interface pairs in contact" );
@@ -993,7 +990,7 @@ private:
    IndexT* m_offsets;
    IndexT* m_counts;
    axom::Array<IndexT> m_candidates;
-   IndexT* m_contact;
+   axom::Array<IndexT> m_contact;
    IndexT* m_idx;
 };  // End of BvhSearch class definition
 

@@ -208,9 +208,9 @@ void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
             RealT force_mag = tribol::dotProd( mesh.getResponse()[0][ node_id ],
                                               mesh.getResponse()[1][ node_id ], 
                                               mesh.getResponse()[2][ node_id ],
-                                              mesh.getElementNormals(0)[ kf ],
-                                              mesh.getElementNormals(1)[ kf ],
-                                              mesh.getElementNormals(2)[ kf ] );
+                                              mesh.getElementNormals()[0][ kf ],
+                                              mesh.getElementNormals()[1][ kf ],
+                                              mesh.getElementNormals()[2][ kf ] );
             if (!isTied) {
                // <= catches interpenetration AND separation
                EXPECT_LE( force_mag, 0. );
