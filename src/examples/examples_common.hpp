@@ -8,7 +8,6 @@
 
 // axom includes
 #include "axom/core.hpp"
-#include "axom/mint.hpp"
 #include "axom/primal.hpp"
 #include "axom/slic.hpp"
 #include "axom/CLI11.hpp"
@@ -25,11 +24,9 @@
 #include <iostream>
 
 // namespace aliases
-namespace mint      = axom::mint;
 namespace primal    = axom::primal;
 namespace slic      = axom::slic;
 namespace utilities = axom::utilities;
-namespace fmt       = axom::fmt;
 namespace CLI       = axom::CLI;
 
 using real = tribol::real;
@@ -55,7 +52,7 @@ enum BLOCK_EX_BCS
 class NumberAtLeast : public CLI::Validator 
 {
   public:
-    NumberAtLeast(int n) : Validator(fmt::format(">={} ",n)) 
+    NumberAtLeast(int n) : Validator(axom::fmt::format(">={} ",n)) 
     {
         func_ = [=](std::string &number_str) {
             int number;
@@ -65,7 +62,7 @@ class NumberAtLeast : public CLI::Validator
             }
             if(number < n)
             {
-                return fmt::format("Number ({}) must be at least {} ", number, n);
+                return axom::fmt::format("Number ({}) must be at least {} ", number, n);
             }
             return std::string();
         };
@@ -199,19 +196,19 @@ void build_mesh_3D( tribol::TestMesh &mesh, Arguments &args, BLOCK_EX_BCS bc_typ
       case PATCH_BCS:
       {
          // setup block 1 homogeneous Dirichlet BCs
-         mesh.setupPatchTestDirichletBCs( res1[0], res1[1], res1[2],
-                                          true, 0, false, 0. );
+         mesh.setupPatchTestDirichletBCs( mesh.mortarMeshId, res1[0], res1[1], res1[2],
+                                          0, false, 0. );
 
          // setup block 2 homogeneous Dirichlet BCs
-         mesh.setupPatchTestDirichletBCs( res2[0], res2[1], res2[2],
-                                          false, mesh.numMortarNodes, false, 0. );
+         mesh.setupPatchTestDirichletBCs( mesh.nonmortarMeshId, res2[0], res2[1], res2[2],
+                                          mesh.numMortarNodes, false, 0. );
 
          // setup DUMMY block 1 pressure dof array
-         mesh.setupPatchTestPressureDofs( res1[0], res1[1], res1[2], 0, false, true );
+         mesh.setupPatchTestPressureDofs( mesh.mortarMeshId, res1[0], res1[1], res1[2], 0, false );
 
          // setup block 2 pressure dofs
-         mesh.setupPatchTestPressureDofs( res2[0], res2[1], res2[2], 
-                                          mesh.numMortarNodes, true, false );
+         mesh.setupPatchTestPressureDofs( mesh.nonmortarMeshId, res2[0], res2[1], res2[2], 
+                                          mesh.numMortarNodes, true );
          break;
       }
       default:
@@ -249,8 +246,8 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
    // mesh class typically used for testing.  //
    //                                         //
    /////////////////////////////////////////////
-   const int cellType = (mesh.dim == 3) ? (int)(tribol::FACE) : 
-                                           (int)(tribol::EDGE);
+   const int cellType = mesh.cellType; 
+                        
    
    // set the mesh ids for block 1 and block 2
    const int block1_id = 0;
@@ -318,15 +315,15 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
         // register nodal gaps and pressures. Note: for single sided mortar 
         // methods these fields are only registered for one mesh. By 
         // convention, this is the second mesh/block.
-        tribol::registerRealNodalField( block2_id, tribol::MORTAR_GAPS, mesh.gaps );
-        tribol::registerRealNodalField( block2_id, tribol::MORTAR_PRESSURES, mesh.pressures );
+        tribol::registerMortarGaps( block2_id, mesh.gaps );
+        tribol::registerMortarPressures( block2_id, mesh.pressures );
      }
      else if (method == tribol::MORTAR_WEIGHTS)
      {
         tribol::allocRealArray( &mesh.gaps, mesh.numTotalNodes, 0. );
         mesh.pressures = nullptr; // not needed
   
-        tribol::registerRealNodalField( block2_id, tribol::MORTAR_GAPS, mesh.gaps );
+        tribol::registerMortarGaps( block2_id, mesh.gaps );
      }
 
    } // end STEP 2 scope

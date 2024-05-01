@@ -19,17 +19,17 @@ void TransferByElements::TransferToSerial(
 {
   // checks to make sure src and dst are valid
   auto redecomp = dynamic_cast<RedecompMesh*>(dst.FESpace()->GetMesh());
-  SLIC_ASSERT_MSG(redecomp != nullptr,
+  SLIC_ERROR_ROOT_IF(redecomp == nullptr,
     "The Mesh of GridFunction dst must be a Redecomp mesh.");
-  SLIC_ASSERT_MSG(src.ParFESpace()->GetParMesh() == &redecomp->getParent(),
-    "The Meshes of the specified GridFunctions are not related in a"
+  SLIC_ERROR_ROOT_IF(src.ParFESpace()->GetParMesh() != &redecomp->getParent(),
+    "The Meshes of the specified GridFunctions are not related in a "
     "Redecomp -> ParMesh relationship.");
-  SLIC_ASSERT_MSG(strcmp(src.FESpace()->FEColl()->Name(), 
-    dst.FESpace()->FEColl()->Name()) == 0, 
-    "The FiniteElementCollections of the specified GridFunctions are not"
+  SLIC_ERROR_ROOT_IF(strcmp(src.FESpace()->FEColl()->Name(), 
+    dst.FESpace()->FEColl()->Name()) != 0, 
+    "The FiniteElementCollections of the specified GridFunctions are not "
     "the same.");
-  SLIC_ASSERT_MSG(src.FESpace()->GetVDim() == dst.FESpace()->GetVDim(),
-    "The vdim of the FiniteElementSpaces of the specified GridFunctions are"
+  SLIC_ERROR_ROOT_IF(src.FESpace()->GetVDim() != dst.FESpace()->GetVDim(),
+    "The vdim of the FiniteElementSpaces of the specified GridFunctions are "
     "not the same.");
 
   // send and receive DOF values from other ranks
@@ -85,16 +85,16 @@ void TransferByElements::TransferToParallel(
 {
   // checks to make sure src and dst are valid
   auto redecomp = dynamic_cast<RedecompMesh*>(src.FESpace()->GetMesh());
-  SLIC_ASSERT_MSG(redecomp != nullptr,
+  SLIC_ERROR_ROOT_IF(redecomp == nullptr,
     "The Mesh of GridFunction dst must be a Redecomp mesh.");
-  SLIC_ASSERT_MSG(dst.ParFESpace()->GetParMesh() == &redecomp->getParent(),
+  SLIC_ERROR_ROOT_IF(dst.ParFESpace()->GetParMesh() != &redecomp->getParent(),
     "The Meshes of the specified GridFunctions are not related in a"
     "Redecomp -> ParMesh relationship.");
-  SLIC_ASSERT_MSG(strcmp(dst.FESpace()->FEColl()->Name(), 
-    src.FESpace()->FEColl()->Name()) == 0, 
+  SLIC_ERROR_ROOT_IF(strcmp(dst.FESpace()->FEColl()->Name(), 
+    src.FESpace()->FEColl()->Name()) != 0, 
     "The FiniteElementCollections of the specified GridFunctions are not"
     "the same.");
-  SLIC_ASSERT_MSG(dst.FESpace()->GetVDim() == src.FESpace()->GetVDim(),
+  SLIC_ERROR_ROOT_IF(dst.FESpace()->GetVDim() != src.FESpace()->GetVDim(),
     "The vdim of the FiniteElementSpaces of the specified GridFunctions are"
     "not the same.");
 

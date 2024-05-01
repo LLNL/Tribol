@@ -95,11 +95,6 @@ public:
                          int * conn2,
                          tribol::ContactMethod method )
    {
-      if (this->numNodesPerFace != 4)
-      {
-         SLIC_ERROR("checkMortarWts: number of nodes per face not equal to 4.");
-      }
-
       // declare arrays to hold stacked coordinates for each
       // face used in initializing a SurfaceContactElem struct
       real xyz1[ this->dim * this->numNodesPerFace ];
@@ -154,8 +149,24 @@ public:
       } // end loop over nodes
 
       // register the mesh with tribol
-      const int cellType = (dim == 3) ? (int)(tribol::FACE) :
-                                        (int)(tribol::EDGE);
+      int cellType = static_cast<int>(tribol::UNDEFINED_ELEMENT);
+      switch (this->numNodesPerFace)
+      {
+         case 4:
+         {
+            cellType = (int)(tribol::LINEAR_QUAD);
+            break;
+         }
+         default:
+         {
+            SLIC_ERROR("checkMortarWts: number of nodes per face not equal to 4.");
+         }
+      }
+
+      int dim = 3;
+      tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+      tribol::initialize( dim, problem_comm );
+
       const int mortarMeshId = 0;
       const int nonmortarMeshId = 1;
 
@@ -168,6 +179,14 @@ public:
                             conn2, cellType,
                             x2, y2, z2 );
 
+      // get instance of meshes to compute face data required for other calculations
+      tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
+      tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarMeshId );
+      tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarMeshId );
+
+      mortarMesh.computeFaceData(dim);
+      nonmortarMesh.computeFaceData(dim);
+
       real* gaps;
       int size = 2*this->numNodesPerFace;
       gaps = new real[ size ];
@@ -177,7 +196,7 @@ public:
          gaps[i] = 0.;
       }
 
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, gaps );
+      tribol::registerMortarGaps( nonmortarMeshId, gaps );
 
       // instantiate SurfaceContactElem struct. Note, this object is instantiated
       // using face 1, face 2, and the set overlap polygon. Note, the mesh ids are set
@@ -201,10 +220,6 @@ public:
          break;
       }
 
-      // get instance of mesh in order to compute nodal gaps
-      tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-      tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarMeshId );
-
       nonmortarMesh.computeNodalNormals( this->dim );
 
       switch (method)
@@ -219,6 +234,8 @@ public:
          SLIC_ERROR("Unsupported contact method");
          break;
       }
+
+      tribol::finalize();
    }
 
 protected:

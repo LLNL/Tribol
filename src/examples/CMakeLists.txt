@@ -10,8 +10,7 @@ set( contact_examples
      )
 
 
-set(example_depends axom tribol cli11 fmt)
-blt_list_append(TO example_depends ELEMENTS cuda IF ENABLE_CUDA )
+set(example_depends tribol)
 
 foreach( example ${contact_examples} )
 
@@ -21,7 +20,7 @@ foreach( example ${contact_examples} )
       NAME       ${example_name}_ex
       SOURCES    ${example}
       OUTPUT_DIR ${EXAMPLE_OUTPUT_DIRECTORY}
-      DEPENDS_ON ${example_depends}
+      DEPENDS_ON ${example_depends} ${tribol_device_depends}
       )
 
 
@@ -54,7 +53,7 @@ if(ENABLE_FORTRAN AND TRIBOL_USE_MPI)
     NAME       simple_tribol_interface_ex
     SOURCES    simple_tribol_interface.F
     OUTPUT_DIR ${EXAMPLE_OUTPUT_DIRECTORY}
-    DEPENDS_ON tribol
+    DEPENDS_ON tribol ${tribol_device_depends}
     )
 
   if (ENABLE_CUDA)
@@ -64,12 +63,13 @@ if(ENABLE_FORTRAN AND TRIBOL_USE_MPI)
 endif()
 
 ## Redecomp examples
-if ( TRIBOL_USE_MPI )
+if ( BUILD_REDECOMP )
 
   set( redecomp_examples
       domain_redecomp.cpp
       multidomain_redecomp.cpp
-      matrix_redecomp.cpp
+      element_matrix_redecomp.cpp
+      sparse_matrix_redecomp.cpp
       )
 
   foreach( example ${redecomp_examples} )
@@ -80,7 +80,34 @@ if ( TRIBOL_USE_MPI )
         NAME       ${example_name}_ex
         SOURCES    ${example}
         OUTPUT_DIR ${EXAMPLE_OUTPUT_DIRECTORY}
-        DEPENDS_ON axom mfem mpi redecomp tribol
+        DEPENDS_ON tribol ${tribol_device_depends}
+        )
+
+    if (ENABLE_CUDA)
+      set_target_properties(${example_name}_ex PROPERTIES CUDA_SEPARABLE_COMPILATION On)
+    endif()
+
+  endforeach()
+  
+endif()
+
+## Tribol + redecomp examples
+if ( BUILD_REDECOMP )
+
+  set( examples
+      mfem_mortar_lm_patch.cpp
+      mfem_common_plane.cpp
+      )
+
+  foreach( example ${examples} )
+    
+    get_filename_component( example_name ${example} NAME_WE )
+
+    blt_add_executable(
+        NAME       ${example_name}_ex
+        SOURCES    ${example}
+        OUTPUT_DIR ${EXAMPLE_OUTPUT_DIRECTORY}
+        DEPENDS_ON tribol ${tribol_device_depends}
         )
 
     if (ENABLE_CUDA)

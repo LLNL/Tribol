@@ -16,6 +16,8 @@
 #cmakedefine TRIBOL_USE_64BIT_INDEXTYPE
 #cmakedefine TRIBOL_DATA_DIR "@TRIBOL_DATA_DIR@"
 #cmakedefine TRIBOL_USE_MPI
+#cmakedefine TRIBOL_USE_UMPIRE
+#cmakedefine BUILD_REDECOMP
 
 #ifdef TRIBOL_USE_MPI
 #include "mpi.h"
@@ -72,17 +74,6 @@ using containerArray = std::vector<T>;
   #define RESTRICT __restrict
   #define RESTRICT_THIS
   #define CONSTEXPRFUNC constexpr  
-#endif
-
-#if TRIBOL_DEBUG
-#define TRIBOL_DEBUG_LOG( msg )                                                \
-  do {                                                                         \
-    std::ostringstream oss;                                                    \
-    oss << msg;                                                                \
-    std::cout << oss.str() << std::endl;                                       \
-  } while( false )
-#else
-#define TRIBOL_DEBUG_LOG( msg ) do{}while(false)
 #endif
 
 #define TRIBOL_UNUSED_VAR AXOM_UNUSED_VAR

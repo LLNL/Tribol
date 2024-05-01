@@ -96,11 +96,16 @@ else()
     endif()
     if(NOT mfem_tpl_lnk_flags EQUAL "")
         string(REGEX REPLACE  "MFEM_EXT_LIBS +=" "" mfem_tpl_lnk_flags "${mfem_tpl_lnk_flags}")
+        string(REPLACE "-ltribol " "" mfem_tpl_lnk_flags "${mfem_tpl_lnk_flags}")
+        string(REPLACE "-lredecomp " "" mfem_tpl_lnk_flags "${mfem_tpl_lnk_flags}")
         string(FIND  "${mfem_tpl_lnk_flags}" "\n" mfem_tpl_lnl_flags_end_pos )
         string(SUBSTRING "${mfem_tpl_lnk_flags}" 0 ${mfem_tpl_lnl_flags_end_pos} mfem_tpl_lnk_flags)
         string(STRIP "${mfem_tpl_lnk_flags}" mfem_tpl_lnk_flags)
     else()
         message(WARNING "No third party library flags found in ${MFEM_CFG_DIR}/config.mk")
+    endif()
+    if(mfem_cfg_file_txt MATCHES "MFEM_USE_CUDA += YES")
+        string(REGEX REPLACE "-Xlinker=-rpath," "-Xlinker -rpath -Xlinker " mfem_tpl_lnk_flags "${mfem_tpl_lnk_flags}")
     endif()
 
     list(APPEND MFEM_LIBRARIES ${mfem_tpl_lnk_flags})
@@ -116,18 +121,22 @@ else()
         list(APPEND MFEM_LIBRARIES ${CUDA_cusolver_LIBRARY})
     endif()
 
-    # Tribol edit
-    if(TRIBOL_USE_MPI)
-        list(APPEND MFEM_LIBRARIES mpi)
-    endif()
-    # End Tribol edit
-
     blt_import_library(
         NAME          mfem
         INCLUDES      ${MFEM_INCLUDE_DIRS}
         LIBRARIES     ${MFEM_LIBRARIES}
         TREAT_INCLUDES_AS_SYSTEM ON
         EXPORTABLE    ON)
+
+    # Tribol edit
+    if(TRIBOL_USE_MPI)
+        # Note: -lmpifort is being added to MFEM's link line w/o a -L<mpi lib dir>
+        list(GET MPI_C_LIBRARIES 0 _first_mpi_lib)
+        get_filename_component(_mpi_lib_dir ${_first_mpi_lib} DIRECTORY)
+        target_link_directories(mfem INTERFACE ${_mpi_lib_dir})
+        target_link_libraries(mfem INTERFACE mpi)
+    endif()
+    # End Tribol edit
 
 endif()
 

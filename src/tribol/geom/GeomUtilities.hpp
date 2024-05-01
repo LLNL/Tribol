@@ -7,6 +7,7 @@
 #define SRC_GEOM_GEOMUTILITIES_HPP_
 
 #include "tribol/types.hpp"
+#include "tribol/common/Parameters.hpp"
 
 namespace tribol
 {
@@ -284,6 +285,8 @@ void PolyCentroid( const real* const RESTRICT x,
  * \param [in,out] numPolyVert number of vertices in intersection polygon
  * \param [in,out] area intersection polygon area
  *
+ * \return 0 if no error, >0 a face geom error
+ *
  * \pre length(xA), length(yA) >= numVertexA
  * \pre length(xB), length(yB) >= numVertexB
  *
@@ -292,16 +295,17 @@ void PolyCentroid( const real* const RESTRICT x,
  *  this memory when necessary.
  *
  */
-void Intersection2DPolygon( const real* const RESTRICT xA, 
-                            const real* const RESTRICT yA, 
-                            const int numVertexA, 
-                            const real* const RESTRICT xB, 
-                            const real* const RESTRICT yB, 
-                            const int numVertexB,
-                            real posTol, real lenTol, 
-                            real* RESTRICT * RESTRICT polyX, 
-                            real* RESTRICT * RESTRICT polyY, 
-                            int& numPolyVert, real& area );
+FaceGeomError Intersection2DPolygon( const real* const RESTRICT xA, 
+                                     const real* const RESTRICT yA, 
+                                     const int numVertexA, 
+                                     const real* const RESTRICT xB, 
+                                     const real* const RESTRICT yB, 
+                                     const int numVertexB,
+                                     real posTol, real lenTol, 
+                                     real* RESTRICT * RESTRICT polyX, 
+                                     real* RESTRICT * RESTRICT polyY, 
+                                     int& numPolyVert, real& area,
+                                     bool orientCheck=true );
                            
 /*!
  *
@@ -451,6 +455,8 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
  * \param [in,out] ynew array of new y coordinates
  * \param [in,out] numNewPoints number of new points
  *
+ * \return 0 if no error, >0 a face geom error
+ *
  * \pre length(x), length(y) >= numPoints
  *
  * /note this routine checks the overlapping polygon segments. We may have two adjacent 
@@ -461,14 +467,14 @@ bool SegmentIntersection2D( const real xA1, const real yA1, const real xB1, cons
  *  xnew and ynew values are set to x and y, respectively, and numNewPoints 
  *  equals numPoints.
  */
-void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y, 
-                    const int numPoints, const real tol, 
-                    real* RESTRICT * RESTRICT xnew, real* RESTRICT * RESTRICT ynew, 
-                    int& numNewPoints );
+FaceGeomError CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y, 
+                             const int numPoints, const real tol, 
+                             real* RESTRICT * RESTRICT xnew, real* RESTRICT * RESTRICT ynew, 
+                             int& numNewPoints );
 
 /*!
  *
- * \brief reorders a set of vertices associated with a star convex polygon in 
+ * \brief reorders a set of unordered vertices associated with a star convex polygon in 
  *        counter clockwise orientation
  *
  * \param [in,out] x array of local x vertex coordinates
@@ -481,6 +487,19 @@ void CheckPolySegs( const real* const RESTRICT x, const real* const RESTRICT y,
  *  polygon and orders the vertices in counter-clockwise orientation.
  */
 void PolyReorder( real* const RESTRICT x, real* const RESTRICT y, const int numPoints );
+
+/*!
+ *
+ * \brief reverses ordering of polygon vertices
+ *
+ * \param [in,out] x array of local x vertex coordinates
+ * \param [in,out] y array of local y vertex coordinates
+ * \param [in] numPoints number of vertices
+ *
+ * \pre length(x), length(y) >= numPoints
+ *
+ */
+void PolyReverse( real* const RESTRICT x, real* const RESTRICT y, const int numPoints );
 
 /*!
  *

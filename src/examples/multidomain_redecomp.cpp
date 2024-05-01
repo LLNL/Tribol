@@ -146,7 +146,7 @@ int main( int argc, char** argv )
   auto pmesh2 = MakePMesh(MPI_COMM_WORLD, mesh_file2, rot2, ref_levels);
 
   // call dimension specific version of RedecompExample
-  SLIC_ASSERT_MSG(pmesh1->Dimension() == pmesh2->Dimension(),
+  SLIC_ERROR_ROOT_IF(pmesh1->Dimension() != pmesh2->Dimension(),
     "Dimension of meshes must match.");
   switch (pmesh1->Dimension())
   {

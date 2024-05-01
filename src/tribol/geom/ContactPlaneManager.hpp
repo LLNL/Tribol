@@ -109,7 +109,7 @@ public:
   * \brief Destructor
   *
   */
-  ~ContactPlaneManager() { if( m_numContactPlanes > 0 ) deleteCPManager(); } ;
+  ~ContactPlaneManager() { if( m_numContactPlanes > 0 ) clearCPManager(); } ;
 
   /*!
   * \brief Returns a reference to the ContactPlaneManager instance.
@@ -235,10 +235,12 @@ public:
                                int const numFaceNodes, real * coords );
 
   /*!
-  * \brief Delete contact plane manager 
+  * \brief clear contact plane manager 
+  *
+  * \note this clears data and deallocates/nullptr for allocatable arrays
   *
   */
-  void deleteCPManager();
+  void clearCPManager();
 
 private:
   /*!

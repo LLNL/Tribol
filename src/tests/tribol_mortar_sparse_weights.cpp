@@ -26,6 +26,11 @@
 // MFEM includes
 #include "mfem.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 // gtest includes
 #include "gtest/gtest.h"
 
@@ -67,15 +72,12 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
 
    EXPECT_EQ( csr_err, 0 );
 
-   if (I == nullptr)
-   {
-      SLIC_ERROR("Mortar wts test, I is null.");
-   }
+   SLIC_ERROR_IF(I==nullptr, "Mortar wts test, I is null.");
 
    // get mortar node id offset to distinguish mortar from nonmortar column contributions
    if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
    {
-      SLIC_INFO("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
+      SLIC_DEBUG("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
       mortarMesh.sortSurfaceNodeIds();
    }
    int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
@@ -223,7 +225,7 @@ TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
    tribol::TestControlParameters parameters; // struct does not hold info right now
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::MORTAR_WEIGHTS, tribol::NULL_ENFORCEMENT, 
-                                         tribol::NULL_MODEL, false, parameters );
+                                         tribol::NULL_MODEL, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -247,6 +249,8 @@ TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
    computeGapsFromSparseWts( couplingScheme, gaps );
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
+
+   tribol::finalize();
 
    delete [] gaps;
 }
@@ -289,7 +293,7 @@ TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
    tribol::TestControlParameters parameters; // struct does not hold info right now
    int test_mesh_simple_update_err = 
       this->m_mesh.simpleTribolSetupAndUpdate( tribol::MORTAR_WEIGHTS, tribol::NULL_ENFORCEMENT, 
-                                               tribol::NULL_MODEL, false, parameters );
+                                               tribol::NULL_MODEL, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_simple_update_err, 0 );
 
@@ -313,6 +317,8 @@ TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
    computeGapsFromSparseWts( couplingScheme, gaps );
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
+
+   tribol::finalize();
 
    delete [] gaps;
 }
@@ -356,7 +362,7 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_mortar_fine )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::MORTAR_WEIGHTS, tribol::NULL_ENFORCEMENT, 
-                                         tribol::NULL_MODEL, false, parameters );
+                                         tribol::NULL_MODEL, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -380,6 +386,8 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_mortar_fine )
    computeGapsFromSparseWts( couplingScheme, gaps );
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
+
+   tribol::finalize();
 
    delete [] gaps;
 }
@@ -423,7 +431,7 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_nonmortar_fine )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::MORTAR_WEIGHTS, tribol::NULL_ENFORCEMENT, 
-                                         tribol::NULL_MODEL, false, parameters );
+                                         tribol::NULL_MODEL, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -448,6 +456,8 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_nonmortar_fine )
 
    compareGaps( couplingScheme, gaps, 1.E-8 );
 
+   tribol::finalize();
+
    delete [] gaps;
 }
 
@@ -456,6 +466,10 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
+#endif
 
   axom::slic::SimpleLogger logger;                // create & initialize logger,
   tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable

@@ -35,7 +35,7 @@ MultiRedecomp::MultiRedecomp(
           );
           break;
         default:
-          SLIC_ASSERT_MSG(false, "Only recursive coordinate bisection (RCB) decompositions "
+          SLIC_ERROR_ROOT("Only recursive coordinate bisection (RCB) decompositions "
             "are currently supported.");
       }
       break;
@@ -49,12 +49,12 @@ MultiRedecomp::MultiRedecomp(
           );
           break;
         default:
-          SLIC_ASSERT_MSG(false, "Only recursive coordinate bisection (RCB) decompositions "
+          SLIC_ERROR_ROOT("Only recursive coordinate bisection (RCB) decompositions "
             "are currently supported.");
       }
       break;
     default:
-      SLIC_ASSERT_MSG(false, "Only 2D and 3D meshes are supported.");
+      SLIC_ERROR_ROOT("Only 2D and 3D meshes are supported.");
   }
 }
 
@@ -73,12 +73,12 @@ std::vector<std::unique_ptr<RedecompMesh>> MultiRedecomp::createRedecompMeshes(
   std::vector<std::unique_ptr<RedecompMesh>> redecomps;
 
   // check the validity of parents
-  SLIC_ASSERT_MSG(!parents.empty(), "At least one mesh in parents required.");
+  SLIC_ERROR_ROOT_IF(parents.empty(), "At least one mesh in parents required.");
   for (size_t m{1}; m < parents.size(); ++m)
   {
-    SLIC_ASSERT_MSG(parents[m-1]->SpaceDimension() == parents[m]->SpaceDimension(), 
+    SLIC_ERROR_ROOT_IF(parents[m-1]->SpaceDimension() != parents[m]->SpaceDimension(), 
       "SpaceDimension must match on all parent meshes.");
-    SLIC_ASSERT_MSG(parents[m-1]->GetComm() == parents[m]->GetComm(),
+    SLIC_ERROR_ROOT_IF(parents[m-1]->GetComm() != parents[m]->GetComm(),
       "MPI_Comm must match on all parent meshes.");
   }
 
@@ -90,27 +90,27 @@ std::vector<std::unique_ptr<RedecompMesh>> MultiRedecomp::createRedecompMeshes(
     case 2:
     {
       auto partitioner2d = dynamic_cast<const Partitioner2D*>(partitioner_.get());
-      SLIC_ASSERT_MSG(partitioner2d != nullptr, "Partitioner must be Partitioner2D.");
+      SLIC_ERROR_ROOT_IF(partitioner2d == nullptr, "Partitioner must be Partitioner2D.");
       auto partition_elems2d = dynamic_cast<const PartitionElements2D*>(
         partitioner2d->getPartitionEntity()
       );
-      SLIC_ASSERT_MSG(partition_elems2d != nullptr, "Redecomp requires the PartitionEntity "
+      SLIC_ERROR_ROOT_IF(partition_elems2d == nullptr, "Redecomp requires the PartitionEntity "
         "to be PartitionElements.");
       break;
     }
     case 3:
     {
       auto partitioner3d = dynamic_cast<const Partitioner3D*>(partitioner_.get());
-      SLIC_ASSERT_MSG(partitioner3d != nullptr, "Partitioner must be Partitioner3D.");
+      SLIC_ERROR_ROOT_IF(partitioner3d == nullptr, "Partitioner must be Partitioner3D.");
       auto partition_elems3d = dynamic_cast<const PartitionElements3D*>(
         partitioner3d->getPartitionEntity()
       );
-      SLIC_ASSERT_MSG(partition_elems3d != nullptr, "Redecomp requires the PartitionEntity "
+      SLIC_ERROR_ROOT_IF(partition_elems3d == nullptr, "Redecomp requires the PartitionEntity "
         "to be PartitionElements.");
       break;
     }
     default:
-      SLIC_ASSERT_MSG(false, "Only 2D and 3D meshes are supported.");
+      SLIC_ERROR_ROOT("Only 2D and 3D meshes are supported.");
   }
 
   // Compute the number of parts the redecomp mesh should have and the size of

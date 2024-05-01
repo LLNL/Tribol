@@ -46,7 +46,7 @@ void compareGaps( tribol::CouplingScheme const * cs,
    {
       tribol::InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -151,7 +151,7 @@ void checkPressures( tribol::CouplingScheme const * cs,
    {
       tribol::InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -200,9 +200,9 @@ void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
       // loop over faces and nodes
       for (tribol::IndexType kf = 0; kf < mesh.m_numCells; ++kf)
       {
-         for (tribol::IndexType a = 0; a<mesh.m_numCellNodes; ++a)
+         for (tribol::IndexType a = 0; a<mesh.m_numNodesPerCell; ++a)
          {
-            int idx = mesh.m_numCellNodes * kf + a;
+            int idx = mesh.m_numNodesPerCell * kf + a;
             int node_id = mesh.m_connectivity[ idx ];
             real force_mag = tribol::dotProd( mesh.m_forceX[ node_id ],
                                               mesh.m_forceY[ node_id ], 
@@ -310,7 +310,7 @@ TEST_F( CommonPlaneTest, constant_rate_penetration )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -340,6 +340,8 @@ TEST_F( CommonPlaneTest, constant_rate_penetration )
    compareGaps( couplingScheme, rate_gap, 1.E-8, "rate_penetration" );
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions are not separated
+
+   tribol::finalize();
 
 } // end test 'rate_penetration'
 
@@ -405,7 +407,7 @@ TEST_F( CommonPlaneTest, constant_rate_separation )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -435,6 +437,8 @@ TEST_F( CommonPlaneTest, constant_rate_separation )
    compareGaps( couplingScheme, rate_gap, 1.E-8, "rate_separation" );
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions aren't separated
+
+   tribol::finalize();
 
 } // end test 'rate_separation'
 
@@ -499,7 +503,7 @@ TEST_F( CommonPlaneTest, no_gap_constant_rate_penetration )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -527,6 +531,8 @@ TEST_F( CommonPlaneTest, no_gap_constant_rate_penetration )
    real rate_gap = velZ2 - velZ1;
    real pressure = (gap < 0. && rate_gap < 0.) ? penalty * rate_gap : 0.;
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
+
+   tribol::finalize();
 }
 
 TEST_F( CommonPlaneTest, percent_rate_penetration )
@@ -590,7 +596,7 @@ TEST_F( CommonPlaneTest, percent_rate_penetration )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -616,10 +622,13 @@ TEST_F( CommonPlaneTest, percent_rate_penetration )
    // check the gaps, pressures, and force sense
    //real gap = z_min2 - z_max1;
    real rate_gap = velZ2 - velZ1;
-   real pressure = (rate_gap < 0.) ? penalty * rate_gap : 0.;
+   real stiffness = tribol::ComputePenaltyStiffnessPerArea( penalty, penalty );
+   real pressure = (rate_gap < 0.) ? stiffness * rate_gap : 0.;
    compareGaps( couplingScheme, rate_gap, 1.E-8, "rate_penetration" );
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions are not separated
+
+   tribol::finalize();
 
 } // end test 'rate_penetration'
 
@@ -686,7 +695,7 @@ TEST_F( CommonPlaneTest, percent_rate_separation )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -716,6 +725,8 @@ TEST_F( CommonPlaneTest, percent_rate_separation )
    compareGaps( couplingScheme, rate_gap, 1.E-8, "rate_separation" );
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
    checkForceSense( couplingScheme ); // note: the kinematic and rate contributions aren't separated
+
+   tribol::finalize();
 
 } // end test 'rate_separation'
 
@@ -780,7 +791,7 @@ TEST_F( CommonPlaneTest, no_gap_percent_rate_penetration )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::FRICTIONLESS, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
@@ -808,6 +819,8 @@ TEST_F( CommonPlaneTest, no_gap_percent_rate_penetration )
    real rate_gap = velZ2 - velZ1;
    real pressure = (gap < 0. && rate_gap < 0.) ? penalty * rate_gap : 0.;
    checkPressures( couplingScheme, pressure, 1.E-8, "rate" );
+
+   tribol::finalize();
 }
 
 int main(int argc, char* argv[])

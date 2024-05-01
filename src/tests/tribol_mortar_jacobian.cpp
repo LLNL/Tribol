@@ -73,10 +73,6 @@ public:
       // nodes encompassing the two meshes that will be registered 
       // with tribol, and that the conn1 and conn2 connectivity arrays 
       // reflect a global, contiguous index space
-      if (this->numNodesPerFace != 4)
-      {
-         SLIC_ERROR("setupTribol: number of nodes per face not equal to 4.");
-      }
 
       // grab coordinate data
       real * x = this->x;
@@ -84,8 +80,20 @@ public:
       real * z = this->z;
 
       // register the mesh with tribol
-      const int cellType = (dim == 3) ? (int)(tribol::FACE) : 
-                                        (int)(tribol::EDGE);
+      int cellType = static_cast<int>(tribol::UNDEFINED_ELEMENT);
+      switch (this->numNodesPerFace)
+      {
+         case 4:
+         {
+            cellType = (int)(tribol::LINEAR_QUAD);
+            break;
+         }
+         default:
+         {
+            SLIC_ERROR("setupTribol: number of nodes per face not equal to 4.");
+         }
+      }
+
       const int mortarMeshId = 0;
       const int nonmortarMeshId = 1;
 
@@ -158,8 +166,8 @@ public:
       }
 
       // register nodal gaps and pressures
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, gaps );
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_PRESSURES, pressures );
+      tribol::registerMortarGaps( nonmortarMeshId, gaps );
+      tribol::registerMortarPressures( nonmortarMeshId, pressures );
 
       // register coupling scheme
       const int csIndex = 0;
@@ -167,7 +175,7 @@ public:
                                       mortarMeshId,
                                       nonmortarMeshId,
                                       tribol::SURFACE_TO_SURFACE,
-                                      tribol::AUTO,
+                                      tribol::NO_CASE,
                                       method,
                                       tribol::FRICTIONLESS,
                                       tribol::LAGRANGE_MULTIPLIER );
@@ -179,7 +187,7 @@ public:
       int tribol_update_err = tribol::update( 1, 1., dt );
 
       EXPECT_EQ( tribol_update_err, 0 );
-
+ 
    }
 
 protected:
@@ -304,7 +312,7 @@ TEST_F( MortarJacTest, jac_input_test )
 
    // check Jacobian sparse matrix
    mfem::SparseMatrix * jac { nullptr };
-   int sparseMatErr = tribol::getMfemSparseMatrix( &jac, 0 );
+   int sparseMatErr = tribol::getJacobianSparseMatrix( &jac, 0 );
 
    EXPECT_EQ( sparseMatErr, 0 );
 
@@ -340,6 +348,8 @@ TEST_F( MortarJacTest, jac_input_test )
       delete [] nonmortarMesh.m_nodalFields.m_node_pressure; 
       nonmortarMesh.m_nodalFields.m_node_pressure = nullptr;
    }
+
+   tribol::finalize();
 
    // delete the jacobian matrix
    delete jac;
@@ -400,7 +410,7 @@ TEST_F( MortarJacTest, update_jac_test )
 
    // check Jacobian sparse matrix
    mfem::SparseMatrix * jac { nullptr };
-   int sparseMatErr = tribol::getMfemSparseMatrix( &jac, 0 );
+   int sparseMatErr = tribol::getJacobianSparseMatrix( &jac, 0 );
 
    EXPECT_EQ( sparseMatErr, 0 );
 
@@ -464,7 +474,6 @@ int main(int argc, char* argv[])
   ::testing::InitGoogleTest(&argc, argv);
 
   axom::slic::SimpleLogger logger;                // create & initialize logger,
-  tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
 
   result = RUN_ALL_TESTS();
 

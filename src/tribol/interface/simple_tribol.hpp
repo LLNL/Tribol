@@ -43,6 +43,7 @@ int Finalize(bool finalize_slic = true);
  * \brief Simple coupling setup
  *
  * \param [in] dim dimension of problem
+ * \param [in] cell_type type of contact surface cell
  * \param [in] contact_method method name
  * \param [in] mortar_numCells the number of mortar surface cells
  * \param [in] mortar_lengthNodalData the length of the mortar nodal data arrays
@@ -61,6 +62,7 @@ int Finalize(bool finalize_slic = true);
  * \param [in] mortar_pressures (optional) pointer to nodal mortar pressures scalar field
  */
 void SimpleCouplingSetup( const int dim, 
+                          int cell_type,
                           int contact_method,           
                           int mortar_numCells,
                           int mortar_lengthNodalData,

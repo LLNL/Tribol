@@ -18,6 +18,7 @@ set( redecomp_headers
      partition/RCB.hpp
      transfer/GridFnTransfer.hpp
      transfer/MatrixTransfer.hpp
+     transfer/SparseMatrixTransfer.hpp
      transfer/TransferByElements.hpp
      transfer/TransferByNodes.hpp
      utils/ArrayUtility.hpp
@@ -37,21 +38,22 @@ set( redecomp_sources
      partition/PartitionMethod.cpp
      partition/RCB.cpp
      transfer/MatrixTransfer.cpp
+     transfer/SparseMatrixTransfer.cpp
      transfer/TransferByElements.cpp
      transfer/TransferByNodes.cpp
      utils/MPIUtility.cpp
      )
 
 ## setup the dependency list for redecomp
-set(redecomp_depends axom mfem)
-blt_list_append(TO redecomp_depends ELEMENTS mpi IF TRIBOL_USE_MPI )
+set(redecomp_depends axom::primal mfem)
+blt_list_append(TO redecomp_depends ELEMENTS blt::mpi IF TRIBOL_USE_MPI )
 
 ## create the library
 blt_add_library(
     NAME redecomp
     SOURCES ${redecomp_sources}
     HEADERS ${redecomp_headers}
-    DEPENDS_ON ${redecomp_depends}
+    DEPENDS_ON ${redecomp_depends} ${tribol_device_depends}
     FOLDER redecomp
     )
 

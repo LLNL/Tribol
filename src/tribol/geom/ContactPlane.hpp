@@ -30,15 +30,20 @@ class ContactPlaneManager;
  * \param [in] pair interface pair containing pair related indices
  * \param [in] cMethod the Tribol contact method
  * \param [in] cCase the Tribol contact Case
+ * \param [in] isInteracting true if pair passes all computational geometry filters 
  *
- * \return true if face-pair are interacting
+ * \note isInteracting is true indicating a contact candidate for intersecting or 
+ *       nearly intersecting face-pairs with a positive area of overlap
+ *
+ * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
  *
  * \note will need the contact case for specialized geometry checks
  *
  */
-bool CheckInterfacePair( InterfacePair& pair,
-                         ContactMethod const cMethod,
-                         ContactCase const cCase );
+FaceGeomError CheckInterfacePair( InterfacePair& pair,
+                                  ContactMethod const cMethod,
+                                  ContactCase const cCase,
+                                  bool& isInteracting );
 
 /*!
  *
@@ -124,6 +129,25 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
  */
 bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2, 
                      int eId1, int eId2, real tol, bool& allVerts );
+
+/*!
+ *
+ * \brief checks the contact plane gap against the maximum allowable interpenetration 
+ *
+ * \param [in] meshDat1 MeshData object for mesh 1
+ * \param [in] meshDat2 MeshData object for mesh 2
+ * \param [in] faceId1 face id for face belonging to mesh 1
+ * \param [in] faceId2 face id for face belonging to mesh 2
+ * \param [in] gap the contact plane gap
+ *
+ * \return true if the gap exceeds the max allowable interpenetration
+ *
+ * \pre this function is for use with ContactCase = AUTO to preclude face-pairs on opposite
+ *      sides of thin structures/plates
+ *
+ */
+bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
+                             const int faceId1, const int faceId2, const real gap );
 
 //-----------------------------------------------------------------------------
 // Contact Plane base class
@@ -220,8 +244,12 @@ public:
 
    /*!
     * \brief Compute the contact plane integral gap expression
+    *
+    * \param [in,out] interpen true if the two faces interpenetrate
+    *
+    * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
-   virtual bool computeLocalInterpenOverlap() = 0 ;
+   virtual FaceGeomError computeLocalInterpenOverlap(bool& interpen) = 0 ;
    
    /*!
     * \brief Copy the contact plane object
@@ -558,8 +586,12 @@ public:
     * \brief Computes the polygonal overlap between the portion of two  
     *        faces lying on the contact plane that are interpenetrating the contact 
     *        plane.
+    *
+    * \param [in,out] interpen true if the two faces interpenetrate
+    *
+    * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
-   virtual bool computeLocalInterpenOverlap();
+   virtual FaceGeomError computeLocalInterpenOverlap(bool& interpen);
    
    /*!
     * \brief Copies one contact plane object's data to another
@@ -659,8 +691,12 @@ public:
     * \brief Computes the polygonal overlap between the portion of two  
     *        faces lying on the contact plane that are interpenetrating the contact 
     *        plane.
+    *
+    * \param [in,out] interpen true if the two faces interpenetrate
+    *
+    * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
-   virtual bool computeLocalInterpenOverlap();
+   virtual FaceGeomError computeLocalInterpenOverlap(bool& interpen);
    
    /*!
     * \brief Copies one contact plane object's data to another
@@ -688,15 +724,15 @@ public:
  * \brief Checks if face-pair (3D) candidate is actual local contact interaction.
  *
  * \param [in] pair interface pair containing pair related indices
- * \param [in] method contact method
  * \param [in] fullOverlap True if full overlap calculation is used, false if interpenetration calculation is used
+ * \param [in,out] cp contact plane object to be populated
  *
- * \return 3D contact plane object with boolean indicating if face-pair form a local contact interaction
+ * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
  * 
  */
-ContactPlane3D CheckFacePair( InterfacePair& pair, 
-                              ContactMethod const method,
-                              bool fullOverlap );
+FaceGeomError CheckFacePair( InterfacePair& pair, 
+                             bool fullOverlap,
+                             ContactPlane3D& cp );
 
 /*!
  * \brief Checks if face-pair (3D) candidate is aligned and actual local contact interaction.
@@ -712,15 +748,15 @@ ContactPlane3D CheckAlignedFacePair( InterfacePair& pair );
  * \brief Checks if 2D edge-pair candidate is actual local contact interaction.
  *
  * \param [in] pair interface pair containing pair related indices
- * \param [in] method contact method
  * \param [in] fullOverlap True if full overlap calculation is used, false if interpenetration calculation is used
+ * \param [in,out] cp contact plane object to be populated
  *
- * \return 2D contact plane object with boolean indicating if edge-pair form a local contact interaction
+ * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
  * 
  */
-ContactPlane2D CheckEdgePair( InterfacePair& pair, 
-                              ContactMethod const method,
-                              bool fullOverlap );
+FaceGeomError CheckEdgePair( InterfacePair& pair, 
+                             bool fullOverlap,
+                             ContactPlane2D& cp );
 
 
 }

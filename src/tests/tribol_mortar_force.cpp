@@ -74,19 +74,26 @@ public:
                            int * conn2,
                            tribol::ContactMethod method )
    {
-      if (this->numNodesPerFace != 4)
-      {
-         SLIC_ERROR("checkMortarForces: number of nodes per face not equal to 4.");
-      }
-
       // grab coordinate data
       real * x = this->x;
       real * y = this->y;
       real * z = this->z;
 
       // register the mesh with tribol
-      const int cellType = (dim == 3) ? (int)(tribol::FACE) : 
-                                        (int)(tribol::EDGE);
+      int cellType = static_cast<int>(tribol::UNDEFINED_ELEMENT);
+      switch (this->numNodesPerFace)
+      {
+         case 4:
+         {
+            cellType = (int)(tribol::LINEAR_QUAD);      
+            break;
+         }
+         default:
+         {
+            SLIC_ERROR("checkMortarForces: number of nodes per face not equal to 4.");
+         } 
+      }
+
       const int mortarMeshId = 0;
       const int nonmortarMeshId = 1;
 
@@ -153,8 +160,8 @@ public:
       }
 
       // register nodal gaps and pressure arrays
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_GAPS, gaps );
-      tribol::registerRealNodalField( nonmortarMeshId, tribol::MORTAR_PRESSURES, pressures );
+      tribol::registerMortarGaps( nonmortarMeshId, gaps );
+      tribol::registerMortarPressures( nonmortarMeshId, pressures );
 
       // register coupling scheme
       const int csIndex = 0;
@@ -162,7 +169,7 @@ public:
                                       mortarMeshId,
                                       nonmortarMeshId,
                                       tribol::SURFACE_TO_SURFACE,
-                                      tribol::AUTO,
+                                      tribol::NO_CASE,
                                       method,
                                       tribol::FRICTIONLESS,
                                       tribol::LAGRANGE_MULTIPLIER );
@@ -713,7 +720,6 @@ int main(int argc, char* argv[])
   ::testing::InitGoogleTest(&argc, argv);
 
   axom::slic::SimpleLogger logger;                // create & initialize logger,
-  tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
 
   result = RUN_ALL_TESTS();
 

@@ -19,7 +19,6 @@
 #include "tribol/integ/FE.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 #include "tribol/utils/Math.hpp"
-#include "tribol/common/logger.hpp"
 
 // Axom includes
 #include "axom/slic.hpp"
@@ -95,12 +94,8 @@ void ComputeMortarWeights( SurfaceContactElem & elem )
             LinIsoQuadShapeFunc( xi[0], xi[1], a, phiNonmortarA );
             LinIsoQuadShapeFunc( xi[0], xi[1], b, phiNonmortarB );
 
-            #ifdef TRIBOL_DEBUG_LOG
-               if (nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts)
-               {
-                  TRIBOL_ERROR("ComputeMortarWts: integer ids for weights exceed elem.numWts");
-               }
-            #endif /* TRIBOL_DEBUG_LOG */
+            SLIC_ERROR_IF(nonmortarNonmortarId > elem.numWts || mortarNonmortarId > elem.numWts,
+                          "ComputeMortarWts: integer ids for weights exceed elem.numWts");
 
             // compute nonmortar/nonmortar mortar weight
             elem.mortarWts[ nonmortarNonmortarId ]  += integ.wts[ip] * phiNonmortarA * phiNonmortarB;
@@ -123,12 +118,7 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 {
    // check to make sure mortar weights have been computed locally 
    // for the SurfaceContactElem object
-   #ifdef TRIBOL_DEBUG_LOG
-      if (elem.mortarWts == nullptr)
-      {
-         TRIBOL_ERROR("ComputeNodalGap< SINGLE_MORTAR >: compute local weights on input struct first.");
-      }
-   #endif /* TRIBOL_DEBUG_LOG */
+   SLIC_ERROR_IF(elem.mortarWts==nullptr, "ComputeNodalGap< SINGLE_MORTAR >: compute local weights on input struct first.");
 
    // get mesh instance to store gaps on mesh data object
    MeshManager& meshManager = MeshManager::getInstance();
@@ -136,15 +126,11 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
    IndexType const * const nonmortarConn = nonmortarMesh.m_connectivity;
 
    // will populate local gaps on nonmortar face on nonmortar mesh data object
-   if (nonmortarMesh.m_nodalFields.m_node_gap == nullptr)
-   {
-      SLIC_ERROR("ComputeNodalGap< SINGLE_MORTAR >: allocate gaps on mesh data object."); 
-   }
+   SLIC_ERROR_IF(nonmortarMesh.m_nodalFields.m_node_gap == nullptr,
+                 "ComputeNodalGap< SINGLE_MORTAR >: allocate gaps on mesh data object."); 
 
-   if (nonmortarMesh.m_node_nX == nullptr || nonmortarMesh.m_node_nY == nullptr)
-   {
-      SLIC_ERROR("ComputeNodalGap< SINGLE_MORTAR >: allocate and compute nodal normals on mesh data object.");   
-   }
+   SLIC_ERROR_IF(nonmortarMesh.m_node_nX == nullptr || nonmortarMesh.m_node_nY == nullptr,
+                 "ComputeNodalGap< SINGLE_MORTAR >: allocate and compute nodal normals on mesh data object.");   
 
    // compute gap contributions associated with face 2 on the SurfaceContactElem 
    // (i.e. nonmortar surface)
@@ -211,6 +197,7 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+   IndexType const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    // assume same element type per surface for cell node count
    IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
@@ -226,6 +213,7 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
    IndexType const * nonmortarConn = nonmortarMesh.m_connectivity;
 
    // compute nodal normals (do this outside the element loop)
+   // Note, this is guarded against zero element meshes
    nonmortarMesh.computeNodalNormals( dim );
 
    // declare local variables to hold face nodal coordinates
@@ -239,15 +227,15 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
    real nonmortarX_bar[ size ];
    real* overlapX;
 
-   ////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////
    // compute nonmortar gaps to determine active set of contact dofs //
-   ////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////
    int cpID = 0;
    for (IndexType kp = 0; kp < numPairs; ++kp)
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -349,6 +337,7 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
 
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
    MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+   IndexType const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    // assume same element type on each surface for number of cell nodes
    IndexType const numNodesPerFace = mortarMesh.m_numCellNodes;
@@ -374,32 +363,37 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    real nonmortarX_bar[ dim * numNodesPerFace ];
    real* overlapX; // [dim * cpManager.m_numPolyVert[cpID]];  
 
-   ////////////////////////////////
-   //                            //
-   // compute single mortar gaps //
-   //                            //
-   ////////////////////////////////
+   ///////////////////////////////////////////////////////
+   //                                                   //
+   //            compute single mortar gaps             //
+   //                                                   //
+   // Note, this routine is guarded against null meshes //
+   ///////////////////////////////////////////////////////
    ComputeSingleMortarGaps( cs );
 
    int numTotalNodes = cs->getNumTotalNodes();
    int numRows = dim * numTotalNodes + numTotalNodes;
    const EnforcementOptions& enforcement_options = const_cast<EnforcementOptions&>(cs->getEnforcementOptions());
    const LagrangeMultiplierImplicitOptions& lm_options  = enforcement_options.lm_implicit_options;
-   if ( lm_options.sparse_mode == SparseMode::MFEM_ELEMENT_DENSE )
+   if (!cs->nullMeshes())
    {
-      static_cast<MortarData*>( cs->getMethodData() )->reserveBlockJ( 
-         {BlockSpace::MORTAR, BlockSpace::NONMORTAR, BlockSpace::LAGRANGE_MULTIPLIER},
-         numPairs
-      );
-   }
-   else if ( lm_options.sparse_mode == SparseMode::MFEM_INDEX_SET || 
-             lm_options.sparse_mode == SparseMode::MFEM_LINKED_LIST )
-   {
-      static_cast<MortarData*>( cs->getMethodData() )->allocateMfemSparseMatrix( numRows );
-   }
-   else
-   {
-      SLIC_ERROR("Unsupported Jacobian storage method.");
+      if ( lm_options.sparse_mode == SparseMode::MFEM_ELEMENT_DENSE )
+      {
+         static_cast<MortarData*>( cs->getMethodData() )->reserveBlockJ( 
+            {BlockSpace::MORTAR, BlockSpace::NONMORTAR, BlockSpace::LAGRANGE_MULTIPLIER},
+            numPairs
+         );
+      }
+      else if ( lm_options.sparse_mode == SparseMode::MFEM_INDEX_SET || 
+                lm_options.sparse_mode == SparseMode::MFEM_LINKED_LIST )
+      {
+         static_cast<MortarData*>( cs->getMethodData() )->allocateMfemSparseMatrix( numRows );
+      }
+      else
+      {
+         SLIC_WARNING("Unsupported Jacobian storage method.");
+         return 1;
+      }
    }
 
    ////////////////////////////////////////////////////////////////
@@ -412,7 +406,7 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -528,7 +522,8 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
          }
          else
          {
-            SLIC_ERROR("Unsupported Jacobian storage method.");
+            SLIC_WARNING("Unsupported Jacobian storage method.");
+            return 1;
          }
          
       }
@@ -745,6 +740,9 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
 
    IndexType const mortarId = cs->getMeshId1();
    IndexType const nonmortarId = cs->getMeshId2();
+   MeshManager& meshManager = MeshManager::getInstance();
+   MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
+   IndexType const numNodesPerFace = mortarMesh.m_numNodesPerCell;
 
    MeshManager& meshManager = MeshManager::getInstance();
    MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
@@ -783,7 +781,7 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
    {
       InterfacePair pair = pairs->getInterfacePair(kp);
 
-      if (!pair.inContact)
+      if (!pair.isContactCandidate)
       {
          continue;
       }
@@ -822,9 +820,12 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
       // Note: active nonmortar nodes (i.e. active gaps) are checked in this routine.
       const EnforcementOptions& enforcement_options = const_cast<EnforcementOptions&>(cs->getEnforcementOptions());
       const SparseMode sparse_mode = enforcement_options.lm_implicit_options.sparse_mode;
-      SLIC_ERROR_IF(sparse_mode == SparseMode::MFEM_ELEMENT_DENSE, 
-         "GetMethodData<MORTAR_WEIGHTS>() MFEM_ELEMENT_DENSE " << 
-         "Unassembled element dense matrix output not implemented.");
+      if (sparse_mode == SparseMode::MFEM_ELEMENT_DENSE)
+      {
+        SLIC_WARNING( "GetMethodData<MORTAR_WEIGHTS>() MFEM_ELEMENT_DENSE " << 
+                      "Unassembled element dense matrix output not implemented." );
+        return 1;
+      }
       static_cast<MortarData*>( cs->getMethodData() )->assembleMortarWts( elem, sparse_mode );
 
       ++cpID;

@@ -27,6 +27,11 @@
 // MFEM includes
 #include "mfem.hpp"
 
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
+
 // gtest includes
 #include "gtest/gtest.h"
 
@@ -160,11 +165,9 @@ TEST_F( MortarGeomTest, mortar_good_patch )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3, true );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
@@ -183,7 +186,7 @@ TEST_F( MortarGeomTest, mortar_good_patch )
                         pressures);
 
    double dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -193,6 +196,9 @@ TEST_F( MortarGeomTest, mortar_good_patch )
    tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 36 );
+
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarGeomTest, mortar_bad_patch )
@@ -273,11 +279,9 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3, true );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
@@ -296,7 +300,7 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
                         pressures);
 
    double dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ(err, 0);
 
@@ -307,6 +311,8 @@ TEST_F( MortarGeomTest, mortar_bad_patch )
 
    EXPECT_EQ( couplingScheme->getNumActivePairs(), 36 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarGeomTest, mortar_ironing )
@@ -387,11 +393,9 @@ TEST_F( MortarGeomTest, mortar_ironing )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3, true );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
@@ -410,7 +414,7 @@ TEST_F( MortarGeomTest, mortar_ironing )
                         pressures);
 
    double dt = 1.0;
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ( err, 0 );
 
@@ -460,6 +464,8 @@ TEST_F( MortarGeomTest, mortar_ironing )
 
    EXPECT_EQ( num_total_active_nodes, 54 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
@@ -545,11 +551,9 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
       pressures[i] = 1.;
    }
 
-   // initialize
-   int err = Initialize( 3, true );
-
    // setup simple coupling
    SimpleCouplingSetup( 3,
+                        (int)(tribol::LINEAR_QUAD),
                         tribol::MORTAR_WEIGHTS,
                         this->numMortarCells,
                         this->lengthMortarNodes,
@@ -568,10 +572,12 @@ TEST_F( MortarGeomTest, mortar_ironing_block_sub_mesh )
                         pressures);
 
    double dt = 1.0; 
-   err = Update( dt );
+   int err = Update( dt );
 
    EXPECT_EQ( err, 0 );
 
+   delete[] gaps;
+   delete[] pressures;
 }
 
 int main(int argc, char* argv[])
@@ -580,10 +586,20 @@ int main(int argc, char* argv[])
 
   ::testing::InitGoogleTest(&argc, argv);
 
+  // Initialize Tribol via simple Tribol interface
+  Initialize(3);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
+#endif
+
   axom::slic::SimpleLogger logger;                // create & initialize logger,
   tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
 
   result = RUN_ALL_TESTS();
+
+  // Finalize Tribol via simple Tribol interface
+  Finalize();
 
   return result;
 }
