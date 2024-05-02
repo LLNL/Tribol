@@ -688,7 +688,6 @@ void MfemMeshData::UpdateData::UpdateConnectivity(
     auto elem_attrib = redecomp_mesh_.GetAttribute(e);
     auto elem_conn = mfem::Array<int>();
     redecomp_mesh_.GetElementVertices(e, elem_conn);
-    bool elem_on_1 = false;
     for (auto attribute_1 : attributes_1)
     {
       if (attribute_1 == elem_attrib)
@@ -699,24 +698,20 @@ void MfemMeshData::UpdateData::UpdateConnectivity(
         {
           conn_1_(elem_map_1_.size() - 1, v) = elem_conn[v];
         }
-        elem_on_1 = true;
         break;
       }
     }
-    if (!elem_on_1)
+    for (auto attribute_2 : attributes_2)
     {
-      for (auto attribute_2 : attributes_2)
+      if (attribute_2 == elem_attrib)
       {
-        if (attribute_2 == elem_attrib)
+        elem_map_2_.push_back(e);
+        conn_2_.resize(elem_map_2_.size(), num_verts_per_elem_);
+        for (int v{}; v < num_verts_per_elem_; ++v)
         {
-          elem_map_2_.push_back(e);
-          conn_2_.resize(elem_map_2_.size(), num_verts_per_elem_);
-          for (int v{}; v < num_verts_per_elem_; ++v)
-          {
-            conn_2_(elem_map_2_.size() - 1, v) = elem_conn[v];
-          }
-          break;
+          conn_2_(elem_map_2_.size() - 1, v) = elem_conn[v];
         }
+        break;
       }
     }
   }
