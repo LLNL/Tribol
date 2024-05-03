@@ -55,6 +55,7 @@ spack:
         blas: [netlib-lapack]
         lapack: [netlib-lapack]
         mpi: [spectrum-mpi]
+        zlib-api: [zlib]
 
     # LLNL blueos CUDA
     cuda:
@@ -191,6 +192,11 @@ spack:
       - spec: tar@1.26
         prefix: /usr
       buildable: false
+    zlib:
+      buildable: false
+      externals:
+      - spec: zlib@1.2.7
+        prefix: /usr
 
     # Globally lock in versions of Devtools
     cmake:
