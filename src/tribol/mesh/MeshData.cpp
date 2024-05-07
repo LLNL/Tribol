@@ -202,10 +202,9 @@ MeshData::MeshData( IndexT mesh_id, IndexT num_elements, IndexT num_nodes,
   , m_element_type( element_type )
   , m_dim( getDimFromElementType() )
   , m_num_nodes( num_nodes )
-  , m_num_elements( num_elements )
-  , m_is_valid( true )
   , m_mem_space( mem_space )
   , m_allocator_id( getResourceAllocatorID(mem_space) )
+  , m_is_valid( true )
   , m_position( createNodalVector(x, y, z) )
   , m_connectivity( createConnectivity(num_elements, connectivity) )
 {
@@ -370,13 +369,12 @@ void MeshData::sortSurfaceNodeIds()
 bool MeshData::computeFaceData()
 {
   constexpr RealT nrml_mag_tol = 1.0e-15;
-  const IndexT num_elements = numberOfElements();
 
   // allocate m_c
   VectorArray<RealT> c_host(m_dim, m_dim);
   for (auto& c_dim : c_host)
   {
-    c_dim = ArrayT<RealT>(num_elements, num_elements, m_allocator_id);
+    c_dim = ArrayT<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
   }
   m_c = VectorArray<RealT>(c_host, m_allocator_id);
 
@@ -384,15 +382,15 @@ bool MeshData::computeFaceData()
   VectorArray<RealT> n_host(m_dim, m_dim);
   for (auto& n_dim : n_host)
   {
-    n_dim = ArrayT<RealT>(num_elements, num_elements, m_allocator_id);
+    n_dim = ArrayT<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
   }
   m_n = VectorArray<RealT>(n_host, m_allocator_id);
 
   // allocate m_area
-  m_area = ScalarArray<RealT>(num_elements, num_elements, m_allocator_id);
+  m_area = ScalarArray<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
 
   // allocate face_radius
-  m_face_radius = ScalarArray<RealT>(num_elements, num_elements, m_allocator_id);
+  m_face_radius = ScalarArray<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
 
   // loop over all elements in the mesh
   ArrayViewT<ArrayT<RealT>> c = m_c;
@@ -404,8 +402,8 @@ bool MeshData::computeFaceData()
   auto conn = m_connectivity;
   ArrayT<bool> face_data_ok_data({true}, m_allocator_id);
   ArrayViewT<bool> face_data_ok = face_data_ok_data;
-  forAllExec(getExecutionMode(m_mem_space), num_elements, 
-    [dim, conn, c, x, n, area, radius, face_data_ok] TRIBOL_HOST_DEVICE (const IndexT i) {
+  forAllExec(getExecutionMode(m_mem_space), numberOfElements(), 
+    [=] TRIBOL_HOST_DEVICE (IndexT i) {
 
       // compute the vertex average centroid. This will lie in the 
       // plane of the face for planar faces, and will be used as 
@@ -576,53 +574,6 @@ RealT MeshData::computeEdgeLength( int faceId )
 } // end MeshData::computeEdgeLength()
 
 //------------------------------------------------------------------------------
-void MeshData::getFaceCoords( int const faceId, RealT * coords )
-{
-
-   for (IndexT a=0; a<numberOfNodesPerElement(); ++a)
-   {
-     IndexT nodeId = getGlobalNodeId(faceId, a);
-
-     coords[m_dim * a]     = m_position[0][ nodeId ];
-     coords[m_dim * a + 1] = m_position[1][ nodeId ];
-
-     if (m_dim == 3)
-     {
-        coords[m_dim * a + 2] = m_position[2][ nodeId ];
-     }
-   }
-
-   return;
-
-}  // end MeshData::getFaceCoords()
-
-//------------------------------------------------------------------------------
-void MeshData::getFaceNodalVelocities( int const faceId, RealT * nodalVel )
-{
-   if (m_vel.empty())
-   {
-      SLIC_ERROR("MeshData::getFaceNodalVelocities(): velocity arrays on each " <<
-                 "mesh must be registered with Tribol.");
-   }
-
-   for (IndexT a=0; a<numberOfNodesPerElement(); ++a)
-   {
-     IndexT nodeId = getGlobalNodeId(faceId, a);
-
-     nodalVel[m_dim * a]     = m_vel[0][ nodeId ];
-     nodalVel[m_dim * a + 1] = m_vel[1][ nodeId ];
-
-     if (m_dim == 3)
-     {
-        nodalVel[m_dim * a + 2] = m_vel[2][ nodeId ];
-     }
-   }
-
-   return;
-
-}  // end MeshData::getFaceNodalVelocities()
-
-//------------------------------------------------------------------------------
 void MeshData::computeNodalNormals( int const dim )
 {
    int * numFaceNrmlsToNodes;
@@ -638,11 +589,11 @@ void MeshData::computeNodalNormals( int const dim )
       m_node_n = VectorArray<RealT>(m_dim, m_dim, m_allocator_id);
       for (IndexT i{0}; i < m_dim; ++i)
       {
-        m_node_n[i] = ArrayT<RealT>(numberOfNodes(), numberOfNodes(), m_allocator_id);
+        m_node_n[i] = ArrayT<RealT>(m_num_nodes, m_num_nodes, m_allocator_id);
       }
 
       // allocate space for nodal normal array
-      int size = numberOfNodes(); 
+      int size = m_num_nodes; 
       // allocate scratch array to hold number of faces whose 
       // normals contribute to a given node. Most of the time 
       // this will be four face normals contributing to an 
@@ -689,7 +640,7 @@ void MeshData::computeNodalNormals( int const dim )
    // average the nodal normals
    if (this->numberOfElements() > 0)
    {
-      for (int i=0; i<numberOfNodes(); ++i)
+      for (int i=0; i<m_num_nodes; ++i)
       {
          m_node_n[0][i] /= numFaceNrmlsToNodes[i];
          m_node_n[1][i] /= numFaceNrmlsToNodes[i];
@@ -705,7 +656,7 @@ void MeshData::computeNodalNormals( int const dim )
    {
       if (dim == 3)
       {
-         for (int i=0; i<numberOfNodes(); ++i)
+         for (int i=0; i<m_num_nodes; ++i)
          {
             RealT mag = magnitude( m_node_n[0][i], m_node_n[1][i], m_node_n[2][i] );
             m_node_n[0][ i ] /= mag;
@@ -715,7 +666,7 @@ void MeshData::computeNodalNormals( int const dim )
       }
       else 
       {
-         for (int i=0; i<numberOfNodes(); ++i)
+         for (int i=0; i<m_num_nodes; ++i)
          {
             RealT mag = magnitude( m_node_n[0][i], m_node_n[1][i] );
             m_node_n[0][ i ] /= mag;
@@ -728,21 +679,6 @@ void MeshData::computeNodalNormals( int const dim )
 
    return;
 } // end MeshData::computeNodalNormals()
-
-//------------------------------------------------------------------------------
-void MeshData::getFaceNormal( int const faceId, int const dim, RealT * nrml )
-{
-   nrml[0] = this->m_n[0][ faceId ];
-   nrml[1] = this->m_n[1][ faceId ];
-   
-   if (dim == 3)
-   {
-      nrml[2] = this->m_n[2][ faceId ];
-   }
-
-   return;
-
-} // end MeshData::getFaceNormal()
 
 //------------------------------------------------------------------------------
 int MeshData::checkLagrangeMultiplierData()
@@ -807,7 +743,7 @@ int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
 //------------------------------------------------------------------------------
 void MeshData::print(std::ostream& os) const
 {
-   const int num_verts = numberOfNodes();
+   const int num_verts = m_num_nodes;
    const int num_elem = numberOfElements();
 
    if(num_verts <= 0)
@@ -858,6 +794,74 @@ void MeshData::print(std::ostream& os) const
 
    os << "\n}";
 }
+
+//------------------------------------------------------------------------------
+MeshData::Viewer::Viewer(const MeshData& mesh)
+: m_mesh_id( mesh.m_mesh_id )
+, m_element_type( mesh.m_element_type )
+, m_num_nodes( mesh.m_num_nodes )
+, m_mem_space( mesh.m_mem_space )
+, m_allocator_id( mesh.m_allocator_id )
+, m_position( mesh.m_position )
+, m_disp( mesh.m_disp )
+, m_vel( mesh.m_vel )
+, m_response( mesh.m_response )
+, m_node_n( mesh.m_node_n )
+, m_connectivity( mesh.m_connectivity )
+, m_c( mesh.m_c )
+, m_n( mesh.m_n )
+, m_face_radius( mesh.m_face_radius )
+, m_area( mesh.m_area )
+, m_nodal_fields( mesh.m_nodal_fields )
+, m_element_data( mesh.m_element_data )
+{}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void MeshData::Viewer::getFaceCoords( IndexT face_id, RealT* coords ) const
+{
+  auto dim = spatialDimension();
+
+  for (IndexT a{0}; a < numberOfNodesPerElement(); ++a)
+  {
+    IndexT node_id = getGlobalNodeId(face_id, a);
+    for (int d{0}; d < dim; ++d)
+    {
+      coords[dim*a + d] = m_position[0][node_id];
+    }
+  }
+
+  return;
+
+}  // end MeshData::Viewer::getFaceCoords()
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void MeshData::Viewer::getFaceVelocities( IndexT face_id, RealT* vels ) const
+{
+  auto dim = spatialDimension();
+
+  for (IndexT a{0}; a < numberOfNodesPerElement(); ++a)
+  {
+    IndexT node_id = getGlobalNodeId(face_id, a);
+    for (int d{0}; d < dim; ++d)
+    {
+      vels[dim*a + d] = m_vel[0][node_id];
+    }
+  }
+
+  return;
+
+}  // end MeshData::Viewer::getFaceVelocities()
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void MeshData::Viewer::getFaceNormal( int const face_id, RealT * nrml ) const
+{
+  for (int d{0}; d < spatialDimension(); ++d)
+  {
+    nrml[d] = m_n[d][face_id];
+  }
+  return;
+
+} // end MeshData::getFaceNormal()
 
 } // end tribol namespace
 

@@ -61,13 +61,13 @@ public:
 
    /*!
     * Computes the interacting interface pairs between the meshes
-    * specified in \a m_couplingScheme
+    * specified in \a m_coupling_scheme
     */
    void findInterfacePairs();
 
 private:
 
-   CouplingScheme* m_couplingScheme;
+   CouplingScheme* m_coupling_scheme;
    SearchBase* m_search;  // The search strategy
 };
 

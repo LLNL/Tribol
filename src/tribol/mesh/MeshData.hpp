@@ -88,6 +88,138 @@ struct MeshElemData
 class MeshData
 {
 public:
+  class Viewer
+  {
+  public:
+    Viewer(const MeshData& mesh);
+
+    TRIBOL_HOST_DEVICE IndexT meshId() const { return m_mesh_id; }
+    TRIBOL_HOST_DEVICE InterfaceElementType getElementType() const { return m_element_type; }
+    TRIBOL_HOST_DEVICE MemorySpace getMemorySpace() const { return m_mem_space; }
+    TRIBOL_HOST_DEVICE int getAllocatorId() const { return m_allocator_id; }
+
+    TRIBOL_HOST_DEVICE MeshNodalData& getNodalFields() { return m_nodal_fields; }
+    TRIBOL_HOST_DEVICE MeshElemData& getElementData() { return m_element_data; }
+    TRIBOL_HOST_DEVICE const MeshElemData& getElementData() const { return m_element_data; }
+
+    TRIBOL_HOST_DEVICE int spatialDimension() const { return m_position.size(); }
+    TRIBOL_HOST_DEVICE IndexT numberOfNodes() const { return m_num_nodes; }
+    TRIBOL_HOST_DEVICE IndexT numberOfElements() const { return m_connectivity.shape()[0]; }
+    TRIBOL_HOST_DEVICE IndexT numberOfNodesPerElement() const { return m_connectivity.shape()[1]; }
+    TRIBOL_HOST_DEVICE IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
+    {
+      return m_connectivity(element_id, local_node_id);
+    }
+
+    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayViewT<const RealT>>& getPosition() const
+    {
+      return m_position;
+    }
+    
+    TRIBOL_HOST_DEVICE bool hasDisplacement() const { return !m_disp.empty(); }
+    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayViewT<const RealT>>& getDisplacement() const
+    {
+      return m_disp;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasVelocity() const { return !m_vel.empty(); }
+    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayViewT<const RealT>>& getVelocity() const
+    {
+      return m_vel;
+    }
+    
+    TRIBOL_HOST_DEVICE bool hasResponse() const { return !m_response.empty(); }
+    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayViewT<RealT>>& getResponse() const
+    {
+      return m_response;
+    }
+    
+    TRIBOL_HOST_DEVICE bool hasNodalNormals() const { return !m_node_n.empty(); }
+    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayT<RealT>>& getNodalNormals() const
+    {
+      return m_node_n;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasElementCentroids() const { return !m_c.empty(); }
+    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayT<RealT>>& getElementCentroids() const
+    {
+      return m_c;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasElementNormals() const { return !m_n.empty(); }
+    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayT<RealT>>& getElementNormals() const
+    {
+      return m_n;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasFaceRadii() const { return !m_face_radius.empty(); }
+    TRIBOL_HOST_DEVICE const ArrayViewT<RealT>& getFaceRadii() const
+    {
+      return m_face_radius;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasElementAreas() const { return !m_area.empty(); }
+    TRIBOL_HOST_DEVICE const ArrayViewT<RealT>& getElementAreas() const
+    {
+      return m_area;
+    }
+  
+    /*!
+    *
+    * \brief returns pointer to array of stacked nodal coordinates for given face
+    *
+    * \param [in] face_id integer id of face
+    * \param [in/out] coords pointer to an array of stacked (x,y,z) nodal coordinates
+    *
+    */
+    TRIBOL_HOST_DEVICE void getFaceCoords( IndexT face_id, RealT* coords ) const;
+
+    /*!
+    *
+    * \brief returns pointer to array of stacked nodal velocities for given face
+    *
+    * \param [in] face_id integer id of face
+    * \param [in/out] nodalVel pointer to an array of stacked (x,y,z) nodal velocities
+    *
+    */
+    TRIBOL_HOST_DEVICE void getFaceVelocities( IndexT face_id, RealT* vels ) const;
+
+    /*!
+    *
+    * \brief returns pointer to array of stacked normal components 
+    *
+    * \param [in] face_id integer id of face
+    * \param [in/out] nrml pointer to array of stacked components of the face normal vector
+    *
+    */
+    TRIBOL_HOST_DEVICE void getFaceNormal( IndexT face_id, RealT* nrml ) const;
+    
+  private:
+    const IndexT m_mesh_id;
+    const InterfaceElementType m_element_type;
+    const IndexT m_num_nodes;
+
+    const MemorySpace m_mem_space;
+    const int m_allocator_id;
+
+    const ArrayViewT<const ArrayViewT<const RealT>> m_position;
+    const ArrayViewT<const ArrayViewT<const RealT>> m_disp;
+    const ArrayViewT<const ArrayViewT<const RealT>> m_vel;
+    const ArrayViewT<const ArrayViewT<RealT>> m_response;
+
+    const ArrayViewT<const ArrayT<RealT>> m_node_n;
+
+    const ArrayViewT<const IndexT, 2> m_connectivity;
+
+    const ArrayViewT<const ArrayT<RealT>> m_c;
+    const ArrayViewT<const ArrayT<RealT>> m_n;
+    const ArrayViewT<RealT> m_face_radius;
+    const ArrayViewT<RealT> m_area;
+    
+    MeshNodalData m_nodal_fields; ///< method specific nodal fields
+    MeshElemData  m_element_data; ///< method/enforcement specific element data
+  };
+
   /*!
   * \brief Constructor 
   *
@@ -97,53 +229,23 @@ public:
                    const RealT* x, const RealT* y, const RealT* z,
                    MemorySpace mem_space );
 
-  IndexT meshId() { return m_mesh_id; }
-
   InterfaceElementType getElementType() const { return m_element_type; }
-
-  TRIBOL_HOST_DEVICE int dimension() const { return m_dim; }
-
-  IndexT numberOfNodes() const { return m_num_nodes; };
-
-  IndexT numberOfElements() const { return m_num_elements; };
+  int spatialDimension() const { return m_dim; }
+  MemorySpace getMemorySpace() const { return m_mem_space; }
 
   bool& isMeshValid() { return m_is_valid; }
 
   MeshNodalData& getNodalFields() { return m_nodal_fields; }
-
   MeshElemData& getElementData() { return m_element_data; }
-
   const MeshElemData& getElementData() const { return m_element_data; }
-
-  MemorySpace getMemorySpace() const { return m_mem_space; }
-
-  int getAllocatorId() const { return m_allocator_id; }
-
-  bool hasVelocity() const { return !m_vel.empty(); }
-
-  bool hasNodalNormals() const { return !m_node_n.empty(); }
-
-  const VectorArrayView<const RealT>& getPosition() const 
+  
+  IndexT numberOfNodes() const { return m_num_nodes; }
+  IndexT numberOfElements() const { return m_connectivity.shape()[0]; }
+  IndexT numberOfNodesPerElement() const { return m_connectivity.shape()[1]; }
+  TRIBOL_HOST_DEVICE IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
   {
-    return m_position;
+    return m_connectivity(element_id, local_node_id);
   }
-
-  const VectorArrayView<const RealT>& getDisplacement() const
-  { 
-    return m_disp;
-  }
-
-  const VectorArrayView<const RealT>& getVelocity() const
-  { 
-    return m_vel;
-  }
-
-  const VectorArrayView<RealT>& getResponse() const
-  {
-    return m_response;
-  }
-
-  const VectorArray<RealT>& getNodalNormals() const { return m_node_n; }
 
   void setPosition( const RealT* x,
                     const RealT* y,
@@ -159,38 +261,12 @@ public:
 
   void setResponse( RealT* rx, RealT* ry, RealT* rz );
 
-  const ArrayViewT<const IndexT, 2>& getConnectivity() const
-  {
-    return m_connectivity;
-  }
-
-  ArrayViewT<const IndexT, 2>& getConnectivity()
-  {
-    return m_connectivity;
-  }
-
   const ArrayT<IndexT, 1>& getSortedSurfaceNodeIds() const 
   { 
     return m_sorted_surface_node_ids;
   }
 
-  TRIBOL_HOST_DEVICE IndexT numberOfNodesPerElement() const
-  { 
-    return m_connectivity.shape()[1];
-  }
-
-  TRIBOL_HOST_DEVICE IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
-  {
-    return m_connectivity(element_id, local_node_id);
-  }
-
-  TRIBOL_HOST_DEVICE const VectorArray<RealT>& getElementNormals() const { return m_n; }
-
-  TRIBOL_HOST_DEVICE const VectorArray<RealT>& getElementCentroids() const { return m_c; }
-
-  TRIBOL_HOST_DEVICE const ScalarArray<RealT>& getFaceRadius() const { return m_face_radius; }
-
-  TRIBOL_HOST_DEVICE const ScalarArray<RealT>& getElementAreas() const { return m_area; }
+  std::unique_ptr<Viewer> getView() { return std::make_unique<Viewer>(*this); }
 
 private:
   int getDimFromElementType() const;
@@ -208,25 +284,23 @@ private:
 
   IndexT m_mesh_id;                    ///< Mesh Id associated with this data
   InterfaceElementType m_element_type; ///< Type of interface element in mesh
-  int m_dim;                           ///< Mesh dimension
+  int m_dim;
+  IndexT m_num_nodes;
 
-  IndexT m_num_nodes;                  ///< Number of nodes in the mesh
-  IndexT m_num_elements;               ///< Number of elements in the mesh
+  MemorySpace m_mem_space; ///< Memory space for mesh data
+  int m_allocator_id;      ///< Allocator for mesh data memory
   
   bool m_is_valid;                     ///< True if the mesh is valid
 
   MeshNodalData m_nodal_fields; ///< method specific nodal fields
   MeshElemData  m_element_data; ///< method/enforcement specific element data
 
-  MemorySpace m_mem_space; ///< Memory space for mesh data
-  int m_allocator_id;      ///< Allocator for mesh data memory
-
   // Nodal field data
   VectorArrayView<const RealT> m_position; ///< Coordinates of nodes in mesh
   VectorArrayView<const RealT> m_disp;     ///< Nodal displacements
   VectorArrayView<const RealT> m_vel;      ///< Nodal velocity
-
   VectorArrayView<RealT> m_response;       ///< Nodal responses (forces)
+
   VectorArray<RealT> m_node_n;             ///< Outward unit node normals
 
   // Element field data
@@ -282,35 +356,6 @@ public:
   *
   */
   RealT computeEdgeLength( int edgeId );
-  
-  /*!
-  *
-  * \brief returns pointer to array of stacked nodal coordinates for given face
-  *
-  * \param [in/out] coords pointer to an array of stacked (x,y,z) nodal coordinates
-  *
-  */
-  void getFaceCoords( int const faceId, RealT * coords );
-
-  /*!
-  *
-  * \brief returns pointer to array of stacked nodal velocities for given face
-  *
-  * \param [in/out] nodalVel pointer to an array of stacked (x,y,z) nodal velocities
-  *
-  */
-  void getFaceNodalVelocities( int const faceId, RealT * nodalVel );
-
-  /*!
-  *
-  * \brief returns pointer to array of stacked normal components 
-  *
-  * \param [in] faceId integer id of face
-  * \param [in] dim dimension of the problem
-  * \param [in/out] nrml pointer to array of stacked components of the face normal vector
-  *
-  */
-  void getFaceNormal( int const faceId, int const dim, RealT * nrml );
 
   /// Prints information associated with this mesh to \a os
   void print(std::ostream& os) const;
@@ -321,11 +366,11 @@ template <typename T>
 VectorArrayView<T> MeshData::createNodalVector( T* x, T* y, T* z ) const
 {
   VectorArrayView<T> host_nodal_vector(m_dim, m_dim);
-  host_nodal_vector[0] = ArrayViewT<T>(x, numberOfNodes());
-  host_nodal_vector[1] = ArrayViewT<T>(y, numberOfNodes());
+  host_nodal_vector[0] = ArrayViewT<T>(x, m_num_nodes);
+  host_nodal_vector[1] = ArrayViewT<T>(y, m_num_nodes);
   if (m_dim == 3)
   {
-    host_nodal_vector[2] = ArrayViewT<T>(z, numberOfNodes());
+    host_nodal_vector[2] = ArrayViewT<T>(z, m_num_nodes);
   }
   return VectorArrayView<T>(host_nodal_vector, m_allocator_id);
 }

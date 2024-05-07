@@ -10,17 +10,17 @@ namespace tribol
 {
 
 InterfacePairs::InterfacePairs(int allocator_id)
-: m_allocator_id(allocator_id),
-  m_pairIndex1(0, 0, m_allocator_id),
-  m_pairIndex2(0, 0, m_allocator_id),
-  m_isContactCandidate(0, 0, m_allocator_id)
+  : m_allocator_id( allocator_id )
+  , m_pairIndex1( 0, 0, m_allocator_id )
+  , m_pairIndex2( 0, 0, m_allocator_id )
+  , m_isContactCandidate( 0, 0, m_allocator_id )
 {}
 
 void InterfacePairs::reserve(IndexT capacity)
 {
-   m_pairIndex1.reserve(capacity);
-   m_pairIndex2.reserve(capacity);
-   m_isContactCandidate.reserve(capacity);
+  m_pairIndex1.reserve(capacity);
+  m_pairIndex2.reserve(capacity);
+  m_isContactCandidate.reserve(capacity);
 }
 
 void InterfacePairs::resize(IndexT new_size)
@@ -37,8 +37,7 @@ void InterfacePairs::clear()
    m_isContactCandidate.clear();
 }
 
-
-TRIBOL_HOST_DEVICE void InterfacePairs::addInterfacePair( InterfacePair const& pair )
+void InterfacePairs::addInterfacePair( InterfacePair const& pair )
 {
    // set mesh ids and pair types. This is redundant since these 
    // only need to be set once.
@@ -56,18 +55,28 @@ TRIBOL_HOST_DEVICE void InterfacePairs::addInterfacePair( InterfacePair const& p
    m_isContactCandidate.push_back(pair.isContactCandidate);
 }
 
-TRIBOL_HOST_DEVICE void InterfacePairs::updateInterfacePair( InterfacePair const& pair, 
-                                          int const idx )
-{
-   m_isContactCandidate[ idx ] = pair.isContactCandidate;
-}
+InterfacePairs::Viewer::Viewer(const InterfacePairs& pairs)
+  : m_mesh_id1( pairs.m_mesh_id1 )
+  , m_mesh_id2( pairs.m_mesh_id2 )
+  , m_pairType1( pairs.m_pairType1 )
+  , m_pairType2( pairs.m_pairType2 )
+  , m_pairIndex1( pairs.m_pairIndex1 )
+  , m_pairIndex2( pairs.m_pairIndex2 )
+  , m_isContactCandidate( pairs.m_isContactCandidate )
+{}
 
-TRIBOL_HOST_DEVICE InterfacePair InterfacePairs::getInterfacePair(IndexT idx) const
+TRIBOL_HOST_DEVICE InterfacePair InterfacePairs::Viewer::getInterfacePair(IndexT idx) const
 {
-   return InterfacePair {
+   return {
       m_mesh_id1, m_pairType1, m_pairIndex1[idx],
       m_mesh_id2, m_pairType2, m_pairIndex2[idx], 
       m_isContactCandidate[idx], idx };
+}
+
+TRIBOL_HOST_DEVICE void InterfacePairs::Viewer::updateInterfacePair(
+  InterfacePair const& pair, int const idx ) const
+{
+   m_isContactCandidate[ idx ] = pair.isContactCandidate;
 }
 
 } // namespace tribol

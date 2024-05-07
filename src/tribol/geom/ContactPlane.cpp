@@ -25,10 +25,10 @@ namespace tribol
 //------------------------------------------------------------------------------
 // free functions
 //------------------------------------------------------------------------------
-FaceGeomError CheckInterfacePair( InterfacePair& pair,
-                                  ContactMethod const cMethod,
-                                  ContactCase const TRIBOL_UNUSED_PARAM(cCase),
-                                  bool& isInteracting )
+TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
+                                                     ContactMethod cMethod,
+                                                     ContactCase TRIBOL_UNUSED_PARAM(cCase),
+                                                     bool& isInteracting )
 {
    isInteracting = false;
 
@@ -145,7 +145,7 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
 } // end CheckInterfacePair()
 
 //------------------------------------------------------------------------------
-bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2, 
+bool FaceInterCheck( const MeshData::Viewer& meshDat1, const MeshData::Viewer& meshDat2, 
                      int fId1, int fId2, RealT tol, bool& allVerts )
 {
    bool check = false;
@@ -238,7 +238,7 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
 } // end FaceInterCheck()
 
 //------------------------------------------------------------------------------
-bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2, 
+bool EdgeInterCheck( const MeshData::Viewer& meshDat1, const MeshData::Viewer& meshDat2, 
                      int eId1, int eId2, RealT tol, bool& allVerts )
 {
    bool check = false;
@@ -303,7 +303,7 @@ bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
 } // end EdgeInterCheck()
 
 //------------------------------------------------------------------------------
-bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
+bool ExceedsMaxAutoInterpen( const MeshData::Viewer& meshDat1, const MeshData::Viewer& meshDat2,
                              const int faceId1, const int faceId2, const RealT gap )
 {
    parameters_t& params = parameters_t::getInstance();
@@ -322,7 +322,7 @@ bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
 }
 
 //------------------------------------------------------------------------------
-void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId, 
+void ProjectFaceNodesToPlane( const MeshData::Viewer& mesh, int faceId, 
                               RealT nrmlX, RealT nrmlY, RealT nrmlZ,
                               RealT cX, RealT cY, RealT cZ,
                               RealT* pX, RealT* pY, 
@@ -343,7 +343,7 @@ void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId,
 } // end EdgeInterCheck()
 
 //------------------------------------------------------------------------------
-void ProjectEdgeNodesToSegment( const MeshData& mesh, int edgeId, 
+void ProjectEdgeNodesToSegment( const MeshData::Viewer& mesh, int edgeId, 
                                 RealT nrmlX, RealT nrmlY, RealT cX, 
                                 RealT cY, RealT* pX, 
                                 RealT* pY )
@@ -532,8 +532,8 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
    MeshManager & meshManager = MeshManager::getInstance();
 
    // get instance of mesh data
-   MeshData& mesh1 = meshManager.at(mesh_id1);
-   MeshData& mesh2 = meshManager.at(mesh_id2);
+   auto mesh1 = meshManager.at(mesh_id1).getView();
+   auto mesh2 = meshManager.at(mesh_id2).getView();
 
    // set overlap booleans based on input arguments and contact method
    bool interpenOverlap = (!fullOverlap) ? true : false;
@@ -543,10 +543,10 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
    // that pass check #3 this check may easily indicate that the faces 
    // do in fact intersect. 
    RealT separationTol = params.gap_separation_ratio * 
-                        axom::utilities::max( mesh1.getFaceRadius()[ faceId1 ], 
-                                              mesh2.getFaceRadius()[ faceId2 ] );
+                        axom::utilities::max( mesh1->getFaceRadii()[ faceId1 ], 
+                                              mesh2->getFaceRadii()[ faceId2 ] );
    bool all = false;
-   bool ls = FaceInterCheck( mesh1, mesh2, faceId1, faceId2, separationTol, all );
+   bool ls = FaceInterCheck( *mesh1, *mesh2, faceId1, faceId2, separationTol, all );
    if (!ls) {
       cp.m_inContact = false;
       return NO_FACE_GEOM_ERROR;
@@ -573,12 +573,12 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
    // The mortar face may not be exactly planar so we still need to project 
    // the nodes onto the contact plane, which is defined by average normal of the 
    // nonmortar face.
-   RealT projX1[ mesh1.numberOfNodesPerElement() ];
-   RealT projY1[ mesh1.numberOfNodesPerElement() ];
-   RealT projZ1[ mesh1.numberOfNodesPerElement() ];
-   RealT projX2[ mesh2.numberOfNodesPerElement() ];
-   RealT projY2[ mesh2.numberOfNodesPerElement() ];
-   RealT projZ2[ mesh2.numberOfNodesPerElement() ];
+   RealT projX1[ mesh1->numberOfNodesPerElement() ];
+   RealT projY1[ mesh1->numberOfNodesPerElement() ];
+   RealT projZ1[ mesh1->numberOfNodesPerElement() ];
+   RealT projX2[ mesh2->numberOfNodesPerElement() ];
+   RealT projY2[ mesh2->numberOfNodesPerElement() ];
+   RealT projZ2[ mesh2->numberOfNodesPerElement() ];
     
    ProjectFaceNodesToPlane( mesh1, faceId1, cp.m_nX, cp.m_nY, cp.m_nZ, 
                             cp.m_cX, cp.m_cY, cp.m_cZ, 
@@ -592,17 +592,17 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
 
    // project the projected global nodal coordinates onto local 
    // contact plane 2D coordinate system. 
-   RealT projeX1[ mesh1.numberOfNodesPerElement() ];
-   RealT projeY1[ mesh1.numberOfNodesPerElement() ];
-   RealT projeX2[ mesh2.numberOfNodesPerElement() ];
-   RealT projeY2[ mesh2.numberOfNodesPerElement() ];
+   RealT projeX1[ mesh1->numberOfNodesPerElement() ];
+   RealT projeY1[ mesh1->numberOfNodesPerElement() ];
+   RealT projeX2[ mesh2->numberOfNodesPerElement() ];
+   RealT projeY2[ mesh2->numberOfNodesPerElement() ];
 
    cp.globalTo2DLocalCoords( &projX1[0], &projY1[0], &projZ1[0], 
                              &projeX1[0], &projeY1[0], 
-                             mesh1.numberOfNodesPerElement() );
+                             mesh1->numberOfNodesPerElement() );
    cp.globalTo2DLocalCoords( &projX2[0], &projY2[0], &projZ2[0], 
                              &projeX2[0], &projeY2[0], 
-                             mesh2.numberOfNodesPerElement() );
+                             mesh2->numberOfNodesPerElement() );
 
    // compute the overlap area of the two faces. Note, this is the full,
    // but cheaper, overlap computation. This is suitable enough to 
@@ -639,17 +639,17 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
       // reorder face 2 vertices to be consistent with face 1. DO NOT CALL POLYREORDER() 
       // to do this. // TODO debug this; this may affect calculations later on. We may 
       // have to unreverse the ordering.
-      PolyReverse( X2, Y2, mesh2.numberOfNodesPerElement() );
+      PolyReverse( X2, Y2, mesh2->numberOfNodesPerElement() );
 
       // compute intersection polygon and area. Note, the polygon centroid 
       // is stored from the previous intersection calc that just computes 
       // area and local centroid
       RealT pos_tol = params.len_collapse_ratio * 
-                     axom::utilities::max( mesh1.getFaceRadius()[ faceId1 ], 
-                                           mesh2.getFaceRadius()[ faceId2 ] );
+                     axom::utilities::max( mesh1.getFaceRadii()[ faceId1 ], 
+                                           mesh2.getFaceRadii()[ faceId2 ] );
       RealT len_tol = pos_tol;
-      FaceGeomError inter_err = Intersection2DPolygon( X1, Y1, mesh1.numberOfNodesPerElement(),
-                                                       X2, Y2, mesh2.numberOfNodesPerElement(),
+      FaceGeomError inter_err = Intersection2DPolygon( X1, Y1, mesh1->numberOfNodesPerElement(),
+                                                       X2, Y2, mesh2->numberOfNodesPerElement(),
                                                        pos_tol, len_tol, &cp.m_polyLocX, 
                                                        &cp.m_polyLocY, cp.m_numPolyVert, 
                                                        cp.m_area, false ); 
@@ -676,8 +676,8 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
       // is not necessary for mortar formulations as the mortar plane is correctly 
       // located.
       cp.planePointAndCentroidGap( 2. * 
-         axom::utilities::max( mesh1.getFaceRadius()[ faceId1 ], 
-                               mesh2.getFaceRadius()[ faceId2 ] ));
+         axom::utilities::max( mesh1.getFaceRadii()[ faceId1 ], 
+                               mesh2.getFaceRadii()[ faceId2 ] ));
 
       bool interpen = false;
       FaceGeomError interpen_err = cp.computeLocalInterpenOverlap(interpen); // same for mortar
@@ -800,15 +800,15 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
    // for mortar methods. We should just do a gap computation if 
    // needed. 
    cp.planePointAndCentroidGap( 2. * 
-      axom::utilities::max( mesh1.getFaceRadius()[ faceId1 ], 
-                            mesh2.getFaceRadius()[ faceId2 ] ));
+      axom::utilities::max( mesh1.getFaceRadii()[ faceId1 ], 
+                            mesh2.getFaceRadii()[ faceId2 ] ));
 
    // The gap tolerance allows separation up to the separation ratio of the 
    // largest face-radius. This is conservative and allows for possible 
    // over-inclusion. This is done for the mortar method per testing.
    cp.m_gapTol = params.gap_separation_ratio * 
-                 axom::utilities::max( mesh1.getFaceRadius()[ faceId1 ], 
-                                       mesh2.getFaceRadius()[ faceId2 ] );
+                 axom::utilities::max( mesh1.getFaceRadii()[ faceId1 ], 
+                                       mesh2.getFaceRadii()[ faceId2 ] );
 
    if (cp.m_gap > cp.m_gapTol)
    {
@@ -897,8 +897,8 @@ ContactPlane3D CheckAlignedFacePair( InterfacePair& pair )
 
    // set the gap tolerance inclusive for separation up to m_gapTol
    cp.m_gapTol = params.gap_separation_ratio * 
-                 axom::utilities::max( mesh1.getFaceRadius()[ faceId1 ],
-                                       mesh2.getFaceRadius()[ faceId2 ] );
+                 axom::utilities::max( mesh1.getFaceRadii()[ faceId1 ],
+                                       mesh2.getFaceRadii()[ faceId2 ] );
    
    // set the area fraction
    cp.m_areaFrac = params.overlap_area_frac;
@@ -1074,7 +1074,7 @@ void ContactPlane3D::computeLocalBasis()
    if (sqrMag < 1.E-12) // note: tolerance on the square of the magnitude
    {
       // translate projected first node by face radius
-      RealT radius = m1.getFaceRadius()[ m_pair.pairIndex1 ];
+      RealT radius = m1.getFaceRadii()[ m_pair.pairIndex1 ];
       RealT scale = 1.0 * radius;
    
       RealT pNewX = pX + scale;
@@ -1654,8 +1654,8 @@ FaceGeomError ContactPlane3D::computeLocalInterpenOverlap( bool& interpen )
 
    // call intersection routine to get intersecting polygon
    RealT pos_tol = parameters.len_collapse_ratio * 
-                  axom::utilities::max( mesh1.getFaceRadius()[ m_pair.pairIndex1 ], 
-                                        mesh2.getFaceRadius()[ m_pair.pairIndex2 ] );
+                  axom::utilities::max( mesh1.getFaceRadii()[ m_pair.pairIndex1 ], 
+                                        mesh2.getFaceRadii()[ m_pair.pairIndex2 ] );
    RealT len_tol = pos_tol;
    FaceGeomError inter_err = Intersection2DPolygon( cfx1_loc, cfy1_loc, numV[0],
                                                     cfx2_loc, cfy2_loc, numV[1],
@@ -1998,8 +1998,8 @@ FaceGeomError CheckEdgePair( InterfacePair& pair,
    // inclusive up to a separation of a fraction of the edge-radius.
    // This is done for the mortar method per 3D testing.
    RealT separationTol = params.gap_separation_ratio * 
-                        axom::utilities::max( mesh1.getFaceRadius()[ edgeId1 ], 
-                                              mesh2.getFaceRadius()[ edgeId2 ] );
+                        axom::utilities::max( mesh1.getFaceRadii()[ edgeId1 ], 
+                                              mesh2.getFaceRadii()[ edgeId2 ] );
    bool all = false;
    bool ls = EdgeInterCheck( mesh1, mesh2, edgeId1, edgeId2, separationTol, all );
    if (!ls) 
@@ -2058,8 +2058,8 @@ FaceGeomError CheckEdgePair( InterfacePair& pair,
    {
       // properly locate the contact plane (segment)
       cp.planePointAndCentroidGap( 2. * 
-         axom::utilities::max( mesh1.getFaceRadius()[ edgeId1 ], 
-                               mesh2.getFaceRadius()[ edgeId2 ] )); 
+         axom::utilities::max( mesh1.getFaceRadii()[ edgeId1 ], 
+                               mesh2.getFaceRadii()[ edgeId2 ] )); 
       bool interpen = false;
       FaceGeomError interpen_err = cp.computeLocalInterpenOverlap(interpen);
       if (interpen_err != NO_FACE_GEOM_ERROR)
@@ -2083,13 +2083,13 @@ FaceGeomError CheckEdgePair( InterfacePair& pair,
    // plane point moved (in-contact segment) due to the interpen overlap 
    // segment calc
    cp.planePointAndCentroidGap( 2. * 
-      axom::utilities::max( mesh1.getFaceRadius()[ edgeId1 ], 
-                            mesh2.getFaceRadius()[ edgeId2 ] )); 
+      axom::utilities::max( mesh1.getFaceRadii()[ edgeId1 ], 
+                            mesh2.getFaceRadii()[ edgeId2 ] )); 
 
    // Per 3D mortar testing, allow for separation up to the edge-radius
    cp.m_gapTol = params.gap_separation_ratio * 
-                 axom::utilities::max( mesh1.getFaceRadius()[ edgeId1 ], 
-                                       mesh2.getFaceRadius()[ edgeId2 ] );
+                 axom::utilities::max( mesh1.getFaceRadii()[ edgeId1 ], 
+                                       mesh2.getFaceRadii()[ edgeId2 ] );
    if (cp.m_gap > cp.m_gapTol)
    {
       cp.m_inContact = false;
@@ -2277,8 +2277,8 @@ FaceGeomError ContactPlane2D::computeLocalInterpenOverlap( bool& interpen )
 
    // check if the segments intersect
    RealT len_tol = parameters.len_collapse_ratio * 
-                  axom::utilities::max( mesh1.getFaceRadius()[ edgeId1 ], 
-                                        mesh2.getFaceRadius()[ edgeId2 ] );
+                  axom::utilities::max( mesh1.getFaceRadii()[ edgeId1 ], 
+                                        mesh2.getFaceRadii()[ edgeId2 ] );
 
    bool edgeIntersect = SegmentIntersection2D( xposA1, yposA1, xposB1, yposB1,
                                                xposA2, yposA2, xposB2, yposB2,
@@ -2713,8 +2713,8 @@ void ContactPlane2D::checkSegOverlap( const RealT* const pX1, const RealT* const
    // if they are codirectional. If so, check, that this vector length is 
    // less than edge 1 length indicating that the vertex lies within edge 1
    RealT projTol = parameters.projection_ratio * 
-                  axom::utilities::max( mesh1.getFaceRadius()[ e1Id ], 
-                                        mesh2.getFaceRadius()[ e2Id ] );
+                  axom::utilities::max( mesh1.getFaceRadii()[ e1Id ], 
+                                        mesh2.getFaceRadii()[ e2Id ] );
    RealT vLenTol = projTol;
    int inter2 = 0;
    int twoInOneId = -1;

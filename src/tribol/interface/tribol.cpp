@@ -386,7 +386,7 @@ void registerNodalDisplacements( IndexT mesh_id,
       mesh->getNodalFields().m_is_nodal_displacement_set = false;
    }
 
-   if (mesh->dimension() == 3)
+   if (mesh->spatialDimension() == 3)
    {
       if (dz == nullptr)
       {
@@ -416,7 +416,7 @@ void registerNodalVelocities( IndexT mesh_id,
       mesh->getNodalFields().m_is_velocity_set = false;
    }
    
-   if (mesh->dimension() == 3)
+   if (mesh->spatialDimension() == 3)
    {
       if (vz == nullptr)
       {
@@ -445,7 +445,7 @@ void registerNodalResponse( IndexT mesh_id,
       mesh->getNodalFields().m_is_nodal_response_set = false;
    }
 
-   if (mesh->dimension() == 3)
+   if (mesh->spatialDimension() == 3)
    {
       if (rz == nullptr)
       {
@@ -894,8 +894,8 @@ void setInterfacePairs( IndexT cs_id,
    // copy the interaction pairs
    for(int i=0; i< numPairs; ++i)
    {
-      InterfacePair pair { mesh_id1[i], pairType1[i], pairIndex1[i],
-                           mesh_id2[i], pairType2[i], pairIndex2[i], i };
+      InterfacePair pair { mesh_id1[i], static_cast<InterfaceElementType>(pairType1[i]), pairIndex1[i],
+                           mesh_id2[i], static_cast<InterfaceElementType>(pairType2[i]), pairIndex2[i], i };
       ContactMode mode = couplingScheme->getContactMode();
 
       // perform initial face-pair validity checks to add valid face-pairs 

@@ -19,8 +19,8 @@ namespace tribol
 enum class MemorySpace
 {
   Dynamic,
-#ifdef TRIBOL_USE_UMPIRE
   Host,
+#ifdef TRIBOL_USE_UMPIRE
   Device,
   Unified
 #endif

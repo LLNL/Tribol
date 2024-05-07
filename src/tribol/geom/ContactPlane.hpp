@@ -63,7 +63,7 @@ FaceGeomError CheckInterfacePair( InterfacePair& pair,
  *
  * \pre length(pX), length(pY), length(pZ) >= number of nodes on face
  */
-void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId,
+void ProjectFaceNodesToPlane( const MeshData::Viewer& mesh, int faceId,
                               RealT nrmlX, RealT nrmlY, RealT nrmlZ,
                               RealT cX, RealT cY, RealT cZ,
                               RealT* pX, RealT* pY, 
@@ -83,7 +83,7 @@ void ProjectFaceNodesToPlane( const MeshData& mesh, int faceId,
  * \param [in,out] pY pointer to array of projected nodal y-coordinates
  *
  */
-void ProjectEdgeNodesToSegment( const MeshData& mesh, int edgeId, 
+void ProjectEdgeNodesToSegment( const MeshData::Viewer& mesh, int edgeId, 
                                 RealT nrmlX, RealT nrmlY, RealT cX, 
                                 RealT cY, RealT* pX, 
                                 RealT* pY );
@@ -108,7 +108,7 @@ void ProjectEdgeNodesToSegment( const MeshData& mesh, int edgeId,
  * by face1 (i.e. the zero level set). 
  * 
  */
-bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2, 
+bool FaceInterCheck( const MeshData::Viewer& meshDat1, const MeshData::Viewer& meshDat2, 
                      int fId1, int fId2, RealT tol, bool& allVerts );
 
 /*!
@@ -126,7 +126,7 @@ bool FaceInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
  * \return true if edge 2 interpenetrates the level set defined by edge 1
  *
  */
-bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2, 
+bool EdgeInterCheck( const MeshData::Viewer& meshDat1, const MeshData::Viewer& meshDat2, 
                      int eId1, int eId2, RealT tol, bool& allVerts );
 
 /*!
@@ -145,7 +145,7 @@ bool EdgeInterCheck( const MeshData& meshDat1, const MeshData& meshDat2,
  *      sides of thin structures/plates
  *
  */
-bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
+bool ExceedsMaxAutoInterpen( const MeshData::Viewer& meshDat1, const MeshData::Viewer& meshDat2,
                              const int faceId1, const int faceId2, const RealT gap );
 
 //-----------------------------------------------------------------------------
@@ -373,7 +373,7 @@ public:
     * \param [in] i Face number 
     * \param [in] pairType Face type 
     */
-   void setCpPairType( int id, int pairType )
+   void setCpPairType( int id, InterfaceElementType pairType )
    {
       if (id != 1 && id != 2)
      {

@@ -15,6 +15,9 @@
 namespace tribol
 {
 
+template <typename T, int DIM, typename ArrayType>
+using ArrayBaseT = axom::ArrayBase<T, DIM, ArrayType>;
+
 template <typename T, int DIM = 1, MemorySpace SPACE = MemorySpace::Dynamic>
 using ArrayT = axom::Array<T, DIM, toAxomMemorySpace<SPACE>::value>;
 
