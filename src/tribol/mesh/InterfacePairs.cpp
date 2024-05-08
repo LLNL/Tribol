@@ -55,7 +55,8 @@ void InterfacePairs::addInterfacePair( InterfacePair const& pair )
    m_isContactCandidate.push_back(pair.isContactCandidate);
 }
 
-InterfacePairs::Viewer::Viewer(const InterfacePairs& pairs)
+template <typename PAIRS, typename IDX, typename CAND>
+InterfacePairs::ViewerBase<PAIRS, IDX, CAND>::ViewerBase(PAIRS& pairs)
   : m_mesh_id1( pairs.m_mesh_id1 )
   , m_mesh_id2( pairs.m_mesh_id2 )
   , m_pairType1( pairs.m_pairType1 )
@@ -65,7 +66,8 @@ InterfacePairs::Viewer::Viewer(const InterfacePairs& pairs)
   , m_isContactCandidate( pairs.m_isContactCandidate )
 {}
 
-TRIBOL_HOST_DEVICE InterfacePair InterfacePairs::Viewer::getInterfacePair(IndexT idx) const
+template <typename PAIRS, typename IDX, typename CAND>
+TRIBOL_HOST_DEVICE InterfacePair InterfacePairs::ViewerBase<PAIRS, IDX, CAND>::getInterfacePair(IndexT idx) const
 {
    return {
       m_mesh_id1, m_pairType1, m_pairIndex1[idx],
@@ -73,11 +75,15 @@ TRIBOL_HOST_DEVICE InterfacePair InterfacePairs::Viewer::getInterfacePair(IndexT
       m_isContactCandidate[idx], idx };
 }
 
-TRIBOL_HOST_DEVICE void InterfacePairs::Viewer::updateInterfacePair(
+template <>
+TRIBOL_HOST_DEVICE void InterfacePairs::ViewerBase<InterfacePairs, IndexT, bool>::updateInterfacePair(
   InterfacePair const& pair, int const idx ) const
 {
    m_isContactCandidate[ idx ] = pair.isContactCandidate;
 }
+
+template class InterfacePairs::ViewerBase<InterfacePairs, IndexT, bool>;
+template class InterfacePairs::ViewerBase<const InterfacePairs, const IndexT, const bool>;
 
 } // namespace tribol
 

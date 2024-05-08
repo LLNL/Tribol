@@ -56,13 +56,11 @@ namespace detail
   template <ExecutionMode T>
   struct forAllType {};
 
-#ifdef TRIBOL_USE_RAJA
   template <ExecutionMode EXEC, typename BODY, bool ASYNC, int BLOCK_SIZE>
   void forAllImpl(forAllType<EXEC>, IndexT, BODY&&)
   {
     SLIC_ERROR_ROOT("forAllExec not defined for the given ExecutionMode.");
   }
-#endif
 
 #ifndef TRIBOL_USE_RAJA
 // ExecutionMode::Dynamic maps to ExecutionMode::Sequential without RAJA
@@ -102,7 +100,7 @@ namespace detail
   template <typename BODY, bool ASYNC, int BLOCK_SIZE>
   void forAllImpl(forAllType<ExecutionMode::Cuda>, IndexT N, BODY&& body)
   {
-    forAllCudaImpl<BLOCK_SIZE, ASYNC>(N, std::move(body));
+    forAllCudaImpl<BODY, ASYNC, BLOCK_SIZE>(N, std::move(body));
   }
 #endif
 
@@ -122,7 +120,7 @@ namespace detail
   template <typename BODY, bool ASYNC, int BLOCK_SIZE>
   void forAllImpl(forAllType<ExecutionMode::Hip>, IndexT N, BODY&& body)
   {
-    forAllHipImpl<BLOCK_SIZE, ASYNC>(N, std::move(body));
+    forAllHipImpl<BODY, ASYNC, BLOCK_SIZE>(N, std::move(body));
   }
 #endif
 
@@ -136,34 +134,34 @@ namespace detail
 }
 
 #define TRIBOL_BLOCK_SIZE 256
-template <ExecutionMode EXEC, bool ASYNC = false, int BLOCK_SIZE = TRIBOL_BLOCK_SIZE, typename BODY>
+template <ExecutionMode EXEC, typename BODY, bool ASYNC = false, int BLOCK_SIZE = TRIBOL_BLOCK_SIZE>
 void forAllExec(IndexT N, BODY&& body)
 {
-  detail::forAllImpl<ASYNC, BLOCK_SIZE>(detail::forAllType<EXEC>(), N, std::move(body));
+  detail::forAllImpl<BODY, ASYNC, BLOCK_SIZE>(detail::forAllType<EXEC>(), N, std::move(body));
 }
 
-template <bool ASYNC = false, int BLOCK_SIZE = TRIBOL_BLOCK_SIZE, typename BODY>
+template <typename BODY, bool ASYNC = false, int BLOCK_SIZE = TRIBOL_BLOCK_SIZE>
 void forAllExec(ExecutionMode exec_mode, IndexT N, BODY&& body)
 {
   switch (exec_mode)
   {
     case ExecutionMode::Sequential:
-      return detail::forAllImpl<ASYNC, BLOCK_SIZE>(
+      return detail::forAllImpl<BODY, ASYNC, BLOCK_SIZE>(
         detail::forAllType<ExecutionMode::Sequential>(), N, std::move(body));
 #ifdef TRIBOL_USE_RAJA
 #ifdef TRIBOL_USE_OPENMP
     case ExecutionMode::OpenMP:
-      return detail::forAllImpl<ASYNC, BLOCK_SIZE>(
+      return detail::forAllImpl<BODY, ASYNC, BLOCK_SIZE>(
         detail::forAllType<ExecutionMode::OpenMP>(), N, std::move(body));
 #endif
 #ifdef TRIBOL_USE_CUDA
     case ExecutionMode::Cuda:
-      return detail::forAllImpl<ASYNC, BLOCK_SIZE>(
+      return detail::forAllImpl<BODY, ASYNC, BLOCK_SIZE>(
         detail::forAllType<ExecutionMode::Cuda>(), N, std::move(body));
 #endif
 #ifdef TRIBOL_USE_HIP
     case ExecutionMode::Hip:
-      return detail::forAllImpl<ASYNC, BLOCK_SIZE>(
+      return detail::forAllImpl<BODY, ASYNC, BLOCK_SIZE>(
         detail::forAllType<ExecutionMode::Hip>(), N, std::move(body));
 #endif
 #endif

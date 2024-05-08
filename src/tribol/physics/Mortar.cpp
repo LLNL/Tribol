@@ -118,9 +118,8 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
    SLIC_ERROR_IF(elem.mortarWts==nullptr, "ComputeNodalGap< SINGLE_MORTAR >: compute local weights on input struct first.");
 
    // get mesh instance to store gaps on mesh data object
-   MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
-   IndexT const * const nonmortarConn = nonmortarMesh.getConnectivity().data();;
+   auto& nonmortarMesh = *elem.m_mesh2;
+   IndexT const * const nonmortarConn = nonmortarMesh.getConnectivity().data();
 
    // will populate local gaps on nonmortar face on nonmortar mesh data object
    SLIC_ERROR_IF(nonmortarMesh.getNodalFields().m_node_gap.empty(),
@@ -174,10 +173,10 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 } // end ComputeNodalGap<>()
 
 //------------------------------------------------------------------------------
-void ComputeSingleMortarGaps( CouplingScheme const * cs )
+void ComputeSingleMortarGaps( CouplingScheme* cs )
 {
-   InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexT const numPairs = pairs->getNumPairs();
+   auto pairs = cs->getInterfacePairs()->getConstViewer();
+   IndexT const numPairs = pairs.getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
@@ -189,11 +188,10 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   IndexT const mortarId = cs->getMeshId1();
-   IndexT const nonmortarId = cs->getMeshId2();
+   auto& mortarMesh = cs->getMesh1();
+   auto& nonmortarMesh = cs->getMesh2();
 
-   MeshData& mortarMesh = meshManager.at( mortarId );
-   MeshData& nonmortarMesh = meshManager.at( nonmortarId );
+   MeshData& nonmortarMeshBase = meshManager.at( cs->getMeshId2() );
    IndexT const numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
    RealT const * const x1 = mortarMesh.getPosition()[0].data();
@@ -208,7 +206,7 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
 
    // compute nodal normals (do this outside the element loop)
    // Note, this is guarded against zero element meshes
-   nonmortarMesh.computeNodalNormals( dim );
+   nonmortarMeshBase.computeNodalNormals( dim );
 
    // declare local variables to hold face nodal coordinates
    // and overlap vertex coordinates
@@ -227,7 +225,7 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
    int cpID = 0;
    for (IndexT kp = 0; kp < numPairs; ++kp)
    {
-      InterfacePair pair = pairs->getInterfacePair(kp);
+      InterfacePair pair = pairs.getInterfacePair(kp);
 
       if (!pair.isContactCandidate)
       {
@@ -278,7 +276,7 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
                                &overlapX[0],
                                numNodesPerFace, 
                                cpManager.m_numPolyVert[cpID],
-                               mortarId, nonmortarId, index1, index2 );
+                               &mortarMesh, &nonmortarMesh, index1, index2 );
 
       // compute the mortar weights to be stored on the surface 
       // contact element struct. This must be done prior to computing nodal gaps
@@ -313,24 +311,20 @@ void ComputeSingleMortarGaps( CouplingScheme const * cs )
 template< >
 int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs )
 {
-   InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexT const numPairs = pairs->getNumPairs();
+   auto pairs = cs->getInterfacePairs()->getConstViewer();
+   IndexT const numPairs = pairs.getNumPairs();
 
-   MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
-   parameters_t& parameters = parameters_t::getInstance();
-   int const dim = parameters.dimension;
+   int const dim = cs->spatialDimension();
 
-   ////////////////////////////////
-   //                            //
-   // Grab pointers to mesh data //
-   //                            //
-   ////////////////////////////////
-   IndexT const mortarId = cs->getMeshId1();
-   IndexT const nonmortarId = cs->getMeshId2();
+   ////////////////////////////////////////////////////////////////////////
+   //
+   // Grab pointers to mesh data
+   //
+   ////////////////////////////////////////////////////////////////////////
+   auto& mortarMesh = cs->getMesh1();
+   auto& nonmortarMesh = cs->getMesh2();
 
-   MeshData& mortarMesh = meshManager.at( mortarId );
-   MeshData& nonmortarMesh = meshManager.at( nonmortarId );
    IndexT const numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
    RealT const * const x1 = mortarMesh.getPosition()[0].data();
@@ -395,7 +389,7 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
    int cpID = 0;
    for (IndexT kp = 0; kp < numPairs; ++kp)
    {
-      InterfacePair pair = pairs->getInterfacePair(kp);
+      InterfacePair pair = pairs.getInterfacePair(kp);
 
       if (!pair.isContactCandidate)
       {
@@ -438,7 +432,7 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs
                                &overlapX[0],
                                numNodesPerFace, 
                                cpManager.m_numPolyVert[cpID],
-                               mortarId, nonmortarId, index1, index2 );
+                               &mortarMesh, &nonmortarMesh, index1, index2 );
 
       //////////////////////////////////
       // compute equilibrium residual //
@@ -541,8 +535,7 @@ void ComputeResidualJacobian< SINGLE_MORTAR, PRIMAL >( SurfaceContactElem & TRIB
 template< >
 void ComputeResidualJacobian< SINGLE_MORTAR, DUAL >( SurfaceContactElem & elem )
 {
-   MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
+   auto& nonmortarMesh = *elem.m_mesh2;
    IndexT const * const nonmortarConn = nonmortarMesh.getConnectivity().data();
 
    // loop over "a" nodes accumulating sums of mortar/nonmortar 
@@ -617,8 +610,7 @@ void ComputeResidualJacobian< SINGLE_MORTAR, DUAL >( SurfaceContactElem & elem )
 template< >
 void ComputeConstraintJacobian< SINGLE_MORTAR, PRIMAL >( SurfaceContactElem & elem )
 {
-   MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
+   auto& nonmortarMesh = *elem.m_mesh2;
    IndexT const * const nonmortarConn = nonmortarMesh.getConnectivity().data();
 
    // loop over nonmortar nodes for which we are accumulating Jacobian 
@@ -722,17 +714,15 @@ void ComputeSingleMortarJacobian( SurfaceContactElem & elem )
 template< >
 int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
 {
-   InterfacePairs const * const pairs = cs->getInterfacePairs();
-   IndexT const numPairs = pairs->getNumPairs();
+   auto pairs = cs->getInterfacePairs()->getConstViewer();
+   IndexT const numPairs = pairs.getNumPairs();
 
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
    parameters_t& parameters = parameters_t::getInstance();
    int const dim = parameters.dimension;
 
-   IndexT const mortarId = cs->getMeshId1();
-   IndexT const nonmortarId = cs->getMeshId2();
-   MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& mortarMesh = meshManager.at( mortarId );
+   auto& mortarMesh = cs->getMesh1();
+   auto& nonmortarMesh = cs->getMesh2();
    IndexT const numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
    ////////////////////////////////
@@ -766,7 +756,7 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
    int cpID = 0;
    for (IndexT kp = 0; kp < numPairs; ++kp)
    {
-      InterfacePair pair = pairs->getInterfacePair(kp);
+      InterfacePair pair = pairs.getInterfacePair(kp);
 
       if (!pair.isContactCandidate)
       {
@@ -793,7 +783,7 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
                                &overlapX[0],
                                numNodesPerFace, 
                                cpManager.m_numPolyVert[cpID],
-                               mortarId, nonmortarId, index1, index2 );
+                               &mortarMesh, &nonmortarMesh, index1, index2 );
 
       // compute the mortar weights to be stored on the surface 
       // contact element struct. This must be done prior to computing nodal gaps

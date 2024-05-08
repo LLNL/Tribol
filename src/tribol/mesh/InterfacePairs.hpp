@@ -74,23 +74,27 @@ struct InterfacePair
 class InterfacePairs
 {
 public:
-  class Viewer
+  template <typename PAIRS, typename IDX, typename CAND>
+  class ViewerBase
   {
   public:
-    Viewer( const InterfacePairs& pairs );
+    ViewerBase( PAIRS& pairs );
     TRIBOL_HOST_DEVICE InterfacePair getInterfacePair( IndexT idx ) const;
     TRIBOL_HOST_DEVICE void updateInterfacePair( InterfacePair const& pair,
                                                  int const idx ) const;
+    IndexT getNumPairs() const { return m_pairIndex1.size(); }
   private:
     const IndexT m_mesh_id1;
     const IndexT m_mesh_id2;
     const InterfaceElementType m_pairType1;
     const InterfaceElementType m_pairType2;
 
-    const ArrayViewT<IndexT> m_pairIndex1;
-    const ArrayViewT<IndexT> m_pairIndex2;
-    const ArrayViewT<bool> m_isContactCandidate;
+    const ArrayViewT<IDX> m_pairIndex1;
+    const ArrayViewT<IDX> m_pairIndex2;
+    const ArrayViewT<CAND> m_isContactCandidate;
   };
+  using Viewer = ViewerBase<InterfacePairs, IndexT, bool>;
+  using ConstViewer = ViewerBase<const InterfacePairs, const IndexT, const bool>;
 
   InterfacePairs()  = default;
   InterfacePairs( int allocator_id );
@@ -132,7 +136,9 @@ public:
 
   IndexT getNumPairs() const { return m_pairIndex1.size(); }
 
-  Viewer getViewer() const { return *this; }
+  Viewer getViewer() { return *this; }
+
+  ConstViewer getConstViewer() const { return *this; }
 
 private:
 

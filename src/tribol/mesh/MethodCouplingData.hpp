@@ -8,6 +8,7 @@
 
 #include "tribol/common/ArrayTypes.hpp"
 #include "tribol/common/Parameters.hpp"
+#include "tribol/mesh/MeshData.hpp"
 
 // Axom includes
 #include "axom/core.hpp"
@@ -15,7 +16,6 @@
 
 // MFEM includes
 #include "mfem.hpp"
-#include <axom/core/Types.hpp>
 
 namespace tribol
 {
@@ -42,14 +42,14 @@ struct SurfaceContactElem
                        RealT * xOverlap,   ///< [in] Vertex coordinates of overlap
                        int nFV,       ///< [in] Number of face vertices
                        int nPV,       ///< [in] Number of overlap vertices
-                       int mId1,      ///< [in] Id for mesh 1
-                       int mId2,      ///< [in] Id for mesh 2
+                       const MeshData::Viewer* mesh1,      ///< [in] Id for mesh 1
+                       const MeshData::Viewer* mesh2,      ///< [in] Id for mesh 2
                        int fId1,      ///< [in] Id for face 1
                        int fId2       ///< [in] Id for face 2
                      )
      : dim(dimension)
-     , mesh_id1(mId1)
-     , mesh_id2(mId2)
+     , m_mesh1(mesh1)
+     , m_mesh2(mesh2)
      , faceId1(fId1)
      , faceId2(fId2)
      , faceCoords1(x1)
@@ -74,8 +74,8 @@ struct SurfaceContactElem
    }
 
    int dim;          ///< Problem dimension
-   IndexT mesh_id1;      ///< Mesh Id for face 1 (mortar)
-   IndexT mesh_id2;      ///< Mesh Id for face 2 (nonmortar)
+   const MeshData::Viewer* m_mesh1;      ///< Mesh Id for face 1 (mortar)
+   const MeshData::Viewer* m_mesh2;      ///< Mesh Id for face 2 (nonmortar)
    int faceId1;      ///< Face Id for face 1 (mortar)
    int faceId2;      ///< Face Id for face 2 (nonmortar)
    RealT * faceCoords1;   ///< Coordinates of face 1 in 3D

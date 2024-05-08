@@ -132,7 +132,9 @@ public:
   int getMeshId1() const { return m_mesh_id1; }
   int getMeshId2() const { return m_mesh_id2; }
 
+  MeshData::Viewer& getMesh1() { return *m_mesh1; }
   const MeshData::Viewer& getMesh1() const { return *m_mesh1; }
+  MeshData::Viewer& getMesh2() { return *m_mesh2; }
   const MeshData::Viewer& getMesh2() const { return *m_mesh2; }
 
   ExecutionMode getExecutionMode() const { return m_exec_mode; }
@@ -548,8 +550,6 @@ public:
   }
 
 #endif /* BUILD_REDECOMP */
-
-private:
 
   /*!
    * \brief Computes common-plane specific time step vote

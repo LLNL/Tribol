@@ -781,11 +781,11 @@ public:
         
         auto mesh1_elem = algorithm::binarySearch(
           offsets_view.size(),
-          [&] TRIBOL_HOST_DEVICE (IndexT j)
+          [=] TRIBOL_HOST_DEVICE (IndexT j)
           {
             return offsets_view[j] + counts_view[j] < i;
           },
-          [&] TRIBOL_HOST_DEVICE (IndexT j)
+          [=] TRIBOL_HOST_DEVICE (IndexT j)
           {
             return offsets_view[j] > i;
           }
@@ -926,7 +926,7 @@ InterfacePairFinder::InterfacePairFinder(CouplingScheme* cs)
             #endif
             #ifdef TRIBOL_USE_CUDA
             case(ExecutionMode::Cuda):
-               m_search = new BvhSearch<2, axom::CUDA_EXEC<CUDA_BLOCK_SIZE>>(m_coupling_scheme);
+               m_search = new BvhSearch<2, axom::CUDA_EXEC<TRIBOL_BLOCK_SIZE>>(m_coupling_scheme);
                break;
             #endif
             default:

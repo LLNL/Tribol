@@ -1403,13 +1403,13 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
          return;
       }
 
-      RealT x1[dim * numNodesPerCell1];
-      RealT v1[dim * numNodesPerCell1];
+      ArrayT<RealT> x1(dim * numNodesPerCell1, dim * numNodesPerCell1, allocator_id);
+      ArrayT<RealT> v1(dim * numNodesPerCell1, dim * numNodesPerCell1, allocator_id);
       mesh1.getFaceCoords( pair.pairIndex1, &x1[0] );
       mesh1.getFaceVelocities( pair.pairIndex1, &v1[0] );
 
-      RealT x2[dim * numNodesPerCell2];
-      RealT v2[dim * numNodesPerCell2];
+      ArrayT<RealT> x2(dim * numNodesPerCell2, dim * numNodesPerCell2, allocator_id);
+      ArrayT<RealT> v2(dim * numNodesPerCell2, dim * numNodesPerCell2, allocator_id);
       mesh2.getFaceCoords( pair.pairIndex2, &x2[0] );
       mesh2.getFaceVelocities( pair.pairIndex2, &v2[0] );
 
@@ -1431,272 +1431,272 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
   );
       
 
-      // interpolate nodal velocity at overlap centroid as projected 
-      // onto face 2
-      RealT cXf2 = cpMgr.m_cXf2[cpID];
-      RealT cYf2 = cpMgr.m_cYf2[cpID];
-      RealT cZf2 = (dim == 3) ? cpMgr.m_cZf2[cpID] : 0.;
-      GalerkinEval( &x2[0], cXf2, cYf2, cZf2,
-                    LINEAR, PHYSICAL, dim, dim, 
-                    &v2[0], &vel_f2[0] );
+  //     // interpolate nodal velocity at overlap centroid as projected 
+  //     // onto face 2
+  //     RealT cXf2 = cpMgr.m_cXf2[cpID];
+  //     RealT cYf2 = cpMgr.m_cYf2[cpID];
+  //     RealT cZf2 = (dim == 3) ? cpMgr.m_cZf2[cpID] : 0.;
+  //     GalerkinEval( &x2[0], cXf2, cYf2, cZf2,
+  //                   LINEAR, PHYSICAL, dim, dim, 
+  //                   &v2[0], &vel_f2[0] );
 
-      ////////////////////////////////////////////////
-      //                                            //
-      // Compute Timestep Vote Based on a Few Cases //
-      //                                            //
-      ////////////////////////////////////////////////
+  //     ////////////////////////////////////////////////
+  //     //                                            //
+  //     // Compute Timestep Vote Based on a Few Cases //
+  //     //                                            //
+  //     ////////////////////////////////////////////////
 
-      ///////////////////////////////////////////////
-      // compute data common to all timestep votes //
-      ///////////////////////////////////////////////
+  //     ///////////////////////////////////////////////
+  //     // compute data common to all timestep votes //
+  //     ///////////////////////////////////////////////
 
-      // compute velocity projections:
-      // compute the dot product between the face velocities 
-      // at the overlap-centroid-to-face projected centroid and each
-      // face's outward unit normal AND the overlap normal. The 
-      // former is used to compute projections and the latter is 
-      // used to indicate further contact using a velocity projection
-      RealT v1_dot_n, v2_dot_n, v1_dot_n1, v2_dot_n2;
-      RealT overlapNormal[dim];
-      cpMgr.getContactPlaneNormal( cpID, dim, &overlapNormal[0] );
+  //     // compute velocity projections:
+  //     // compute the dot product between the face velocities 
+  //     // at the overlap-centroid-to-face projected centroid and each
+  //     // face's outward unit normal AND the overlap normal. The 
+  //     // former is used to compute projections and the latter is 
+  //     // used to indicate further contact using a velocity projection
+  //     RealT v1_dot_n, v2_dot_n, v1_dot_n1, v2_dot_n2;
+  //     RealT overlapNormal[dim];
+  //     cpMgr.getContactPlaneNormal( cpID, dim, &overlapNormal[0] );
 
-      // get face normals
-      RealT fn1[dim], fn2[dim];
-      m_mesh1->getFaceNormal( pair.pairIndex1, &fn1[0] );
-      m_mesh2->getFaceNormal( pair.pairIndex2, &fn2[0] );
+  //     // get face normals
+  //     RealT fn1[dim], fn2[dim];
+  //     m_mesh1->getFaceNormal( pair.pairIndex1, &fn1[0] );
+  //     m_mesh2->getFaceNormal( pair.pairIndex2, &fn2[0] );
 
-      // compute projections
-      v1_dot_n  = dotProd( &vel_f1[0], &overlapNormal[0], dim );
-      v2_dot_n  = dotProd( &vel_f2[0], &overlapNormal[0], dim );
-      v1_dot_n1 = dotProd( &vel_f1[0], &fn1[0], dim );
-      v2_dot_n2 = dotProd( &vel_f2[0], &fn2[0], dim );
+  //     // compute projections
+  //     v1_dot_n  = dotProd( &vel_f1[0], &overlapNormal[0], dim );
+  //     v2_dot_n  = dotProd( &vel_f2[0], &overlapNormal[0], dim );
+  //     v1_dot_n1 = dotProd( &vel_f1[0], &fn1[0], dim );
+  //     v2_dot_n2 = dotProd( &vel_f2[0], &fn2[0], dim );
 
-      //std::cout << "face 1 normal: " << fn1[0] << ", " << fn1[1] << ", " << fn1[2] << std::endl;
-      //std::cout << "face 2 normal: " << fn2[0] << ", " << fn2[1] << ", " << fn2[2] << std::endl;
-      //std::cout << " " << std::endl;
-      //std::cout << "face 1 vel: " << vel_f1[0] << ", " << vel_f1[1] << ", " << vel_f1[2] << std::endl;
-      //std::cout << "face 2 vel: " << vel_f2[0] << ", " << vel_f2[1] << ", " << vel_f2[2] << std::endl;
-      //std::cout << " " << std::endl;
-      //std::cout << "First v1_dot_n1 calc: " << v1_dot_n1 << std::endl;
-      //std::cout << "First v2_dot_n2 calc: " << v2_dot_n2 << std::endl;
-      //std::cout << "First v1_dot_n: " << v1_dot_n << std::endl;
-      //std::cout << "First v2_dot_n: " << v2_dot_n << std::endl;
+  //     //std::cout << "face 1 normal: " << fn1[0] << ", " << fn1[1] << ", " << fn1[2] << std::endl;
+  //     //std::cout << "face 2 normal: " << fn2[0] << ", " << fn2[1] << ", " << fn2[2] << std::endl;
+  //     //std::cout << " " << std::endl;
+  //     //std::cout << "face 1 vel: " << vel_f1[0] << ", " << vel_f1[1] << ", " << vel_f1[2] << std::endl;
+  //     //std::cout << "face 2 vel: " << vel_f2[0] << ", " << vel_f2[1] << ", " << vel_f2[2] << std::endl;
+  //     //std::cout << " " << std::endl;
+  //     //std::cout << "First v1_dot_n1 calc: " << v1_dot_n1 << std::endl;
+  //     //std::cout << "First v2_dot_n2 calc: " << v2_dot_n2 << std::endl;
+  //     //std::cout << "First v1_dot_n: " << v1_dot_n << std::endl;
+  //     //std::cout << "First v2_dot_n: " << v2_dot_n << std::endl;
 
-      // add tiny amount to velocity-cp_normal projections to avoid
-      // division by zero. Note that if these projections are close to 
-      // zero, there may stationary interactions or tangential motion. 
-      // In this case, any timestep estimate will be very large, and 
-      // not control the simulation
-      RealT tiny = 1.e-12;
-      RealT tiny1 = (v1_dot_n >= 0.) ? tiny : -1.*tiny;
-      RealT tiny2 = (v2_dot_n >= 0.) ? tiny : -1.*tiny;
-      v1_dot_n  += tiny1;
-      v2_dot_n  += tiny2;
-      // add tiny amount to velocity-face_normal projections to avoid
-      // division by zero
-      tiny1 = (v1_dot_n1 >= 0.) ? tiny : -1.*tiny;
-      tiny2 = (v2_dot_n2 >= 0.) ? tiny : -1.*tiny;
-      v1_dot_n1 += tiny1;
-      v2_dot_n2 += tiny2;
+  //     // add tiny amount to velocity-cp_normal projections to avoid
+  //     // division by zero. Note that if these projections are close to 
+  //     // zero, there may stationary interactions or tangential motion. 
+  //     // In this case, any timestep estimate will be very large, and 
+  //     // not control the simulation
+  //     RealT tiny = 1.e-12;
+  //     RealT tiny1 = (v1_dot_n >= 0.) ? tiny : -1.*tiny;
+  //     RealT tiny2 = (v2_dot_n >= 0.) ? tiny : -1.*tiny;
+  //     v1_dot_n  += tiny1;
+  //     v2_dot_n  += tiny2;
+  //     // add tiny amount to velocity-face_normal projections to avoid
+  //     // division by zero
+  //     tiny1 = (v1_dot_n1 >= 0.) ? tiny : -1.*tiny;
+  //     tiny2 = (v2_dot_n2 >= 0.) ? tiny : -1.*tiny;
+  //     v1_dot_n1 += tiny1;
+  //     v2_dot_n2 += tiny2;
 
-      //std::cout << "Second v1_dot_n1 calc: " << v1_dot_n1 << std::endl;
-      //std::cout << "Second v2_dot_n2 calc: " << v2_dot_n2 << std::endl;
-      //std::cout << "Second v1_dot_n: " << v1_dot_n << std::endl;
-      //std::cout << "Second v2_dot_n: " << v2_dot_n << std::endl;
+  //     //std::cout << "Second v1_dot_n1 calc: " << v1_dot_n1 << std::endl;
+  //     //std::cout << "Second v2_dot_n2 calc: " << v2_dot_n2 << std::endl;
+  //     //std::cout << "Second v1_dot_n: " << v1_dot_n << std::endl;
+  //     //std::cout << "Second v2_dot_n: " << v2_dot_n << std::endl;
 
-      // get volume element thicknesses associated with each 
-      // face in this pair and find minimum
-      RealT t1 = m_mesh1->getElementData().m_thickness[pair.pairIndex1];
-      RealT t2 = m_mesh2->getElementData().m_thickness[pair.pairIndex2];
+  //     // get volume element thicknesses associated with each 
+  //     // face in this pair and find minimum
+  //     RealT t1 = m_mesh1->getElementData().m_thickness[pair.pairIndex1];
+  //     RealT t2 = m_mesh2->getElementData().m_thickness[pair.pairIndex2];
 
-      // compute the gap vector (recall gap is x1-x2 by convention)
-      RealT gapVec[dim];
-      gapVec[0] = cpMgr.m_cXf1[cpID] - cpMgr.m_cXf2[cpID];
-      gapVec[1] = cpMgr.m_cYf1[cpID] - cpMgr.m_cYf2[cpID];
-      if (dim == 3)
-      {
-         gapVec[2] = cpMgr.m_cZf1[cpID] - cpMgr.m_cZf2[cpID];
-      }
+  //     // compute the gap vector (recall gap is x1-x2 by convention)
+  //     RealT gapVec[dim];
+  //     gapVec[0] = cpMgr.m_cXf1[cpID] - cpMgr.m_cXf2[cpID];
+  //     gapVec[1] = cpMgr.m_cYf1[cpID] - cpMgr.m_cYf2[cpID];
+  //     if (dim == 3)
+  //     {
+  //        gapVec[2] = cpMgr.m_cZf1[cpID] - cpMgr.m_cZf2[cpID];
+  //     }
 
-      // compute the dot product between gap vector and the outward 
-      // unit face normals. Note: the amount of interpenetration is 
-      // going to be compared to a length/thickness parameter that 
-      // is computed in the direction of the outward unit normal, 
-      // NOT the normal of the contact plane. This is despite the 
-      // fact that the contact nodal forces are resisting contact 
-      // in the direction of the overlap normal. 
-      RealT gap_f1_n1 = dotProd( &gapVec[0], &fn1[0], dim );
-      RealT gap_f2_n2 = dotProd( &gapVec[0], &fn2[0], dim );
+  //     // compute the dot product between gap vector and the outward 
+  //     // unit face normals. Note: the amount of interpenetration is 
+  //     // going to be compared to a length/thickness parameter that 
+  //     // is computed in the direction of the outward unit normal, 
+  //     // NOT the normal of the contact plane. This is despite the 
+  //     // fact that the contact nodal forces are resisting contact 
+  //     // in the direction of the overlap normal. 
+  //     RealT gap_f1_n1 = dotProd( &gapVec[0], &fn1[0], dim );
+  //     RealT gap_f2_n2 = dotProd( &gapVec[0], &fn2[0], dim );
 
-      RealT dt1 = 1.e6;  // initialize as large number
-      RealT dt2 = 1.e6;  // initialize as large number
-      RealT alpha = 1.0; // multiplier on timestep estimate
-      bool dt1_check1 = false;
-      bool dt2_check1 = false;
-      bool dt1_vel_check = false;
-      bool dt2_vel_check = false;
+  //     RealT dt1 = 1.e6;  // initialize as large number
+  //     RealT dt2 = 1.e6;  // initialize as large number
+  //     RealT alpha = 1.0; // multiplier on timestep estimate
+  //     bool dt1_check1 = false;
+  //     bool dt2_check1 = false;
+  //     bool dt1_vel_check = false;
+  //     bool dt2_vel_check = false;
 
-      RealT max_delta1 = proj_ratio * t1;
-      RealT max_delta2 = proj_ratio * t2;
+  //     RealT max_delta1 = proj_ratio * t1;
+  //     RealT max_delta2 = proj_ratio * t2;
 
-      // Trigger for check 1 and 2:
-      // check if there is further interpen or separation based on the 
-      // velocity projection in the direction of the common-plane normal,
-      // which is in the direction of face-2 normal.
-      // The two cases are:
-      // if v1*n < 0 there is interpen
-      // if v2*n > 0 there is interpen 
-      //
-      // Note: we compare strictly to 0. here since a 'tiny' value was 
-      // appropriately added to the velocity projections, which is akin 
-      // to some tolerancing effect
-      dt1_vel_check = (v1_dot_n < 0.) ? true : false; 
-      dt2_vel_check = (v2_dot_n > 0.) ? true : false; 
+  //     // Trigger for check 1 and 2:
+  //     // check if there is further interpen or separation based on the 
+  //     // velocity projection in the direction of the common-plane normal,
+  //     // which is in the direction of face-2 normal.
+  //     // The two cases are:
+  //     // if v1*n < 0 there is interpen
+  //     // if v2*n > 0 there is interpen 
+  //     //
+  //     // Note: we compare strictly to 0. here since a 'tiny' value was 
+  //     // appropriately added to the velocity projections, which is akin 
+  //     // to some tolerancing effect
+  //     dt1_vel_check = (v1_dot_n < 0.) ? true : false; 
+  //     dt2_vel_check = (v2_dot_n > 0.) ? true : false; 
 
-      ////////////////////////////////////////////////////////////////////
-      // 1. Current interpenetration gap exceeds max allowable interpen // 
-      ////////////////////////////////////////////////////////////////////
+  //     ////////////////////////////////////////////////////////////////////
+  //     // 1. Current interpenetration gap exceeds max allowable interpen // 
+  //     ////////////////////////////////////////////////////////////////////
 
-      // check if pair is in contact per Common Plane method. Note: this check 
-      // to see if the face-pair is in contact uses the gap computed on the 
-      // contact plane, which is in the direction of the overlap normal
-      if (cpMgr.m_inContact[cpID]) // gap < gap_tol
-      {
+  //     // check if pair is in contact per Common Plane method. Note: this check 
+  //     // to see if the face-pair is in contact uses the gap computed on the 
+  //     // contact plane, which is in the direction of the overlap normal
+  //     if (cpMgr.m_inContact[cpID]) // gap < gap_tol
+  //     {
 
-         // compute the difference between the 'face-gaps' and the max allowable 
-         // interpen as a function of element thickness. 
-         RealT delta1 = max_delta1 - gap_f1_n1; // >0 not exceeding max allowable
-         RealT delta2 = max_delta2 + gap_f2_n2; // >0 not exceeding max allowable
+  //        // compute the difference between the 'face-gaps' and the max allowable 
+  //        // interpen as a function of element thickness. 
+  //        RealT delta1 = max_delta1 - gap_f1_n1; // >0 not exceeding max allowable
+  //        RealT delta2 = max_delta2 + gap_f2_n2; // >0 not exceeding max allowable
 
-         if (delta1 < 0 || delta2 < 0)
-         {
-            max_gap_msg = true;
-         }
+  //        if (delta1 < 0 || delta2 < 0)
+  //        {
+  //           max_gap_msg = true;
+  //        }
 
-         // if velocity projection indicates further interpenetration, and the gaps
-         // EXCEED max allowable, then compute time step estimates to reduce overlap
-         dt1_check1 = (dt1_vel_check) ? (delta1 < 0.) : false;
-         dt2_check1 = (dt2_vel_check) ? (delta2 < 0.) : false;
+  //        // if velocity projection indicates further interpenetration, and the gaps
+  //        // EXCEED max allowable, then compute time step estimates to reduce overlap
+  //        dt1_check1 = (dt1_vel_check) ? (delta1 < 0.) : false;
+  //        dt2_check1 = (dt2_vel_check) ? (delta2 < 0.) : false;
 
-         // compute dt for face 1 and 2 based on the velocity projection in the 
-         // direction of that face's outward unit normal
-         // Note, this calculation takes a fraction of the computed dt to reduce 
-         // the amount of face-displacement in a given cycle.
-         //
-         // if dt[i]_check[i] is true, then delta[i] is < 0. per check above. Furthermore,
-         // if the velocity projection indicates further interpenetration, the velocity 
-         // projected onto that face's outward unit normal is always positive. Thus,
-         // dt[i] should never be negative unless the face-normal is flipped based on 
-         // vertex ordering.
-         dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
-         dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
+  //        // compute dt for face 1 and 2 based on the velocity projection in the 
+  //        // direction of that face's outward unit normal
+  //        // Note, this calculation takes a fraction of the computed dt to reduce 
+  //        // the amount of face-displacement in a given cycle.
+  //        //
+  //        // if dt[i]_check[i] is true, then delta[i] is < 0. per check above. Furthermore,
+  //        // if the velocity projection indicates further interpenetration, the velocity 
+  //        // projected onto that face's outward unit normal is always positive. Thus,
+  //        // dt[i] should never be negative unless the face-normal is flipped based on 
+  //        // vertex ordering.
+  //        dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
+  //        dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
 
-         //std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << delta1 << ", " << v1_dot_n1 << std::endl;
-         //std::cout << "dt2_check1, delta2 and v2_dot_n2: " << dt2_check1 << ", " << delta2 << ", " << v2_dot_n2 << std::endl;
-         //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
+  //        //std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << delta1 << ", " << v1_dot_n1 << std::endl;
+  //        //std::cout << "dt2_check1, delta2 and v2_dot_n2: " << dt2_check1 << ", " << delta2 << ", " << v2_dot_n2 << std::endl;
+  //        //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
-         // update dt_temp1 only for positive dt1 and/or dt2
-         if (dt1 > 0.)
-         {
-            dt_temp1 = axom::utilities::min(dt_temp1, 
-                       axom::utilities::min(dt1, 1.e6));
-         }
-         if (dt2 > 0.)
-         {
-            dt_temp1 = axom::utilities::min(dt_temp1, 
-                       axom::utilities::min(1.e6, dt2));
-         }
+  //        // update dt_temp1 only for positive dt1 and/or dt2
+  //        if (dt1 > 0.)
+  //        {
+  //           dt_temp1 = axom::utilities::min(dt_temp1, 
+  //                      axom::utilities::min(dt1, 1.e6));
+  //        }
+  //        if (dt2 > 0.)
+  //        {
+  //           dt_temp1 = axom::utilities::min(dt_temp1, 
+  //                      axom::utilities::min(1.e6, dt2));
+  //        }
 
-         if (dt1 < 0. || dt2 < 0.)
-         {
-            neg_dt_gap_msg = true;
-         }
+  //        if (dt1 < 0. || dt2 < 0.)
+  //        {
+  //           neg_dt_gap_msg = true;
+  //        }
 
-      } // end case 1
+  //     } // end case 1
 
-      ///////////////////////////////////////////////////////////
-      // 2. Velocity projection exceeds interpen tolerance     // 
-      //    Note: This is performed for all contact candidates //
-      //          even if they are not 'in contact' per the    //
-      //          common-plane method                          //
-      ///////////////////////////////////////////////////////////
+  //     ///////////////////////////////////////////////////////////
+  //     // 2. Velocity projection exceeds interpen tolerance     // 
+  //     //    Note: This is performed for all contact candidates //
+  //     //          even if they are not 'in contact' per the    //
+  //     //          common-plane method                          //
+  //     ///////////////////////////////////////////////////////////
 
-      {
-         // compute delta between velocity projection of face-projected 
-         // overlap centroid and the OTHER face's face-projected overlap 
-         // centroid
-         RealT proj_delta_x1 = cpMgr.m_cXf1[cpID] + dt * vel_f1[0] - cpMgr.m_cXf2[cpID];
-         RealT proj_delta_y1 = cpMgr.m_cYf1[cpID] + dt * vel_f1[1] - cpMgr.m_cYf2[cpID];
-         RealT proj_delta_z1 = 0.;
+  //     {
+  //        // compute delta between velocity projection of face-projected 
+  //        // overlap centroid and the OTHER face's face-projected overlap 
+  //        // centroid
+  //        RealT proj_delta_x1 = cpMgr.m_cXf1[cpID] + dt * vel_f1[0] - cpMgr.m_cXf2[cpID];
+  //        RealT proj_delta_y1 = cpMgr.m_cYf1[cpID] + dt * vel_f1[1] - cpMgr.m_cYf2[cpID];
+  //        RealT proj_delta_z1 = 0.;
 
-         RealT proj_delta_x2 = cpMgr.m_cXf2[cpID] + dt * vel_f2[0] - cpMgr.m_cXf1[cpID]; 
-         RealT proj_delta_y2 = cpMgr.m_cYf2[cpID] + dt * vel_f2[1] - cpMgr.m_cYf1[cpID];
-         RealT proj_delta_z2 = 0.;
+  //        RealT proj_delta_x2 = cpMgr.m_cXf2[cpID] + dt * vel_f2[0] - cpMgr.m_cXf1[cpID]; 
+  //        RealT proj_delta_y2 = cpMgr.m_cYf2[cpID] + dt * vel_f2[1] - cpMgr.m_cYf1[cpID];
+  //        RealT proj_delta_z2 = 0.;
 
-         // compute the dot product between each face's delta and the OTHER 
-         // face's outward unit normal. This is the magnitude of interpenetration 
-         // of one face's projected overlap-centroid in the 'thickness-direction' 
-         // of the other face (with whom in may be in contact currently, or in 
-         // a velocity projected sense).
-         RealT proj_delta_n_1 = proj_delta_x1 * fn2[0] + proj_delta_y1 * fn2[1];
-         RealT proj_delta_n_2 = proj_delta_x2 * fn1[0] + proj_delta_y2 * fn1[1];
+  //        // compute the dot product between each face's delta and the OTHER 
+  //        // face's outward unit normal. This is the magnitude of interpenetration 
+  //        // of one face's projected overlap-centroid in the 'thickness-direction' 
+  //        // of the other face (with whom in may be in contact currently, or in 
+  //        // a velocity projected sense).
+  //        RealT proj_delta_n_1 = proj_delta_x1 * fn2[0] + proj_delta_y1 * fn2[1];
+  //        RealT proj_delta_n_2 = proj_delta_x2 * fn1[0] + proj_delta_y2 * fn1[1];
 
-         if (dim == 3)
-         {
-            proj_delta_z1 = cpMgr.m_cZf1[cpID] + dt * vel_f1[2] - cpMgr.m_cZf2[cpID];
-            proj_delta_z2 = cpMgr.m_cZf2[cpID] + dt * vel_f2[2] - cpMgr.m_cZf1[cpID];
+  //        if (dim == 3)
+  //        {
+  //           proj_delta_z1 = cpMgr.m_cZf1[cpID] + dt * vel_f1[2] - cpMgr.m_cZf2[cpID];
+  //           proj_delta_z2 = cpMgr.m_cZf2[cpID] + dt * vel_f2[2] - cpMgr.m_cZf1[cpID];
 
-            proj_delta_n_1 += proj_delta_z1 * fn2[2];
-            proj_delta_n_2 += proj_delta_z2 * fn1[2];
-         }
+  //           proj_delta_n_1 += proj_delta_z1 * fn2[2];
+  //           proj_delta_n_2 += proj_delta_z2 * fn1[2];
+  //        }
 
-         // If proj_delta_n_i < 0, (i=1,2) there is interpen from the velocity projection. 
-         // Check this interpen against the maximum allowable to determine if a velocity projection 
-         // timestep estimate is still required.
-         if (dt1_vel_check)
-         {
-            dt1_vel_check = (proj_delta_n_1 < 0.) ? ((std::abs(proj_delta_n_1) > max_delta1) ? true : false) : false;
-         }
+  //        // If proj_delta_n_i < 0, (i=1,2) there is interpen from the velocity projection. 
+  //        // Check this interpen against the maximum allowable to determine if a velocity projection 
+  //        // timestep estimate is still required.
+  //        if (dt1_vel_check)
+  //        {
+  //           dt1_vel_check = (proj_delta_n_1 < 0.) ? ((std::abs(proj_delta_n_1) > max_delta1) ? true : false) : false;
+  //        }
          
-         if (dt2_vel_check)
-         {
-            dt2_vel_check = (proj_delta_n_2 < 0.) ? ((std::abs(proj_delta_n_2) > max_delta2) ? true : false) : false;
-         }
+  //        if (dt2_vel_check)
+  //        {
+  //           dt2_vel_check = (proj_delta_n_2 < 0.) ? ((std::abs(proj_delta_n_2) > max_delta2) ? true : false) : false;
+  //        }
 
-         // if the 'case 1' check was not triggered for face 1 or 2, then
-         // check the sign of the delta-projections to determine if interpen 
-         // is occuring. If so, check against maximum allowable interpen. 
-         // In both cases if delta_n_i (i=1,2) < 0 there is interpen
-         //
-         // Note, this check is predicated on (proj_delta_n_1 + max_delta1 > 0). If this is not true,
-         // the dt[i]_vel_check would be false; 
-         dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
-         dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
+  //        // if the 'case 1' check was not triggered for face 1 or 2, then
+  //        // check the sign of the delta-projections to determine if interpen 
+  //        // is occuring. If so, check against maximum allowable interpen. 
+  //        // In both cases if delta_n_i (i=1,2) < 0 there is interpen
+  //        //
+  //        // Note, this check is predicated on (proj_delta_n_1 + max_delta1 > 0). If this is not true,
+  //        // the dt[i]_vel_check would be false; 
+  //        dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
+  //        dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
 
-         //std::cout << "dt1_vel_check, (proj_delta_n_1+max_delta1), v1_dot_n1: " << dt1_vel_check << ", " << proj_delta_n_1+max_delta1 << ", " << v1_dot_n1 << std::endl;
-         //std::cout << "dt2_vel_check, (proj_delta_n_2+max_delta2), v2_dot_n2: " << dt2_vel_check << ", " << proj_delta_n_2+max_delta2 << ", " << v2_dot_n2 << std::endl;
-         //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
+  //        //std::cout << "dt1_vel_check, (proj_delta_n_1+max_delta1), v1_dot_n1: " << dt1_vel_check << ", " << proj_delta_n_1+max_delta1 << ", " << v1_dot_n1 << std::endl;
+  //        //std::cout << "dt2_vel_check, (proj_delta_n_2+max_delta2), v2_dot_n2: " << dt2_vel_check << ", " << proj_delta_n_2+max_delta2 << ", " << v2_dot_n2 << std::endl;
+  //        //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
-         // update dt_temp2 only for positive dt1 and/or dt2
-         if (dt1 > 0.)
-         {
-            dt_temp2 = axom::utilities::min(dt_temp2,
-                       axom::utilities::min(dt1, 1.e6));
-         }
-         if (dt2 > 0.)
-         {
-            dt_temp2 = axom::utilities::min(dt_temp2,
-                       axom::utilities::min(1.e6, dt2));
-         }
-         if (dt1 < 0. || dt2 < 0.)
-         {
-            neg_dt_vel_proj_msg = true;
-         }
+  //        // update dt_temp2 only for positive dt1 and/or dt2
+  //        if (dt1 > 0.)
+  //        {
+  //           dt_temp2 = axom::utilities::min(dt_temp2,
+  //                      axom::utilities::min(dt1, 1.e6));
+  //        }
+  //        if (dt2 > 0.)
+  //        {
+  //           dt_temp2 = axom::utilities::min(dt_temp2,
+  //                      axom::utilities::min(1.e6, dt2));
+  //        }
+  //        if (dt1 < 0. || dt2 < 0.)
+  //        {
+  //           neg_dt_vel_proj_msg = true;
+  //        }
 
-      } // end check 2
+  //     } // end check 2
 
-      ++cpID;
-   } // end loop over interface pairs
+  //     ++cpID;
+  //  } // end loop over interface pairs
 
    // print general messages once
    // Can we output this message on root? SRW

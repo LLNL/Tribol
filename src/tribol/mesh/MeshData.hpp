@@ -91,7 +91,7 @@ public:
   class Viewer
   {
   public:
-    Viewer(const MeshData& mesh);
+    Viewer(MeshData& mesh);
 
     TRIBOL_HOST_DEVICE IndexT meshId() const { return m_mesh_id; }
     TRIBOL_HOST_DEVICE InterfaceElementType getElementType() const { return m_element_type; }
@@ -99,6 +99,7 @@ public:
     TRIBOL_HOST_DEVICE int getAllocatorId() const { return m_allocator_id; }
 
     TRIBOL_HOST_DEVICE MeshNodalData& getNodalFields() { return m_nodal_fields; }
+    TRIBOL_HOST_DEVICE const MeshNodalData& getNodalFields() const { return m_nodal_fields; }
     TRIBOL_HOST_DEVICE MeshElemData& getElementData() { return m_element_data; }
     TRIBOL_HOST_DEVICE const MeshElemData& getElementData() const { return m_element_data; }
 
@@ -162,6 +163,11 @@ public:
     TRIBOL_HOST_DEVICE const ArrayViewT<RealT>& getElementAreas() const
     {
       return m_area;
+    }
+
+    TRIBOL_HOST_DEVICE const ArrayViewT<const IndexT, 2>& getConnectivity() const 
+    {
+      return m_connectivity;
     }
   
     /*!

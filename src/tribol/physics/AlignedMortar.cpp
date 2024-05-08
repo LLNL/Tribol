@@ -84,8 +84,7 @@ template< >
 void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 {
    // get mesh instance to store gaps on mesh data object
-   MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMesh = meshManager.at( elem.mesh_id2 );
+   auto& nonmortarMesh = *elem.m_mesh2;
    const IndexT * const nonmortarConn = nonmortarMesh.getConnectivity().data();
 
    SLIC_ERROR_IF(nonmortarMesh.getNodalFields().m_node_gap.empty(), 
@@ -161,10 +160,10 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 } // end of ComputeNodalGap<>()
 
 //------------------------------------------------------------------------------
-void ComputeAlignedMortarGaps( CouplingScheme const * cs )
+void ComputeAlignedMortarGaps( CouplingScheme* cs )
 {
-   InterfacePairs const * const pairs = cs->getInterfacePairs();
-   const IndexT numPairs = pairs->getNumPairs();
+   auto pairs = cs->getInterfacePairs()->getConstViewer();
+   const IndexT numPairs = pairs.getNumPairs();
 
    MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
@@ -176,11 +175,10 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   const IndexT mortarId = cs->getMeshId1();
-   const IndexT nonmortarId =  cs->getMeshId2();
+   auto& mortarMesh = cs->getMesh1();
+   auto& nonmortarMesh = cs->getMesh2();
 
-   MeshData& mortarMesh = meshManager.at( mortarId );
-   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
+   MeshData& nonmortarMeshBase = meshManager.at( cs->getMeshId2() );
    const IndexT numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
    RealT const * const x1 = mortarMesh.getPosition()[0].data();
@@ -195,7 +193,7 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
 
    // compute nodal normals (do this outside the element loop)
    // This routine is guarded against a null mesh
-   nonmortarMesh.computeNodalNormals( dim );
+   nonmortarMeshBase.computeNodalNormals( dim );
  
    // declare local variables to hold face nodal coordinates
    // and overlap vertex coordinates
@@ -209,7 +207,7 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
    int cpID = 0;
    for (IndexT kp = 0; kp < numPairs; ++kp)
    {
-      InterfacePair pair = pairs->getInterfacePair(kp);
+      InterfacePair pair = pairs.getInterfacePair(kp);
 
       if (!pair.isContactCandidate)
       {
@@ -251,7 +249,7 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
                                        &overlapX[0],
                                        numNodesPerFace, 
                                        cpManager.m_numPolyVert[cpID],
-                                       mortarId, nonmortarId, index1, index2 );
+                                       &mortarMesh, &nonmortarMesh, index1, index2 );
 
       /////////////////////////
       // compute mortar gaps //
@@ -276,25 +274,20 @@ void ComputeAlignedMortarGaps( CouplingScheme const * cs )
 template< >
 int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs )
 {
+   auto pairs = cs->getInterfacePairs()->getConstViewer();
+   IndexT const numPairs = pairs.getNumPairs();
 
-   InterfacePairs const * const pairs = cs->getInterfacePairs();
-   const IndexT numPairs = pairs->getNumPairs();
-
-   MeshManager& meshManager = MeshManager::getInstance();
    ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
-   parameters_t& parameters = parameters_t::getInstance();
-   int const dim = parameters.dimension;
+   int const dim = cs->spatialDimension();
 
    ////////////////////////////////////////////////////////////////////////
    //
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   const IndexT mortarId = cs->getMeshId1();
-   const IndexT nonmortarId =  cs->getMeshId2();
+   auto& mortarMesh = cs->getMesh1();
+   auto& nonmortarMesh = cs->getMesh2();
 
-   MeshData& mortarMesh = meshManager.at( mortarId );
-   MeshData& nonmortarMesh  = meshManager.at( nonmortarId );
    const IndexT numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
    RealT const * const x1 = mortarMesh.getPosition()[0].data();
@@ -336,7 +329,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
    int cpID = 0;
    for (IndexT kp = 0; kp < numPairs; ++kp)
    {
-      InterfacePair pair = pairs->getInterfacePair(kp);
+      InterfacePair pair = pairs.getInterfacePair(kp);
 
       if (!pair.isContactCandidate)
       {
@@ -440,7 +433,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * c
                                           &overlapX[0],
                                           numNodesPerFace, 
                                           cpManager.m_numPolyVert[cpID],
-                                          mortarId, nonmortarId, index1, index2 );
+                                          &mortarMesh, &nonmortarMesh, index1, index2 );
 
          // HAVE TO set the number of active constraints. For now set to 
          // all nonmortar face nodes.

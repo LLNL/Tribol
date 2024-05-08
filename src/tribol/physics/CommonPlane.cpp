@@ -170,7 +170,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    bool neg_thickness {false};
    auto& mesh1 = cs->getMesh1();
    auto& mesh2 = cs->getMesh2();
-   auto pairs = cs->getInterfacePairs()->getViewer();
+   auto pairs = cs->getInterfacePairs()->getConstViewer();
    auto num_pairs = cs->getInterfacePairs()->getNumPairs();
    forAllExec(cs->getExecutionMode(), num_pairs,
     [=] TRIBOL_HOST_DEVICE (IndexT i)

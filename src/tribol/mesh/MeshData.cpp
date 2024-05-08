@@ -796,7 +796,7 @@ void MeshData::print(std::ostream& os) const
 }
 
 //------------------------------------------------------------------------------
-MeshData::Viewer::Viewer(const MeshData& mesh)
+MeshData::Viewer::Viewer(MeshData& mesh)
 : m_mesh_id( mesh.m_mesh_id )
 , m_element_type( mesh.m_element_type )
 , m_num_nodes( mesh.m_num_nodes )
