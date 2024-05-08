@@ -1055,11 +1055,24 @@ bool CouplingScheme::init()
    this->m_isValid = valid;
    if (this->m_isValid)
    {
-      // set mesh pointers
+      
       auto& mesh_data1 = MeshManager::getInstance().at( this->m_mesh_id1 );
       auto& mesh_data2 = MeshManager::getInstance().at( this->m_mesh_id2 );
+
+      // compute the face data
+      mesh_data1.computeFaceData();
+      if (this->m_mesh_id2 != this->m_mesh_id1)
+      {
+         mesh_data2.computeFaceData();
+      }
+
+      // set mesh pointers (with computed face data)
       m_mesh1 = mesh_data1.getView();
       m_mesh2 = mesh_data2.getView();
+
+      // set individual coupling scheme logging level
+      this->setSlicLoggingLevel();
+      this->allocateMethodData();
 
       // determine execution mode for kernels (already verified the memory
       // spaces of each mesh match in isValidCouplingScheme())
@@ -1098,6 +1111,7 @@ bool CouplingScheme::init()
             m_exec_mode = ExecutionMode::Hip;
     #endif
           }
+          break;
         case MemorySpace::Host:
           switch (m_given_exec_mode)
           {
@@ -1117,12 +1131,14 @@ bool CouplingScheme::init()
                 "Assuming sequential execution.");
               m_exec_mode = ExecutionMode::Sequential;
     #endif
+              break;
             default:
               SLIC_WARNING_ROOT("Unsupported execution mode for host memory. "
                 "Switching to sequential execution.");
               m_exec_mode = ExecutionMode::Sequential;
               break;
           }
+          break;
         case MemorySpace::Device:
           switch (m_given_exec_mode)
           {
@@ -1146,17 +1162,6 @@ bool CouplingScheme::init()
       m_exec_mode = ExecutionMode::Sequential;
 #endif
       m_allocator_id = m_mesh1->getAllocatorId();
-
-      // set individual coupling scheme logging level
-      this->setSlicLoggingLevel();
-      this->allocateMethodData();
-
-      // compute the face data
-      mesh_data1.computeFaceData();
-      if (this->m_mesh_id2 != this->m_mesh_id1)
-      {
-         mesh_data2.computeFaceData();
-      }
 
       return true;
    }

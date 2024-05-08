@@ -23,7 +23,7 @@ struct SurfaceContactElem;
  *
  *
  */
-void ComputeAlignedMortarGaps( CouplingScheme const * cs );
+void ComputeAlignedMortarGaps( const CouplingScheme* cs );
 
 /*!
  *
@@ -72,7 +72,7 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem );
  *
  */
 template< >
-int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs );
+int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( const CouplingScheme* cs );
 
 /*!
  *

@@ -729,17 +729,7 @@ public:
     forAllExec(m_coupling_scheme->getExecutionMode(), m_candidates.size(),
       [=] TRIBOL_HOST_DEVICE (IndexT i) 
       {
-        auto mesh1_elem = algorithm::binarySearch(
-          offsets_view.size(),
-          [&] TRIBOL_HOST_DEVICE (IndexT j)
-          {
-            return offsets_view[j] + counts_view[j] < i;
-          },
-          [&] TRIBOL_HOST_DEVICE (IndexT j)
-          {
-            return offsets_view[j] > i;
-          }
-        );
+        auto mesh1_elem = algorithm::binarySearch(offsets_view, counts_view, i);
         auto mesh2_elem = candidates_view[i];
         if (geomFilter(mesh1_elem, mesh2_elem, mesh1, mesh2, cmode))
         {
@@ -779,17 +769,7 @@ public:
           return;
         }
         
-        auto mesh1_elem = algorithm::binarySearch(
-          offsets_view.size(),
-          [=] TRIBOL_HOST_DEVICE (IndexT j)
-          {
-            return offsets_view[j] + counts_view[j] < i;
-          },
-          [=] TRIBOL_HOST_DEVICE (IndexT j)
-          {
-            return offsets_view[j] > i;
-          }
-        );
+        auto mesh1_elem = algorithm::binarySearch(offsets_view, counts_view, i);
         auto mesh2_elem = candidates_view[i];
 
         // get unique index for the array

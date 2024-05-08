@@ -6,6 +6,7 @@
 // Tribol includes
 #include "tribol/interface/tribol.hpp"
 #include "tribol/common/Parameters.hpp"
+#include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/physics/Mortar.hpp"
 #include "tribol/physics/AlignedMortar.hpp"
@@ -187,9 +188,9 @@ public:
       EXPECT_EQ( tribol_update_err, 0 );      
 
       // diagnostics
-      tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-      tribol::MeshData& mortarMesh = meshManager.at( mortarMeshId );
-      tribol::MeshData& nonmortarMesh = meshManager.at( nonmortarMeshId );
+      auto& cs = tribol::CouplingSchemeManager::getInstance().at(csIndex);
+      auto& mortarMesh = cs.getMesh1();
+      auto& nonmortarMesh = cs.getMesh2();
 
       // compute the sum of the nodal forces
       RealT fx1Sum = 0.;

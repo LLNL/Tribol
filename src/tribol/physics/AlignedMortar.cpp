@@ -160,7 +160,7 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 } // end of ComputeNodalGap<>()
 
 //------------------------------------------------------------------------------
-void ComputeAlignedMortarGaps( CouplingScheme* cs )
+void ComputeAlignedMortarGaps( const CouplingScheme* cs )
 {
    auto pairs = cs->getInterfacePairs()->getConstViewer();
    const IndexT numPairs = pairs.getNumPairs();
@@ -266,13 +266,11 @@ void ComputeAlignedMortarGaps( CouplingScheme* cs )
 
    } // end loop over pairs for nonmortar gap calculations
 
-   nonmortarMesh.getNodalFields().m_is_gap_computed = true;
-
 } // end ComputeAlignedMortarGaps()
 
 //------------------------------------------------------------------------------
 template< >
-int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs )
+int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( const CouplingScheme* cs )
 {
    auto pairs = cs->getInterfacePairs()->getConstViewer();
    IndexT const numPairs = pairs.getNumPairs();

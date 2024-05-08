@@ -29,7 +29,6 @@ struct MeshNodalData
   ArrayViewT<RealT>       m_node_gap;      ///< scalar nodal gap (used on nonmortar mesh) 
   ArrayViewT<const RealT> m_node_pressure; ///< scalar nodal pressure (used on nonmortar mesh) 
 
-  bool m_is_gap_computed      {false}; ///< true if the nodal gaps have been computed
   bool m_is_node_gap_set      {false}; ///< true if nodal gap field is set
   bool m_is_node_pressure_set {false}; ///< true if nodal pressure field is set
   /////////////////////////

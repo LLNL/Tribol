@@ -40,13 +40,13 @@ void compareGaps( tribol::CouplingScheme const * cs,
                   const char *gapType )
 {
    tribol::ContactPlaneManager& cpManager = tribol::ContactPlaneManager::getInstance();
-   tribol::InterfacePairs const * const pairs = cs->getInterfacePairs();
-   tribol::IndexT const numPairs = pairs->getNumPairs();
+   auto pairs = cs->getInterfacePairs()->getConstViewer();
+   tribol::IndexT const numPairs = pairs.getNumPairs();
 
    int cpID = 0;
    for (tribol::IndexT kp = 0; kp < numPairs; ++kp)
    {
-      tribol::InterfacePair pair = pairs->getInterfacePair(kp);
+      tribol::InterfacePair pair = pairs.getInterfacePair(kp);
 
       if (!pair.isContactCandidate)
       {
@@ -144,13 +144,13 @@ void checkPressures( tribol::CouplingScheme const * cs,
                      RealT pressure, const RealT tol, const char * pressureType = "kinematic"  )
 {
    tribol::ContactPlaneManager& cpManager = tribol::ContactPlaneManager::getInstance();
-   tribol::InterfacePairs const * const pairs = cs->getInterfacePairs();
-   tribol::IndexT const numPairs = pairs->getNumPairs();
+   auto pairs = cs->getInterfacePairs()->getConstViewer();
+   tribol::IndexT const numPairs = pairs.getNumPairs();
 
    int cpID = 0;
    for (tribol::IndexT kp = 0; kp < numPairs; ++kp)
    {
-      tribol::InterfacePair pair = pairs->getInterfacePair(kp);
+      tribol::InterfacePair pair = pairs.getInterfacePair(kp);
 
       if (!pair.isContactCandidate)
       {
@@ -187,16 +187,12 @@ void checkPressures( tribol::CouplingScheme const * cs,
 // mesh configurations.
 void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
 {
-   tribol::IndexT const meshId1 = cs->getMeshId1();
-   tribol::IndexT const meshId2 = cs->getMeshId2();
-
-   tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mesh1 = meshManager.at( meshId1 );
-   tribol::MeshData& mesh2 = meshManager.at( meshId2 );
+   auto& mesh1 = cs->getMesh1();
+   auto& mesh2 = cs->getMesh1();
 
    for (int i=0; i<2; ++i) // loop over meshes
    { 
-      tribol::MeshData & mesh = (i==0) ? mesh1 : mesh2;
+      auto& mesh = (i==0) ? mesh1 : mesh2;
   
       // loop over faces and nodes
       for (tribol::IndexT kf = 0; kf < mesh.numberOfElements(); ++kf)

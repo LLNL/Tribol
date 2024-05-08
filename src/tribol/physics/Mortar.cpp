@@ -173,7 +173,7 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 } // end ComputeNodalGap<>()
 
 //------------------------------------------------------------------------------
-void ComputeSingleMortarGaps( CouplingScheme* cs )
+void ComputeSingleMortarGaps( const CouplingScheme* cs )
 {
    auto pairs = cs->getInterfacePairs()->getConstViewer();
    IndexT const numPairs = pairs.getNumPairs();
@@ -303,13 +303,11 @@ void ComputeSingleMortarGaps( CouplingScheme* cs )
 
    } // end loop over pairs to compute nodal gaps
 
-   nonmortarMesh.getNodalFields().m_is_gap_computed = true;
-
 } // end ComputeSingleMortarGaps()
 
 //------------------------------------------------------------------------------
 template< >
-int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs )
+int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( const CouplingScheme* cs )
 {
    auto pairs = cs->getInterfacePairs()->getConstViewer();
    IndexT const numPairs = pairs.getNumPairs();

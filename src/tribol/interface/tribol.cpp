@@ -902,11 +902,10 @@ void setInterfacePairs( IndexT cs_id,
       // to interface pair manager. Note, further computational geometry 
       // filtering will be performed on each face-pair indendifying 
       // contact candidates.
-      const MeshData* pMesh1 = &meshManager.getData(mesh_id1[i]);
-      const MeshData* pMesh2 = &meshManager.getData(mesh_id2[i]);
+      auto pMesh1 = meshManager.getData(mesh_id1[i]).getView();
+      auto pMesh2 = meshManager.getData(mesh_id2[i]).getView();
       bool check = geomFilter( pairIndex1[i], pairIndex2[i],
-                               mesh_id1[i], mesh_id2[i],
-                               pMesh1, pMesh2, mode );
+                               *pMesh1, *pMesh2, mode );
 
       if (check)
       {

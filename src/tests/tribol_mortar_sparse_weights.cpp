@@ -42,20 +42,15 @@ using RealT = tribol::RealT;
 
 void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, RealT * gaps )
 {
-   tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::parameters_t& parameters = tribol::parameters_t::getInstance();
-   int const dim = parameters.dimension;
+   int const dim = cs->spatialDimension();
 
    ////////////////////////////////////////////////////////////////////////
    //
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   tribol::IndexT const mortarId = cs->getMeshId1();
-   tribol::IndexT const nonmortarId = cs->getMeshId2();
-
-   tribol::MeshData& mortarMesh = meshManager.at( mortarId );
-   tribol::MeshData& nonmortarMesh = meshManager.at( nonmortarId );
+   auto& mortarMesh = cs->getMesh1();
+   auto& nonmortarMesh = cs->getMesh2();
 
    // get mortar weights in CSR format. Note this simple API function 
    // calls tribol::getCSRMatrix() so this API function in the Tribol 
@@ -72,7 +67,7 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, RealT * gaps )
    SLIC_ERROR_IF(I==nullptr, "Mortar wts test, I is null.");
 
    // get mortar node id offset to distinguish mortar from nonmortar column contributions
-   int nodeOffset = mortarMesh.getSortedSurfaceNodeIds().back() + 1;
+   int nodeOffset = 1;//mortarMesh.getSortedSurfaceNodeIds().back() + 1;
 
    ////////////////////////////////////////////////////////////////
    // compute nonmortar gaps to determine active set of contact dofs //

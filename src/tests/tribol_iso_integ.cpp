@@ -87,7 +87,7 @@ public:
       // is ok.
       tribol::SurfaceContactElem elem ( this->dim, xy, xy, xy, 
                                         this->numNodes, this->numNodes, 
-                                        0, 1, 0, 0);
+                                        nullptr, nullptr, 0, 0);
 
       // instantiate integration object
       tribol::IntegPts integ;
