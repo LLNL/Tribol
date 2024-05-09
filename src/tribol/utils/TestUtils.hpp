@@ -498,6 +498,7 @@ private:
    void SetHomogeneousBC(mfem::Vector& dxdt) const;
 };
 
+#ifdef TRIBOL_USE_MPI
 /// Explicit solid mechanics update with lumped mass
 class ExplicitMechanics : public mfem::SecondOrderTimeDependentOperator
 {
@@ -549,6 +550,7 @@ private:
     */
    mfem::Vector inv_lumped_mass;
 };
+#endif /* defined(TRIBOL_USE_MPI) */
 
 } // end of namespace "mfem_ext"
 
