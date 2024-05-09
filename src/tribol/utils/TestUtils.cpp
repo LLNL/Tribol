@@ -2040,6 +2040,7 @@ void CentralDiffSolver::SetHomogeneousBC(mfem::Vector& dxdt) const
    }
 }
 
+#ifdef TRIBOL_USE_MPI
 ExplicitMechanics::ExplicitMechanics(
    mfem::ParFiniteElementSpace& fespace, 
    mfem::Coefficient& rho,
@@ -2098,5 +2099,6 @@ void ExplicitMechanics::Mult(
       a[i] = inv_lumped_mass[i] * f[i];
    }
 }
+#endif
 
 } // end of namespace "mfem_ext"
