@@ -1274,52 +1274,47 @@ void CouplingScheme::computeTimeStep(real &dt)
 //------------------------------------------------------------------------------
 void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 {
-   // note: the timestep vote is based on a velocity projection 
-   // and does not account for the spring stiffness in a CFL-like 
-   // timestep constraint. A constant penalty everywhere is not necessarily 
-   // tuned to the underlying material that occurs with 'element_wise'
-   // and may result in contact instabilities that this timestep vote 
-   // does not yet address. Tuning the penalty to the underlying material 
-   // stiffness implicitly scales the penalty stiffness to approximately 
-   // correspond to a host-code timestep governed by an underlying 
-   // element-wise CFL constraint. The timestep vote in this routine 
-   // catches the case where too large of a timestep results in too 
-   // much face-pair interpenetration, which may also lead to contact 
-   // instabilities.
+   // note: the timestep vote is based on a maximum allowable interpenetration
+   // approach checking current gaps and then performing a velocity projection.
+   // This timestep vote is not derived from a stability analysis and does not 
+   // account for the spring stiffness in a CFL-like timestep constraint. 
+   // The timestep vote in this routine is intended to avoid missing contact or 
+   // inadequately resolving contact by detecting 'too much' interpenetration. 
+   // To do this, the first check is a 'gap check' where the current gap is 
+   // checked against a fraction of the element-thicknesses. The second check 
+   // assumes zero gap, and then does a velocity projection followed by the 
+   // 'gap check' using this new, projected gap.
    
    MeshManager & meshManager = MeshManager::getInstance(); 
    MeshData & mesh1 = meshManager.GetMeshInstance( m_meshId1 );
    MeshData & mesh2 = meshManager.GetMeshInstance( m_meshId2 );
 
-   // issue warning that this timestep vote does not address 
-   // contact instabilities that may present themselves with the use 
-   // of a constant penalty everywhere; then, return. If constant penalty 
-   // is used then likely element thicknesses have not been registered.
-   PenaltyEnforcementOptions& pen_enfrc_options = this->m_enforcementOptions.penalty_options;
-   KinematicPenaltyCalculation kin_calc = pen_enfrc_options.kinematic_calculation;
-   if ( kin_calc == KINEMATIC_CONSTANT )
+   // check if the element thicknesses have been set. This is now
+   // regardless of exact penalty calculation type, since element
+   // thicknesses are required for auto contact even if a constant
+   // penalty is used
+   if ( !mesh1.m_elemData.m_is_element_thickness_set ||
+        !mesh2.m_elemData.m_is_element_thickness_set )
    {
-      // Tribol timestep vote only used with KINEMATIC_ELEMENT penalty
-      // because element thicknesses are supplied
       return; 
    }
 
    parameters_t & parameters = parameters_t::getInstance();
    real proj_ratio = parameters.timestep_pen_frac;
    ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
-   //int num_sides = 2; // always 2 sides in a single coupling scheme
    int dim = this->spatialDimension();
    int numNodesPerCell1 = mesh1.m_numNodesPerCell;
    int numNodesPerCell2 = mesh2.m_numNodesPerCell;
 
-   // loop over each interface pair. Even if pair is not in contact, 
-   // we still do a velocity projection for that proximate face-pair 
-   // to see if interpenetration next cycle 'may' be too much
+   // Loop over interface pairs and check exising gaps for pairs in 
+   // contact, and perform velocity projection check for all contact 
+   // candidates.
    IndexType numPairs = m_interfacePairs->getNumPairs();
    real dt_temp1 = dt;
    real dt_temp2 = dt;
    int cpID = 0; 
-   bool max_gap_msg = false;
+   bool exceed_max_gap1 = false;
+   bool exceed_max_gap2 = false;
    bool neg_dt_gap_msg = false;
    bool neg_dt_vel_proj_msg = false;
    for (IndexType kp = 0; kp < numPairs; ++kp)
@@ -1382,9 +1377,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       // compute velocity projections:
       // compute the dot product between the face velocities 
       // at the overlap-centroid-to-face projected centroid and each
-      // face's outward unit normal AND the overlap normal. The 
-      // former is used to compute projections and the latter is 
-      // used to indicate further contact using a velocity projection
+      // face's outward unit normal AND the overlap normal. 
       real v1_dot_n, v2_dot_n, v1_dot_n1, v2_dot_n2;
       real overlapNormal[dim];
       cpMgr.getContactPlaneNormal( cpID, dim, &overlapNormal[0] );
@@ -1411,18 +1404,16 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       //std::cout << "First v1_dot_n: " << v1_dot_n << std::endl;
       //std::cout << "First v2_dot_n: " << v2_dot_n << std::endl;
 
-      // add tiny amount to velocity-cp_normal projections to avoid
-      // division by zero. Note that if these projections are close to 
-      // zero, there may stationary interactions or tangential motion. 
-      // In this case, any timestep estimate will be very large, and 
-      // not control the simulation
+      // add tiny amount to velocity projections to avoid division by zero. 
+      // Note that if these projections are close to zero, there may be 
+      // stationary interactions or tangential motion. In this case, any 
+      // timestep estimate will be very large, and not control the simulation
       real tiny = 1.e-12;
       real tiny1 = (v1_dot_n >= 0.) ? tiny : -1.*tiny;
       real tiny2 = (v2_dot_n >= 0.) ? tiny : -1.*tiny;
       v1_dot_n  += tiny1;
       v2_dot_n  += tiny2;
-      // add tiny amount to velocity-face_normal projections to avoid
-      // division by zero
+      // reset tiny velocity based on face normal projections.
       tiny1 = (v1_dot_n1 >= 0.) ? tiny : -1.*tiny;
       tiny2 = (v2_dot_n2 >= 0.) ? tiny : -1.*tiny;
       v1_dot_n1 += tiny1;
@@ -1433,12 +1424,11 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       //std::cout << "Second v1_dot_n: " << v1_dot_n << std::endl;
       //std::cout << "Second v2_dot_n: " << v2_dot_n << std::endl;
 
-      // get volume element thicknesses associated with each 
-      // face in this pair and find minimum
+      // get volume element thicknesses associated with each face in this pair
       real t1 = mesh1.m_elemData.m_thickness[pair.pairIndex1];
       real t2 = mesh2.m_elemData.m_thickness[pair.pairIndex2];
 
-      // compute the gap vector (recall gap is x1-x2 by convention)
+      // compute the existing gap vector (recall gap is x1-x2 by convention)
       real gapVec[dim];
       gapVec[0] = cpMgr.m_cXf1[cpID] - cpMgr.m_cXf2[cpID];
       gapVec[1] = cpMgr.m_cYf1[cpID] - cpMgr.m_cYf2[cpID];
@@ -1447,13 +1437,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          gapVec[2] = cpMgr.m_cZf1[cpID] - cpMgr.m_cZf2[cpID];
       }
 
-      // compute the dot product between gap vector and the outward 
-      // unit face normals. Note: the amount of interpenetration is 
-      // going to be compared to a length/thickness parameter that 
-      // is computed in the direction of the outward unit normal, 
-      // NOT the normal of the contact plane. This is despite the 
-      // fact that the contact nodal forces are resisting contact 
-      // in the direction of the overlap normal. 
+      // compute the dot product between gap vector and the outward unit face normals. 
       real gap_f1_n1 = dotProd( &gapVec[0], &fn1[0], dim );
       real gap_f2_n2 = dotProd( &gapVec[0], &fn2[0], dim );
 
@@ -1465,10 +1449,11 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       bool dt1_vel_check = false;
       bool dt2_vel_check = false;
 
+      // maximum allowable interpenetration in the normal direction of each element
       real max_delta1 = proj_ratio * t1;
       real max_delta2 = proj_ratio * t2;
 
-      // Trigger for check 1 and 2:
+      // Separation or interpenetration trigger for check 1 and 2:
       // check if there is further interpen or separation based on the 
       // velocity projection in the direction of the common-plane normal,
       // which is in the direction of face-2 normal.
@@ -1482,43 +1467,47 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       dt1_vel_check = (v1_dot_n < 0.) ? true : false; 
       dt2_vel_check = (v2_dot_n > 0.) ? true : false; 
 
-      ////////////////////////////////////////////////////////////////////
-      // 1. Current interpenetration gap exceeds max allowable interpen // 
-      ////////////////////////////////////////////////////////////////////
+      //////////////////////////////////////////////////////////////////////////
+      // Check 1. Current interpenetration gap exceeds max allowable interpen // 
+      //////////////////////////////////////////////////////////////////////////
 
-      // check if pair is in contact per Common Plane method. Note: this check 
-      // to see if the face-pair is in contact uses the gap computed on the 
-      // contact plane, which is in the direction of the overlap normal
-      if (cpMgr.m_inContact[cpID]) // gap < gap_tol
+      // check if face-pair is in contact (i.e. gap < gap_tol), which is determined
+      // in Common Plane ApplyNormal<>() routine
+      if (cpMgr.m_inContact[cpID])
       {
 
          // compute the difference between the 'face-gaps' and the max allowable 
-         // interpen as a function of element thickness. 
+         // interpen as a function of element thickness. Note, we have to use the 
+         // gap projected onto the outward unit face-normal to check against the
+         // max allowable gap as a factor of the thickness in the element normal
+         // direction 
          real delta1 = max_delta1 - gap_f1_n1; // >0 not exceeding max allowable
          real delta2 = max_delta2 + gap_f2_n2; // >0 not exceeding max allowable
 
-         if (delta1 < 0 || delta2 < 0)
-         {
-            max_gap_msg = true;
-         }
+         exceed_max_gap1 = (delta1 < 0.) ? true : false;
+         exceed_max_gap2 = (delta2 < 0.) ? true : false;
 
          // if velocity projection indicates further interpenetration, and the gaps
          // EXCEED max allowable, then compute time step estimates to reduce overlap
-         dt1_check1 = (dt1_vel_check) ? (delta1 < 0.) : false;
-         dt2_check1 = (dt2_vel_check) ? (delta2 < 0.) : false;
+         dt1_check1 = (dt1_vel_check) ? exceed_max_gap1 : false;
+         dt2_check1 = (dt2_vel_check) ? exceed_max_gap2 : false;
 
-         // compute dt for face 1 and 2 based on the velocity projection in the 
-         // direction of that face's outward unit normal
-         // Note, this calculation takes a fraction of the computed dt to reduce 
-         // the amount of face-displacement in a given cycle.
+         // compute dt for face 1 and 2 based on the velocity and gap projections onto 
+         // the face-normals for faces where currect gap exceeds max allowable gap.
          //
-         // if dt[i]_check[i] is true, then delta[i] is < 0. per check above. Furthermore,
-         // if the velocity projection indicates further interpenetration, the velocity 
-         // projected onto that face's outward unit normal is always positive. Thus,
-         // dt[i] should never be negative unless the face-normal is flipped based on 
-         // vertex ordering.
-         dt1 = (dt1_check1) ? -alpha * delta1 / v1_dot_n1 : dt1;
-         dt2 = (dt2_check1) ? -alpha * delta2 / v2_dot_n2 : dt2;
+         // NOTE:
+         //
+         // This calculation RESETS the current gap to be g = 0, and computes a timestep
+         // such that the velocity projection of the overlap-to-face projected overlap 
+         // centroid does not exceed the max allowable gap. 
+         //
+         // This avoid a timestep crash in the case that the current gap barely exceeds 
+         // the max allowable and also allows a soft contact response with interpen
+         // in excess of the max allowable gap without causing timestep crashes.
+         //
+         // v1_dot_n1 > 0 and v2_dot_n2 > 0 for further interpen
+         dt1 = (dt1_check1) ? -alpha * max_delta1 / v1_dot_n1 : dt1;
+         dt2 = (dt2_check1) ? -alpha * max_delta2 / v2_dot_n2 : dt2;
 
          //std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << delta1 << ", " << v1_dot_n1 << std::endl;
          //std::cout << "dt2_check1, delta2 and v2_dot_n2: " << dt2_check1 << ", " << delta2 << ", " << v2_dot_n2 << std::endl;
@@ -1629,7 +1618,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
    // print general messages once
    // Can we output this message on root? SRW
-   SLIC_DEBUG_IF(max_gap_msg, "tribol::computeCommonPlaneTimeStep(): there are "  <<
+   SLIC_DEBUG_IF(exceed_max_gap, "tribol::computeCommonPlaneTimeStep(): there are "  <<
                  "locations where mesh overlap may be too large. "                <<
                  "Cannot provide timestep vote. Reduce timestep and/or increase " << 
                  "penalty.");
