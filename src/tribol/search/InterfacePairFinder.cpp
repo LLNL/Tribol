@@ -364,12 +364,7 @@ public:
       ArrayT<int> countArray(1, 1, m_coupling_scheme->getAllocatorId());
       int* pCount = countArray.data();
 
-      auto cellType1 = mesh1.getElementType();
-      auto cellType2 = mesh2.getElementType();
       ContactMode cmode = m_coupling_scheme->getContactMode();
-
-      IndexT meshId1 = m_coupling_scheme->getMeshId1();
-      IndexT meshId2 = m_coupling_scheme->getMeshId2();
 
       try
       {
@@ -395,9 +390,9 @@ public:
       
       SLIC_INFO("Found " << countArray[0] << " pairs in contact" );
 
-      InterfacePairs* contactPairs = m_coupling_scheme->getInterfacePairs();
-      contactPairs->clear();
-      contactPairs->reserve(countArray[0]);
+      auto& contactPairs = m_coupling_scheme->getInterfacePairs();
+      contactPairs.clear();
+      contactPairs.reserve(countArray[0]);
       
       int idx = 0;
       {
@@ -407,18 +402,15 @@ public:
             {
                IndexT fromIdx = k / mesh1NumElems;
                IndexT toIdx = k % mesh2NumElems;
-               InterfacePair pair( meshId1, cellType1, fromIdx,
-                                   meshId2, cellType2, toIdx, 
-                                   true, idx );
                // SLIC_INFO("Interface pair " << idx << " = " << toIdx << ", " << fromIdx);  // Debug only
-               contactPairs->addInterfacePair( pair );
+               contactPairs.emplace_back( fromIdx, toIdx, true );
                idx++;
             }
          }
       }
       SLIC_INFO("Added " << idx << " pairs to contact list" );  // Debug only
 
-      SLIC_INFO("Coupling scheme has " << contactPairs->getNumPairs()
+      SLIC_INFO("Coupling scheme has " << contactPairs.size()
             << " pairs out of a maximum possible of " << numPairs
             << " = " << mesh1NumElems << " * " << mesh2NumElems << ".");
    }
@@ -468,7 +460,7 @@ public:
       // TODO does this tolerance need to scale with the mesh?
       const RealT bboxTolerance = 1e-6;
 
-      m_coupling_scheme->getInterfacePairs()->clear();
+      m_coupling_scheme->getInterfacePairs().clear();
 
       // Find the bounding boxes of the elements in the first mesh
       // Store them in an array for efficient reuse
@@ -550,17 +542,10 @@ public:
    {
       using BitsetType = typename ImplicitGridType::BitsetType;
 
-      // Extract some mesh metadata from coupling scheme / mesh manageer
+      // Extract some mesh metadata from coupling scheme
       auto& mesh1 = m_coupling_scheme->getMesh1();
-      auto cellType1 = mesh1.getElementType();
-      
       auto& mesh2 = m_coupling_scheme->getMesh2();
-      auto cellType2 = mesh2.getElementType();
-
-      InterfacePairs* contactPairs = m_coupling_scheme->getInterfacePairs();
-
-      IndexT meshId1 = m_coupling_scheme->getMeshId1();
-      IndexT meshId2 = m_coupling_scheme->getMeshId2();
+      auto& contactPairs = m_coupling_scheme->getInterfacePairs();
 
       // Find matches in first mesh (with index 'fromIdx')
       // with candidate elements in second mesh (with index 'toIdx')
@@ -594,11 +579,7 @@ public:
 
             if (contact)
             {
-               InterfacePair pair( meshId1, cellType1, fromIdx,
-                                 meshId2, cellType2, toIdx, false, 
-                                 -1 );
-               pair.pairId = k;
-               contactPairs->addInterfacePair( pair );
+               contactPairs.emplace_back( fromIdx, toIdx, true );
                // SLIC_INFO("Interface pair " << k << " = " << toIdx << ", " << fromIdx);  // Debug only
                ++k;
             }
@@ -745,21 +726,12 @@ public:
     // Add filtered pairs to interface pairs
     ArrayT<IndexT> filtered_candidates_host( filtered_candidates_data, 
                                              getResourceAllocatorID(MemorySpace::Host) );
-    m_coupling_scheme->getInterfacePairs()->resize(filtered_candidates_host[0]);
+    m_coupling_scheme->getInterfacePairs().resize(filtered_candidates_host[0]);
     filtered_candidates_host[0] = 0;
     filtered_candidates_data = filtered_candidates_host;
 
-    m_coupling_scheme->getInterfacePairs()->setMeshId(1, m_coupling_scheme->getMeshId1());
-    m_coupling_scheme->getInterfacePairs()->setMeshId(2, m_coupling_scheme->getMeshId2());
-    m_coupling_scheme->getInterfacePairs()->setPairType(
-      1, m_coupling_scheme->getMesh1().getElementType());
-    m_coupling_scheme->getInterfacePairs()->setPairType(
-      2, m_coupling_scheme->getMesh2().getElementType());
-
     filtered_candidates = filtered_candidates_data.view();
-    auto idx1_view = m_coupling_scheme->getInterfacePairs()->getPairIndex1Array();
-    auto idx2_view = m_coupling_scheme->getInterfacePairs()->getPairIndex2Array();
-    auto contact_view = m_coupling_scheme->getInterfacePairs()->getContactArray();
+    auto pairs_view = m_coupling_scheme->getInterfacePairsView();
     forAllExec(m_coupling_scheme->getExecutionMode(), m_candidates.size(),
       [=] TRIBOL_HOST_DEVICE (IndexT i)
       {
@@ -775,9 +747,7 @@ public:
         // get unique index for the array
         auto idx = RAJA::atomicInc<AtomicPolicy>(filtered_candidates.data());
 
-        idx1_view[idx] = mesh1_elem;
-        idx2_view[idx] = mesh2_elem;
-        contact_view[idx] = true;
+        pairs_view[idx] = InterfacePair(mesh1_elem, mesh2_elem, true);
       }
     );
    } // end findInterfacePairs()

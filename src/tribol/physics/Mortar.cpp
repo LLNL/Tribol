@@ -9,7 +9,6 @@
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/geom/ContactPlane.hpp"
-#include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/integ/Integration.hpp"
@@ -175,13 +174,12 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 //------------------------------------------------------------------------------
 void ComputeSingleMortarGaps( const CouplingScheme* cs )
 {
-   auto pairs = cs->getInterfacePairs()->getConstViewer();
-   IndexT const numPairs = pairs.getNumPairs();
+   auto pairs = cs->getInterfacePairsView();
+   const IndexT numPairs = pairs.size();
+   auto planes = cs->get3DContactPlanesView();
 
    MeshManager& meshManager = MeshManager::getInstance();
-   ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
-   parameters_t& parameters = parameters_t::getInstance();
-   int const dim = parameters.dimension;
+   int const dim = cs->spatialDimension();
 
    ////////////////////////////////////////////////////////////////////////
    //
@@ -225,16 +223,18 @@ void ComputeSingleMortarGaps( const CouplingScheme* cs )
    int cpID = 0;
    for (IndexT kp = 0; kp < numPairs; ++kp)
    {
-      InterfacePair pair = pairs.getInterfacePair(kp);
+      InterfacePair pair = pairs[kp];
 
-      if (!pair.isContactCandidate)
+      if (!pair.m_is_contact_candidate)
       {
          continue;
       }
 
+      auto& plane = planes[cpID];
+
       // get pair indices
-      IndexT index1 = pair.pairIndex1;
-      IndexT index2 = pair.pairIndex2;
+      IndexT index1 = pair.m_element_id1;
+      IndexT index2 = pair.m_element_id2;
 
       // populate the current configuration nodal coordinates for the 
       // two faces
@@ -260,10 +260,22 @@ void ComputeSingleMortarGaps( const CouplingScheme* cs )
          nonmortarX_bar[ id+2 ] = z2[ nonmortar_id ];
       }
 
-      overlapX = new RealT[ dim * cpManager.m_numPolyVert[ cpID ]];
-      initRealArray( overlapX, dim*cpManager.m_numPolyVert[cpID], 0. );
+      overlapX = new RealT[ dim * plane.m_numPolyVert];
+      initRealArray( overlapX, dim*plane.m_numPolyVert, 0. );
 
       // get projected face coordinates
+      ProjectFaceNodesToPlane( mortarMesh, index1, 
+                               plane.m_nX, plane.m_nY, plane.m_nZ,
+                               plane.m_cX, plane.m_cY, plane.m_cZ,
+                               &mortarX_bar[0], 
+                               &mortarX_bar[numNodesPerFace], 
+                               &mortarX_bar[2*numNodesPerFace] );
+      ProjectFaceNodesToPlane( nonmortarMesh, index2, 
+                               plane.m_nX, plane.m_nY, plane.m_nZ,
+                               plane.m_cX, plane.m_cY, plane.m_cZ,
+                               &nonmortarX_bar[0], 
+                               &nonmortarX_bar[numNodesPerFace], 
+                               &nonmortarX_bar[2*numNodesPerFace] );
       cpManager.getProjectedFaceCoords( cpID, 0, &mortarX_bar[0] ); // face 0 = first face
       cpManager.getProjectedFaceCoords( cpID, 1, &nonmortarX_bar[0] ); // face 1 = second face
 

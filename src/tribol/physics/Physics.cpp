@@ -8,7 +8,6 @@
 
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
-#include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 
 // Axom includes

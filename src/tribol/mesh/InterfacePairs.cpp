@@ -4,86 +4,23 @@
 // SPDX-License-Identifier: (MIT)
 
 #include "tribol/mesh/InterfacePairs.hpp"
-#include "tribol/common/ExecModel.hpp"
 
 namespace tribol
 {
 
-InterfacePairs::InterfacePairs(int allocator_id)
-  : m_allocator_id( allocator_id )
-  , m_pairIndex1( 0, 0, m_allocator_id )
-  , m_pairIndex2( 0, 0, m_allocator_id )
-  , m_isContactCandidate( 0, 0, m_allocator_id )
+TRIBOL_HOST_DEVICE InterfacePair::InterfacePair( IndexT element_id1,
+                                                 IndexT element_id2,
+                                                 bool is_contact_candidate )
+  : m_element_id1          ( element_id1 )
+  , m_element_id2          ( element_id2 )
+  , m_is_contact_candidate ( is_contact_candidate ) 
 {}
 
-void InterfacePairs::reserve(IndexT capacity)
-{
-  m_pairIndex1.reserve(capacity);
-  m_pairIndex2.reserve(capacity);
-  m_isContactCandidate.reserve(capacity);
-}
-
-void InterfacePairs::resize(IndexT new_size)
-{
-   m_pairIndex1.resize(new_size);
-   m_pairIndex2.resize(new_size);
-   m_isContactCandidate.resize(new_size);
-}
-
-void InterfacePairs::clear()
-{
-   m_pairIndex1.clear();
-   m_pairIndex2.clear();
-   m_isContactCandidate.clear();
-}
-
-void InterfacePairs::addInterfacePair( InterfacePair const& pair )
-{
-   // set mesh ids and pair types. This is redundant since these 
-   // only need to be set once.
-  //  m_mesh_id1 = pair.mesh_id1;
-  //  m_mesh_id2 = pair.mesh_id2;
-  //  m_pairType1 = pair.pairType1;
-  //  m_pairType2 = pair.pairType2;
-
-   // add face ids to containers
-   m_pairIndex1.resize(m_pairIndex1.size() + 1, pair.pairIndex1);
-   m_pairIndex1.push_back(pair.pairIndex1);
-   m_pairIndex2.push_back(pair.pairIndex2);
-
-   // set contact candidate boolean container entry
-   m_isContactCandidate.push_back(pair.isContactCandidate);
-}
-
-template <typename PAIRS, typename IDX, typename CAND>
-InterfacePairs::ViewerBase<PAIRS, IDX, CAND>::ViewerBase(PAIRS& pairs)
-  : m_mesh_id1( pairs.m_mesh_id1 )
-  , m_mesh_id2( pairs.m_mesh_id2 )
-  , m_pairType1( pairs.m_pairType1 )
-  , m_pairType2( pairs.m_pairType2 )
-  , m_pairIndex1( pairs.m_pairIndex1 )
-  , m_pairIndex2( pairs.m_pairIndex2 )
-  , m_isContactCandidate( pairs.m_isContactCandidate )
+TRIBOL_HOST_DEVICE InterfacePair::InterfacePair()
+  : m_element_id1          ( -1 )
+  , m_element_id2          ( -1 )
+  , m_is_contact_candidate ( true )
 {}
-
-template <typename PAIRS, typename IDX, typename CAND>
-TRIBOL_HOST_DEVICE InterfacePair InterfacePairs::ViewerBase<PAIRS, IDX, CAND>::getInterfacePair(IndexT idx) const
-{
-   return {
-      m_mesh_id1, m_pairType1, m_pairIndex1[idx],
-      m_mesh_id2, m_pairType2, m_pairIndex2[idx], 
-      m_isContactCandidate[idx], idx };
-}
-
-template <>
-TRIBOL_HOST_DEVICE void InterfacePairs::ViewerBase<InterfacePairs, IndexT, bool>::updateInterfacePair(
-  InterfacePair const& pair, int const idx ) const
-{
-   m_isContactCandidate[ idx ] = pair.isContactCandidate;
-}
-
-template class InterfacePairs::ViewerBase<InterfacePairs, IndexT, bool>;
-template class InterfacePairs::ViewerBase<const InterfacePairs, const IndexT, const bool>;
 
 } // namespace tribol
 

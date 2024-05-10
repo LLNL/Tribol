@@ -13,7 +13,6 @@
 #include "tribol/mesh/InterfacePairs.hpp"
 
 #include "tribol/geom/ContactPlane.hpp"
-#include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 
 #include "tribol/physics/Physics.hpp"
@@ -873,48 +872,34 @@ void registerCouplingScheme( IndexT cs_id,
 //------------------------------------------------------------------------------
 void setInterfacePairs( IndexT cs_id,
                         IndexT numPairs,
-                        IndexT const * const mesh_id1,
-                        IndexT const * const pairType1,
                         IndexT const * const pairIndex1,
-                        IndexT const * const mesh_id2,
-                        IndexT const * const pairType2,
                         IndexT const * const pairIndex2 )
 {
-   MeshManager& meshManager = MeshManager::getInstance();
    // get access to coupling scheme
    auto couplingScheme = CouplingSchemeManager::getInstance().findData(cs_id);
 
    SLIC_ERROR_ROOT_IF(!couplingScheme, 
                       "tribol::setInterfacePairs(): invalid coupling scheme index.");
 
-   auto* pairs = couplingScheme->getInterfacePairs();
+   auto& pairs = couplingScheme->getInterfacePairs();
+   auto& mesh1 = couplingScheme->getMesh1();
+   auto& mesh2 = couplingScheme->getMesh2();
 
-   pairs->clear();
+   pairs.clear();
+   pairs.reserve(numPairs);
 
    // copy the interaction pairs
    for(int i=0; i< numPairs; ++i)
    {
-      InterfacePair pair { mesh_id1[i], static_cast<InterfaceElementType>(pairType1[i]), pairIndex1[i],
-                           mesh_id2[i], static_cast<InterfaceElementType>(pairType2[i]), pairIndex2[i], i };
       ContactMode mode = couplingScheme->getContactMode();
 
       // perform initial face-pair validity checks to add valid face-pairs 
       // to interface pair manager. Note, further computational geometry 
       // filtering will be performed on each face-pair indendifying 
       // contact candidates.
-      auto pMesh1 = meshManager.getData(mesh_id1[i]).getView();
-      auto pMesh2 = meshManager.getData(mesh_id2[i]).getView();
-      bool check = geomFilter( pairIndex1[i], pairIndex2[i],
-                               *pMesh1, *pMesh2, mode );
-
-      if (check)
+      if (geomFilter( pairIndex1[i], pairIndex2[i], mesh1, mesh2, mode ))
       {
-         pair.isContactCandidate = true;
-         pairs->addInterfacePair( pair );
-      }
-      else
-      {
-         pair.isContactCandidate = false;
+        pairs.emplace_back(pairIndex1[i], pairIndex2[i], true);
       }
    }
 

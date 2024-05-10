@@ -12,6 +12,8 @@
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/MfemData.hpp"
 #include "tribol/utils/DataManager.hpp"
+#include "tribol/mesh/InterfacePairs.hpp"
+#include "tribol/geom/ContactPlane.hpp"
 
 // Axom includes
 #include "axom/core.hpp"
@@ -63,7 +65,6 @@ public:
 
 // forward declaration
 class MethodData;
-class InterfacePairs;
 
 /*!
  * \brief The CouplingScheme class defines the coupling between two meshes
@@ -209,14 +210,28 @@ public:
    *
    * \return Reference to the InterfacePairs instance.
    */
-  InterfacePairs* getInterfacePairs( ) { return m_interfacePairs.get(); }
+  ArrayT<InterfacePair>& getInterfacePairs() { return m_interface_pairs; }
 
   /*!
-   * \brief Returns a reference to the associated InterfacePairs
+   * \brief Returns a const reference to the associated InterfacePairs
    *
    * \return Reference to the InterfacePairs instance.
    */
-  const InterfacePairs* getInterfacePairs( ) const { return m_interfacePairs.get(); }
+  const ArrayT<InterfacePair>& getInterfacePairs() const { return m_interface_pairs; }
+
+  /*!
+   * \brief Returns a view to the associated InterfacePairs
+   *
+   * \return Reference to the InterfacePairs instance.
+   */
+  ArrayViewT<InterfacePair> getInterfacePairsView() { return m_interface_pairs.view(); }
+
+  /*!
+   * \brief Returns a view to the associated InterfacePairs
+   *
+   * \return Reference to the InterfacePairs instance.
+   */
+  const ArrayViewT<const InterfacePair> getInterfacePairsView() const { return m_interface_pairs.view(); }
 
   /// @}
 
@@ -225,7 +240,29 @@ public:
    *
    * \return number of active interface pairs
    */
-  int getNumActivePairs( ) const { return m_numActivePairs; }
+  int getNumActivePairs( ) const
+  { 
+    return spatialDimension() == 2 ? m_contact_plane2d.size() : m_contact_plane3d.size(); 
+  }
+
+  const ContactPlane& getContactPlane(IndexT id) const
+  {
+    if (spatialDimension() == 2)
+    {
+      return m_contact_plane2d[id];
+    }
+    else
+    {
+      return m_contact_plane3d[id];
+    }
+  }
+
+  /*!
+   * \brief Returns a reference to the associated InterfacePairs
+   *
+   * \return Reference to the InterfacePairs instance.
+   */
+  const ArrayViewT<const ContactPlane3D> get3DContactPlanesView() const { return m_contact_plane3d; }
 
   /*!
    * Get the gap tolerance that determines in contact face-pairs 
@@ -592,9 +629,10 @@ private:
   bool m_isBinned; ///< True if binning has occured 
   bool m_isTied; ///< True if surfaces have been "tied" (Tied contact only)
 
-  std::unique_ptr<InterfacePairs> m_interfacePairs; ///< List of interface pairs
+  ArrayT<InterfacePair> m_interface_pairs; ///< List of interface pairs
 
-  int m_numActivePairs; ///< number of active interface pairs from InterfacePairs list
+  ArrayT<ContactPlane2D> m_contact_plane2d; ///< List of 2D contact planes
+  ArrayT<ContactPlane3D> m_contact_plane3d; ///< List of 3D contact planes
 
   MethodData* m_methodData; ///< method object holding required interface method data
 

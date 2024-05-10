@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: (MIT)
 
 #include "tribol/common/Parameters.hpp"
-#include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 
@@ -53,7 +52,6 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
                                  const IndexT mesh_id2, const int dim,
                                  const int cycle, const RealT time )
 {
-   ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
    CouplingScheme* couplingScheme  = CouplingSchemeManager::getInstance().findData(cs_id);
    auto& mesh1 = couplingScheme->getMesh1();
    auto& mesh2 = couplingScheme->getMesh2();
@@ -74,7 +72,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
    /////////////////////////////////////////
    if (!couplingScheme->nullMeshes())
    {
-      int cpSize = cpMgr.size();
+      int cpSize = couplingScheme->getNumActivePairs();
       bool overlaps { false };
       bool faces    { false };
 
@@ -144,23 +142,24 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          // loop over all contact planes and output the face coordinates
          for (int i=0; i<cpSize; ++i)
          {
+            auto& cp = couplingScheme->getContactPlane(i);
             // if interpenOverlap, print interpenetrating portions of each face.
-            if (cpMgr.m_interpenOverlap[i])
+            if (cp.m_interpenOverlap)
             {
-               for (int j=0; j<cpMgr.m_numInterpenPoly1Vert[i]; ++j)
+               for (int j=0; j<cp.m_numInterpenPoly1Vert; ++j)
                {
                   axom::fmt::print(faces, "{} {} {}\n",
-                     cpMgr.m_interpenG1X[i][j],
-                     cpMgr.m_interpenG1Y[i][j],
-                     dim==3 ? cpMgr.m_interpenG1Z[i][j] : 0.);
+                     cp.m_interpenG1X[j],
+                     cp.m_interpenG1Y[j],
+                     dim==3 ? cp.m_interpenG1Z[j] : 0.);
                }
 
-               for (int j=0; j<cpMgr.m_numInterpenPoly2Vert[i]; ++j)
+               for (int j=0; j<cp.m_numInterpenPoly2Vert; ++j)
                {
                   axom::fmt::print(faces, "{} {} {}\n",
-                     cpMgr.m_interpenG2X[i][j],
-                     cpMgr.m_interpenG2Y[i][j],
-                     dim==3 ? cpMgr.m_interpenG2Z[i][j] : 0.);
+                     cp.m_interpenG2X[j],
+                     cp.m_interpenG2Y[j],
+                     dim==3 ? cp.m_interpenG2Z[j] : 0.);
                }
             } // end if-cpMrg.m_interpenOverlap[i]
 
@@ -168,7 +167,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
             {
                for (int j=0; j<mesh1.numberOfNodesPerElement(); ++j)
                {
-                  const int nodeId = mesh1.getGlobalNodeId(cpMgr.m_fId1[i], j);
+                  const int nodeId = mesh1.getGlobalNodeId(cp.getCpElementId1(), j);
                   axom::fmt::print(faces, "{} {} {}\n",
                      mesh1.getPosition()[0][nodeId],
                      mesh1.getPosition()[1][nodeId],
@@ -177,7 +176,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
                for (int j=0; j<mesh2.numberOfNodesPerElement(); ++j)
                {
-                  const int nodeId = mesh2.getGlobalNodeId(cpMgr.m_fId2[i], j);
+                  const int nodeId = mesh2.getGlobalNodeId(cp.getCpElementId2(), j);
                   axom::fmt::print(faces, "{} {} {}\n",
                      mesh2.getPosition()[0][nodeId],
                      mesh2.getPosition()[1][nodeId],
@@ -229,10 +228,11 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
          for (int i=0; i<cpSize; ++i)
          {
+            auto& cp = couplingScheme->getContactPlane(i);
             // print face areas
             axom::fmt::print(faces, "{} {} ",
-               mesh1.getElementAreas()[cpMgr.m_fId1[i]],
-               mesh2.getElementAreas()[cpMgr.m_fId2[i]]);
+               mesh1.getElementAreas()[cp.getCpElementId1()],
+               mesh2.getElementAreas()[cp.getCpElementId2()]);
          } // end i-loop over contact planes
          faces << std::endl;
          faces.close();
@@ -268,37 +268,50 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          overlap << cs_id << "\n";
 
          // count the total number of vertices for all contact plane instances.
-         int numPoints = 0;
-         for ( int k=0 ; k< cpSize; ++k )
+         int numPoints = 2 * cpSize;
+         if (dim == 3)
          {
-            // add the number of overlap vertices
-            numPoints += cpMgr.m_numPolyVert[k];
-         } // end k-loop over contact planes
+            numPoints = 0;
+            for ( int k=0 ; k< cpSize; ++k )
+            {
+               auto& cp = couplingScheme->getContactPlane(k);
+               auto& cp3 = static_cast<const ContactPlane3D&>(cp);
+               // add the number of overlap vertices
+               numPoints += cp3.m_numPolyVert;
+            } // end k-loop over contact planes
+         }
 
          axom::fmt::print(overlap, "POINTS {} float\n", numPoints);
 
          // loop over contact plane instances and output polygon vertices
          for( int k=0 ; k < cpSize; ++k )
          {
+            auto& cp = couplingScheme->getContactPlane(k);
             // output the overlap polygon. Whether interpenetrating overlap or full
             // overlap the vertex coordinates are stored in cp.m_polyX,Y,Z
-            for (int i=0; i<cpMgr.m_numPolyVert[k]; ++i)
+            if (dim == 2)
             {
-               if (dim == 3)
+               auto& cp2 = static_cast<const ContactPlane2D&>(cp);
+               for (int i=0; i<2; ++i)
                {
                   axom::fmt::print(overlap, "{} {} {}\n",
-                     cpMgr.m_polyX[k][i],
-                     cpMgr.m_polyY[k][i],
-                     cpMgr.m_polyZ[k][i]);
-               }
-               else
-               {
-                  axom::fmt::print(overlap, "{} {} {}\n",
-                     cpMgr.m_segX[k][i],
-                     cpMgr.m_segY[k][i],
+                     cp2.m_segX[i],
+                     cp2.m_segY[i],
                      0.);
-               }
-            } // end i-loop over overlap vertices
+               } // end i-loop over overlap vertices
+            }
+            else
+            {
+               auto& cp3 = static_cast<const ContactPlane3D&>(cp);
+               for (int i=0; i<cp3.m_numPolyVert; ++i)
+               {
+                  auto& cp3 = static_cast<const ContactPlane3D&>(cp);
+                  axom::fmt::print(overlap, "{} {} {}\n",
+                     cp3.m_polyX[i],
+                     cp3.m_polyY[i],
+                     cp3.m_polyZ[i]);
+               } // end i-loop over overlap vertices
+            }
          } // end i-loop over contact planes for overlap output
 
          // define the polygons
@@ -311,7 +324,11 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          int k = 0;
          for (int i=0; i<cpSize; ++i)
          {
-            const int nVerts = cpMgr.m_numPolyVert[i];
+            int nVerts = 2;
+            if (dim == 3)
+            {
+              nVerts = static_cast<const ContactPlane3D&>(couplingScheme->getContactPlane(i)).m_numPolyVert;
+            }
             axom::fmt::print(overlap, "{} {}\n", nVerts, axom::fmt::join(RSet(k, k+nVerts), " "));
             k += nVerts;
          }
@@ -336,19 +353,20 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
             axom::fmt::print(overlap, "LOOKUP_TABLE default\n");
             for (int i=0; i<cpSize; ++i)
             {
+              auto& cp = couplingScheme->getContactPlane(i);
                axom::fmt::print(overlap, "{} ",
-               cpMgr.m_interpenOverlap[i] ? cpMgr.m_interpenArea[i] : cpMgr.m_area[i] );
+               cp.m_interpenOverlap ? cp.m_interpenArea : cp.m_area );
             }
             overlap << std::endl;
          }
 
          // print the contact plane pressure scalar data
-         {
-            axom::fmt::print(overlap, "SCALARS {} {}\n", "overlap_pressure", "float");
-            axom::fmt::print(overlap, "LOOKUP_TABLE default\n");
-            axom::fmt::print(overlap, "{}", axom::fmt::join(cpMgr.m_pressure.data(), cpMgr.m_pressure.data() + cpSize, " "));
-            overlap << std::endl;
-         }
+        //  {
+        //     axom::fmt::print(overlap, "SCALARS {} {}\n", "overlap_pressure", "float");
+        //     axom::fmt::print(overlap, "LOOKUP_TABLE default\n");
+        //     axom::fmt::print(overlap, "{}", axom::fmt::join(cp.m_pressure.data(), cpMgr.m_pressure.data() + cpSize, " "));
+        //     overlap << std::endl;
+        //  }
 
          // close file
          overlap.close();

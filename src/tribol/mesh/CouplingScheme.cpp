@@ -14,7 +14,6 @@
 #include "tribol/search/InterfacePairFinder.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/geom/ContactPlane.hpp"
-#include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/physics/Physics.hpp"
 #include "tribol/integ/FE.hpp"
 
@@ -330,8 +329,6 @@ CouplingScheme::CouplingScheme( IndexT cs_id,
    , m_fixedBinning         ( false )
    , m_isBinned             ( false )
    , m_isTied               ( false )
-   , m_interfacePairs       ( new InterfacePairs() )
-   , m_numActivePairs       ( 0 )
    , m_methodData           ( nullptr )
 {
   // error sanity checks
@@ -901,7 +898,7 @@ void CouplingScheme::performBinning()
       if( !this->hasFixedBinning() ) 
       {
          // create interface pairs based on allocator id
-         m_interfacePairs = std::make_unique<InterfacePairs>(m_mesh1->getAllocatorId());
+         m_interface_pairs = ArrayT<InterfacePair>(0, 0, m_allocator_id);
 
          InterfacePairFinder finder(this);
          finder.initialize();
@@ -926,21 +923,20 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
 {
   // set dimension on the contact plane manager
   parameters_t& params = parameters_t::getInstance();
-  ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
 
   // clear contact plane manager to be populated/allocated anew for this
   // coupling-scheme/cycle.
-  cpMgr.clearCPManager();
-  cpMgr.setSpaceDim( params.dimension );
+  m_contact_plane2d.clear();
+  m_contact_plane3d.clear();
 
   // loop over number of interface pairs
-  IndexT numPairs = m_interfacePairs->getNumPairs();
+  IndexT numPairs = m_interface_pairs.size();
 
   SLIC_DEBUG("Coupling scheme " << m_id << " has " << numPairs << " pairs.");
 
   // loop over all pairs and perform geometry checks to see if they are
   // interacting
-  auto pairs = getInterfacePairs()->getViewer();
+  ArrayViewT<InterfacePair> pairs = getInterfacePairs();
   auto contact_method = m_contactMethod;
   auto contact_case = m_contactCase;
   ArrayT<int> active_pair_ct_data(1, 1, getAllocatorId());
@@ -950,14 +946,14 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   forAllExec(getExecutionMode(), numPairs,
     [=] TRIBOL_HOST_DEVICE (IndexT i)
     {
-      auto pair = pairs.getInterfacePair(i);
+      auto& pair = pairs[i];
       
       // call wrapper around the contact method/case specific 
       // geometry checks to determine whether to include a pair 
       // in the active set
       bool interact = false;
       FaceGeomError interact_err = CheckInterfacePair(
-        pair, contact_method, contact_case, interact);
+        pair, *m_mesh1, *m_mesh2, contact_method, contact_case, interact);
         
       // // Update pair reporting data for this coupling scheme
       // this->updatePairReportingData( interact_err );
@@ -967,29 +963,24 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
       if (interact_err != NO_FACE_GEOM_ERROR)
       {
         pair_err[0] = 1;
-        pair.isContactCandidate = false;
+        pair.m_is_contact_candidate = false;
         // TODO consider printing offending face(s) coordinates for debugging
         // SLIC_DEBUG("Face geometry error, " << static_cast<int>(interact_err) << "for pair, " << kp << ".");
         // continue; // TODO SRW why do we need this? Seems like we want to update interface pair below if-statements
       }
       else if (!interact)
       {
-        pair.isContactCandidate = false;
+        pair.m_is_contact_candidate = false;
       }
       else
       {
-        pair.isContactCandidate = true;
+        pair.m_is_contact_candidate = true;
         RAJA::atomicInc<RAJA::auto_atomic>(active_pair_ct.data(), 1);
       }
-
-      // update the InterfacePairs container on the coupling scheme 
-      // to reflect any change to contact candidacy
-      pairs.updateInterfacePair(pair, i);
     }
   );
 
   ArrayT<int> active_pair_ct_host(active_pair_ct_data, getResourceAllocatorID(MemorySpace::Host));
-  this->m_numActivePairs = active_pair_ct_host[0];
 
   // Here, the pair_err is checked, which detects an issue with a face-pair geometry
   // (which has been skipped over for contact eligibility) and reports this warning.
@@ -1005,8 +996,7 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   SLIC_INFO_IF( pair_err_host[0]!=0, "CouplingScheme::apply(): possible issues with orientation, " << 
                 "input, or invalid overlaps in CheckInterfacePair()." );
 
-  SLIC_ERROR_IF( m_numActivePairs != cpMgr.size(), "CouplingScheme::apply(): " << 
-                "number of active pairs does not match number of contact planes." );
+  // TODO create contact planes
 
   // aggregate across ranks for this coupling scheme? SRW
   SLIC_DEBUG("Number of active interface pairs: " << m_numActivePairs);
@@ -1022,7 +1012,7 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
                   "coupling scheme, " << this->m_id << ".");
 
   // compute Tribol timestep vote on the coupling scheme
-  if (err==0 && m_numActivePairs>0)
+  if (err == 0 && getNumActivePairs() > 0)
   {
     computeTimeStep(dt);
   }
@@ -1055,7 +1045,6 @@ bool CouplingScheme::init()
    this->m_isValid = valid;
    if (this->m_isValid)
    {
-      
       auto& mesh_data1 = MeshManager::getInstance().at( this->m_mesh_id1 );
       auto& mesh_data2 = MeshManager::getInstance().at( this->m_mesh_id2 );
 
@@ -1374,7 +1363,6 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 
   parameters_t & parameters = parameters_t::getInstance();
   RealT proj_ratio = parameters.timestep_pen_frac;
-  ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
   //int num_sides = 2; // always 2 sides in a single coupling scheme
   int dim = this->spatialDimension();
   int numNodesPerCell1 = m_mesh1->numberOfNodesPerElement();
@@ -1383,8 +1371,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
   // loop over each interface pair. Even if pair is not in contact, 
   // we still do a velocity projection for that proximate face-pair 
   // to see if interpenetration next cycle 'may' be too much
-  IndexT numPairs = m_interfacePairs->getNumPairs();
-  auto pairs = m_interfacePairs->getViewer();
+  IndexT numPairs = getInterfacePairs().size();
+  auto pairs = getInterfacePairsView();
   auto& mesh1 = *m_mesh1;
   auto& mesh2 = *m_mesh2;
   int allocator_id = getAllocatorId();
@@ -1399,24 +1387,24 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
   forAllExec(getExecutionMode(), numPairs,
     [=] TRIBOL_HOST_DEVICE (IndexT kp)
     {
-      InterfacePair pair = pairs.getInterfacePair(kp);
+      InterfacePair pair = pairs[kp];
 
       // guard against the case where a pair does not have a contact plane; that is, 
       // the pair is not a contact candidate
-      if (!pair.isContactCandidate)
+      if (!pair.m_is_contact_candidate)
       {
          return;
       }
 
       ArrayT<RealT> x1(dim * numNodesPerCell1, dim * numNodesPerCell1, allocator_id);
       ArrayT<RealT> v1(dim * numNodesPerCell1, dim * numNodesPerCell1, allocator_id);
-      mesh1.getFaceCoords( pair.pairIndex1, &x1[0] );
-      mesh1.getFaceVelocities( pair.pairIndex1, &v1[0] );
+      mesh1.getFaceCoords( pair.m_element_id1, &x1[0] );
+      mesh1.getFaceVelocities( pair.m_element_id1, &v1[0] );
 
       ArrayT<RealT> x2(dim * numNodesPerCell2, dim * numNodesPerCell2, allocator_id);
       ArrayT<RealT> v2(dim * numNodesPerCell2, dim * numNodesPerCell2, allocator_id);
-      mesh2.getFaceCoords( pair.pairIndex2, &x2[0] );
-      mesh2.getFaceVelocities( pair.pairIndex2, &v2[0] );
+      mesh2.getFaceCoords( pair.m_element_id2, &x2[0] );
+      mesh2.getFaceVelocities( pair.m_element_id2, &v2[0] );
 
       /////////////////////////////////////////////////////////////
       // calculate face velocities at projected overlap centroid //
@@ -1426,12 +1414,12 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 
       // interpolate nodal velocity at overlap centroid as projected 
       // onto face 1
-      RealT cXf1 = cpMgr.m_cXf1[cpID];
-      RealT cYf1 = cpMgr.m_cYf1[cpID];
-      RealT cZf1 = (dim == 3) ? cpMgr.m_cZf1[cpID] : 0.;
-      GalerkinEval( &x1[0], cXf1, cYf1, cZf1,
-                    LINEAR, PHYSICAL, dim, dim, 
-                    &v1[0], &vel_f1[0] );
+      // RealT cXf1 = cpMgr.m_cXf1[cpID];
+      // RealT cYf1 = cpMgr.m_cYf1[cpID];
+      // RealT cZf1 = (dim == 3) ? cpMgr.m_cZf1[cpID] : 0.;
+      // GalerkinEval( &x1[0], cXf1, cYf1, cZf1,
+      //               LINEAR, PHYSICAL, dim, dim, 
+      //               &v1[0], &vel_f1[0] );
     }
   );
       
@@ -1467,8 +1455,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 
   //     // get face normals
   //     RealT fn1[dim], fn2[dim];
-  //     m_mesh1->getFaceNormal( pair.pairIndex1, &fn1[0] );
-  //     m_mesh2->getFaceNormal( pair.pairIndex2, &fn2[0] );
+  //     m_mesh1->getFaceNormal( pair.m_element_id1, &fn1[0] );
+  //     m_mesh2->getFaceNormal( pair.m_element_id2, &fn2[0] );
 
   //     // compute projections
   //     v1_dot_n  = dotProd( &vel_f1[0], &overlapNormal[0], dim );
@@ -1511,8 +1499,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 
   //     // get volume element thicknesses associated with each 
   //     // face in this pair and find minimum
-  //     RealT t1 = m_mesh1->getElementData().m_thickness[pair.pairIndex1];
-  //     RealT t2 = m_mesh2->getElementData().m_thickness[pair.pairIndex2];
+  //     RealT t1 = m_mesh1->getElementData().m_thickness[pair.m_element_id1];
+  //     RealT t2 = m_mesh2->getElementData().m_thickness[pair.m_element_id2];
 
   //     // compute the gap vector (recall gap is x1-x2 by convention)
   //     RealT gapVec[dim];
@@ -1788,9 +1776,7 @@ void CouplingScheme::updatePairReportingData( const FaceGeomError face_error )
 //------------------------------------------------------------------------------
 void CouplingScheme::printPairReportingData()
 {
-   int numInterfacePairs = this->m_interfacePairs->getNumPairs();
-
-   SLIC_DEBUG(this->m_numActivePairs*100./numInterfacePairs << "% of binned interface " <<
+   SLIC_DEBUG(this->m_numActivePairs*100./getInterfacePairs().size() << "% of binned interface " <<
               "pairs are active contact candidates.");
 
    SLIC_DEBUG_IF(this->m_pairReportingData.numBadOrientation>0,

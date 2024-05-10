@@ -6,8 +6,9 @@
 #ifndef TRIBOL_HPP_
 #define TRIBOL_HPP_
 
-#include "tribol/common/BasicTypes.hpp"
-#include "tribol/geom/ContactPlaneManager.hpp"
+#include "tribol/common/ExecModel.hpp"
+#include "tribol/common/ArrayTypes.hpp"
+#include "tribol/common/Parameters.hpp"
 
 #include <string>
 

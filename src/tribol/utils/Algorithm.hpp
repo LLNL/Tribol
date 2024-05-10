@@ -69,6 +69,27 @@ TRIBOL_HOST_DEVICE IndexT binarySearch( const ARRAY& array,
   return binarySearch(array.data(), range.data(), array.size(), value);
 }
 
+template <typename T, MemorySpace MSPACE>
+TRIBOL_HOST_DEVICE void transpose( const ArrayT<T, 2, MSPACE>& in, 
+                                   ArrayT<T, 2, MSPACE>& out )
+{
+  auto h_in = in.shape()[0];
+  auto w_in = in.shape()[1];
+  auto h_out = out.shape()[0];
+  auto w_out = out.shape()[1];
+
+  SLIC_ERROR_IF(h_in != w_out, "Input number of rows does not equal output number of columns.");
+  SLIC_ERROR_IF(w_in != h_out, "Input number of columns does not equal output number of rows.");
+
+  for (IndexT i{0}; i < h_in; ++i)
+  {
+    for (IndexT j{0}; j < w_in; ++j)
+    {
+      out(j, i) = in(i, j);
+    }
+  }
+}
+
 } // namespace algorithm
 
 } // namespace tribol

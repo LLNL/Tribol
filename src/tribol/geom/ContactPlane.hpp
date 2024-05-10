@@ -7,7 +7,6 @@
 #define SRC_GEOM_CONTACTPLANE_HPP_
 
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "axom/slic.hpp" 
@@ -40,6 +39,8 @@ class ContactPlaneManager;
  *
  */
 FaceGeomError CheckInterfacePair( InterfacePair& pair,
+                                  const MeshData::Viewer& mesh1,
+                                  const MeshData::Viewer& mesh2,
                                   ContactMethod const cMethod,
                                   ContactCase const cCase,
                                   bool& isInteracting );
@@ -157,11 +158,14 @@ class ContactPlane
 protected:
    int dim;              ///< Problem dimension
    int m_numFaces;       ///< Number of constituent faces
-   InterfacePair m_pair; ///< Face-pair struct for two constituent faces
+   InterfacePair* m_pair; ///< Face-pair struct for two constituent faces
 
 public:
    ContactPlane() { };
    virtual ~ContactPlane() { } ;
+   
+   const MeshData::Viewer* m_mesh1; ///< Pointer to mesh 1
+   const MeshData::Viewer* m_mesh2; ///< Pointer to mesh 2
 
    bool m_intermediatePlane; ///< True if intermediate plane is used
    bool m_inContact;         ///< True if face-pair is in contact
@@ -264,55 +268,18 @@ public:
    /// @{
    
    /*!
-    * \brief Get mesh data associated with a particular mesh id
+    * \brief Get the id of the first element that forms the contact plane
     *
-    * \param [in] mesh_id Integer id for mesh
-    * \return MeshData object
-    */
-   MeshData& getCpMeshData(IndexT mesh_id)
-      { MeshManager & meshManager = MeshManager::getInstance();
-        MeshData& mesh = meshManager.getData( mesh_id );
-        return mesh; }
-   
-   /*!
-    * \brief Get the mesh id of one of the two faces used to form the contact plane
-    *
-    * \param [in] i Integer id for mesh
-    * \return Mesh id
-    */
-   int getCpMeshId( int i ) const 
-   {
-     if (i != 1 && i != 2)
-     {
-        SLIC_ERROR("getCpMeshId input mesh ID value must be 1 or 2.");
-     }
-
-     int mesh_id = -1;
-     if (i == 1) mesh_id = m_pair.mesh_id1;
-     if (i == 2) mesh_id = m_pair.mesh_id2;
-    
-     return mesh_id;
-   }
-   
-   /*!
-    * \brief Get the face id of one of the two faces used to form the contact plane
-    *
-    * \param [in] faceID Integer id for mesh
     * \return Face id
     */
-   int getCpFaceId( int faceID ) const
-   {
-     if (faceID != 1 && faceID != 2)
-     {
-        SLIC_ERROR("getCpFaceId input face ID value must be 1 or 2.");
-     }
-
-     int id = -1;
-     if (faceID == 1) id = m_pair.pairIndex1;
-     if (faceID == 2) id = m_pair.pairIndex2;
-    
-     return id;
-   }
+   int getCpElementId1() const { return m_pair->m_element_id1; }
+   
+   /*!
+    * \brief Get the id of the second element that forms the contact plane
+    *
+    * \return Face id
+    */
+   int getCpElementId2() const { return m_pair->m_element_id2; }
    
    /*!
     * \brief Get the number of faces used to form the contact plane 
@@ -334,54 +301,20 @@ public:
     *
     */
    int getDim() { return dim; };
-
-   /*!
-    * \brief Set the contact plane mesh id for a given face id 
-    *
-    * \param [in] i Face id 
-    * \param [in] mesh_id Integer Id of the mesh
-    */
-   void setCpMeshId( int i, IndexT mesh_id )
-   {
-     if (i != 1 && i != 2)
-     {
-        SLIC_ERROR("setCpMeshId input argument _i_ value must be 1 or 2.");
-     }
-     if (i == 1) m_pair.mesh_id1 = mesh_id;
-     if (i == 2) m_pair.mesh_id2 = mesh_id;
-   }
    
    /*!
-    * \brief Set a contact plane face id
+    * \brief Set the first contact plane element id
     *
-    * \param [in] i Face number 
-    * \param [in] faceID Integer Id of the i^th face
+    * \param [in] element_id element id
     */
-   void setCpFaceId( int i, int faceID )
-   {
-     if (i != 1 && i != 2)
-     {
-        SLIC_ERROR("setCpMeshId input argument _i_ value must be 1 or 2.");
-     }
-     if (i == 1) m_pair.pairIndex1 = faceID;
-     if (i == 2) m_pair.pairIndex2 = faceID;
-   }
-
+   void setCpElementId1( IndexT element_id ) { m_pair->m_element_id1 = element_id; }
+   
    /*!
-    * \brief Set the pair type for each face
+    * \brief Set the second contact plane element id
     *
-    * \param [in] i Face number 
-    * \param [in] pairType Face type 
+    * \param [in] element_id element id
     */
-   void setCpPairType( int id, InterfaceElementType pairType )
-   {
-      if (id != 1 && id != 2)
-     {
-        SLIC_ERROR("setCpPairType input argument _id_ value must be 1 or 2.");
-     }
-     if (id == 1) m_pair.pairType1 = pairType;
-     if (id == 2) m_pair.pairType2 = pairType;
-   }
+   void setCpElementId2( IndexT element_id ) { m_pair->m_element_id2 = element_id; }
    
    /*!
     * \brief Set the number of faces involved in forming the contact plane
@@ -392,13 +325,6 @@ public:
    {
      m_numFaces = num;
    }
-
-   /*!
-    * \brief Set the dimension of the problem
-    *
-    * \param [in] dimension Dimension of the problem
-    */
-   void setDim( int dimension ) { dim = dimension; };
 
    /// @}
 };
@@ -448,9 +374,13 @@ public:
     * \param [in] interPlane True if intermediate (i.e. common) plane is used
     * \param [in] dimension Dimension of the problem
     */
-   ContactPlane3D( InterfacePair& pair, RealT areaFrac, 
-                                      bool interpenOverlap, bool interPlane, 
-                                      int dimension );
+   ContactPlane3D( InterfacePair* pair,
+                   const MeshData::Viewer* mesh1,
+                   const MeshData::Viewer* mesh2,
+                   RealT areaFrac,
+                   bool interpenOverlap,
+                   bool interPlane,
+                   int dimension );
 
    /*!
     * Overload constructor with no argument list
@@ -485,7 +415,7 @@ public:
     * \param [in] m1 data associated with mesh 1
     * \param [in] m2 data associated with mesh 2
     */
-   virtual void computeNormal();
+   void computeNormal() override;
    
    /*!
     * \brief Computes a reference point on the plane locating it in 3-space
@@ -495,7 +425,7 @@ public:
     * \note This is taken as the average of the vertex averaged centroids of 
     *  the two faces that are used to define a local contact plane
     */
-   virtual void computePlanePoint();
+   void computePlanePoint() override;
    
    /*!
     * \brief Compute a local basis on the contact plane
@@ -505,7 +435,7 @@ public:
    /*!
     * \brief Compute the weak (integral form) gap between the two faces. 
     */
-   virtual void computeIntegralGap();
+   void computeIntegralGap() override;
    
    /*!
     * \brief Compute the local 2D coordinates of an array of points on the 
@@ -543,7 +473,7 @@ public:
    /*!
     * \brief Computes the area tolerance for accepting a face pair
     */
-   virtual void computeAreaTol();
+   void computeAreaTol() override;
    
    /*!
     * \brief Check whether two polygons (faces) have a positive area of overlap
@@ -575,7 +505,7 @@ public:
     *  polygon intersection routine) back to each face that are used to form 
     *  the contact plane and then averages these projected points.
     */
-   virtual void planePointAndCentroidGap( RealT scale );
+   void planePointAndCentroidGap( RealT scale ) override;
    
    /*!
     * \brief Computes the gap between the two projections of the contact 
@@ -583,7 +513,7 @@ public:
     *
     * \param [in] scale
     */
-   virtual void centroidGap( RealT scale );
+   void centroidGap( RealT scale ) override;
    
    /*!
     * \brief Computes the polygonal overlap between the portion of two  
@@ -594,14 +524,14 @@ public:
     *
     * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
     */
-   virtual FaceGeomError computeLocalInterpenOverlap( bool& interpen );
+   FaceGeomError computeLocalInterpenOverlap( bool& interpen ) override;
    
    /*!
     * \brief Copies one contact plane object's data to another
     *        
     * \param [in] cPlane input contact plane object to be copied
     */
-   virtual void copyContactPlane( ContactPlane* cPlane );
+   void copyContactPlane( ContactPlane* cPlane ) override;
 
 };
 
@@ -628,8 +558,12 @@ public:
     * \param [in] interPlane True if intermediate (i.e. common) plane is used
     * \param [in] dimension Dimension of problem
     */
-   ContactPlane2D( InterfacePair& pair, RealT lenFrac, 
-                   bool interpenOverlap, bool interPlane, 
+   ContactPlane2D( InterfacePair* pair,
+                   const MeshData::Viewer* mesh1,
+                   const MeshData::Viewer* mesh2,
+                   RealT lenFrac,
+                   bool interpenOverlap,
+                   bool interPlane,
                    int dimension ) ;
 
    /*!
@@ -737,9 +671,13 @@ public:
  * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
  * 
  */
-FaceGeomError CheckFacePair( InterfacePair& pair, 
-                             bool fullOverlap,
-                             ContactPlane3D& cp );
+TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( InterfacePair& pair,
+                                                const MeshData::Viewer& mesh1,
+                                                const MeshData::Viewer& mesh2,
+                                                RealT gap_separation_ratio,
+                                                RealT len_collapse_ratio,
+                                                bool fullOverlap,
+                                                ContactPlane3D& cp );
 
 /*!
  * \brief Checks if face-pair (3D) candidate is aligned and actual local contact interaction.
@@ -749,7 +687,9 @@ FaceGeomError CheckFacePair( InterfacePair& pair,
  * \return 3D contact plane object with boolean indicating if face-pair form a local contact interaction
  * 
  */
-ContactPlane3D CheckAlignedFacePair( InterfacePair& pair );
+TRIBOL_HOST_DEVICE ContactPlane3D CheckAlignedFacePair( InterfacePair& pair,
+                                                        const MeshData::Viewer& mesh1,
+                                                        const MeshData::Viewer& mesh2 );
 
 /*!
  * \brief Checks if 2D edge-pair candidate is actual local contact interaction.
