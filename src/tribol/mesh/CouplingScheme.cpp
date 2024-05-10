@@ -1532,12 +1532,13 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
       } // end case 1
 
-      ///////////////////////////////////////////////////////////
-      // 2. Velocity projection exceeds interpen tolerance     // 
-      //    Note: This is performed for all contact candidates //
-      //          even if they are not 'in contact' per the    //
-      //          common-plane method                          //
-      ///////////////////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////////////////
+      // 2. Velocity projection exceeds max interpenetration                // 
+      //                                                                    // 
+      //    Note: This is performed for all contact candidates even if they //
+      //          are not 'in contact' per the common-plane method. Every   //
+      //          contact candidate has a contact plane                     //
+      ////////////////////////////////////////////////////////////////////////
 
       {
          // compute delta between velocity projection of face-projected 
@@ -1568,28 +1569,28 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
             proj_delta_n_2 += proj_delta_z2 * fn1[2];
          }
 
+         // Reset the dt velocity check only for faces with continued interpen that exceeds the 
+         // max allowable gap AND where the current gap did NOT exceed that face's max allowable
+         // gap per check 1 (would result in same dt calc).
+         //
+         // Note:
          // If proj_delta_n_i < 0, (i=1,2) there is interpen from the velocity projection. 
-         // Check this interpen against the maximum allowable to determine if a velocity projection 
-         // timestep estimate is still required.
-         if (dt1_vel_check)
+         if (dt1_vel_check && !dt1_check1) // continued interpen
          {
             dt1_vel_check = (proj_delta_n_1 < 0.) ? ((std::abs(proj_delta_n_1) > max_delta1) ? true : false) : false;
          }
          
-         if (dt2_vel_check)
+         if (dt2_vel_check && !dt2_check1) // continued interpen
          {
             dt2_vel_check = (proj_delta_n_2 < 0.) ? ((std::abs(proj_delta_n_2) > max_delta2) ? true : false) : false;
          }
 
-         // if the 'case 1' check was not triggered for face 1 or 2, then
-         // check the sign of the delta-projections to determine if interpen 
-         // is occuring. If so, check against maximum allowable interpen. 
-         // In both cases if delta_n_i (i=1,2) < 0 there is interpen
-         //
-         // Note, this check is predicated on (proj_delta_n_1 + max_delta1 > 0). If this is not true,
-         // the dt[i]_vel_check would be false; 
-         dt1 = (dt1_vel_check) ? -alpha * (proj_delta_n_1 + max_delta1) / v1_dot_n1 : dt1;
-         dt2 = (dt2_vel_check) ? -alpha * (proj_delta_n_2 + max_delta2) / v2_dot_n2 : dt2; 
+         // compute velocity projection based dt (check 2) using a RESET gap (g=0) such that
+         // the velocity projected gap does not exceed the max allowable gap. This avoid timestep
+         // crashes for velocity projected gaps slightly in excess of the max allowable and still
+         // allows for a soft contact response without a timestep crash.
+         dt1 = (dt1_vel_check) ? -alpha * max_delta1 / v1_dot_n1 : dt1;
+         dt2 = (dt2_vel_check) ? -alpha * max_delta2 / v2_dot_n2 : dt2; 
 
          //std::cout << "dt1_vel_check, (proj_delta_n_1+max_delta1), v1_dot_n1: " << dt1_vel_check << ", " << proj_delta_n_1+max_delta1 << ", " << v1_dot_n1 << std::endl;
          //std::cout << "dt2_vel_check, (proj_delta_n_2+max_delta2), v2_dot_n2: " << dt2_vel_check << ", " << proj_delta_n_2+max_delta2 << ", " << v2_dot_n2 << std::endl;
@@ -1618,8 +1619,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
    // print general messages once
    // Can we output this message on root? SRW
-   SLIC_DEBUG_IF(exceed_max_gap, "tribol::computeCommonPlaneTimeStep(): there are "  <<
-                 "locations where mesh overlap may be too large. "                <<
+   SLIC_DEBUG_IF(exceed_max_gap1 || exceed_max_gap2, "tribol::computeCommonPlaneTimeStep(): " <<
+                 "there are locations where mesh overlap may be too large. " <<
                  "Cannot provide timestep vote. Reduce timestep and/or increase " << 
                  "penalty.");
 
