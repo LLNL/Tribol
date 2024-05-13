@@ -9,7 +9,6 @@
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/geom/ContactPlane.hpp"
-#include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/integ/Integration.hpp"
@@ -43,14 +42,17 @@ RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
 } // end ComputePenaltyStiffnessPerArea
 
 //------------------------------------------------------------------------------
-RealT ComputeGapRatePressure( ContactPlaneManager& cpMgr, 
-                             int cpID, IndexT mesh_id1, IndexT mesh_id2, 
-                             int fId1, int fId2, RealT element_penalty,
-                             int dim, RatePenaltyCalculation rate_calc )
+TRIBOL_HOST_DEVICE RealT ComputeGapRatePressure( ContactPlane& plane, 
+                                                 RealT element_penalty,
+                                                 RatePenaltyCalculation rate_calc )
 {
-   MeshManager& meshManager = MeshManager::getInstance();
-   auto m1 = meshManager.at( mesh_id1 ).getView();
-   auto m2 = meshManager.at( mesh_id2 ).getView();
+   auto m1 = plane.m_mesh1;
+   auto m2 = plane.m_mesh2;
+
+   auto fId1 = plane.getCpElementId1();
+   auto fId2 = plane.getCpElementId2();
+
+   const auto dim = plane.m_dim;
 
    // compute the correct rate_penalty
    RealT rate_penalty = 0.;
@@ -79,48 +81,48 @@ RealT ComputeGapRatePressure( ContactPlaneManager& cpMgr,
    } // end switch on rate_calc
 
    // compute the velocity gap and pressure contribution
-   int numNodesPerCell1 = m1->numberOfNodesPerElement();
-   int numNodesPerCell2 = m2->numberOfNodesPerElement();
+   constexpr int max_dim = 3;
+   constexpr int max_nodes_per_elem = 4;
 
-   RealT x1[dim * numNodesPerCell1];
-   RealT v1[dim * numNodesPerCell1];
-   m1->getFaceCoords( fId1, &x1[0] );
-   m1->getFaceVelocities( fId1, &v1[0] );
+   StackArrayT<RealT, max_dim * max_nodes_per_elem> x1;
+   StackArrayT<RealT, max_dim * max_nodes_per_elem> v1;
+   m1->getFaceCoords( fId1, x1 );
+   m1->getFaceVelocities( fId1, v1 );
 
-   RealT x2[dim * numNodesPerCell2];
-   RealT v2[dim * numNodesPerCell2];
-   m2->getFaceCoords( fId2, &x2[0] );
-   m2->getFaceVelocities( fId2, &v2[0] );
+   StackArrayT<RealT, max_dim * max_nodes_per_elem> x2;
+   StackArrayT<RealT, max_dim * max_nodes_per_elem> v2;
+   m2->getFaceCoords( fId2, x2 );
+   m2->getFaceVelocities( fId2, v2 );
 
    //////////////////////////////////////////////////////////
    // compute velocity Galerkin approximation at projected // 
    // overlap centroid                                     //
    //////////////////////////////////////////////////////////
-   RealT vel_f1[dim];
-   RealT vel_f2[dim];
-   initRealArray( &vel_f1[0], dim, 0. );
-   initRealArray( &vel_f2[0], dim, 0. );
+   RealT vel_f1[max_dim];
+   RealT vel_f2[max_dim];
+   initRealArray( vel_f1, dim, 0. );
+   initRealArray( vel_f2, dim, 0. );
 
    // interpolate nodal velocity at overlap centroid as projected 
    // onto face 1
-   RealT cXf1 = cpMgr.m_cXf1[cpID];
-   RealT cYf1 = cpMgr.m_cYf1[cpID];
-   RealT cZf1 = (dim == 3) ? cpMgr.m_cZf1[cpID] : 0.;
-   GalerkinEval( &x1[0], cXf1, cYf1, cZf1,
+   RealT cXf1 = plane.m_cXf1;
+   RealT cYf1 = plane.m_cYf1;
+   RealT cZf1 = (dim == 3) ? plane.m_cZf1 : 0.;
+   GalerkinEval( x1, cXf1, cYf1, cZf1,
                  LINEAR, PHYSICAL, dim, dim, 
                  &v1[0], &vel_f1[0] );
 
    // interpolate nodal velocity at overlap centroid as projected 
    // onto face 2
-   RealT cXf2 = cpMgr.m_cXf2[cpID];
-   RealT cYf2 = cpMgr.m_cYf2[cpID];
-   RealT cZf2 = (dim == 3) ? cpMgr.m_cZf2[cpID] : 0.;
+   RealT cXf2 = plane.m_cXf2;
+   RealT cYf2 = plane.m_cYf2;
+   RealT cZf2 = (dim == 3) ? plane.m_cZf2 : 0.;
    GalerkinEval( &x2[0], cXf2, cYf2, cZf2,
                  LINEAR, PHYSICAL, dim, dim, 
                  &v2[0], &vel_f2[0] );
 
    // compute velocity gap vector
-   RealT velGap[dim];
+   RealT velGap[max_dim];
    velGap[0] = vel_f1[0] - vel_f2[0];
    velGap[1] = vel_f1[1] - vel_f2[1];
    if (dim == 3)
@@ -129,12 +131,12 @@ RealT ComputeGapRatePressure( ContactPlaneManager& cpMgr,
    }
 
    // compute velocity gap scalar
-   cpMgr.m_velGap[cpID] = 0.;
-   cpMgr.m_velGap[cpID] += velGap[0] * cpMgr.m_nX[cpID];
-   cpMgr.m_velGap[cpID] += velGap[1] * cpMgr.m_nY[cpID];
+   plane.m_velGap = 0.;
+   plane.m_velGap += velGap[0] * plane.m_nX;
+   plane.m_velGap += velGap[1] * plane.m_nY;
    if (dim == 3)
    {
-      cpMgr.m_velGap[cpID] += velGap[2] * cpMgr.m_nZ[cpID];
+      plane.m_velGap += velGap[2] * plane.m_nZ;
    }
 
    // check the gap rate sense. 
@@ -143,10 +145,10 @@ RealT ComputeGapRatePressure( ContactPlaneManager& cpMgr,
    // TODO consider a velocity gap tolerance. Checking this against 
    // 0. actually smoothed out contact behavior in contact problem 1
    // for certain percent rate penalties.
-   if (cpMgr.m_velGap[cpID] <= 0.) // TODO do we want = or just <?
+   if (plane.m_velGap <= 0.) // TODO do we want = or just <?
    {
-      cpMgr.m_ratePressure[ cpID ] = cpMgr.m_velGap[ cpID ] * rate_penalty;
-      return cpMgr.m_ratePressure[ cpID ];
+      plane.m_ratePressure = plane.m_velGap * rate_penalty;
+      return plane.m_ratePressure;
    } // end if-check on velocity gap
 
    return 0.;
@@ -157,9 +159,6 @@ RealT ComputeGapRatePressure( ContactPlaneManager& cpMgr,
 template< >
 int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 {
-   MeshManager& meshManager = MeshManager::getInstance();
-   ContactPlaneManager& cpManager = ContactPlaneManager::getInstance();
-
    LoggingLevel logLevel = cs->getLoggingLevel(); 
 
    ///////////////////////////////
@@ -170,34 +169,29 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
    bool neg_thickness {false};
    auto& mesh1 = cs->getMesh1();
    auto& mesh2 = cs->getMesh2();
-   auto pairs = cs->getInterfacePairs()->getConstViewer();
-   auto num_pairs = cs->getInterfacePairs()->getNumPairs();
+   const auto num_pairs = cs->getNumActivePairs();
    forAllExec(cs->getExecutionMode(), num_pairs,
-    [=] TRIBOL_HOST_DEVICE (IndexT i)
-    {
-      InterfacePair pair = pairs.getInterfacePair(i);
-
-      if (!pair.isContactCandidate) 
+      [=] TRIBOL_HOST_DEVICE (IndexT i)
       {
-         return;
+         auto& plane = cs->getContactPlane(i);
+
+         // get pair indices
+         IndexT index1 = plane.getCpElementId1();
+         IndexT index2 = plane.getCpElementId2();
+        
+         RealT gap = plane.m_gap;
+         RealT A = plane.m_area; // face-pair overlap area
+
+         // don't proceed for gaps that don't violate the constraints. This check 
+         // allows for numerically zero interpenetration.
+         RealT gap_tol = cs->getGapTol( index1, index2 );
       }
-
-      // get pair indices
-      IndexT index1 = pair.pairIndex1;
-      IndexT index2 = pair.pairIndex2;
-
-    }
    );
 //    for (IndexT kp = 0; kp < numPairs; ++kp)
 //    {
 
 
-//       RealT gap = cpManager.m_gap[ cpID ];
-//       RealT A = cpManager.m_area[ cpID ]; // face-pair overlap area
 
-//       // don't proceed for gaps that don't violate the constraints. This check 
-//       // allows for numerically zero interpenetration.
-//       RealT gap_tol = cs->getGapTol( index1, index2 );
 
 //       if ( gap > gap_tol )
 //       {

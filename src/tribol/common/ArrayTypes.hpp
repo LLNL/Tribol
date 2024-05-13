@@ -24,6 +24,9 @@ using ArrayT = axom::Array<T, DIM, toAxomMemorySpace<SPACE>::value>;
 template <typename T, int DIM = 1, MemorySpace SPACE = MemorySpace::Dynamic>
 using ArrayViewT = axom::ArrayView<T, DIM, toAxomMemorySpace<SPACE>::value>;
 
+template <typename T, int N>
+using StackArrayT = axom::StackArray<T, N>;
+
 template <typename T, MemorySpace SPACE = MemorySpace::Dynamic>
 using ScalarArray = ArrayT<T, 1, SPACE>;
 

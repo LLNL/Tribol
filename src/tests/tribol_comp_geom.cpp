@@ -422,7 +422,7 @@ TEST_F( CompGeomTest, 2d_projections_1 )
                                    tribol::BINNING_GRID );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT );
-   tribol::setContactAreaFrac(1.e-4);
+   tribol::setContactAreaFrac( 0, 1.e-4 );
 
    // TODO check penetration and overlap tolerance with what is being used in host-code
 
@@ -557,8 +557,6 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    tribol::IndexT conn[8] = {0,1,2,3,4,5,6,7}; // hard coded for a two face problem
    tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
 
-   tribol::enableTimestepVote(true);
-
    RealT *fx;
    RealT *fy;
    RealT *fz; 
@@ -598,6 +596,8 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
                                    tribol::PENALTY,
                                    tribol::BINNING_CARTESIAN_PRODUCT );
 
+   tribol::enableTimestepVote( csIndex, true );
+
    tribol::setLoggingLevel( csIndex, tribol::TRIBOL_DEBUG );
 
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_ELEMENT, tribol::NO_RATE_PENALTY );
@@ -630,7 +630,6 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
    // is included as a conatct candidate, and is in fact in contact 
    // when the interpenetration is less than the maximum allowable
    // for auto contact
-   constexpr int dim = 3;
    constexpr int numVerts = 4;
    constexpr int numCells = 2;
    constexpr int lengthNodalData = numCells * numVerts;
@@ -673,23 +672,16 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
 
    // amount of interpenetration in the z-direction
    RealT max_interpen_frac = 1.0;
-   tribol::setAutoContactPenScale( max_interpen_frac );
    RealT test_ratio = 0.90; // fraction of max interpen frac used for this test
    z[4] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[5] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[6] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[7] = -test_ratio * max_interpen_frac * element_thickness[1]; 
 
-   // initialize tribol
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( dim, problem_comm );
-
    // register contact mesh
    tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
    tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
-
-   tribol::enableTimestepVote(true);
 
    RealT *fx;
    RealT *fy;
@@ -728,6 +720,10 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
                                    tribol::FRICTIONLESS,
                                    tribol::PENALTY,
                                    tribol::BINNING_CARTESIAN_PRODUCT );
+                                   
+   tribol::setAutoContactPenScale( csIndex, max_interpen_frac );
+
+   tribol::enableTimestepVote( csIndex, true );
 
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT, tribol::NO_RATE_PENALTY );
 
@@ -760,7 +756,6 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
    // is included as a contact candidate, and is in fact in contact 
    // when the interpenetration is less than the maximum allowable
    // for auto contact
-   constexpr int dim = 3;
    constexpr int numVerts = 4;
    constexpr int numCells = 2;
    constexpr int lengthNodalData = numCells * numVerts;
@@ -803,23 +798,16 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
 
    // amount of interpenetration in the z-direction
    RealT max_interpen_frac = 1.0;
-   tribol::setAutoContactPenScale( max_interpen_frac );
    RealT test_ratio = 1.01; // fraction of max interpen frac used for this test
    z[4] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[5] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[6] = -test_ratio * max_interpen_frac * element_thickness[1]; 
    z[7] = -test_ratio * max_interpen_frac * element_thickness[1]; 
 
-   // initialize tribol
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( dim, problem_comm );
-
    // register contact mesh
    tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
    tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
-
-   tribol::enableTimestepVote(true);
 
    RealT *fx;
    RealT *fy;
@@ -858,6 +846,10 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
                                    tribol::FRICTIONLESS,
                                    tribol::PENALTY,
                                    tribol::BINNING_CARTESIAN_PRODUCT );
+
+   tribol::setAutoContactPenScale( csIndex, max_interpen_frac );
+
+   tribol::enableTimestepVote( csIndex, true );
 
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT, tribol::NO_RATE_PENALTY );
 

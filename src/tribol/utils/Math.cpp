@@ -53,8 +53,8 @@ RealT dotProd( RealT const * const v,
 }
 
 //------------------------------------------------------------------------------
-RealT dotProd( RealT const aX, RealT const aY, RealT const aZ,
-               RealT const bX, RealT const bY, RealT const bZ )
+TRIBOL_HOST_DEVICE RealT dotProd( RealT const aX, RealT const aY, RealT const aZ,
+                                  RealT const bX, RealT const bY, RealT const bZ )
 {
    return aX*bX + aY*bY + aZ*bZ;
 }
@@ -70,9 +70,9 @@ RealT magCrossProd( RealT const a[3], RealT const b[3] )
 }
 
 //------------------------------------------------------------------------------
-void crossProd( RealT const aX, RealT const aY, RealT const aZ,
-                RealT const bX, RealT const bY, RealT const bZ,
-                RealT &prodX, RealT &prodY, RealT &prodZ )
+TRIBOL_HOST_DEVICE void crossProd( RealT const aX, RealT const aY, RealT const aZ,
+                                   RealT const bX, RealT const bY, RealT const bZ,
+                                   RealT &prodX, RealT &prodY, RealT &prodZ )
 {
    prodX = aY * bZ - aZ * bY;
    prodY = aZ * bX - aX * bZ;
@@ -212,18 +212,18 @@ void allocIntArray( int** arr, const int length, const int* const data )
 //------------------------------------------------------------------------------
 void allocBoolArray( bool** arr, int length, bool init_val )
 {
-   SLIC_ERROR_IF( length==0, "allocBoolArray: please specify nonzero length " << 
-                  "for array allocation." );
+  //  SLIC_ERROR_IF( length==0, "allocBoolArray: please specify nonzero length " << 
+  //                 "for array allocation." );
 
    *arr = new bool [length];
    initBoolArray( *arr, length, init_val );
 }
 
 //------------------------------------------------------------------------------
-void initRealArray( RealT * arr, int length, RealT init_val )
+TRIBOL_HOST_DEVICE void initRealArray( RealT * arr, int length, RealT init_val )
 {
-   SLIC_ERROR_IF( arr == nullptr, "initRealArray(): " << 
-                  "input pointer to array is null." );
+  //  SLIC_ERROR_IF( arr == nullptr, "initRealArray(): " << 
+  //                 "input pointer to array is null." );
 
    for (int i=0; i<length; ++i)
    {
@@ -232,10 +232,10 @@ void initRealArray( RealT * arr, int length, RealT init_val )
 } 
 
 //------------------------------------------------------------------------------
-void initIntArray( int * arr, int length, int init_val )
+TRIBOL_HOST_DEVICE void initIntArray( int * arr, int length, int init_val )
 {
-   SLIC_ERROR_IF( arr == nullptr, "initIntArray(): " << 
-                  "input pointer to array is null." );
+  //  SLIC_ERROR_IF( arr == nullptr, "initIntArray(): " << 
+  //                 "input pointer to array is null." );
    for (int i=0; i<length; ++i)
    {
       arr[i] = init_val;
@@ -243,10 +243,10 @@ void initIntArray( int * arr, int length, int init_val )
 } 
 
 //------------------------------------------------------------------------------
-void initBoolArray( bool * arr, int length, bool init_val )
+TRIBOL_HOST_DEVICE void initBoolArray( bool * arr, int length, bool init_val )
 {
-   SLIC_ERROR_IF( arr == nullptr, "initBoolArray(): " << 
-                  "input pointer to array is null." );
+  //  SLIC_ERROR_IF( arr == nullptr, "initBoolArray(): " << 
+  //                 "input pointer to array is null." );
    for (int i=0; i<length; ++i)
    {
       arr[i] = init_val;

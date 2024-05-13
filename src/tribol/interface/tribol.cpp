@@ -36,60 +36,26 @@
 namespace tribol
 {
 
-namespace internal
+//------------------------------------------------------------------------------
+void initialize( int TRIBOL_UNUSED_PARAM(dimension), 
+                 CommT TRIBOL_UNUSED_PARAM(comm) )
 {
-
-/*!
- * \brief Sets various default parameters
- */
-void set_defaults()
-{
-   parameters_t & parameters = parameters_t::getInstance();
-
-   //////////////////////////////
-   // visualization parameters //
-   //////////////////////////////
-   parameters.vis_cycle_incr               = 100;    // default contact output every 100 cycles
-   parameters.vis_type                     = VIS_OVERLAPS;
-   parameters.output_directory             = "";
-
-   ///////////////////////////////////////
-   // computational geometry parameters //
-   ///////////////////////////////////////
-   parameters.overlap_area_frac            = 1.E-8;  // note: API supports setting this
-   parameters.gap_tol_ratio                = 1.e-12; // numerically "zero". Note: API doesn't support setting this
-   parameters.gap_separation_ratio         = 0.75;   // applied to the face-radius for geometry filtering. API doesn't support setting this
-   parameters.gap_tied_tol                 = 0.1;    // tolerance for how much separation can occur before opposing faces are let go
-   parameters.len_collapse_ratio           = 1.E-8;
-   parameters.projection_ratio             = 1.E-10;
-   parameters.auto_contact_pen_frac        = 0.95;   // max allowable interpenetration as percent of element thickness for contact candidacy 
-   parameters.timestep_pen_frac            = 3.e-1;  // max allowable interpenetration as percent of element thickness prior to triggering timestep vote (not exposed to API) 
-   parameters.enable_timestep_vote         = false;  // true if host-code wants to receive tribol timestep vote
-   
-   // Interpenetration check for auto-contact. If true, this will check a full-overlap 
-   // face-pair configuration in the computational geoemtry routines to preclude 
-   // auto-contact of opposite sides of thin structures/plates. If the full-overlap 
-   // interpenetration kinematic gap is more than the smallest thickness of the 
-   // constituent face elements, then we don't consider the face-pair a contact candidate.
-   // Note, auto-contact will require registration of element thicknesses.
-   parameters.auto_interpen_check           = false; // true if the auto-contact interpenetration check is used for interpenetrating face-pairs.
-
+   SLIC_WARNING_ROOT("Initialization of Tribol is no longer needed. Dimension\n"
+     "is set by registered meshes and MPI communicator is stored on the\n"
+     "coupling scheme (see setMPIComm()).");
 }
 
-} /* end namepsace internal */
-
 //------------------------------------------------------------------------------
-void initialize( int dimension, CommT comm )
+void setMPIComm( IndexT cs_id, CommT comm )
 {
-   // sanity checks
-   SLIC_ASSERT( (dimension==2) || (dimension==3) );
-   SLIC_ASSERT( comm != TRIBOL_COMM_NULL );
-
-   parameters_t & parameters = parameters_t::getInstance();
-   parameters.dimension    = dimension;
-   parameters.problem_comm = comm;
-
-   internal::set_defaults( );
+   auto cs = CouplingSchemeManager::getInstance().findData(cs_id);
+  
+   // check to see if coupling scheme exists
+   SLIC_ERROR_ROOT_IF( !cs, 
+                       "tribol::setMPIComm(): call tribol::registerCouplingScheme() " <<
+                       "prior to calling this routine." );
+   
+   cs->setMPIComm(comm);
 }
 
 //------------------------------------------------------------------------------
@@ -179,43 +145,60 @@ void setRatePercentPenalty( IndexT mesh_id, RealT r_p )
 } // end setRatePercentPenalty()
 
 //------------------------------------------------------------------------------
-void setAutoContactPenScale( RealT scale )
+void setAutoContactPenScale( IndexT cs_id, RealT scale )
 {
-   parameters_t & parameters = parameters_t::getInstance();
+   auto cs = CouplingSchemeManager::getInstance().findData(cs_id);
+  
+   // check to see if coupling scheme exists
+   SLIC_ERROR_ROOT_IF( !cs, 
+                       "tribol::setAutoContactPenScale(): call tribol::registerCouplingScheme() " <<
+                       "prior to calling this routine." );
 
    // check for strict positivity of the input parameter
    SLIC_WARNING_ROOT_IF(scale<0., "tribol::setAutoContactPenScale(): " << 
                         "input for the auto-contact length scale factor must be positive.");
 
-   parameters.auto_contact_pen_frac = scale;
+   cs->getParameters().auto_contact_pen_frac = scale;
 
 } // end setAutoContactPenScale()
 
 //------------------------------------------------------------------------------
-void setTimestepPenFrac( RealT frac )
+void setTimestepPenFrac( IndexT cs_id, RealT frac )
 {
-   parameters_t & parameters = parameters_t::getInstance();
+   auto cs = CouplingSchemeManager::getInstance().findData(cs_id);
+  
+   // check to see if coupling scheme exists
+   SLIC_ERROR_ROOT_IF( !cs, 
+                       "tribol::setTimestepPenFrac(): call tribol::registerCouplingScheme() " <<
+                       "prior to calling this routine." );
+
    if (frac <= 0.)
    {
       // Don't set the timestep_pen_frac. This will use default
       return;
    }
 
-   parameters.timestep_pen_frac = frac;
+   cs->getParameters().timestep_pen_frac = frac;
 
 } // end setTimestepPenFrac()
 
 //------------------------------------------------------------------------------
-void setContactAreaFrac( RealT frac )
+void setContactAreaFrac( IndexT cs_id, RealT frac )
 {
-   parameters_t & parameters = parameters_t::getInstance();
+   auto cs = CouplingSchemeManager::getInstance().findData(cs_id);
+  
+   // check to see if coupling scheme exists
+   SLIC_ERROR_ROOT_IF( !cs, 
+                       "tribol::setContactAreaFrac(): call tribol::registerCouplingScheme() " <<
+                       "prior to calling this routine." );
+
    if (frac < 1.e-12)
    {
       SLIC_DEBUG_ROOT("tribol::setContactAreaFrac(): area fraction too small or negative; " << 
                       "setting to default 1.e-8.");
       frac = 1.e-8;
    }
-   parameters.overlap_area_frac = frac;
+   cs->getParameters().overlap_area_frac = frac;
 
 } // end setPenaltyScale()
 
@@ -290,24 +273,43 @@ void setLagrangeMultiplierOptions( IndexT cs_id, ImplicitEvalMode evalMode,
 } // end setLagrangeMultiplierOptions()
 
 //------------------------------------------------------------------------------
-void setPlotCycleIncrement( int incr )
+void setPlotCycleIncrement( IndexT cs_id, int incr )
 {
-   parameters_t & parameters = parameters_t::getInstance();
-   parameters.vis_cycle_incr = incr;
+   auto cs = CouplingSchemeManager::getInstance().findData(cs_id);
+  
+   // check to see if coupling scheme exists
+   SLIC_ERROR_ROOT_IF( !cs, 
+                       "tribol::setPlotCycleIncrement(): call tribol::registerCouplingScheme() " <<
+                       "prior to calling this routine." );
+
+   cs->getParameters().vis_cycle_incr = incr;
 
 } // end setPlotCycleIncrement()
 
 //------------------------------------------------------------------------------
-void setPlotOptions( enum VisType v_type )
+void setPlotOptions( IndexT cs_id, enum VisType v_type )
 {
-   parameters_t & parameters = parameters_t::getInstance();
-   parameters.vis_type = v_type;
+   auto cs = CouplingSchemeManager::getInstance().findData(cs_id);
+  
+   // check to see if coupling scheme exists
+   SLIC_ERROR_ROOT_IF( !cs, 
+                       "tribol::setPlotOptions(): call tribol::registerCouplingScheme() " <<
+                       "prior to calling this routine." );
+
+   cs->getParameters().vis_type = v_type;
 
 } // end setPlotOptions()
 
 //------------------------------------------------------------------------------
-void setOutputDirectory( const std::string& dir)
+void setOutputDirectory( IndexT cs_id, const std::string& dir)
 {
+   auto cs = CouplingSchemeManager::getInstance().findData(cs_id);
+  
+   // check to see if coupling scheme exists
+   SLIC_ERROR_ROOT_IF( !cs, 
+                       "tribol::setOutputDirectory(): call tribol::registerCouplingScheme() " <<
+                       "prior to calling this routine." );
+
    // Create path if it doesn't already exist
    if(! axom::utilities::filesystem::pathExists(dir) )
    {
@@ -315,8 +317,7 @@ void setOutputDirectory( const std::string& dir)
      axom::utilities::filesystem::makeDirsForPath(dir);
    }
 
-   parameters_t & parameters = parameters_t::getInstance();
-   parameters.output_directory = dir;
+   cs->getParameters().output_directory = dir;
 
 } // end setOutputDirectory()
 
@@ -344,10 +345,16 @@ void setLoggingLevel( IndexT cs_id, LoggingLevel log_level )
 } // end setLoggingLevel()
 
 //------------------------------------------------------------------------------
-void enableTimestepVote( const bool enable )
+void enableTimestepVote( IndexT cs_id, const bool enable )
 {
-   parameters_t & parameters = parameters_t::getInstance();
-   parameters.enable_timestep_vote= enable;
+   auto cs = CouplingSchemeManager::getInstance().findData(cs_id);
+  
+   // check to see if coupling scheme exists
+   SLIC_ERROR_ROOT_IF( !cs, 
+                       "tribol::enableTimestepVote(): call tribol::registerCouplingScheme() " <<
+                       "prior to calling this routine." );
+
+   cs->getParameters().enable_timestep_vote= enable;
 
 } // end enableTimestepVote()
 

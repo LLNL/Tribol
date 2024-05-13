@@ -17,9 +17,6 @@
 #include <unordered_map>
 #include <fstream>
 
-// Axom Aliases
-namespace numerics = axom::numerics;
-
 //------------------------------------------------------------------------------
 // Interface Implementation
 //------------------------------------------------------------------------------
@@ -114,10 +111,6 @@ void SimpleCouplingSetup( const int dim,
       tribol::registerMortarPressures( nonmortarMeshId, mortar_pressures);
    }
 
-   // set contact area fraction 
-   tribol::setContactAreaFrac( area_frac );
-   tribol::setPlotCycleIncrement(1);
-
    // note the use of NULL_ENFORCEMENT reflects that this routine is used 
    // to initially setup tests for MORTAR_WEIGHTS only!
    tribol::registerCouplingScheme( 0, mortarMeshId, nonmortarMeshId,
@@ -126,6 +119,10 @@ void SimpleCouplingSetup( const int dim,
                                    contact_method,
                                    tribol::NULL_MODEL,
                                    tribol::NULL_ENFORCEMENT );
+
+   // set contact area fraction 
+   tribol::setContactAreaFrac( 0, area_frac );
+   tribol::setPlotCycleIncrement( 0, 1 );
 
    // set enforcement options for MORTAR_WEIGHTS
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_WEIGHTS_EVAL, 

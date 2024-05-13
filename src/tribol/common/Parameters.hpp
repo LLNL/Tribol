@@ -462,50 +462,30 @@ public:
    LagrangeMultiplierImplicitOptions lm_implicit_options;
 };
 
-/*!
- * \brief Singleton Struct to hold parameters
- */
-struct parameters_t
-{
-  // return an instance of this struct
-  static parameters_t& getInstance()
+  /*!
+  * \brief Coupling scheme parameters struct
+  */
+  struct Parameters
   {
-     static parameters_t instance;
-     return instance;
-  }
+    CommT problem_comm = TRIBOL_COMM_WORLD;  ///! MPI communicator for the problem
 
-  // disable copy constructor
-  parameters_t( parameters_t const& ) = delete;
+    RealT overlap_area_frac     = 1.0e-8;  ///! Ratio of overlap area to largest face area for contact inclusion
+    RealT gap_tol_ratio         = 1.0e-12; ///! Ratio for determining tolerance for active contact gaps 
+    RealT gap_separation_ratio  = 0.75;    ///! Ratio for determining allowable separation in geometric filtering
+    RealT gap_tied_tol          = 0.1;     ///! Ratio for determining max separation tied contact can support
+    RealT len_collapse_ratio    = 1.0e-8;  ///! Ratio of face length providing topology collapse length tolerance
+    RealT projection_ratio      = 1.0e-10; ///! Ratio for defining nonzero projections
+    RealT auto_contact_pen_frac = 0.95;    ///! Max allowable interpenetration as percent of element thickness for contact candidacy
+    RealT timestep_pen_frac     = 3.0e-1;  ///! Max allowable interpenetration as percent of element thickness prior to triggering timestep vote
 
-  // disable move
-  parameters_t( parameters_t&& ) = delete;
+    int vis_cycle_incr          = 100;     ///! Frequency for visualizations dumps
+    VisType vis_type            = VIS_OVERLAPS; ///! Type of interface physics visualization output
+    std::string output_directory = "";     ///! Output directory for visualization dumps
+    bool enable_timestep_vote   = false;   ///! True if host-code desires the timestep vote to be calculated and returned
 
-  int dimension;             ///! Spatial dimension of the problem
-  CommT problem_comm;         ///! MPI communicator for the problem
-
-  RealT overlap_area_frac;      ///! Ratio of overlap area to largest face area for contact inclusion
-  RealT gap_tol_ratio;          ///! Ratio for determining tolerance for active contact gaps 
-  RealT gap_separation_ratio;   ///! Ratio for determining allowable separation in geometric filtering
-  RealT gap_tied_tol;           ///! Ratio for determining max separation tied contact can support
-  RealT len_collapse_ratio;     ///! Ratio of face length providing topology collapse length tolerance
-  RealT projection_ratio;       ///! Ratio for defining nonzero projections
-  RealT auto_contact_pen_frac;  ///! Max allowable interpenetration as percent of element thickness for contact candidacy
-  RealT timestep_pen_frac;      ///! Max allowable interpenetration as percent of element thickness prior to triggering timestep vote
-
-  int vis_cycle_incr;            ///! Frequency for visualizations dumps
-  VisType vis_type;              ///! Type of interface physics visualization output
-  std::string output_directory;  ///! Output directory for visualization dumps
-  bool enable_timestep_vote;     ///! True if host-code desires the timestep vote to be calculated and returned
-
-  RealT auto_contact_len_scale_factor; ///! Sacle factor applied to element thickness for auto contact length scale
-  bool auto_interpen_check;             ///! True if the auto-contact interpenetration check is used for full-overlap pairs
-
-private:
-
-  // private constructor
-  parameters_t () { } 
-
-};
+    RealT auto_contact_len_scale_factor;   ///! Scale factor applied to element thickness for auto contact length scale
+    bool auto_interpen_check    = false;   ///! True if the auto-contact interpenetration check is used for full-overlap pairs
+  };
 
 } // namespace tribol
 

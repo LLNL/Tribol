@@ -39,32 +39,24 @@ void compareGaps( tribol::CouplingScheme const * cs,
                   RealT gap, const RealT tol,
                   const char *gapType )
 {
-   tribol::ContactPlaneManager& cpManager = tribol::ContactPlaneManager::getInstance();
-   auto pairs = cs->getInterfacePairs()->getConstViewer();
-   tribol::IndexT const numPairs = pairs.getNumPairs();
+   tribol::IndexT const numPairs = cs->getNumActivePairs();
 
-   int cpID = 0;
-   for (tribol::IndexT kp = 0; kp < numPairs; ++kp)
+   for (tribol::IndexT cpID = 0; cpID < numPairs; ++cpID)
    {
-      tribol::InterfacePair pair = pairs.getInterfacePair(kp);
-
-      if (!pair.isContactCandidate)
-      {
-         continue;
-      }
+      auto& plane = cs->getContactPlane(cpID);
 
       RealT my_gap = 0.;
       if ( std::strcmp( gapType, "kinematic_penetration" ) == 0 ||
            std::strcmp( gapType, "kinematic_separation"  ) == 0 )
       {
-         my_gap = cpManager.m_gap[ cpID ];
+         my_gap = plane.m_gap;
       }
       else
       {
-         my_gap = cpManager.m_velGap[ cpID ];
+         my_gap = plane.m_velGap;
       }
 
-      RealT gap_tol = cs->getGapTol( pair.pairIndex1, pair.pairIndex2 );
+      RealT gap_tol = cs->getGapTol( plane.getCpElementId1(), plane.getCpElementId2() );
 
       // check gap sense
       if ( std::strcmp( gapType, "kinematic_penetration" ) == 0  ||
@@ -89,8 +81,6 @@ void compareGaps( tribol::CouplingScheme const * cs,
       // check diffs
       RealT diff = std::abs( my_gap - gap );
       EXPECT_LE( diff, tol );
-
-      ++cpID;
    }
 } // end compareGaps()
 
@@ -143,28 +133,20 @@ void checkMeshPenalties( tribol::CouplingScheme const * cs,
 void checkPressures( tribol::CouplingScheme const * cs, 
                      RealT pressure, const RealT tol, const char * pressureType = "kinematic"  )
 {
-   tribol::ContactPlaneManager& cpManager = tribol::ContactPlaneManager::getInstance();
-   auto pairs = cs->getInterfacePairs()->getConstViewer();
-   tribol::IndexT const numPairs = pairs.getNumPairs();
+   tribol::IndexT const numPairs = cs->getNumActivePairs();
 
-   int cpID = 0;
-   for (tribol::IndexT kp = 0; kp < numPairs; ++kp)
+   for (tribol::IndexT cpID = 0; cpID < numPairs; ++cpID)
    {
-      tribol::InterfacePair pair = pairs.getInterfacePair(kp);
-
-      if (!pair.isContactCandidate)
-      {
-         continue;
-      }
+      auto& plane = cs->getContactPlane(cpID);
 
       RealT my_pressure = 0.;
       if ( std::strcmp( pressureType, "rate" ) == 0 )
       {
-         my_pressure = cpManager.m_ratePressure[ cpID ];
+         my_pressure = plane.m_ratePressure;
       }
       else if ( std::strcmp( pressureType, "kinematic" ) == 0 )
       {
-         my_pressure = cpManager.m_pressure[ cpID ];
+         my_pressure = plane.m_pressure;
       }
       else
       {
@@ -175,8 +157,6 @@ void checkPressures( tribol::CouplingScheme const * cs,
       // check diffs
       RealT press_diff = std::abs( my_pressure - pressure );
       EXPECT_LE( press_diff, tol );
-
-      ++cpID;
    }
 } // end checkPressures()
 

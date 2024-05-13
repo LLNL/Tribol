@@ -527,10 +527,9 @@ bool CouplingScheme::isValidCase()
 
    // specify auto-contact specific interpenetration check and verify 
    // element thicknesses have been registered
-   parameters_t& params = parameters_t::getInstance();
    if (this->m_contactCase == AUTO)
    { 
-      params.auto_interpen_check = true;
+      m_parameters.auto_interpen_check = true;
 
       MeshManager & meshManager = MeshManager::getInstance(); 
       MeshData & mesh1 = meshManager.at( this->m_mesh_id1 );
@@ -543,9 +542,9 @@ bool CouplingScheme::isValidCase()
          return false;
       }
    }
-   else // reset params.auto_interpen_check if true from previous coupling scheme
+   else
    {
-      params.auto_interpen_check = false;
+      m_parameters.auto_interpen_check = false;
    }
    
    // if we are here we have modified the case with no error.
@@ -921,8 +920,7 @@ void CouplingScheme::performBinning()
 //------------------------------------------------------------------------------
 int CouplingScheme::apply( int cycle, RealT t, RealT &dt ) 
 {
-  // set dimension on the contact plane manager
-  parameters_t& params = parameters_t::getInstance();
+  auto& params = m_parameters;
 
   // clear contact plane manager to be populated/allocated anew for this
   // coupling-scheme/cycle.
@@ -953,7 +951,7 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
       // in the active set
       bool interact = false;
       FaceGeomError interact_err = CheckInterfacePair(
-        pair, *m_mesh1, *m_mesh2, contact_method, contact_case, interact);
+        pair, *m_mesh1, *m_mesh2, params, contact_method, contact_case, interact);
         
       // // Update pair reporting data for this coupling scheme
       // this->updatePairReportingData( interact_err );
@@ -1232,7 +1230,6 @@ void CouplingScheme::allocateMethodData()
 //------------------------------------------------------------------------------
 RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
 {
-   parameters_t& params = parameters_t::getInstance();
    RealT gap_tol = 0.;
 
    // add debug warning if this routine is called for interface methods 
@@ -1259,13 +1256,13 @@ RealT CouplingScheme::getGapTol( int fid1, int fid2 ) const
          switch ( m_contactModel ) {
 
             case TIED :
-               gap_tol = params.gap_tied_tol *
+               gap_tol = m_parameters.gap_tied_tol *
                          axom::utilities::max( m_mesh1->getFaceRadii()[fid1],
                                                m_mesh2->getFaceRadii()[fid2] );
                break;
 
             default :  
-               gap_tol = -1. * params.gap_tol_ratio *  
+               gap_tol = -1. * m_parameters.gap_tol_ratio *  
                          axom::utilities::max( m_mesh1->getFaceRadii()[fid1],
                                                m_mesh2->getFaceRadii()[fid2] );
                break;
@@ -1320,8 +1317,7 @@ void CouplingScheme::computeTimeStep(RealT &dt)
       case COMMON_PLANE : 
          if ( m_enforcementMethod == PENALTY )
          {
-            parameters_t & parameters = parameters_t::getInstance();
-            if (parameters.enable_timestep_vote)
+            if (m_parameters.enable_timestep_vote)
             {
                this->computeCommonPlaneTimeStep( dt ); 
             }
@@ -1361,8 +1357,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
     return; 
   }
 
-  parameters_t & parameters = parameters_t::getInstance();
-  RealT proj_ratio = parameters.timestep_pen_frac;
+  RealT proj_ratio = m_parameters.timestep_pen_frac;
   //int num_sides = 2; // always 2 sides in a single coupling scheme
   int dim = this->spatialDimension();
   int numNodesPerCell1 = m_mesh1->numberOfNodesPerElement();
@@ -1715,10 +1710,9 @@ void CouplingScheme::writeInterfaceOutput( const std::string& dir,
                                            const int cycle, 
                                            const RealT t )
 {
-   parameters_t & parameters = parameters_t::getInstance();
    int dim = this->spatialDimension();
-   if ( parameters.vis_cycle_incr > 0 
-     && !(cycle % parameters.vis_cycle_incr) )
+   if ( m_parameters.vis_cycle_incr > 0 
+     && !(cycle % m_parameters.vis_cycle_incr) )
    {
       switch( m_contactMethod ) {
          case SINGLE_MORTAR :

@@ -29,13 +29,13 @@ RealT dotProd( RealT const * const v,  ///< [in] first vector
              );
 
 /// returns the dot product of two 3-vectors with component-wise input
-RealT dotProd( RealT const aX,  ///< [in] x-component of first vector
-               RealT const aY,  ///< [in] y-component of first vector
-               RealT const aZ,  ///< [in] z-component of first vector
-               RealT const bX,  ///< [in] x-component of second vector
-               RealT const bY,  ///< [in] y-component of second vector
-               RealT const bZ   ///< [in] z-component of second vector
-             );
+TRIBOL_HOST_DEVICE RealT dotProd( RealT const aX,  ///< [in] x-component of first vector
+                                  RealT const aY,  ///< [in] y-component of first vector
+                                  RealT const aZ,  ///< [in] z-component of first vector
+                                  RealT const bX,  ///< [in] x-component of second vector
+                                  RealT const bY,  ///< [in] y-component of second vector
+                                  RealT const bZ   ///< [in] z-component of second vector
+                                );
               
 /// returns the magnitude of the cross product of two 3-vectors
 RealT magCrossProd( RealT const a[3],  ///< [in] array of components of first 3-vector
@@ -43,16 +43,16 @@ RealT magCrossProd( RealT const a[3],  ///< [in] array of components of first 3-
                   );
 
 /// computes and returns the constituent cross product terms of two 3-vectors with component-wise input
-void crossProd( RealT const aX,  ///< [in] x-component of first vector
-                RealT const aY,  ///< [in] y-component of first vector
-                RealT const aZ,  ///< [in] z-component of first vector
-                RealT const bX,  ///< [in] x-component of second vector
-                RealT const bY,  ///< [in] y-component of second vector
-                RealT const bZ,  ///< [in] z-component of second vector
-                RealT &prodX,    ///< [in,out] j x k (i-component) product term
-                RealT &prodY,    ///< [in,out] i x k (j-component) product term 
-                RealT &prodZ     ///< [in,out] i x j (k-component) product term
-              );
+TRIBOL_HOST_DEVICE void crossProd( RealT const aX,  ///< [in] x-component of first vector
+                                   RealT const aY,  ///< [in] y-component of first vector
+                                   RealT const aZ,  ///< [in] z-component of first vector
+                                   RealT const bX,  ///< [in] x-component of second vector
+                                   RealT const bY,  ///< [in] y-component of second vector
+                                   RealT const bZ,  ///< [in] z-component of second vector
+                                   RealT &prodX,    ///< [in,out] j x k (i-component) product term
+                                   RealT &prodY,    ///< [in,out] i x k (j-component) product term 
+                                   RealT &prodZ     ///< [in,out] i x j (k-component) product term
+                                 );
 
 /// binary search algorithm on presorted array
 int binary_search( const int * const array, ///< [in] pointer to array of integer values
@@ -86,13 +86,13 @@ void allocIntArray( int** arr, const int length, const int* const data );
 void allocBoolArray( bool** arr, int length, bool init_val );
 
 /// initialize a array of reals
-void initRealArray( RealT* arr, int length, RealT init_val );
+TRIBOL_HOST_DEVICE void initRealArray( RealT* arr, int length, RealT init_val );
 
 /// initialize a array of integers
-void initIntArray( int* arr, int length, int init_val ); 
+TRIBOL_HOST_DEVICE void initIntArray( int* arr, int length, int init_val ); 
 
 /// initialize a array of booleans
-void initBoolArray( bool* arr, int length, bool init_val );
+TRIBOL_HOST_DEVICE void initBoolArray( bool* arr, int length, bool init_val );
 
 } // end of namespace "tribol"
 

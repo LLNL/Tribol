@@ -17,10 +17,10 @@
 namespace tribol
 {
 
-void ProjectPointToPlane( const RealT x, const RealT y, const RealT z, 
-                          const RealT nx, const RealT ny, const RealT nz,
-                          const RealT ox, const RealT oy, const RealT oz, 
-                          RealT& px, RealT& py, RealT& pz )
+TRIBOL_HOST_DEVICE void ProjectPointToPlane( const RealT x, const RealT y, const RealT z, 
+                                             const RealT nx, const RealT ny, const RealT nz,
+                                             const RealT ox, const RealT oy, const RealT oz, 
+                                             RealT& px, RealT& py, RealT& pz )
 {
    // compute the vector from input point to be projected to 
    // the origin point on the plane
@@ -41,10 +41,10 @@ void ProjectPointToPlane( const RealT x, const RealT y, const RealT z,
 } // end ProjectPointToPlane()
 
 //------------------------------------------------------------------------------
-void ProjectPointToSegment( const RealT x, const RealT y,
-                            const RealT nx, const RealT ny,
-                            const RealT ox, const RealT oy,
-                            RealT& px, RealT& py )
+TRIBOL_HOST_DEVICE void ProjectPointToSegment( const RealT x, const RealT y,
+                                               const RealT nx, const RealT ny,
+                                               const RealT ox, const RealT oy,
+                                               RealT& px, RealT& py )
 {
    // compute the vector from input point to be projected to 
    // the origin point on the plane
@@ -63,15 +63,15 @@ void ProjectPointToSegment( const RealT x, const RealT y,
 } // end ProjectPointToSegment()
 
 //------------------------------------------------------------------------------
-void PolyInterYCentroid( const int namax,
-                         const RealT* const xa,
-                         const RealT* const ya,
-                         const int nbmax,
-                         const RealT* const xb,
-                         const RealT* const yb,
-                         const int isym,
-                         RealT & area,
-                         RealT & ycent )
+TRIBOL_HOST_DEVICE void PolyInterYCentroid( const int namax,
+                                            const RealT* const xa,
+                                            const RealT* const ya,
+                                            const int nbmax,
+                                            const RealT* const xb,
+                                            const RealT* const yb,
+                                            const int isym,
+                                            RealT & area,
+                                            RealT & ycent )
 {
 
    RealT vol;
@@ -292,11 +292,11 @@ void PolyInterYCentroid( const int namax,
 } // end PolyInterYCentroid()
 
 //------------------------------------------------------------------------------
-void Local2DToGlobalCoords( RealT xloc, RealT yloc, 
-                            RealT e1X, RealT e1Y, RealT e1Z,
-                            RealT e2X, RealT e2Y, RealT e2Z,
-                            RealT cX, RealT cY, RealT cZ,
-                            RealT& xg, RealT& yg, RealT& zg )
+TRIBOL_HOST_DEVICE void Local2DToGlobalCoords( RealT xloc, RealT yloc, 
+                                               RealT e1X, RealT e1Y, RealT e1Z,
+                                               RealT e2X, RealT e2Y, RealT e2Z,
+                                               RealT cX, RealT cY, RealT cZ,
+                                               RealT& xg, RealT& yg, RealT& zg )
 {
 
    // This projection takes the two input local vector components and uses 
@@ -318,18 +318,18 @@ void Local2DToGlobalCoords( RealT xloc, RealT yloc,
 } // end Local2DToGlobalCoords()
 
 //------------------------------------------------------------------------------
-void GlobalTo2DLocalCoords( const RealT* const pX, 
-                            const RealT* const pY, 
-                            const RealT* const pZ,
-                            RealT e1X, RealT e1Y, RealT e1Z,
-                            RealT e2X, RealT e2Y, RealT e2Z,
-                            RealT cX, RealT cY, RealT cZ,
-                            RealT* const pLX, 
-                            RealT* const pLY, int size )
+TRIBOL_HOST_DEVICE void GlobalTo2DLocalCoords( const RealT* const pX, 
+                                               const RealT* const pY, 
+                                               const RealT* const pZ,
+                                               RealT e1X, RealT e1Y, RealT e1Z,
+                                               RealT e2X, RealT e2Y, RealT e2Z,
+                                               RealT cX, RealT cY, RealT cZ,
+                                               RealT* const pLX, 
+                                               RealT* const pLY, int size )
 {
 
-   SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
-                 "GlobalTo2DLocalCoords: local coordinate pointers are null");
+  //  SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
+  //                "GlobalTo2DLocalCoords: local coordinate pointers are null");
 
    // loop over projected nodes
    for (int i=0; i<size; ++i) {
@@ -372,13 +372,13 @@ void GlobalTo2DLocalCoords( RealT pX, RealT pY, RealT pZ,
 } // end GlobalTo2DLocalCoords()
 
 //------------------------------------------------------------------------------
-void VertexAvgCentroid( const RealT* const x, 
+TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x, 
                         const RealT* const y, 
                         const RealT* const z, 
                         const int numVert,
                         RealT& cX, RealT& cY, RealT& cZ )
 {
-   SLIC_ERROR_IF (numVert==0, "VertexAvgCentroid: numVert = 0.");
+   //SLIC_ERROR_IF (numVert==0, "VertexAvgCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -534,16 +534,16 @@ void PolyCentroid( const RealT* const x,
 } // end PolyCentroid()
 
 //------------------------------------------------------------------------------
-FaceGeomError Intersection2DPolygon( const RealT* const xA, 
-                                     const RealT* const yA, 
-                                     const int numVertexA, 
-                                     const RealT* const xB, 
-                                     const RealT* const yB, 
-                                     const int numVertexB,
-                                     RealT posTol, RealT lenTol, 
-                                     RealT* * polyX, 
-                                     RealT* * polyY, 
-                                     int& numPolyVert, RealT& area, bool orientCheck )
+TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA, 
+                                                        const RealT* const yA, 
+                                                        const int numVertexA, 
+                                                        const RealT* const xB, 
+                                                        const RealT* const yB, 
+                                                        const int numVertexB,
+                                                        RealT posTol, RealT lenTol, 
+                                                        RealT* * polyX, 
+                                                        RealT* * polyY, 
+                                                        int& numPolyVert, RealT& area, bool orientCheck )
 {
    // for tribol, if you have called this routine it is because a positive area of 
    // overlap between two polygons (faces) exists. This routine does not perform a 
@@ -551,8 +551,8 @@ FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // the full calculation. This can and probably should be added.
 
    // check to make sure the intersection polygon vertex pointers are null
-   SLIC_ERROR_IF(*polyX != nullptr || *polyY != nullptr, 
-                 "Intersection2DPolygon: expecting nullptr input arguments polyX, polyY.");
+  //  SLIC_ERROR_IF(*polyX != nullptr || *polyY != nullptr, 
+  //                "Intersection2DPolygon: expecting nullptr input arguments polyX, polyY.");
 
    // check numVertexA and numVertexB to make sure they are 3 (triangle) or more
    if (numVertexA < 3 || numVertexB < 3) 
@@ -582,9 +582,10 @@ FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // determine minimum number of vertices (for use later)
    int numVertexMax = numVertexA >= numVertexB ? numVertexA : numVertexB;
 
-   // allocate an array to hold ids of interior vertices 
-   int interiorVAId[ numVertexA ];
-   int interiorVBId[ numVertexB ];
+   // allocate an array to hold ids of interior vertices
+   constexpr int max_nodes_per_overlap = 8;
+   int interiorVAId[ max_nodes_per_overlap ];
+   int interiorVBId[ max_nodes_per_overlap ];
 
    // initialize all entries in interior vertex array to -1
    initIntArray( &interiorVAId[0], numVertexA, -1 );
@@ -692,14 +693,15 @@ FaceGeomError Intersection2DPolygon( const RealT* const xA,
 
    // determine the maximum number of intersection points
 
-   // maximum number of vertices between the two polygons. 
+   // maximum number of vertices between the two polygons.
    int maxSegInter = numVertexMax * numVertexMax;
 
    // allocate space to store the segment-segment intersection vertex coords. 
    // and a boolean array to indicate intersecting pairs
-   RealT interX[ maxSegInter ];
-   RealT interY[ maxSegInter ];
-   bool intersect[ maxSegInter ];
+   constexpr int max_seg_inter = max_nodes_per_overlap * max_nodes_per_overlap;
+   RealT interX[ max_seg_inter ];
+   RealT interY[ max_seg_inter ];
+   bool intersect[ max_seg_inter ];
    bool dupl; // boolean to indicate a segment-segment intersection that 
               // duplicates an existing interior vertex.
    bool interior [4];
@@ -775,8 +777,8 @@ FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // allocate temp intersection polygon vertex coordinate arrays to consist 
    // of segment-segment intersections and number of interior points in A and B
    numPolyVert = numSegInter + numVAI + numVBI;
-   RealT polyXTemp[ numPolyVert ];
-   RealT polyYTemp[ numPolyVert ];
+   RealT polyXTemp[ max_nodes_per_overlap ];
+   RealT polyYTemp[ max_nodes_per_overlap ];
 
    // fill polyXTemp and polyYTemp with the intersection points
    int k = 0;
@@ -862,9 +864,9 @@ FaceGeomError Intersection2DPolygon( const RealT* const xA,
 } // end Intersection2DPolygon()
 
 //------------------------------------------------------------------------------
-bool CheckPolyOrientation( const RealT* const x, 
-                           const RealT* const y, 
-                           const int numVertex )
+TRIBOL_HOST_DEVICE bool CheckPolyOrientation( const RealT* const x, 
+                                              const RealT* const y, 
+                                              const int numVertex )
 {
    bool check = true;
    for (int i=0; i<numVertex; ++i)
@@ -905,15 +907,15 @@ bool CheckPolyOrientation( const RealT* const x,
 } // end CheckPolyOrientation()
 
 //------------------------------------------------------------------------------
-bool Point2DInFace( const RealT xPoint, const RealT yPoint, 
-                    const RealT* const xPoly, 
-                    const RealT* const yPoly,
-                    const RealT xC, const RealT yC, 
-                    const int numPolyVert )
+TRIBOL_HOST_DEVICE bool Point2DInFace( const RealT xPoint, const RealT yPoint, 
+                                       const RealT* const xPoly, 
+                                       const RealT* const yPoly,
+                                       const RealT xC, const RealT yC, 
+                                       const int numPolyVert )
 {
-   SLIC_ERROR_IF(numPolyVert<3, "Point2DInFace: number of face vertices is less than 3");
+  //  SLIC_ERROR_IF(numPolyVert<3, "Point2DInFace: number of face vertices is less than 3");
 
-   SLIC_ERROR_IF(xPoly == nullptr || yPoly == nullptr, "Point2DInFace: input pointer not set");
+  //  SLIC_ERROR_IF(xPoly == nullptr || yPoly == nullptr, "Point2DInFace: input pointer not set");
 
    // if face is triangle (numPolyVert), call Point2DInTri once
    if (numPolyVert == 3)
@@ -953,9 +955,9 @@ bool Point2DInFace( const RealT xPoint, const RealT yPoint,
 } // end Point2DInFace()
 
 //------------------------------------------------------------------------------
-bool Point2DInTri( const RealT xp, const RealT yp, 
-                   const RealT* const xTri, 
-                   const RealT* const yTri )
+TRIBOL_HOST_DEVICE bool Point2DInTri( const RealT xp, const RealT yp, 
+                                      const RealT* const xTri, 
+                                      const RealT* const yTri )
 {
    bool inside = false;
 
@@ -998,9 +1000,9 @@ bool Point2DInTri( const RealT xp, const RealT yp,
 } // end Point2DInTri()
 
 //------------------------------------------------------------------------------
-RealT Area2DPolygon( const RealT* const x, 
-                    const RealT* const y, 
-                    const int numPolyVert )
+TRIBOL_HOST_DEVICE RealT Area2DPolygon( const RealT* const x, 
+                                        const RealT* const y, 
+                                        const int numPolyVert )
 {
 
    RealT area = 0.;
@@ -1038,10 +1040,10 @@ RealT Area3DTri( const RealT* const x,
 } // end Area3DTri()
 
 //------------------------------------------------------------------------------
-bool SegmentIntersection2D( const RealT xA1, const RealT yA1, const RealT xB1, const RealT yB1,
-                            const RealT xA2, const RealT yA2, const RealT xB2, const RealT yB2,
-                            const bool* const interior, RealT& x, RealT& y, 
-                            bool& duplicate, const RealT tol )
+TRIBOL_HOST_DEVICE bool SegmentIntersection2D( const RealT xA1, const RealT yA1, const RealT xB1, const RealT yB1,
+                                               const RealT xA2, const RealT yA2, const RealT xB2, const RealT yB2,
+                                               const bool* const interior, RealT& x, RealT& y, 
+                                               bool& duplicate, const RealT tol )
 {
    // note 1: this routine computes a unique segment-segment intersection, where two 
    // segments are assumed to intersect at a single point. A segment-segment overlap 
@@ -1195,12 +1197,13 @@ bool SegmentIntersection2D( const RealT xA1, const RealT yA1, const RealT xB1, c
 } // end SegmentIntersection2D()
 
 //------------------------------------------------------------------------------
-FaceGeomError CheckPolySegs( const RealT* const x, const RealT* const y, 
-                             const int numPoints, const RealT tol, 
-                             RealT* * xnew, RealT* * ynew, 
-                             int& numNewPoints )
+TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const RealT* const y, 
+                                                const int numPoints, const RealT tol, 
+                                                RealT* * xnew, RealT* * ynew, 
+                                                int& numNewPoints )
 {
-   RealT newIDs[ numPoints ];
+   constexpr int max_nodes_per_overlap = 8;
+   RealT newIDs[ max_nodes_per_overlap ];
 
    // set newIDs[i] to original local ordering
    for (int i=0; i<numPoints; ++i)
@@ -1266,16 +1269,17 @@ FaceGeomError CheckPolySegs( const RealT* const x, const RealT* const y,
 } // end CheckPolySegs()
 
 //------------------------------------------------------------------------------
-void PolyReorder( RealT* const x, RealT* const y, const int numPoints )
+TRIBOL_HOST_DEVICE void PolyReorder( RealT* const x, RealT* const y, const int numPoints )
 {
 
-   SLIC_ERROR_IF(numPoints<3, "PolyReorder: numPoints < 3.");
+  //  SLIC_ERROR_IF(numPoints<3, "PolyReorder: numPoints < 3.");
 
    RealT xC, yC, zC;
    RealT * z = nullptr;
-   RealT proj [numPoints - 2];
+   constexpr int max_nodes_per_overlap = 8;
+   RealT proj [max_nodes_per_overlap - 2];
 
-   int newIDs[ numPoints ];
+   int newIDs[ max_nodes_per_overlap ];
 
    // initialize newIDs array to local ordering, 0,1,2,...,numPoints-1
    for (int i=0; i<numPoints; ++i)
@@ -1424,8 +1428,8 @@ void PolyReorder( RealT* const x, RealT* const y, const int numPoints )
    } // end loop over i
 
    // reorder x and y coordinate arrays based on newIDs id-array
-   RealT xtemp[ numPoints ];
-   RealT ytemp[ numPoints ];
+   RealT xtemp[ max_nodes_per_overlap ];
+   RealT ytemp[ max_nodes_per_overlap ];
    for (int i=0; i<numPoints; ++i)
    {
       xtemp[i] = x[i];
@@ -1443,10 +1447,11 @@ void PolyReorder( RealT* const x, RealT* const y, const int numPoints )
 } // end PolyReorder()
 
 //------------------------------------------------------------------------------
-void PolyReverse( RealT* const x, RealT* const y, const int numPoints )
+TRIBOL_HOST_DEVICE void PolyReverse( RealT* const x, RealT* const y, const int numPoints )
 {
-   RealT xtemp[ numPoints ];
-   RealT ytemp[ numPoints ];
+   constexpr int max_nodes_per_elem = 4;
+   RealT xtemp[ max_nodes_per_elem ];
+   RealT ytemp[ max_nodes_per_elem ];
    for (int i=0; i<numPoints; ++i)
    {
       xtemp[i] = x[i];
@@ -1463,13 +1468,13 @@ void PolyReverse( RealT* const x, RealT* const y, const int numPoints )
 }
 
 //------------------------------------------------------------------------------
-void PolyReorderWithNormal( RealT* const x,
-                            RealT* const y,
-                            RealT* const z,
-                            const int numPoints,
-                            const RealT nX,
-                            const RealT nY,
-                            const RealT nZ )
+TRIBOL_HOST_DEVICE void PolyReorderWithNormal( RealT* const x,
+                                               RealT* const y,
+                                               RealT* const z,
+                                               const int numPoints,
+                                               const RealT nX,
+                                               const RealT nY,
+                                               const RealT nZ )
 {
    // form link vectors between second and first vertex and third and first
    // vertex
@@ -1492,11 +1497,12 @@ void PolyReorderWithNormal( RealT* const x,
    RealT v = dotProd( pNrmlX, pNrmlY, pNrmlZ, nX, nY, nZ ); 
 
    // check to see if v is negative. If so, reorient the vertices
+   constexpr int max_nodes_per_overlap = 8;
    if (v < 0)
    {
-      RealT xTemp[ numPoints ];
-      RealT yTemp[ numPoints ];
-      RealT zTemp[ numPoints ];
+      RealT xTemp[ max_nodes_per_overlap ];
+      RealT yTemp[ max_nodes_per_overlap ];
+      RealT zTemp[ max_nodes_per_overlap ];
 
       xTemp[0] = x[0];
       yTemp[0] = y[0];
@@ -1522,11 +1528,11 @@ void PolyReorderWithNormal( RealT* const x,
 } // end PolyReorderWithNormal()
 
 //------------------------------------------------------------------------------
-bool LinePlaneIntersection( const RealT xA, const RealT yA, const RealT zA,
-                            const RealT xB, const RealT yB, const RealT zB,
-                            const RealT xP, const RealT yP, const RealT zP,
-                            const RealT nX, const RealT nY, const RealT nZ,
-                            RealT& x, RealT& y, RealT& z, bool& inPlane )
+TRIBOL_HOST_DEVICE bool LinePlaneIntersection( const RealT xA, const RealT yA, const RealT zA,
+                                               const RealT xB, const RealT yB, const RealT zB,
+                                               const RealT xP, const RealT yP, const RealT zP,
+                                               const RealT nX, const RealT nY, const RealT nZ,
+                                               RealT& x, RealT& y, RealT& z, bool& inPlane )
 {
 
    // compute segment vector

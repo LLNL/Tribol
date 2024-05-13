@@ -456,8 +456,8 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
      ////////////////////////////////////////////////////////////////////
      if (visualization)
      {
-        tribol::setPlotCycleIncrement( 1 );
-        tribol::setPlotOptions( tribol::VIS_MESH_FACES_AND_OVERLAPS );
+        tribol::setPlotCycleIncrement( csIndex, 1 );
+        tribol::setPlotOptions( csIndex, tribol::VIS_MESH_FACES_AND_OVERLAPS );
      }
 
      //////////////////////////////////////////////////////////////
@@ -471,7 +471,7 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
      //  methods.                                                // 
      //                                                          //
      //////////////////////////////////////////////////////////////
-     tribol::setContactAreaFrac( 1.e-6 );
+     tribol::setContactAreaFrac( csIndex, 1.e-6 );
 
    } // end STEP 5 scope
 

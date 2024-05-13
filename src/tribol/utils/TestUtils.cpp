@@ -13,7 +13,8 @@
 #include <cmath> // std::abs, std::cos, std::sin
 
 // AXOM includes
-#include "axom/slic.hpp" 
+#include "axom/core.hpp"
+#include "axom/slic.hpp"
 
 
 namespace tribol
@@ -912,7 +913,7 @@ void TestMesh::allocateAndSetElementThickness( IndexT mesh_id, RealT t )
    }
 
    SLIC_DEBUG_IF( deleteData, "TestMesh::allocateAndSetElementThickness(): " << 
-                  "an element thickness array has been deleted and RealTlocated." );
+                  "an element thickness array has been deleted and reallocated." );
 
 } // end TestMesh::allocateAndSetElementThickness()
 
@@ -1004,8 +1005,6 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    registerMesh( this->nonmortarMeshId, this->numNonmortarFaces, 
                  this->numTotalNodes,
                  this->faceConn2, this->cellType, x, y, z );
-
-   enableTimestepVote(params.enable_timestep_vote);
 
    // register nodal forces. Note, I was getting a seg fault when 
    // registering the same pointer to a single set of force arrays 
@@ -1153,17 +1152,7 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
          setRatePercentPenalty( this->nonmortarMeshId,  params.rate_penalty_ratio );
       }
 
-      // set the penetration fraction for timestep votes computed with penalty enforcements
-      setAutoContactPenScale( params.auto_contact_pen_frac );
-
    } // end if-penalty
-
-   setContactAreaFrac( 1.e-6 );
-
-   if (visualization)
-   {
-      setPlotCycleIncrement( 1 );
-   }
 
    // register coupling scheme
    const int csIndex = 0;
@@ -1176,6 +1165,23 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                            model,
                            enforcement,
                            BINNING_GRID );
+
+   enableTimestepVote( csIndex, params.enable_timestep_vote );
+
+   // if enforcement is penalty, register penalty parameters
+   if (enforcement == PENALTY)
+   {
+      // set the penetration fraction for timestep votes computed with penalty enforcements
+      setAutoContactPenScale( csIndex, params.auto_contact_pen_frac );
+
+   } // end if-penalty
+
+   setContactAreaFrac( csIndex, 1.e-6 );
+
+   if (visualization)
+   {
+      setPlotCycleIncrement( csIndex, 1 );
+   }
 
    setLoggingLevel(csIndex, TRIBOL_WARNING);
 

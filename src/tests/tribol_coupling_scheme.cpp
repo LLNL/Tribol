@@ -717,13 +717,7 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
    EXPECT_EQ(cs_null->getNumActivePairs(), 0);
 
    // check InterfacePairs data
-   bool isNullPtr {false};
-   if (cs_null->getInterfacePairs() == nullptr)
-   {
-      isNullPtr = true;
-   }
-   EXPECT_EQ( isNullPtr, false );
-   EXPECT_EQ( cs_null->getInterfacePairs()->getNumPairs(), 0 );
+   EXPECT_EQ( cs_null->getInterfacePairs().size(), 0 );
 
    tribol::finalize();
 }
@@ -1121,13 +1115,7 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
    EXPECT_EQ( scheme->nullMeshes(), true );
 
    // check the InterfacePairs member class on the coupling scheme
-   bool isNullPtr {false};
-   if (scheme->getInterfacePairs() == nullptr)
-   {
-      isNullPtr = true;
-   }
-   EXPECT_EQ( isNullPtr, false );
-   EXPECT_EQ( scheme->getInterfacePairs()->getNumPairs(), 0 );
+   EXPECT_EQ( scheme->getInterfacePairs().size(), 0 );
 
    tribol::finalize();
 }

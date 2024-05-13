@@ -23,13 +23,13 @@ namespace tribol
 /// @{
 
 /*!
- * \brief Initializes the contact library.
+ * \brief Deprecated (previously initialized the contact library)
  *
- * \param [in] dimension the problem dimension.
+ * \param [in] dimension the problem dimension
  * \param [in] comm the MPI communicator
  *
- * \pre dimension==2 || dimensions==3
- * \pre comm != MPI_COMM_NULL
+ * Problem dimension is now set by the registered meshes and MPI communicator is
+ * stored at the coupling scheme level (see setMPIComm()).
  */
 void initialize( int dimension, CommT comm );
 
@@ -37,6 +37,18 @@ void initialize( int dimension, CommT comm );
 
 /// \name Set Parameter methods
 /// @{
+
+/**
+ * @brief Sets the MPI communicator for a coupling scheme
+ * 
+ * @param cs_id coupling scheme id
+ * @param comm MPI communicator
+ * \pre MPI-enabled Tribol
+ *
+ * If the MPI communicator is not set using this function, MPI_COMM_WORLD is
+ * assumed.
+ */
+void setMPIComm( IndexT cs_id, CommT comm );
 
 /*!
  * \brief Sets the penalty enforcement option
@@ -90,6 +102,7 @@ void setRatePercentPenalty( IndexT mesh_id, RealT r_p );
  *
  * \brief sets the auto-contact interpen fraction on the parameters struct
  *
+ * \param [in] cs_id coupling scheme id
  * \param [in] scale the scale applied to the element thickness to determine the auto-contact length scale 
  *
  * \note this is only used for common-plane with penalty enforcement. A sacle < 1.0 may 
@@ -97,29 +110,32 @@ void setRatePercentPenalty( IndexT mesh_id, RealT r_p );
  *     
  *
  */
-void setAutoContactPenScale( RealT scale );
+void setAutoContactPenScale( IndexT cs_id, RealT scale );
 
 /*!
  *
  * \brief sets the timestep interpen fraction on the parameters struct
  *
+ * \param [in] cs_id coupling scheme id
  * \param [in] frac the maximum allowable interpenetration factor triggering a timestep vote
  *
  * \note this is only used for common-plane with penalty enforcement. This is the 
  * fraction of the element thickness that is allowed prior to triggering a timestep vote.
  *
  */
-void setTimestepPenFrac( RealT frac );
+void setTimestepPenFrac( IndexT cs_id, RealT frac );
 
 /*!
  * \brief Sets the area fraction for inclusion of a contact overlap 
+ *
+ * \param [in] cs_id coupling scheme id
  * \param [in] frac area fraction tolerance
  *
  * \note the area fraction under consideration is the ratio of the 
  *       contact overlap with the largest of the two consituent 
  *       faces. A default ratio is provided by Tribol.
  */
-void setContactAreaFrac( RealT frac );
+void setContactAreaFrac( IndexT cs_id, RealT frac );
 
 /*!
  * \brief Sets the penalty scale
@@ -142,22 +158,27 @@ void setLagrangeMultiplierOptions( IndexT cs_id, ImplicitEvalMode evalMode,
 
 /*!
  * \brief Sets the plot cycle increment for visualization
+ *
+ * \param [in] cs_id coupling scheme id
  * \param [in] incr cycle increment between writing plot data
  */
-void setPlotCycleIncrement( int incr );
+void setPlotCycleIncrement( IndexT cs_id, int incr );
 
 /*!
  * \brief Sets the plot options for interface visualization 
  *
+ * \param [in] cs_id coupling scheme id
  * \param [in] v_type visualization option
  */
-void setPlotOptions( enum VisType v_type );
+void setPlotOptions( IndexT cs_id, enum VisType v_type );
 
 /*!
  * \brief Sets the directory for dumping files.
+ *
+ * \param [in] cs_id coupling scheme id
  * \param [in] dir the path of the output directory
  */
-void setOutputDirectory( const std::string& dir );
+void setOutputDirectory( IndexT cs_id, const std::string& dir );
 
 /*!
  * \brief Optionally sets the logging level per coupling scheme
@@ -171,12 +192,13 @@ void setLoggingLevel( IndexT cs_id, LoggingLevel log_level );
 /*!
  * \brief Enable the contact timestep vote 
  *
+ * \param [in] cs_id coupling scheme id
  * \param [in] enable the timestep vote will be calculated and returned if true
  *
  * \note default behavior is to not enable timestep calculation
  *
  */
-void enableTimestepVote( const bool enable );
+void enableTimestepVote( IndexT cs_id, const bool enable );
 
 /// @}
 

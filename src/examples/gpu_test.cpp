@@ -8,6 +8,7 @@
 #include "examples_common.hpp" // for common functionality used in examples
 
 #include "tribol/interface/tribol.hpp"
+#include "tribol/common/LoopExec.hpp"
 
 namespace tribol
 {

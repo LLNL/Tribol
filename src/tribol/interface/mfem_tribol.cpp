@@ -54,7 +54,8 @@ void registerMfemCouplingScheme( IndexT cs_id,
       enforcement_method,
       binning_method
    );
-   auto coupling_scheme = CouplingSchemeManager::getInstance().findData(cs_id);
+   auto& coupling_scheme = CouplingSchemeManager::getInstance().at(cs_id);
+   coupling_scheme.setMPIComm(mesh.GetComm());
    if (enforcement_method == LAGRANGE_MULTIPLIER)
    {
       std::unique_ptr<mfem::FiniteElementCollection> pressure_fec 
@@ -78,7 +79,7 @@ void registerMfemCouplingScheme( IndexT cs_id,
       }
       // create pressure field on the parent-linked boundary submesh and
       // transfer operators to the redecomp level
-      coupling_scheme->setMfemSubmeshData(
+      coupling_scheme.setMfemSubmeshData(
          std::make_unique<MfemSubmeshData>(
             mfem_data->GetSubmesh(),
             mfem_data->GetLORMesh(),
@@ -87,7 +88,7 @@ void registerMfemCouplingScheme( IndexT cs_id,
          )
       );
       // set up Jacobian transfer if the coupling scheme requires it
-      auto lm_options = coupling_scheme->getEnforcementOptions().lm_implicit_options;
+      auto lm_options = coupling_scheme.getEnforcementOptions().lm_implicit_options;
       if (
          lm_options.enforcement_option_set && 
          (
@@ -98,14 +99,14 @@ void registerMfemCouplingScheme( IndexT cs_id,
       {
          // create matrix transfer operator between redecomp and
          // parent/parent-linked boundary submesh
-         coupling_scheme->setMfemJacobianData(std::make_unique<MfemJacobianData>(
+         coupling_scheme.setMfemJacobianData(std::make_unique<MfemJacobianData>(
             *mfem_data,
-            *coupling_scheme->getMfemSubmeshData(),
+            *coupling_scheme.getMfemSubmeshData(),
             contact_method
          ));
       }
    }
-   coupling_scheme->setMfemMeshData(std::move(mfem_data));
+   coupling_scheme.setMfemMeshData(std::move(mfem_data));
 
 }
 

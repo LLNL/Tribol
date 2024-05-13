@@ -133,6 +133,8 @@ public:
   int getMeshId1() const { return m_mesh_id1; }
   int getMeshId2() const { return m_mesh_id2; }
 
+  Parameters& getParameters() { return m_parameters; }
+
   MeshData::Viewer& getMesh1() { return *m_mesh1; }
   const MeshData::Viewer& getMesh1() const { return *m_mesh1; }
   MeshData::Viewer& getMesh2() { return *m_mesh2; }
@@ -183,6 +185,8 @@ public:
         m_fixedBinning = true; 
      }
   }
+
+  void setMPIComm( CommT comm ) { m_parameters.problem_comm = comm; }
 
   /*!
    * Check whether the coupling scheme has been binned
@@ -610,6 +614,8 @@ private:
 
   ExecutionMode m_exec_mode; ///< Execution mode for kernels (set when init() is called)
   int m_allocator_id; ///< Allocator for arrays used in kernels (set when init() is called)
+
+  Parameters m_parameters;
 
   bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
   bool m_isValid {true}; ///< False if the coupling scheme is not valid per call to init()
