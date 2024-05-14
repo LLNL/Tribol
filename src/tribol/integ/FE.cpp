@@ -15,7 +15,7 @@
 namespace tribol
 {
 
-int GetNumFaceNodes( int dim, FaceOrderType order_type )
+TRIBOL_HOST_DEVICE int GetNumFaceNodes( int dim, FaceOrderType order_type )
 {
    // SRW consider consolidating this to take a tribol topology and 
    // order for consistency
@@ -26,21 +26,21 @@ int GetNumFaceNodes( int dim, FaceOrderType order_type )
          numNodes = (dim == 3) ? 4 : 2; // segments and quads
          break;
       default : 
-         SLIC_ERROR("GetNumFaceNodes(): order_type not supported.");
+        //  SLIC_ERROR("GetNumFaceNodes(): order_type not supported.");
          break;
    } 
    return numNodes;
 }
 
-void GalerkinEval( const RealT* const x, 
-                   const RealT pX, const RealT pY, const RealT pZ, 
-                   FaceOrderType order_type, BasisEvalType basis_type, 
-                   int dim, int galerkinDim, RealT* nodeVals, RealT* galerkinVal )
+TRIBOL_HOST_DEVICE void GalerkinEval( const RealT* const x, 
+                                      const RealT pX, const RealT pY, const RealT pZ, 
+                                      FaceOrderType order_type, BasisEvalType basis_type, 
+                                      int dim, int galerkinDim, RealT* nodeVals, RealT* galerkinVal )
 {
-   SLIC_ERROR_IF(x==nullptr, "GalerkinEval(): input pointer, x, is NULL.");
-   SLIC_ERROR_IF(nodeVals==nullptr, "GalerkinEval(): input pointer, nodeVals, is NULL.");
-   SLIC_ERROR_IF(galerkinVal==nullptr, "GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
-   SLIC_ERROR_IF(galerkinDim<1, "GalerkinEval(): scalar approximations not yet supported." );
+  //  SLIC_ERROR_IF(x==nullptr, "GalerkinEval(): input pointer, x, is NULL.");
+  //  SLIC_ERROR_IF(nodeVals==nullptr, "GalerkinEval(): input pointer, nodeVals, is NULL.");
+  //  SLIC_ERROR_IF(galerkinVal==nullptr, "GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
+  //  SLIC_ERROR_IF(galerkinDim<1, "GalerkinEval(): scalar approximations not yet supported." );
 
    int numNodes = GetNumFaceNodes( dim, order_type );
    switch (basis_type)
@@ -56,15 +56,15 @@ void GalerkinEval( const RealT* const x,
             } 
          }
          break;
-      default :
-         SLIC_ERROR( "GalerkinEval(): basis_type = PARENT not yet supported." );
+      // default :
+        //  SLIC_ERROR( "GalerkinEval(): basis_type = PARENT not yet supported." );
    }
 }
 
-void EvalBasis( const RealT* const x, 
-                const RealT pX, const RealT pY, const RealT pZ, 
-                const int numPoints, const int vertexId, 
-                RealT& phi )
+TRIBOL_HOST_DEVICE void EvalBasis( const RealT* const x, 
+                                   const RealT pX, const RealT pY, const RealT pZ, 
+                                   const int numPoints, const int vertexId, 
+                                   RealT& phi )
 {
    if (numPoints > 2)
    {
@@ -76,23 +76,23 @@ void EvalBasis( const RealT* const x,
    }
    else
    {
-      SLIC_ERROR("EvalBasis: invalid numPoints argument.");
+      // SLIC_ERROR("EvalBasis: invalid numPoints argument.");
    }
    return;
 }
 
 //------------------------------------------------------------------------------
-void SegmentBasis( const RealT* const x, 
-                   const RealT pX, const RealT pY,
-                   const int numPoints, const int vertexId, 
-                   RealT& phi )
+TRIBOL_HOST_DEVICE void SegmentBasis( const RealT* const x, 
+                                      const RealT pX, const RealT pY,
+                                      const int numPoints, const int vertexId, 
+                                      RealT& phi )
 {
-   SLIC_ERROR_IF(numPoints != 2, "SegmentBasis: numPoints is " << numPoints <<
-                 " but should be 2.");
+  //  SLIC_ERROR_IF(numPoints != 2, "SegmentBasis: numPoints is " << numPoints <<
+  //                " but should be 2.");
 
-   // note, vertexId is the index, 0 or 1.
-   SLIC_ERROR_IF(vertexId > numPoints-1, "SegmentBasis: vertexId is " << vertexId << 
-                 " but should be 0 or 1.");
+  //  // note, vertexId is the index, 0 or 1.
+  //  SLIC_ERROR_IF(vertexId > numPoints-1, "SegmentBasis: vertexId is " << vertexId << 
+  //                " but should be 0 or 1.");
 
    // compute length of segment
    RealT vx = x[numPoints*1] - x[numPoints*0];
@@ -135,15 +135,16 @@ void SegmentBasis( const RealT* const x,
 }
 
 //------------------------------------------------------------------------------
-void WachspressBasis( const RealT* const x, 
-                      const RealT pX, const RealT pY, const RealT pZ, 
-                      const int numPoints, const int vertexId, RealT& phi )
+TRIBOL_HOST_DEVICE void WachspressBasis( const RealT* const x, 
+                                         const RealT pX, const RealT pY, const RealT pZ, 
+                                         const int numPoints, const int vertexId, RealT& phi )
 {
-   SLIC_ERROR_IF(numPoints<3, "WachspressBasis: numPoints < 3.");
+  //  SLIC_ERROR_IF(numPoints<3, "WachspressBasis: numPoints < 3.");
 
    // first compute the areas of all the triangles formed by the i-1,i,i+1 vertices.
    // These consist of all the numerators in the Wachspress formulation
-   RealT triVertArea[ numPoints ];
+   constexpr int max_nodes_per_elem = 4;
+   RealT triVertArea[ max_nodes_per_elem ];
    for (int i=0; i<numPoints; ++i)
    {
       // determine the i-1, i, i+1 vertices
@@ -172,7 +173,7 @@ void WachspressBasis( const RealT* const x,
 
    // second, compute the areas of all triangles formed using edge segment vertices
    // and the specified interior point (pX,pY,pZ)
-   RealT triPointArea[ numPoints ];
+   RealT triPointArea[ max_nodes_per_elem ];
    for (int i=0; i<numPoints; ++i)
    {
       // determine the i,i+1 edge segment 
@@ -199,7 +200,7 @@ void WachspressBasis( const RealT* const x,
    }
 
    // third, compute all of the weights per Wachspress formulation
-   RealT weight[ numPoints ];
+   RealT weight[ max_nodes_per_elem ];
    RealT myWeight;
    RealT weightSum = 0.;
    for (int i=0; i<numPoints; ++i)
@@ -220,10 +221,10 @@ void WachspressBasis( const RealT* const x,
 
    phi = myWeight / weightSum;
 
-   if (phi <= 0. || phi > 1.)
-   {
-      SLIC_ERROR("Wachspress Basis: phi is not between 0 and 1.");
-   }
+  //  if (phi <= 0. || phi > 1.)
+  //  {
+  //     SLIC_ERROR("Wachspress Basis: phi is not between 0 and 1.");
+  //  }
 
    return;
 }

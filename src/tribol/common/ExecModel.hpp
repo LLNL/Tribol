@@ -96,11 +96,18 @@ inline umpire::resource::MemoryResourceType toUmpireMemoryType(MemorySpace mem_s
 
 inline int getResourceAllocatorID(MemorySpace mem_space)
 {
+  int allocator_id = 0;
 #ifdef TRIBOL_USE_UMPIRE
-  return axom::getUmpireResourceAllocatorID(toUmpireMemoryType(mem_space));
-#else
-  return 0;
+  if (mem_space == MemorySpace::Dynamic)
+  {
+    allocator_id = axom::getDefaultAllocatorID();
+  }
+  else
+  {
+    allocator_id = axom::getUmpireResourceAllocatorID(toUmpireMemoryType(mem_space));
+  }
 #endif
+  return allocator_id;
 }
 
 template <MemorySpace MSPACE>
@@ -154,7 +161,7 @@ inline ExecutionMode getExecutionMode(MemorySpace mem_space)
 #endif
     case MemorySpace::Dynamic:
 #ifdef TRIBOL_USE_UMPIRE
-      SLIC_WARNING_ROOT("Dynamic or unified memory does not correspond to an execution space. "
+      SLIC_DEBUG_ROOT("Dynamic or unified memory does not correspond to an execution space. "
         "Trying to run sequentially on host...");
     case MemorySpace::Host:
 #endif

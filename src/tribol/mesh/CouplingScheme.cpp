@@ -368,6 +368,17 @@ CouplingScheme::CouplingScheme( IndexT cs_id,
 } // end CouplingScheme::CouplingScheme()
 
 //------------------------------------------------------------------------------
+void CouplingScheme::updateMeshViews()
+{
+  auto mesh1 = MeshManager::getInstance().findData(m_mesh_id1);
+  auto mesh2 = MeshManager::getInstance().findData(m_mesh_id2);
+  SLIC_ERROR_ROOT_IF(mesh1 == nullptr || mesh2 == nullptr, 
+    "Register meshes before updating mesh views.");
+  m_mesh1 = mesh1->getView();
+  m_mesh2 = mesh2->getView();
+}
+
+//------------------------------------------------------------------------------
 bool CouplingScheme::isValidCouplingScheme()
 {
    bool valid {true};
@@ -941,8 +952,22 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   auto active_pair_ct = active_pair_ct_data.view();
   ArrayT<int> pair_err_data(1, 1, getAllocatorId());
   auto pair_err = pair_err_data.view();
+  if (spatialDimension() == 2)
+  {
+    m_contact_plane2d.resize(numPairs);
+  }
+  ArrayViewT<ContactPlane2D> planes_2d = m_contact_plane2d.view();
+  if (spatialDimension() == 3)
+  {
+    m_contact_plane3d.resize(numPairs);
+  }
+  ArrayViewT<ContactPlane3D> planes_3d = m_contact_plane3d.view();
+  MeshData::Viewer& mesh1 = getMesh1();
+  MeshData::Viewer& mesh2 = getMesh2();
+  ArrayT<IndexT> planes_ct_data(1, 1, getAllocatorId());
+  auto planes_ct = planes_ct_data.view();
   forAllExec(getExecutionMode(), numPairs,
-    [=] TRIBOL_HOST_DEVICE (IndexT i)
+    [=] TRIBOL_HOST_DEVICE (IndexT i) mutable
     {
       auto& pair = pairs[i];
       
@@ -951,7 +976,8 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
       // in the active set
       bool interact = false;
       FaceGeomError interact_err = CheckInterfacePair(
-        pair, *m_mesh1, *m_mesh2, params, contact_method, contact_case, interact);
+        pair, mesh1, mesh2, params, contact_method, contact_case, 
+        interact, planes_2d, planes_3d, planes_ct.data());
         
       // // Update pair reporting data for this coupling scheme
       // this->updatePairReportingData( interact_err );
@@ -973,13 +999,21 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
       else
       {
         pair.m_is_contact_candidate = true;
-        RAJA::atomicInc<RAJA::auto_atomic>(active_pair_ct.data(), 1);
+        RAJA::atomicInc<RAJA::auto_atomic>(active_pair_ct.data());
       }
     }
   );
 
-  ArrayT<int> active_pair_ct_host(active_pair_ct_data, getResourceAllocatorID(MemorySpace::Host));
-
+  ArrayT<int> active_pair_ct_host(active_pair_ct_data);
+  if (spatialDimension() == 2)
+  {
+    m_contact_plane2d.resize(active_pair_ct_host[0]);
+  }
+  else
+  {
+    m_contact_plane3d.resize(active_pair_ct_host[0]); 
+  }
+  
   // Here, the pair_err is checked, which detects an issue with a face-pair geometry
   // (which has been skipped over for contact eligibility) and reports this warning.
   // This is intended to indicate to a user that there may be bad geometry, or issues with 
@@ -994,10 +1028,8 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   SLIC_INFO_IF( pair_err_host[0]!=0, "CouplingScheme::apply(): possible issues with orientation, " << 
                 "input, or invalid overlaps in CheckInterfacePair()." );
 
-  // TODO create contact planes
-
   // aggregate across ranks for this coupling scheme? SRW
-  SLIC_DEBUG("Number of active interface pairs: " << m_numActivePairs);
+  SLIC_DEBUG("Number of active interface pairs: " << getNumActivePairs());
 
   // wrapper around contact method, case, and 
   // enforcement to apply the interface physics in both 
@@ -1072,7 +1104,7 @@ bool CouplingScheme::init()
           m_exec_mode = m_given_exec_mode;
           if (m_exec_mode == ExecutionMode::Dynamic)
           {
-            SLIC_WARNING_ROOT("Dynamic execution with unknown memory space. "
+            SLIC_DEBUG_ROOT("Dynamic execution with dynamic memory space. "
               "Assuming sequential execution on host.");
             m_exec_mode = ExecutionMode::Sequential;
           }
@@ -1790,6 +1822,67 @@ void CouplingScheme::printPairReportingData()
 }
 
 //------------------------------------------------------------------------------
-template class DataManager<CouplingScheme>;
+template <typename T, typename PARAM, typename MESH, typename CP, typename CP2D, typename CP3D>
+CouplingScheme::ViewerBase<T, PARAM, MESH, CP, CP2D, CP3D>::ViewerBase( T& cs )
+  : m_parameters( cs.m_parameters )
+  , m_contact_model( cs.m_contactModel )
+  , m_enforcement_options( cs.m_enforcementOptions )
+  , m_mesh1( cs.getMesh1() )
+  , m_mesh2( cs.getMesh2() )
+  , m_contact_plane2d( cs.m_contact_plane2d )
+  , m_contact_plane3d( cs.m_contact_plane3d )
+{}
+
+//------------------------------------------------------------------------------
+template <typename T, typename PARAM, typename MESH, typename CP, typename CP2D, typename CP3D>
+TRIBOL_HOST_DEVICE CP& CouplingScheme::ViewerBase<T, PARAM, MESH, CP, CP2D, CP3D>::getContactPlane( IndexT id ) const
+{
+  if (spatialDimension() == 2)
+  {
+    return m_contact_plane2d[id];
+  }
+  else
+  {
+    return m_contact_plane3d[id];
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T, typename PARAM, typename MESH, typename CP, typename CP2D, typename CP3D>
+TRIBOL_HOST_DEVICE RealT CouplingScheme::ViewerBase<T, PARAM, MESH, CP, CP2D, CP3D>::getCommonPlaneGapTol( int fid1, int fid2 ) const
+{
+  RealT gap_tol = 0.;
+  switch ( m_contact_model ) {
+
+    case TIED :
+      gap_tol = m_parameters.gap_tied_tol *
+                axom::utilities::max( m_mesh1.getFaceRadii()[fid1],
+                                      m_mesh2.getFaceRadii()[fid2] );
+      break;
+
+    default :  
+        gap_tol = -1. * m_parameters.gap_tol_ratio *  
+                  axom::utilities::max( m_mesh1.getFaceRadii()[fid1],
+                                        m_mesh2.getFaceRadii()[fid2] );
+        break;
+
+  }
+  
+   return gap_tol;
+}
+
+//------------------------------------------------------------------------------
+template class CouplingScheme::ViewerBase<CouplingScheme,
+                                          Parameters, 
+                                          MeshData::Viewer,
+                                          ContactPlane,
+                                          ContactPlane2D,
+                                          ContactPlane3D>;
+template class CouplingScheme::ViewerBase<const CouplingScheme, 
+                                          const Parameters, 
+                                          const MeshData::Viewer,
+                                          const ContactPlane,
+                                          const ContactPlane2D,
+                                          const ContactPlane3D>;
 
 } /* namespace tribol */

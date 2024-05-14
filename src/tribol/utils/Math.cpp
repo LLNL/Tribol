@@ -60,7 +60,7 @@ TRIBOL_HOST_DEVICE RealT dotProd( RealT const aX, RealT const aY, RealT const aZ
 }
 
 //------------------------------------------------------------------------------
-RealT magCrossProd( RealT const a[3], RealT const b[3] )
+TRIBOL_HOST_DEVICE RealT magCrossProd( RealT const a[3], RealT const b[3] )
 {
    RealT vi = a[1] * b[2] - a[2] * b[1];
    RealT vj = a[2] * b[0] - a[0] * b[2];

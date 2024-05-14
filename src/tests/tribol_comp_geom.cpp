@@ -379,10 +379,6 @@ TEST_F( CompGeomTest, 2d_projections_1 )
    EXPECT_LE(diffx2, 1.e-6); 
    EXPECT_LE(diffy2, 1.e-6); 
 
-   // check with call to tribol::update()
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    RealT x1[numVerts];
    RealT y1[numVerts];
    RealT x2[numVerts];
@@ -501,7 +497,6 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
 {
    // this test ensures that faces in a given face-pair with nearly co-directional 
    // normals is not actually included as a contact candidate
-   constexpr int dim = 3;
    constexpr int numVerts = 4;
    constexpr int numCells = 2;
    constexpr int lengthNodalData = numCells * numVerts;
@@ -547,10 +542,6 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    z[5] = -0.300001*element_thickness[1];
    z[6] = -0.300001*element_thickness[1];
    z[7] = -0.300001*element_thickness[1];
-
-   // initialize tribol
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( dim, problem_comm );
 
    // register contact mesh
    tribol::IndexT mesh_id = 0;

@@ -101,7 +101,7 @@ void ComputeConstraintJacobian( SurfaceContactElem & elem );
  *
  */
 template< >
-int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( const CouplingScheme* cs );
+int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs );
 
 /*!
  *

@@ -30,10 +30,10 @@ namespace tribol
  * \pre z is nullptr for 2D
  *
  */
-void GalerkinEval( const RealT* const x, 
-                   const RealT pX, const RealT pY, const RealT pZ, 
-                   FaceOrderType order_type, BasisEvalType basis_type, 
-                   int dim, int galerkinDim, RealT* nodeVals, RealT* galerkinVal );
+TRIBOL_HOST_DEVICE void GalerkinEval( const RealT* const x, 
+                                      const RealT pX, const RealT pY, const RealT pZ, 
+                                      FaceOrderType order_type, BasisEvalType basis_type, 
+                                      int dim, int galerkinDim, RealT* nodeVals, RealT* galerkinVal );
 
 /*!
  *
@@ -51,10 +51,10 @@ void GalerkinEval( const RealT* const x,
  * \pre z is nullptr for 2D
  *
  */
-void EvalBasis( const RealT* const x, 
-                const RealT pX, const RealT pY, const RealT pZ, 
-                const int numPoints, const int vertexId, 
-                RealT& phi );
+TRIBOL_HOST_DEVICE void EvalBasis( const RealT* const x, 
+                                   const RealT pX, const RealT pY, const RealT pZ, 
+                                   const int numPoints, const int vertexId, 
+                                   RealT& phi );
 
 /*!
  *
@@ -73,9 +73,9 @@ void EvalBasis( const RealT* const x,
  * \note This is implicitly a 3D routine
  *
  */
-void WachspressBasis( const RealT* const x, 
-                      const RealT pX, const RealT pY, const RealT pZ, 
-                      const int numPoints, const int vertexId, RealT& phi );
+TRIBOL_HOST_DEVICE void WachspressBasis( const RealT* const x, 
+                                         const RealT pX, const RealT pY, const RealT pZ, 
+                                         const int numPoints, const int vertexId, RealT& phi );
 
 /*!
  *
@@ -91,10 +91,10 @@ void WachspressBasis( const RealT* const x,
  * \note This is implicitly a 2D routine
  *
  */
-void SegmentBasis( const RealT* const x, 
-                   const RealT pX, const RealT pY,
-                   const int numPoints, const int vertexId, 
-                   RealT& phi );
+TRIBOL_HOST_DEVICE void SegmentBasis( const RealT* const x, 
+                                      const RealT pX, const RealT pY,
+                                      const int numPoints, const int vertexId, 
+                                      RealT& phi );
 
 /*!
  *

@@ -993,10 +993,6 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    RealT * y = this->y;
    RealT * z = this->z;
 
-   // initialize tribol
-   CommT problem_comm = TRIBOL_COMM_WORLD;
-   initialize( this->dim, problem_comm );
-
    // register mesh. Note: Tribol will still work with global integer 
    // ids for the connectivity and array lengths of numTotalNodes. 
    registerMesh( this->mortarMeshId, this->numMortarFaces, 

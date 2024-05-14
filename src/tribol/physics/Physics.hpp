@@ -27,7 +27,7 @@ class CouplingScheme;
  * \return 0 if no errors
  *
  */
-int ApplyInterfacePhysics( CouplingScheme const * cs,
+int ApplyInterfacePhysics( CouplingScheme* cs,
                            int cycle, RealT t );
 /*!
  *
@@ -39,7 +39,7 @@ int ApplyInterfacePhysics( CouplingScheme const * cs,
  *
  */
 template< ContactMethod M, EnforcementMethod E >
-int ApplyNormal( CouplingScheme const * cs );
+int ApplyNormal( CouplingScheme* cs );
 
 /*!
  *
@@ -53,7 +53,7 @@ int ApplyNormal( CouplingScheme const * cs );
 template< ContactMethod M, 
           EnforcementMethod E,
           ContactModel Model >
-int ApplyTangential( CouplingScheme const * cs );
+int ApplyTangential( CouplingScheme* cs );
 
 /*!
  *

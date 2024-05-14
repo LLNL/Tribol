@@ -236,7 +236,7 @@ void registerMesh( IndexT mesh_id,
                    const RealT* x,
                    const RealT* y,
                    const RealT* z = nullptr,
-                   MemorySpace m_space = MemorySpace::Dynamic );
+                   MemorySpace m_space = MemorySpace::Host );
 
 /*!
  * \brief Registers nodal displacements on the contact surface.

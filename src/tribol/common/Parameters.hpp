@@ -453,11 +453,6 @@ public:
 struct EnforcementOptions
 {
 public:
-   // default constructor
-   EnforcementOptions() {};
-
-   ~EnforcementOptions() {}; 
-
    PenaltyEnforcementOptions         penalty_options;
    LagrangeMultiplierImplicitOptions lm_implicit_options;
 };

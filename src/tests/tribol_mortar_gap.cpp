@@ -166,10 +166,6 @@ public:
          }
       }
 
-      int dim = 3;
-      tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-      tribol::initialize( dim, problem_comm );
-
       const int mortarMeshId = 0;
       const int nonmortarMeshId = 1;
 
@@ -190,9 +186,6 @@ public:
       mortarMesh.computeFaceData();
       nonmortarMesh.computeFaceData();
 
-      auto mortarView = mortarMesh.getView();
-      auto nonmortarView = nonmortarMesh.getView();
-
       RealT* gaps;
       int size = 2*this->numNodesPerFace;
       gaps = new RealT[ size ];
@@ -203,6 +196,11 @@ public:
       }
 
       tribol::registerMortarGaps( nonmortarMeshId, gaps );
+
+      nonmortarMesh.computeNodalNormals( this->dim );
+
+      auto mortarView = mortarMesh.getView();
+      auto nonmortarView = nonmortarMesh.getView();
 
       // instantiate SurfaceContactElem struct. Note, this object is instantiated
       // using face 1, face 2, and the set overlap polygon. Note, the mesh ids are set
@@ -225,8 +223,6 @@ public:
          SLIC_ERROR("Unsupported contact method");
          break;
       }
-
-      nonmortarMesh.computeNodalNormals( this->dim );
 
       switch (method)
       {

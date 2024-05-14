@@ -36,17 +36,17 @@ struct SurfaceContactElem
    SurfaceContactElem( );
 
    /// Overloaded Constructor
-   SurfaceContactElem( int dimension, ///< [in] Dimension of the problem
-                       RealT * x1,         ///< [in] Vertex coordinates of first face
-                       RealT * x2,         ///< [in] Vertex coordinates of second face
-                       RealT * xOverlap,   ///< [in] Vertex coordinates of overlap
-                       int nFV,       ///< [in] Number of face vertices
-                       int nPV,       ///< [in] Number of overlap vertices
-                       const MeshData::Viewer* mesh1,      ///< [in] Id for mesh 1
-                       const MeshData::Viewer* mesh2,      ///< [in] Id for mesh 2
-                       int fId1,      ///< [in] Id for face 1
-                       int fId2       ///< [in] Id for face 2
-                     )
+   TRIBOL_HOST_DEVICE SurfaceContactElem( int dimension, ///< [in] Dimension of the problem
+                                          RealT * x1,         ///< [in] Vertex coordinates of first face
+                                          RealT * x2,         ///< [in] Vertex coordinates of second face
+                                          RealT * xOverlap,   ///< [in] Vertex coordinates of overlap
+                                          int nFV,       ///< [in] Number of face vertices
+                                          int nPV,       ///< [in] Number of overlap vertices
+                                          const MeshData::Viewer* mesh1,      ///< [in] Id for mesh 1
+                                          const MeshData::Viewer* mesh2,      ///< [in] Id for mesh 2
+                                          int fId1,      ///< [in] Id for face 1
+                                          int fId2       ///< [in] Id for face 2
+                                        )
      : dim(dimension)
      , m_mesh1(mesh1)
      , m_mesh2(mesh2)
@@ -68,7 +68,7 @@ struct SurfaceContactElem
    { }
 
    /// Destructor
-   ~SurfaceContactElem()
+   TRIBOL_HOST_DEVICE ~SurfaceContactElem()
    {
       this->deallocateElem();
    }

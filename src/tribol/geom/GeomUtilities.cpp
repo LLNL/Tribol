@@ -406,12 +406,12 @@ TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x,
 } // end VertexAvgCentroid()
 
 //------------------------------------------------------------------------------
-void VertexAvgCentroid( const RealT* const x, 
-                        const int dim,
-                        const int numVert,
-                        RealT& cX, RealT& cY, RealT& cZ )
+TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x, 
+                                           const int dim,
+                                           const int numVert,
+                                           RealT& cX, RealT& cY, RealT& cZ )
 {
-   SLIC_ERROR_IF(numVert==0, "VertexAvgCentroid: numVert = 0.");
+  //  SLIC_ERROR_IF(numVert==0, "VertexAvgCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -439,12 +439,12 @@ void VertexAvgCentroid( const RealT* const x,
 } // end VertexAvgCentroid()
 
 //------------------------------------------------------------------------------
-void PolyAreaCentroid( const RealT* const x, 
-                       const int dim,
-                       const int numVert,
-                       RealT& cX, RealT& cY, RealT& cZ )
+TRIBOL_HOST_DEVICE void PolyAreaCentroid( const RealT* const x, 
+                                          const int dim,
+                                          const int numVert,
+                                          RealT& cX, RealT& cY, RealT& cZ )
 {
-   SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
+  //  SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -1028,9 +1028,9 @@ TRIBOL_HOST_DEVICE RealT Area2DPolygon( const RealT* const x,
 } // end Area2DPolygon()
 
 //------------------------------------------------------------------------------
-RealT Area3DTri( const RealT* const x,
-                const RealT* const y,
-                const RealT* const z )
+TRIBOL_HOST_DEVICE RealT Area3DTri( const RealT* const x,
+                                    const RealT* const y,
+                                    const RealT* const z )
 {
    RealT u[3] = { x[1] - x[0], y[1] - y[0], z[1] - z[0] };
    RealT v[3] = { x[2] - x[0], y[2] - y[0], z[2] - z[0] };

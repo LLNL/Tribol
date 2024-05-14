@@ -13,6 +13,7 @@
 #include "axom/core.hpp" 
 #include "axom/slic.hpp"
 
+#include <RAJA/policy/atomic_auto.hpp>
 #include <cmath>
 #include <iomanip>
 #include <sstream>
@@ -30,7 +31,10 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
                                                      const Parameters& params,
                                                      ContactMethod cMethod,
                                                      ContactCase TRIBOL_UNUSED_PARAM(cCase),
-                                                     bool& isInteracting )
+                                                     bool& isInteracting,
+                                                     ArrayViewT<ContactPlane2D>& planes_2d,
+                                                     ArrayViewT<ContactPlane3D>& planes_3d,
+                                                     IndexT* plane_ct )
 {
   isInteracting = false;
 
@@ -53,7 +57,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
       if (mesh1.spatialDimension() == 3)
       {
 
-        ContactPlane3D cpTemp( &pair, &mesh1, &mesh2, params.overlap_area_frac, interpenOverlap, intermediatePlane, 3 );
+        ContactPlane3D cpTemp( &pair, &mesh1, &mesh2, params.overlap_area_frac, interpenOverlap, intermediatePlane);
         FaceGeomError face_err = CheckFacePair( cpTemp, params, full );
 
         SLIC_DEBUG("face_err: " << face_err );
@@ -64,7 +68,8 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
         }
         else if (cpTemp.m_inContact)
         {
-          //cpMgr.addContactPlane( cpTemp ); 
+          auto idx = RAJA::atomicInc<RAJA::auto_atomic>(plane_ct);
+          planes_3d[idx] = std::move(cpTemp);
           isInteracting = true;
         }
         else
@@ -75,7 +80,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
       }
       else 
       {
-        ContactPlane2D cpTemp( &pair, &mesh1, &mesh2, params.overlap_area_frac, interpenOverlap, intermediatePlane, 2 );
+        ContactPlane2D cpTemp( &pair, &mesh1, &mesh2, params.overlap_area_frac, interpenOverlap, intermediatePlane);
         FaceGeomError edge_err = CheckEdgePair( pair, params, full, cpTemp );
 
         if (edge_err != NO_FACE_GEOM_ERROR)
@@ -84,7 +89,8 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
         }
         else if (cpTemp.m_inContact)
         {
-          //cpMgr.addContactPlane( cpTemp ); 
+          auto idx = RAJA::atomicInc<RAJA::auto_atomic>(plane_ct);
+          planes_2d[idx] = std::move(cpTemp);
           isInteracting = true;
         }
         else
@@ -295,14 +301,20 @@ TRIBOL_HOST_DEVICE bool ExceedsMaxAutoInterpen( const MeshData::Viewer& meshDat1
                                                 const MeshData::Viewer& meshDat2,
                                                 const int faceId1,
                                                 const int faceId2,
-                                                RealT auto_contact_pen_frac,
+                                                const Parameters& params,
                                                 const RealT gap )
 {
-   RealT max_interpen = -1. * auto_contact_pen_frac * 
+   if (params.auto_interpen_check)
+   {
+      RealT max_interpen = -1. * params.auto_contact_pen_frac * 
                       axom::utilities::min( meshDat1.getElementData().m_thickness[ faceId1 ],
                                             meshDat2.getElementData().m_thickness[ faceId2 ] );
-
-   return gap < max_interpen ? true : false;
+      if (gap < max_interpen)
+      {
+        return true;
+      }
+   }
+   return false;
 }
 
 //------------------------------------------------------------------------------
@@ -342,156 +354,484 @@ TRIBOL_HOST_DEVICE void ProjectEdgeNodesToSegment( const MeshData::Viewer& mesh,
    return;
 }
 
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane::ContactPlane( InterfacePair* pair, 
+                                               const MeshData::Viewer* mesh1,
+                                               const MeshData::Viewer* mesh2,
+                                               RealT areaFrac, 
+                                               bool interpenOverlap, 
+                                               bool interPlane,
+                                               int dim )
+  : m_pair( pair )
+  , m_dim( dim )
+  , m_mesh1( mesh1 )
+  , m_mesh2( mesh2 )
+  , m_intermediatePlane( interPlane )
+  , m_interpenOverlap( interpenOverlap )
+  , m_cX( 0.0 )
+  , m_cY( 0.0 )
+  , m_cZ( 0.0 )
+  , m_cXf1( 0.0 )
+  , m_cYf1( 0.0 )
+  , m_cZf1( 0.0 )
+  , m_cXf2( 0.0 )
+  , m_cYf2( 0.0 )
+  , m_cZf2( 0.0 )
+  , m_numInterpenPoly1Vert( 0 )
+  , m_interpenG1X( nullptr )
+  , m_interpenG1Y( nullptr )
+  , m_interpenG1Z( nullptr )
+  , m_numInterpenPoly2Vert( 0 )
+  , m_interpenG2X( nullptr )
+  , m_interpenG2Y( nullptr )
+  , m_interpenG2Z( nullptr )
+  , m_nX( 0.0 )
+  , m_nY( 0.0 )
+  , m_nZ( 0.0 )
+  , m_gap( 0.0 )
+  , m_gapTol( 0.0 )
+  , m_areaFrac( areaFrac )
+  , m_areaMin( 0.0 )
+  , m_area( 0.0 )
+  , m_interpenArea( 0.0 )
+  , m_velGap( 0.0 )
+  , m_ratePressure( 0.0 )
+  , m_pressure( 0.0 )
+{}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane::ContactPlane()
+  : ContactPlane(nullptr, nullptr, nullptr, 0.0, true, false, 0)
+{}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane::~ContactPlane()
+{
+  deleteArrays(*this);
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane::ContactPlane(const ContactPlane& other)
+  : m_pair( other.m_pair )
+  , m_dim( other.m_dim )
+  , m_mesh1( other.m_mesh1 )
+  , m_mesh2( other.m_mesh2 )
+  , m_intermediatePlane( other.m_intermediatePlane )
+  , m_interpenOverlap( other.m_interpenOverlap )
+  , m_cX( other.m_cX )
+  , m_cY( other.m_cY )
+  , m_cZ( other.m_cZ )
+  , m_cXf1( other.m_cXf1 )
+  , m_cYf1( other.m_cYf1 )
+  , m_cZf1( other.m_cZf1 )
+  , m_cXf2( other.m_cXf2 )
+  , m_cYf2( other.m_cYf2 )
+  , m_cZf2( other.m_cZf2 )
+  , m_numInterpenPoly1Vert( other.m_numInterpenPoly1Vert )
+  , m_numInterpenPoly2Vert( other.m_numInterpenPoly2Vert )
+  , m_nX( other.m_nX )
+  , m_nY( other.m_nY )
+  , m_nZ( other.m_nZ )
+  , m_gap( other.m_gap )
+  , m_gapTol( other.m_gapTol )
+  , m_areaFrac( other.m_areaFrac )
+  , m_areaMin( other.m_areaMin )
+  , m_area( other.m_area )
+  , m_interpenArea( other.m_interpenArea )
+  , m_velGap( other.m_velGap )
+  , m_ratePressure( other.m_ratePressure )
+  , m_pressure( other.m_pressure )
+{
+  copyArrays(other);
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane::ContactPlane(ContactPlane&& other) noexcept
+  : m_pair( other.m_pair )
+  , m_dim( other.m_dim )
+  , m_mesh1( other.m_mesh1 )
+  , m_mesh2( other.m_mesh2 )
+  , m_intermediatePlane( other.m_intermediatePlane )
+  , m_interpenOverlap( other.m_interpenOverlap )
+  , m_cX( other.m_cX )
+  , m_cY( other.m_cY )
+  , m_cZ( other.m_cZ )
+  , m_cXf1( other.m_cXf1 )
+  , m_cYf1( other.m_cYf1 )
+  , m_cZf1( other.m_cZf1 )
+  , m_cXf2( other.m_cXf2 )
+  , m_cYf2( other.m_cYf2 )
+  , m_cZf2( other.m_cZf2 )
+  , m_numInterpenPoly1Vert( other.m_numInterpenPoly1Vert )
+  , m_interpenG1X( other.m_interpenG1X )
+  , m_interpenG1Y( other.m_interpenG1Y )
+  , m_interpenG1Z( other.m_interpenG1Z )
+  , m_numInterpenPoly2Vert( other.m_numInterpenPoly2Vert )
+  , m_interpenG2X( other.m_interpenG2X )
+  , m_interpenG2Y( other.m_interpenG2Y )
+  , m_interpenG2Z( other.m_interpenG2Z )
+  , m_nX( other.m_nX )
+  , m_nY( other.m_nY )
+  , m_nZ( other.m_nZ )
+  , m_gap( other.m_gap )
+  , m_gapTol( other.m_gapTol )
+  , m_areaFrac( other.m_areaFrac )
+  , m_areaMin( other.m_areaMin )
+  , m_area( other.m_area )
+  , m_interpenArea( other.m_interpenArea )
+  , m_velGap( other.m_velGap )
+  , m_ratePressure( other.m_ratePressure )
+  , m_pressure( other.m_pressure )
+{
+  nullArrays(other);
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void ContactPlane::copyArrays( const ContactPlane& other )
+{
+  if (other.m_interpenG1X != nullptr)
+  {
+    m_interpenG1X = new RealT[ m_numInterpenPoly1Vert ];
+    for (IndexT i{0}; i < m_numInterpenPoly1Vert; ++i)
+    {
+      m_interpenG1X[i] = other.m_interpenG1X[i];
+    }
+  }
+  if (other.m_interpenG1Y != nullptr)
+  {
+    m_interpenG1Y = new RealT[ m_numInterpenPoly1Vert ];
+    for (IndexT i{0}; i < m_numInterpenPoly1Vert; ++i)
+    {
+      m_interpenG1Y[i] = other.m_interpenG1Y[i];
+    }
+  }
+  if (other.m_interpenG1Z != nullptr)
+  {
+    m_interpenG1Z = new RealT[ m_numInterpenPoly1Vert ];
+    for (IndexT i{0}; i < m_numInterpenPoly1Vert; ++i)
+    {
+      m_interpenG1Z[i] = other.m_interpenG1Z[i];
+    }
+  }
+  if (other.m_interpenG2X != nullptr)
+  {
+    m_interpenG2X = new RealT[ m_numInterpenPoly1Vert ];
+    for (IndexT i{0}; i < m_numInterpenPoly1Vert; ++i)
+    {
+      m_interpenG2X[i] = other.m_interpenG2X[i];
+    }
+  }
+  if (other.m_interpenG2Y != nullptr)
+  {
+    m_interpenG2Y = new RealT[ m_numInterpenPoly1Vert ];
+    for (IndexT i{0}; i < m_numInterpenPoly1Vert; ++i)
+    {
+      m_interpenG2Y[i] = other.m_interpenG2Y[i];
+    }
+  }
+  if (other.m_interpenG2Z != nullptr)
+  {
+    m_interpenG2Z = new RealT[ m_numInterpenPoly1Vert ];
+    for (IndexT i{0}; i < m_numInterpenPoly1Vert; ++i)
+    {
+      m_interpenG2Z[i] = other.m_interpenG2Z[i];
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void ContactPlane::deleteArrays( const ContactPlane& plane )
+{
+  if (plane.m_interpenG1X != nullptr) { delete[] plane.m_interpenG1X; }
+  if (plane.m_interpenG1Y != nullptr) { delete[] plane.m_interpenG1Y; }
+  if (plane.m_interpenG1Z != nullptr) { delete[] plane.m_interpenG1Z; }
+  if (plane.m_interpenG2X != nullptr) { delete[] plane.m_interpenG2X; }
+  if (plane.m_interpenG2Y != nullptr) { delete[] plane.m_interpenG2Y; }
+  if (plane.m_interpenG2Z != nullptr) { delete[] plane.m_interpenG2Z; }
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void ContactPlane::nullArrays( ContactPlane& plane )
+{
+  plane.m_interpenG1X = nullptr;
+  plane.m_interpenG1Y = nullptr;
+  plane.m_interpenG1Z = nullptr;
+  plane.m_interpenG2X = nullptr;
+  plane.m_interpenG2Y = nullptr;
+  plane.m_interpenG2Z = nullptr;
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void ContactPlane::moveData( ContactPlane&& other )
+{
+  m_pair = other.m_pair;
+  m_dim = other.m_dim;
+  m_numFaces = other.m_numFaces;
+  m_mesh1 = other.m_mesh1;
+  m_mesh2 = other.m_mesh2;
+  m_intermediatePlane = other.m_intermediatePlane;
+  m_inContact = other.m_inContact;
+  m_interpenOverlap = other.m_interpenOverlap;
+  m_cX = other.m_cX;
+  m_cY = other.m_cY;
+  m_cZ = other.m_cZ;
+  m_cXf1 = other.m_cXf1;
+  m_cYf1 = other.m_cYf1;
+  m_cZf1 = other.m_cZf1;
+  m_cXf2 = other.m_cXf2;
+  m_cYf2 = other.m_cYf2;
+  m_cZf2 = other.m_cZf2;
+  m_numInterpenPoly1Vert = other.m_numInterpenPoly1Vert;
+  m_interpenG1X = other.m_interpenG1X;
+  m_interpenG1Y = other.m_interpenG1Y;
+  m_interpenG1Z = other.m_interpenG1Z;
+  m_numInterpenPoly2Vert = other.m_numInterpenPoly2Vert;
+  m_interpenG2X = other.m_interpenG2X;
+  m_interpenG2Y = other.m_interpenG2Y;
+  m_interpenG2Z = other.m_interpenG2Z;
+  m_nX = other.m_nX;
+  m_nY = other.m_nY;
+  m_nZ = other.m_nZ;
+  m_gap = other.m_gap;
+  m_gapTol = other.m_gapTol;
+  m_areaFrac = other.m_areaFrac;
+  m_areaMin = other.m_areaMin;
+  m_area = other.m_area;
+  m_interpenArea = other.m_interpenArea;
+  m_velGap = other.m_velGap;
+  m_ratePressure = other.m_ratePressure;
+  m_pressure = other.m_pressure;
+
+  nullArrays(other);
+}
+
 //-----------------------------------------------------------------------------
 // 3D contact plane member functions
 //-----------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE ContactPlane3D::ContactPlane3D( InterfacePair* pair, 
-                                const MeshData::Viewer* mesh1,
-                                const MeshData::Viewer* mesh2,
-                                RealT areaFrac, 
-                                bool interpenOverlap, 
-                                bool interPlane, 
-                                int dimension )
-{
-   m_numFaces = 0;
-   m_dim = dimension;
-
-   m_pair = pair;
-   m_mesh1 = mesh1;
-   m_mesh2 = mesh2;
-
-   m_intermediatePlane = (interPlane) ? true : false;
-
-   m_inContact = false;
-   m_interpenOverlap = interpenOverlap;
-
-   m_cX = 0.0;
-   m_cY = 0.0;
-   m_cZ = 0.0;
-
-   m_cXf1 = 0.0;
-   m_cYf1 = 0.0;
-   m_cZf1 = 0.0;
-
-   m_cXf2 = 0.0;
-   m_cYf2 = 0.0;
-   m_cZf2 = 0.0;
-
-   m_nX = 0.0;
-   m_nY = 0.0;
-   m_nZ = 0.0;
- 
-   m_gap = 0.0;
-   m_gapTol = 0.0;
-
-   m_e1X = 0.0;
-   m_e1Y = 0.0;
-   m_e1Z = 0.0;
-
-   m_e2X = 0.0;
-   m_e2Y = 0.0;
-   m_e2Z = 0.0;
-
-   m_overlapCX = 0.0;
-   m_overlapCY = 0.0;
-
-   m_numPolyVert = 0;
-   m_polyX =    nullptr; 
-   m_polyY =    nullptr; 
-   m_polyZ =    nullptr; 
-   m_polyLocX = nullptr; 
-   m_polyLocY = nullptr;
-
-   m_numInterpenPoly1Vert = 0;
-   m_interpenPoly1X = nullptr; 
-   m_interpenPoly1Y = nullptr;
-
-   m_numInterpenPoly2Vert = 0;
-   m_interpenPoly2X = nullptr; 
-   m_interpenPoly2Y = nullptr;
-
-   m_interpenG1X = nullptr; 
-   m_interpenG1Y = nullptr;
-   m_interpenG1Z = nullptr; 
-   m_interpenG2X = nullptr;
-   m_interpenG2Y = nullptr; 
-   m_interpenG2Z = nullptr; 
-
-   m_areaFrac = areaFrac;  
-   m_areaMin = 0.0;
-   m_area = 0.0;
-   m_interpenArea = 0.0;
-
-} // end ContactPlane3D::ContactPlane3D()
+                                                   const MeshData::Viewer* mesh1,
+                                                   const MeshData::Viewer* mesh2,
+                                                   RealT areaFrac, 
+                                                   bool interpenOverlap, 
+                                                   bool interPlane )
+  : ContactPlane( pair, mesh1, mesh2, areaFrac, interpenOverlap, interPlane, 3 )
+  , m_e1X( 0.0 )
+  , m_e1Y( 0.0 )
+  , m_e1Z( 0.0 )
+  , m_e2X( 0.0 )
+  , m_e2Y( 0.0 )
+  , m_e2Z( 0.0 )
+  , m_polyLocX( nullptr )
+  , m_polyLocY( nullptr )
+  , m_polyX( nullptr )
+  , m_polyY( nullptr )
+  , m_polyZ( nullptr )
+  , m_numPolyVert( 0 )
+  , m_overlapCX( 0.0 )
+  , m_overlapCY( 0.0 )
+  , m_interpenPoly1X( nullptr )
+  , m_interpenPoly1Y( nullptr )
+  , m_interpenPoly2X( nullptr )
+  , m_interpenPoly2Y( nullptr )
+{}
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE ContactPlane3D::ContactPlane3D()
+  : ContactPlane3D( nullptr, nullptr, nullptr, 0.0, true, false )
+{}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane3D::~ContactPlane3D()
 {
-   m_numFaces = 0;
-   m_dim = -1;
+  deleteArrays(*this);
+}
 
-   m_inContact = false;
-   m_interpenOverlap = true;
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane3D::ContactPlane3D(const ContactPlane3D& other)
+  : ContactPlane(other)
+  , m_e1X( other.m_e1X )
+  , m_e1Y( other.m_e1Y )
+  , m_e1Z( other.m_e1Z )
+  , m_e2X( other.m_e2X )
+  , m_e2Y( other.m_e2Y )
+  , m_e2Z( other.m_e2Z )
+  , m_numPolyVert( other.m_numPolyVert )
+  , m_overlapCX( other.m_overlapCX )
+  , m_overlapCY( other.m_overlapCY )
+{
+  copyArrays(other);
+}
 
-   m_cX = 0.0;
-   m_cY = 0.0;
-   m_cZ = 0.0;
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane3D::ContactPlane3D(ContactPlane3D&& other) noexcept
+  : ContactPlane(std::move(other))
+  , m_e1X( other.m_e1X )
+  , m_e1Y( other.m_e1Y )
+  , m_e1Z( other.m_e1Z )
+  , m_e2X( other.m_e2X )
+  , m_e2Y( other.m_e2Y )
+  , m_e2Z( other.m_e2Z )
+  , m_polyLocX( other.m_polyLocX )
+  , m_polyLocY( other.m_polyLocY )
+  , m_polyX( other.m_polyX )
+  , m_polyY( other.m_polyY )
+  , m_polyZ( other.m_polyZ )
+  , m_numPolyVert( other.m_numPolyVert )
+  , m_overlapCX( other.m_overlapCX )
+  , m_overlapCY( other.m_overlapCY )
+  , m_interpenPoly1X( other.m_interpenPoly1X )
+  , m_interpenPoly1Y( other.m_interpenPoly1Y )
+  , m_interpenPoly2X( other.m_interpenPoly2X )
+  , m_interpenPoly2Y( other.m_interpenPoly2Y )
+{
+  nullArrays(other);
+}
 
-   m_cXf1 = 0.0;
-   m_cYf1 = 0.0;
-   m_cZf1 = 0.0;
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane3D& ContactPlane3D::operator=(const ContactPlane3D& other)
+{
+  return *this = ContactPlane3D(other);
+}
 
-   m_cXf2 = 0.0;
-   m_cYf2 = 0.0;
-   m_cZf2 = 0.0;
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane3D& ContactPlane3D::operator=(ContactPlane3D&& other) noexcept
+{
+  ContactPlane::moveData(std::move(other));
 
-   m_nX = 0.0;
-   m_nY = 0.0;
-   m_nZ = 0.0;
- 
-   m_gap = 0.0;
-   m_gapTol = 0.0;
+  m_e1X = other.m_e1X;
+  m_e1Y = other.m_e1Y;
+  m_e1Z = other.m_e1Z;
+  m_e2X = other.m_e2X;
+  m_e2Y = other.m_e2Y;
+  m_e2Z = other.m_e2Z;
+  m_polyLocX = other.m_polyLocX;
+  m_polyLocY = other.m_polyLocY;
+  m_polyX = other.m_polyX;
+  m_polyY = other.m_polyY;
+  m_polyZ = other.m_polyZ;
+  m_numPolyVert = other.m_numPolyVert;
+  m_overlapCX = other.m_overlapCX;
+  m_overlapCY = other.m_overlapCY;
+  m_interpenPoly1X = other.m_interpenPoly1X;
+  m_interpenPoly1Y = other.m_interpenPoly1Y;
+  m_interpenPoly2X = other.m_interpenPoly2X;
+  m_interpenPoly2Y = other.m_interpenPoly2Y;
 
-   m_e1X = 0.0;
-   m_e1Y = 0.0;
-   m_e1Z = 0.0;
+  nullArrays(other);
 
-   m_e2X = 0.0;
-   m_e2Y = 0.0;
-   m_e2Z = 0.0;
+  return *this;
+}
 
-   m_overlapCX = 0.0;
-   m_overlapCY = 0.0;
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void ContactPlane3D::deleteArrays( const ContactPlane3D& plane )
+{
+  if (plane.m_polyLocX != nullptr)       { delete[] plane.m_polyLocX; }
+  if (plane.m_polyLocY != nullptr)       { delete[] plane.m_polyLocY; }
+  if (plane.m_polyX != nullptr)          { delete[] plane.m_polyX; }
+  if (plane.m_polyY != nullptr)          { delete[] plane.m_polyY; }
+  if (plane.m_polyZ != nullptr)          { delete[] plane.m_polyZ; }
+  if (plane.m_interpenPoly1X != nullptr) { delete[] plane.m_interpenPoly1X; }
+  if (plane.m_interpenPoly1Y != nullptr) { delete[] plane.m_interpenPoly1Y; }
+  if (plane.m_interpenPoly2X != nullptr) { delete[] plane.m_interpenPoly2X; }
+  if (plane.m_interpenPoly2Y != nullptr) { delete[] plane.m_interpenPoly2Y; }
 
-   m_numPolyVert = 0;
-   m_polyX =    nullptr; 
-   m_polyY =    nullptr; 
-   m_polyZ =    nullptr; 
-   m_polyLocX = nullptr; 
-   m_polyLocY = nullptr;
+  ContactPlane::deleteArrays(plane);
+}
 
-   m_numInterpenPoly1Vert = 0;
-   m_interpenPoly1X = nullptr; 
-   m_interpenPoly1Y = nullptr;
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void ContactPlane3D::copyArrays( const ContactPlane3D& other )
+{
+  if (other.m_polyLocX != nullptr)
+  {
+    m_polyLocX = new RealT[ m_numPolyVert ];
+    for (IndexT i{0}; i < m_numPolyVert; ++i)
+    {
+      m_polyLocX[i] = other.m_polyLocX[i];
+    }
+  }
+  if (other.m_polyLocY != nullptr)
+  {
+    m_polyLocY = new RealT[ m_numPolyVert ];
+    for (IndexT i{0}; i < m_numPolyVert; ++i)
+    {
+      m_polyLocY[i] = other.m_polyLocY[i];
+    }
+  }
+  if (other.m_polyX != nullptr)
+  {
+    m_polyX = new RealT[ m_numPolyVert ];
+    for (IndexT i{0}; i < m_numPolyVert; ++i)
+    {
+      m_polyX[i] = other.m_polyX[i];
+    }
+  }
+  if (other.m_polyY != nullptr)
+  {
+    m_polyY = new RealT[ m_numPolyVert ];
+    for (IndexT i{0}; i < m_numPolyVert; ++i)
+    {
+      m_polyY[i] = other.m_polyY[i];
+    }
+  }
+  if (other.m_polyZ != nullptr)
+  {
+    m_polyZ = new RealT[ m_numPolyVert ];
+    for (IndexT i{0}; i < m_numPolyVert; ++i)
+    {
+      m_polyZ[i] = other.m_polyZ[i];
+    }
+  }
+  if (other.m_interpenPoly1X != nullptr)
+  {
+    m_interpenPoly1X = new RealT[ m_numInterpenPoly1Vert ];
+    for (IndexT i{0}; i < m_numPolyVert; ++i)
+    {
+      m_interpenPoly1X[i] = other.m_interpenPoly1X[i];
+    }
+  }
+  if (other.m_interpenPoly1Y != nullptr)
+  {
+    m_interpenPoly1Y = new RealT[ m_numInterpenPoly1Vert ];
+    for (IndexT i{0}; i < m_numPolyVert; ++i)
+    {
+      m_interpenPoly1Y[i] = other.m_interpenPoly1Y[i];
+    }
+  }
+  if (other.m_interpenPoly2X != nullptr)
+  {
+    m_interpenPoly2X = new RealT[ m_numInterpenPoly2Vert ];
+    for (IndexT i{0}; i < m_numPolyVert; ++i)
+    {
+      m_interpenPoly2X[i] = other.m_interpenPoly2X[i];
+    }
+  }
+  if (other.m_interpenPoly2Y != nullptr)
+  {
+    m_interpenPoly2Y = new RealT[ m_numInterpenPoly2Vert ];
+    for (IndexT i{0}; i < m_numPolyVert; ++i)
+    {
+      m_interpenPoly2Y[i] = other.m_interpenPoly2Y[i];
+    }
+  }
 
-   m_numInterpenPoly2Vert = 0;
-   m_interpenPoly2X = nullptr; 
-   m_interpenPoly2Y = nullptr;
+  ContactPlane::copyArrays(other);
+}
 
-   m_interpenG1X = nullptr; 
-   m_interpenG1Y = nullptr;
-   m_interpenG1Z = nullptr; 
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void ContactPlane3D::nullArrays( ContactPlane3D& plane )
+{
+  plane.m_polyLocX = nullptr;
+  plane.m_polyLocY = nullptr;
+  plane.m_polyX = nullptr;
+  plane.m_polyY = nullptr;
+  plane.m_polyZ = nullptr;
+  plane.m_interpenPoly1X = nullptr;
+  plane.m_interpenPoly1Y = nullptr;
+  plane.m_interpenPoly2X = nullptr;
+  plane.m_interpenPoly2Y = nullptr;
 
-   m_interpenG2X = nullptr;
-   m_interpenG2Y = nullptr; 
-   m_interpenG2Z = nullptr; 
-
-   m_areaFrac = 0.0; 
-   m_areaMin = 0.0;
-   m_area = 0.0;
-   m_interpenArea = 0.0;
-
-} // end ContactPlane3D::ContactPlane3D()
+  ContactPlane::nullArrays(plane);
+}
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
@@ -850,7 +1190,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
    if (fullOverlap && params.auto_interpen_check)
    {
       if (ExceedsMaxAutoInterpen( mesh1, mesh2, element_id1, element_id2, 
-                                  params.auto_contact_pen_frac, cp.m_gap ))
+                                  params, cp.m_gap ))
       {
          cp.m_inContact = false;
          return NO_FACE_GEOM_ERROR;
@@ -893,7 +1233,7 @@ TRIBOL_HOST_DEVICE ContactPlane3D CheckAlignedFacePair( InterfacePair& pair,
    // instantiate temporary contact plane to be returned by this routine
    bool interpenOverlap = false;
    bool intermediatePlane = false;
-   ContactPlane3D cp( &pair, &mesh1, &mesh2, areaFrac, interpenOverlap, intermediatePlane, 3 );
+   ContactPlane3D cp( &pair, &mesh1, &mesh2, areaFrac, interpenOverlap, intermediatePlane);
 
    // TODO should probably stay consistent with the mortar convention and change 
    // the plane point and normal to the nonmortar surface. These calculations are only 
@@ -957,7 +1297,7 @@ TRIBOL_HOST_DEVICE ContactPlane3D CheckAlignedFacePair( InterfacePair& pair,
    //
    // Recall that interpen gaps are negative
    if (ExceedsMaxAutoInterpen( mesh1, mesh2, element_id1, element_id2, 
-                               params.auto_contact_pen_frac, scalarGap ))
+                               params, scalarGap ))
    {
       cp.m_inContact = false;
       return cp;
@@ -1336,256 +1676,70 @@ void ContactPlane3D::centroidGap( RealT scale )
 
 } // end ContactPlane3D::centroidGap()
 
-//------------------------------------------------------------------------------
-void ContactPlane3D::copyContactPlane( ContactPlane* cPlane )
-{
-   ContactPlane3D* cp = dynamic_cast<ContactPlane3D*>(cPlane);
-
-   m_numFaces = cp->m_numFaces;
-   m_dim = cp->m_dim;
-   m_pair = cp->m_pair;
-   m_mesh1 = cp->m_mesh1;
-   m_mesh2 = cp->m_mesh2;
-
-   m_intermediatePlane = cp->m_intermediatePlane;
-   m_inContact = cp->m_inContact;
-   m_interpenOverlap = cp->m_interpenOverlap;
-   
-   m_cX = cp->m_cX;
-   m_cY = cp->m_cY;
-   m_cZ = cp->m_cZ;
-
-   m_cXf1 = cp->m_cXf1;
-   m_cYf1 = cp->m_cYf1;
-   m_cZf1 = cp->m_cZf1;
-
-   m_cXf2 = cp->m_cXf2;
-   m_cYf2 = cp->m_cYf2;
-   m_cZf2 = cp->m_cZf2;
-   
-   m_numInterpenPoly1Vert = cp->m_numInterpenPoly1Vert;
-   if (cp->m_interpenG1X != nullptr && cp->m_interpenG1Y != nullptr 
-       && cp->m_interpenG1Z != nullptr)
-   {
-     m_interpenG1X = new RealT[ m_numInterpenPoly1Vert ];
-     m_interpenG1Y = new RealT[ m_numInterpenPoly1Vert ];
-     m_interpenG1Z = new RealT[ m_numInterpenPoly1Vert ];
-
-     for (int i=0; i<m_numInterpenPoly1Vert; ++i)
-     {
-       m_interpenG1X[i] = cp->m_interpenG1X[i];
-       m_interpenG1Y[i] = cp->m_interpenG1Y[i];
-       m_interpenG1Z[i] = cp->m_interpenG1Z[i];
-     }
-   }
-   
-   m_numInterpenPoly2Vert = cp->m_numInterpenPoly2Vert;
-   if (cp->m_interpenG2X != nullptr && cp->m_interpenG2Y != nullptr 
-       && cp->m_interpenG2Z != nullptr)
-   {
-     m_interpenG2X = new RealT[ m_numInterpenPoly2Vert ];
-     m_interpenG2Y = new RealT[ m_numInterpenPoly2Vert ];
-     m_interpenG2Z = new RealT[ m_numInterpenPoly2Vert ];
-
-     for (int i=0; i<m_numInterpenPoly2Vert; ++i)
-     {
-       m_interpenG2X[i] = cp->m_interpenG2X[i];
-       m_interpenG2Y[i] = cp->m_interpenG2Y[i];
-       m_interpenG2Z[i] = cp->m_interpenG2Z[i];
-     }
-   }
-   
-   m_nX = cp->m_nX;
-   m_nY = cp->m_nY;
-   m_nZ = cp->m_nZ;
-
-   m_gap = cp->m_gap;
-   m_gapTol = cp->m_gapTol;
-
-   m_areaFrac = cp->m_areaFrac;
-   m_areaMin = cp->m_areaMin;
-   m_area = cp->m_area;
-   m_interpenArea = cp->m_interpenArea;
-
-   m_e1X = cp->m_e1X;
-   m_e1Y = cp->m_e1Y;
-   m_e1Z = cp->m_e1Z;
-
-   m_e2X = cp->m_e2X;
-   m_e2Y = cp->m_e2Y;
-   m_e2Z = cp->m_e2Z;
-
-   m_numPolyVert = cp->m_numPolyVert;
-
-   if (cp->m_polyLocX != nullptr && cp->m_polyLocY != nullptr)
-   {
-     m_polyLocX = new RealT[ m_numPolyVert ];
-     m_polyLocY = new RealT[ m_numPolyVert ];
-   }
-
-   if (cp->m_polyX != nullptr) m_polyX = new RealT[ m_numPolyVert ];
-   if (cp->m_polyY != nullptr) m_polyY = new RealT[ m_numPolyVert ];
-   if (cp->m_polyZ != nullptr) m_polyZ = new RealT[ m_numPolyVert ];
-
-   for (int i=0; i<m_numPolyVert; ++i)
-   {
-     if (m_polyLocX != nullptr) m_polyLocX[i] = cp->m_polyLocX[i];
-     if (m_polyLocY != nullptr) m_polyLocY[i] = cp->m_polyLocY[i];
-
-     if (m_polyX != nullptr) m_polyX[i] = cp->m_polyX[i];
-     if (m_polyY != nullptr) m_polyY[i] = cp->m_polyY[i];
-     if (m_polyZ != nullptr) m_polyZ[i] = cp->m_polyZ[i];
-   }
-
-   m_overlapCX = cp->m_overlapCX;
-   m_overlapCY = cp->m_overlapCY;
-
-   if (cp->m_interpenPoly1X != nullptr && cp->m_interpenPoly1Y != nullptr)
-   {
-     m_interpenPoly1X = new RealT[ m_numInterpenPoly1Vert ];
-     m_interpenPoly1Y = new RealT[ m_numInterpenPoly1Vert ];
-
-     for (int i=0; i<m_numInterpenPoly1Vert; ++i)
-     {
-       m_interpenPoly1X[i] = cp->m_interpenPoly1X[i];
-       m_interpenPoly1Y[i] = cp->m_interpenPoly1Y[i];
-     }
-   }
-
-   if (cp->m_interpenPoly2X != nullptr && cp->m_interpenPoly2Y != nullptr)
-   {
-     m_interpenPoly2X = new RealT[ m_numInterpenPoly2Vert ];
-     m_interpenPoly2Y = new RealT[ m_numInterpenPoly2Vert ];
-
-     for (int i=0; i<m_numInterpenPoly2Vert; ++i)
-     {
-       m_interpenPoly2X[i] = cp->m_interpenPoly2X[i];
-       m_interpenPoly2Y[i] = cp->m_interpenPoly2Y[i];
-     }
-   }
-
-   return;
-
-} // end ContactPlane3D::copyContactPlane()
-
 //-----------------------------------------------------------------------------
 // Contact Plane 2D routines
 //-----------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D( InterfacePair* pair,
-                                const MeshData::Viewer* mesh1,
-                                const MeshData::Viewer* mesh2,
-                                RealT lenFrac,
-                                bool interpenOverlap,
-                                bool interPlane,
-                                int dimension )
+                                                   const MeshData::Viewer* mesh1,
+                                                   const MeshData::Viewer* mesh2,
+                                                   RealT lenFrac,
+                                                   bool interpenOverlap,
+                                                   bool interPlane )
+  : ContactPlane( pair, mesh1, mesh2, lenFrac, interpenOverlap, interPlane, 2 )
 {
-   m_dim = dimension;
-   m_numFaces = 0;
-
-   m_pair = pair;
-   m_mesh1 = mesh1;
-   m_mesh2 = mesh2;
-
-   m_intermediatePlane = interPlane;
-   m_inContact = false;
-   m_interpenOverlap = interpenOverlap;
-
-   m_cX = 0.0;
-   m_cY = 0.0;
-   m_cZ = 0.0;
-
-   m_cXf1 = 0.0;
-   m_cYf1 = 0.0;
-   m_cZf1 = 0.0;
-
-   m_cXf2 = 0.0;
-   m_cYf2 = 0.0;
-   m_cZf2 = 0.0;
-
-   m_nX = 0.0;
-   m_nY = 0.0;
-   m_nZ = 0.0;
-
-   m_numInterpenPoly1Vert = 0;
-   m_interpenG1X = nullptr;
-   m_interpenG1Y = nullptr;
-   m_interpenG1Z = nullptr;
-
-   m_numInterpenPoly2Vert = 0;
-   m_interpenG2X = nullptr;
-   m_interpenG2Y = nullptr;
-   m_interpenG2Z = nullptr;
-
-   m_gap = 0.0;
-   m_gapTol = 0.0;
-
-   m_areaFrac = lenFrac;
-   m_areaMin = 0.0;
-   m_area = 0.0;
-   m_interpenArea = 0.0;
-
    for (int i=0; i<2; ++i)
    {
       m_segX[i] = 0.0;
       m_segY[i] = 0.0;
    }
-
-   return;
-
 } // end ContactPlane2D::ContactPlane2D()
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D()
+  : ContactPlane2D( nullptr, nullptr, nullptr, 0.0, true, false )
+{}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D(const ContactPlane2D& other)
+  : ContactPlane( other )
 {
-   m_numFaces = 0;
-   m_dim = -1;
-
-   m_inContact = false;
-   m_interpenOverlap = false;
-
-   m_cX = 0.0;
-   m_cY = 0.0;
-   m_cZ = 0.0;
-
-   m_cXf1 = 0.0;
-   m_cYf1 = 0.0;
-   m_cZf1 = 0.0;
-
-   m_cXf2 = 0.0;
-   m_cYf2 = 0.0;
-   m_cZf2 = 0.0;
-
-   m_nX = 0.0;
-   m_nY = 0.0;
-   m_nZ = 0.0;
-
-   m_numInterpenPoly1Vert = 0;
-   m_interpenG1X = nullptr;
-   m_interpenG1Y = nullptr;
-   m_interpenG1Z = nullptr;
-
-   m_numInterpenPoly2Vert = 0;
-   m_interpenG2X = nullptr;
-   m_interpenG2Y = nullptr;
-   m_interpenG2Z = nullptr;
-
-   m_gap = 0.0;
-   m_gapTol = 0.0;
-
-   m_areaFrac = 0.0;
-   m_areaMin = 0.0;
-   m_area = 0.0;
-   m_interpenArea = 0.0;
-
    for (int i=0; i<2; ++i)
    {
-      m_segX[i] = 0.0;
-      m_segY[i] = 0.0;
+      m_segX[i] = other.m_segX[i];
+      m_segY[i] = other.m_segY[i];
+   }
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D(ContactPlane2D&& other) noexcept
+  : ContactPlane( std::move(other) )
+{
+   for (int i=0; i<2; ++i)
+   {
+      m_segX[i] = other.m_segX[i];
+      m_segY[i] = other.m_segY[i];
+   }
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D& ContactPlane2D::operator=(const ContactPlane2D& other)
+{
+   return *this = ContactPlane2D(other);
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D& ContactPlane2D::operator=(ContactPlane2D&& other) noexcept
+{
+   ContactPlane::moveData(std::move(other));
+   
+   for (int i=0; i<2; ++i)
+   {
+      m_segX[i] = other.m_segX[i];
+      m_segY[i] = other.m_segY[i];
    }
 
-   return;
-  
-} // end ContactPlane2D::ContactPlane2D()
+   return *this;
+}
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE FaceGeomError CheckEdgePair( InterfacePair& pair,
@@ -1754,7 +1908,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckEdgePair( InterfacePair& pair,
    if (fullOverlap)
    {
       if (ExceedsMaxAutoInterpen( *mesh1, *mesh2, edgeId1, edgeId2, 
-                                  params.auto_contact_pen_frac, cp.m_gap ))
+                                  params, cp.m_gap ))
       {
          cp.m_inContact = false;
          return NO_FACE_GEOM_ERROR;
@@ -1949,87 +2103,6 @@ void ContactPlane2D::centroidGap( RealT scale )
    return;
 
 } // end ContactPlane2D::centroidGap()
-
-//------------------------------------------------------------------------------
-void ContactPlane2D::copyContactPlane( ContactPlane* cPlane )
-{
-   ContactPlane2D* cp = dynamic_cast<ContactPlane2D*>(cPlane);
-
-   m_numFaces = cp->m_numFaces;
-   m_dim = cp->m_dim;
-   m_pair = cp->m_pair;
-   m_mesh1 = cp->m_mesh1;
-   m_mesh2 = cp->m_mesh2;
-
-   m_intermediatePlane = cp->m_intermediatePlane;
-   m_inContact = cp->m_inContact;
-   m_interpenOverlap = cp->m_interpenOverlap;
-   
-   m_cX = cp->m_cX;
-   m_cY = cp->m_cY;
-   m_cZ = cp->m_cZ;
-
-   m_cXf1 = cp->m_cXf1;
-   m_cYf1 = cp->m_cYf1;
-   m_cZf1 = cp->m_cZf1;
-
-   m_cXf2 = cp->m_cXf2;
-   m_cYf2 = cp->m_cYf2;
-   m_cZf2 = cp->m_cZf2;
-   
-   m_numInterpenPoly1Vert = cp->m_numInterpenPoly1Vert;
-   if (cp->m_interpenG1X != nullptr && cp->m_interpenG1Y != nullptr 
-       && cp->m_interpenG1Z != nullptr)
-   {
-     m_interpenG1X = new RealT[ m_numInterpenPoly1Vert ];
-     m_interpenG1Y = new RealT[ m_numInterpenPoly1Vert ];
-     m_interpenG1Z = new RealT[ m_numInterpenPoly1Vert ];
-
-     for (int i=0; i<m_numInterpenPoly1Vert; ++i)
-     {
-       m_interpenG1X[i] = cp->m_interpenG1X[i];
-       m_interpenG1Y[i] = cp->m_interpenG1Y[i];
-       m_interpenG1Z[i] = cp->m_interpenG1Z[i];
-     }
-   }
-   
-   m_numInterpenPoly2Vert = cp->m_numInterpenPoly2Vert;
-   if (cp->m_interpenG2X != nullptr && cp->m_interpenG2Y != nullptr 
-       && cp->m_interpenG2Z != nullptr)
-   {
-     m_interpenG2X = new RealT[ m_numInterpenPoly2Vert ];
-     m_interpenG2Y = new RealT[ m_numInterpenPoly2Vert ];
-     m_interpenG2Z = new RealT[ m_numInterpenPoly2Vert ];
-
-     for (int i=0; i<m_numInterpenPoly2Vert; ++i)
-     {
-       m_interpenG2X[i] = cp->m_interpenG2X[i];
-       m_interpenG2Y[i] = cp->m_interpenG2Y[i];
-       m_interpenG2Z[i] = cp->m_interpenG2Z[i];
-     }
-   }
-   
-   m_nX = cp->m_nX;
-   m_nY = cp->m_nY;
-   m_nZ = cp->m_nZ;
-
-   m_gap = cp->m_gap;
-   m_gapTol = cp->m_gapTol;
-
-   m_areaFrac = cp->m_areaFrac;
-   m_areaMin = cp->m_areaMin;
-   m_area = cp->m_area;
-   m_interpenArea = cp->m_interpenArea;
-
-   for (int i=0; i<2; ++i)
-   {
-      m_segX[i] = cp->m_segX[i];
-      m_segY[i] = cp->m_segY[i];
-   }
-
-   return;
-
-} // end ContactPlane2D::copyContactPlane()
 
 //------------------------------------------------------------------------------
 void ContactPlane2D::checkSegOverlap( const Parameters& params,
@@ -2268,15 +2341,26 @@ TRIBOL_HOST_DEVICE void planePointAndCentroidGap( ContactPlane& cp,
    auto m2 = cp.m_mesh2;
    auto fId1 = cp.getCpElementId1();
    auto fId2 = cp.getCpElementId2();
+   RealT c1_z = 0.0;
+   RealT n1_z = 0.0;
+   RealT c2_z = 0.0;
+   RealT n2_z = 0.0;
+   if (cp.m_dim == 3)
+   {
+    c1_z = m1->getElementCentroids()[2][fId1];
+    n1_z = m1->getElementNormals()[2][fId1];
+    c2_z = m2->getElementCentroids()[2][fId2];
+    n2_z = m2->getElementNormals()[2][fId2];
+   }
    bool inPlane = false;
    LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
-                          m1->getElementCentroids()[0][fId1], m1->getElementCentroids()[1][fId1], m1->getElementCentroids()[2][fId1],
-                          m1->getElementNormals()[0][fId1], m1->getElementNormals()[1][fId1], m1->getElementNormals()[2][fId1],
+                          m1->getElementCentroids()[0][fId1], m1->getElementCentroids()[1][fId1], c1_z,
+                          m1->getElementNormals()[0][fId1], m1->getElementNormals()[1][fId1], n1_z,
                           xc1, yc1, zc1, inPlane );
 
    LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
-                          m2->getElementCentroids()[0][fId2], m2->getElementCentroids()[1][fId2], m2->getElementCentroids()[2][fId2],
-                          m2->getElementNormals()[0][fId2], m2->getElementNormals()[1][fId2], m2->getElementNormals()[2][fId2],
+                          m2->getElementCentroids()[0][fId2], m2->getElementCentroids()[1][fId2], c2_z,
+                          m2->getElementNormals()[0][fId2], m2->getElementNormals()[1][fId2], n2_z,
                           xc2, yc2, zc2, inPlane );
 
    // for intermediate, or common plane methods, average the two contact plane 

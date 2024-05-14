@@ -94,9 +94,9 @@ struct IntegPts
  *
  */
 template< ContactMethod M, PolyInteg I > 
-void EvalWeakFormIntegral( SurfaceContactElem const & elem,
-                           RealT * const integ1,
-                           RealT * const integ2 );
+TRIBOL_HOST_DEVICE void EvalWeakFormIntegral( SurfaceContactElem const & elem,
+                                              RealT * const integ1,
+                                              RealT * const integ2 );
                         
 /*!
  *

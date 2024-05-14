@@ -101,10 +101,6 @@ public:
       const int mortarMeshId = 0;
       const int nonmortarMeshId = 1;
 
-      // initialize tribol
-      tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-      tribol::initialize( dim, problem_comm );
-
       // register mesh
       tribol::registerMesh( mortarMeshId, 1, 
                             this->numNodes,

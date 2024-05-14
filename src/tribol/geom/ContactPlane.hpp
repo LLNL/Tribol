@@ -16,33 +16,6 @@
 namespace tribol
 {
 
-//-----------------------------------------------------------------------------
-// Free functions
-//-----------------------------------------------------------------------------
-/*!
- * \brief higher level routine wrapping face and edge-pair interaction checks
- *
- * \param [in] pair interface pair containing pair related indices
- * \param [in] cMethod the Tribol contact method
- * \param [in] cCase the Tribol contact Case
- * \param [in] isInteracting true if pair passes all computational geometry filters 
- *
- * \note isInteracting is true indicating a contact candidate for intersecting or 
- *       nearly intersecting face-pairs with a positive area of overlap
- *
- * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
- *
- * \note will need the contact case for specialized geometry checks
- *
- */
-TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
-                                  const MeshData::Viewer& mesh1,
-                                  const MeshData::Viewer& mesh2,
-                                  const Parameters& params,
-                                  ContactMethod const cMethod,
-                                  ContactCase const cCase,
-                                  bool& isInteracting );
-
 /*!
  *
  * \brief projects all the nodes (vertices) of a given FE face to a 
@@ -160,11 +133,25 @@ class ContactPlane
 protected:
    InterfacePair* m_pair; ///< Face-pair struct for two constituent faces
 
-public:
-   TRIBOL_HOST_DEVICE ContactPlane() { };
-   TRIBOL_HOST_DEVICE virtual ~ContactPlane() { } ;
+   TRIBOL_HOST_DEVICE ContactPlane( InterfacePair* pair, 
+                                    const MeshData::Viewer* mesh1,
+                                    const MeshData::Viewer* mesh2,
+                                    RealT areaFrac, 
+                                    bool interpenOverlap, 
+                                    bool interPlane,
+                                    int dim );
 
-   int m_dim;              ///< Problem dimension
+   TRIBOL_HOST_DEVICE ContactPlane();
+
+   TRIBOL_HOST_DEVICE virtual ~ContactPlane();
+
+   TRIBOL_HOST_DEVICE ContactPlane(const ContactPlane& other);
+
+   TRIBOL_HOST_DEVICE ContactPlane(ContactPlane&& other) noexcept;
+
+public:
+
+   int m_dim;            ///< Problem dimension
    int m_numFaces;       ///< Number of constituent faces
    const MeshData::Viewer* m_mesh1; ///< Pointer to mesh 1
    const MeshData::Viewer* m_mesh2; ///< Pointer to mesh 2
@@ -213,8 +200,6 @@ public:
 
    RealT m_pressure;
 
-public:
-
    /// \name Contact plane routines
    /// @{
 
@@ -244,13 +229,6 @@ public:
     * \param [in] scale Scale to help find centroid-to-face projections
     */
    virtual void centroidGap( RealT scale ) = 0 ;
-   
-   /*!
-    * \brief Copy the contact plane object
-    *
-    * \param [in] cPlane Pointer to existing contact plane object to be copied
-    */
-   virtual void copyContactPlane( ContactPlane* cPlane ) = 0 ;
 
    /// @}
 
@@ -309,6 +287,16 @@ public:
      m_numFaces = num;
    }
 
+protected:
+
+   TRIBOL_HOST_DEVICE static void deleteArrays( const ContactPlane& plane );
+
+   TRIBOL_HOST_DEVICE void copyArrays( const ContactPlane& other );
+
+   TRIBOL_HOST_DEVICE static void nullArrays( ContactPlane& plane );
+
+   TRIBOL_HOST_DEVICE void moveData( ContactPlane&& other );
+
    /// @}
 };
 
@@ -319,6 +307,42 @@ public:
 class ContactPlane3D : public ContactPlane
 {
 public:
+
+   /*!
+    * Constructor
+    *
+    * \param [in] pair InterfacePair struct
+    * \param [in] areaFrac Area fraction for inclusion of contact plane
+    * \param [in] interpenOverlap True if using interpenetration overlap algorithm
+    * \param [in] interPlane True if intermediate (i.e. common) plane is used
+    * \param [in] dimension Dimension of the problem
+    */
+   TRIBOL_HOST_DEVICE ContactPlane3D( InterfacePair* pair,
+                                      const MeshData::Viewer* mesh1,
+                                      const MeshData::Viewer* mesh2,
+                                      RealT areaFrac,
+                                      bool interpenOverlap,
+                                      bool interPlane );
+
+   /*!
+    * Overload constructor with no argument list
+    *
+    */
+   TRIBOL_HOST_DEVICE ContactPlane3D();
+
+   /*!
+    * Destructor 
+    *
+    */
+   TRIBOL_HOST_DEVICE ~ContactPlane3D();
+
+   TRIBOL_HOST_DEVICE ContactPlane3D(const ContactPlane3D& other);
+
+   TRIBOL_HOST_DEVICE ContactPlane3D(ContactPlane3D&& other) noexcept;
+
+   TRIBOL_HOST_DEVICE ContactPlane3D& operator=(const ContactPlane3D& other);
+
+   TRIBOL_HOST_DEVICE ContactPlane3D& operator=(ContactPlane3D&& other) noexcept;
 
    RealT m_e1X; ///< Global x-component of first in-plane basis vector
    RealT m_e1Y; ///< Global y-component of first in-plane basis vector
@@ -345,53 +369,6 @@ public:
 
    RealT* m_interpenPoly2X; ///< Local x-coordinates of face 2 interpenetrating overlap
    RealT* m_interpenPoly2Y; ///< Local y-coordinates of face 2 interpenetrating overlap
-
-public:
-
-   /*!
-    * Constructor
-    *
-    * \param [in] pair InterfacePair struct
-    * \param [in] areaFrac Area fraction for inclusion of contact plane
-    * \param [in] interpenOverlap True if using interpenetration overlap algorithm
-    * \param [in] interPlane True if intermediate (i.e. common) plane is used
-    * \param [in] dimension Dimension of the problem
-    */
-   TRIBOL_HOST_DEVICE ContactPlane3D( InterfacePair* pair,
-                   const MeshData::Viewer* mesh1,
-                   const MeshData::Viewer* mesh2,
-                   RealT areaFrac,
-                   bool interpenOverlap,
-                   bool interPlane,
-                   int dimension );
-
-   /*!
-    * Overload constructor with no argument list
-    *
-    */
-   TRIBOL_HOST_DEVICE ContactPlane3D();
-
-   /*!
-    * Destructor 
-    *
-    */
-   TRIBOL_HOST_DEVICE ~ContactPlane3D() {
-                        if (m_polyX != nullptr)          delete[] m_polyX; 
-                        if (m_polyY != nullptr)          delete[] m_polyY; 
-                        if (m_polyZ != nullptr)          delete[] m_polyZ; 
-                        if (m_polyLocX != nullptr)       delete[] m_polyLocX; 
-                        if (m_polyLocY != nullptr)       delete[] m_polyLocY; 
-                        if (m_interpenPoly1X != nullptr) delete[] m_interpenPoly1X;
-                        if (m_interpenPoly1Y != nullptr) delete[] m_interpenPoly1Y; 
-                        if (m_interpenPoly2X != nullptr) delete[] m_interpenPoly2X; 
-                        if (m_interpenPoly2Y != nullptr) delete[] m_interpenPoly2Y; 
-                        if (m_interpenG1X != nullptr)    delete[] m_interpenG1X;
-                        if (m_interpenG1Y != nullptr)    delete[] m_interpenG1Y; 
-                        if (m_interpenG1Z != nullptr)    delete[] m_interpenG1Z;
-                        if (m_interpenG2X != nullptr)    delete[] m_interpenG2X; 
-                        if (m_interpenG2Y != nullptr)    delete[] m_interpenG2Y;
-                        if (m_interpenG2Z != nullptr)    delete[] m_interpenG2Z; 
-                    }
 
    /*!
     * \brief Compute the unit normal that defines the contact plane
@@ -487,13 +464,14 @@ public:
     * \param [in] scale
     */
    void centroidGap( RealT scale ) override;
-   
-   /*!
-    * \brief Copies one contact plane object's data to another
-    *        
-    * \param [in] cPlane input contact plane object to be copied
-    */
-   void copyContactPlane( ContactPlane* cPlane ) override;
+
+private:
+
+   TRIBOL_HOST_DEVICE static void deleteArrays( const ContactPlane3D& plane );
+
+   TRIBOL_HOST_DEVICE void copyArrays( const ContactPlane3D& other );
+
+   TRIBOL_HOST_DEVICE static void nullArrays( ContactPlane3D& plane );
 
 };
 
@@ -521,12 +499,11 @@ public:
     * \param [in] dimension Dimension of problem
     */
    TRIBOL_HOST_DEVICE ContactPlane2D( InterfacePair* pair,
-                   const MeshData::Viewer* mesh1,
-                   const MeshData::Viewer* mesh2,
-                   RealT lenFrac,
-                   bool interpenOverlap,
-                   bool interPlane,
-                   int dimension ) ;
+                                      const MeshData::Viewer* mesh1,
+                                      const MeshData::Viewer* mesh2,
+                                      RealT lenFrac,
+                                      bool interpenOverlap,
+                                      bool interPlane ) ;
 
    /*!
     * \brief Overloaded constructor with no arguments
@@ -538,12 +515,15 @@ public:
     * \brief Destructor 
     *        
     */
-   TRIBOL_HOST_DEVICE ~ContactPlane2D() { if (m_interpenG1X != nullptr) delete[] m_interpenG1X;
-                       if (m_interpenG1Y != nullptr) delete[] m_interpenG1Y;
-                       if (m_interpenG1Z != nullptr) delete[] m_interpenG1Z;
-                       if (m_interpenG2X != nullptr) delete[] m_interpenG2X;
-                       if (m_interpenG2Y != nullptr) delete[] m_interpenG2Y;
-                       if (m_interpenG2Z != nullptr) delete[] m_interpenG2Z; } ;
+   TRIBOL_HOST_DEVICE ~ContactPlane2D() = default;
+
+   TRIBOL_HOST_DEVICE ContactPlane2D(const ContactPlane2D& other);
+
+   TRIBOL_HOST_DEVICE ContactPlane2D(ContactPlane2D&& other) noexcept;
+
+   TRIBOL_HOST_DEVICE ContactPlane2D& operator=(const ContactPlane2D& other);
+
+   TRIBOL_HOST_DEVICE ContactPlane2D& operator=(ContactPlane2D&& other) noexcept;
 
    /*!
     * \brief Compute the unit normal that defines the contact plane
@@ -579,13 +559,6 @@ public:
     * \param [in] scale
     */
    void centroidGap( RealT scale ) override;
-   
-   /*!
-    * \brief Copies one contact plane object's data to another
-    *        
-    * \param [in] cPlane input contact plane object to be copied
-    */
-   void copyContactPlane( ContactPlane* cPlane ) override;
 
    /*!
     * \brief Check whether two segments have a positive length of overlap 
@@ -597,6 +570,36 @@ public:
                          const int nV1, const int nV2 );
 
 };
+
+//-----------------------------------------------------------------------------
+// Free functions
+//-----------------------------------------------------------------------------
+/*!
+ * \brief higher level routine wrapping face and edge-pair interaction checks
+ *
+ * \param [in] pair interface pair containing pair related indices
+ * \param [in] cMethod the Tribol contact method
+ * \param [in] cCase the Tribol contact Case
+ * \param [in] isInteracting true if pair passes all computational geometry filters 
+ *
+ * \note isInteracting is true indicating a contact candidate for intersecting or 
+ *       nearly intersecting face-pairs with a positive area of overlap
+ *
+ * \return 0 if no error, non-zero (via FaceGeomError enum) otherwise
+ *
+ * \note will need the contact case for specialized geometry checks
+ *
+ */
+TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
+                                  const MeshData::Viewer& mesh1,
+                                  const MeshData::Viewer& mesh2,
+                                  const Parameters& params,
+                                  ContactMethod const cMethod,
+                                  ContactCase const cCase,
+                                  bool& isInteracting,
+                                  ArrayViewT<ContactPlane2D>& planes_2d,
+                                  ArrayViewT<ContactPlane3D>& planes_3d,
+                                  IndexT* plane_ct );
 
 
 //-----------------------------------------------------------------------------

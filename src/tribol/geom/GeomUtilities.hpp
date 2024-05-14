@@ -225,10 +225,10 @@ TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x,
  * \pre length(x) >= numVert
  *
  */
-void VertexAvgCentroid( const RealT* const x, 
-                        const int dim,
-                        const int numVert,
-                        RealT& cX, RealT& cY, RealT& cZ );
+TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x, 
+                                           const int dim,
+                                           const int numVert,
+                                           RealT& cX, RealT& cY, RealT& cZ );
 
 /*!
  *
@@ -244,10 +244,10 @@ void VertexAvgCentroid( const RealT* const x,
  * \pre length(x) >= numVert
  *
  */
-void PolyAreaCentroid( const RealT* const x, 
-                       const int dim,
-                       const int numVert,
-                       RealT& cX, RealT& cY, RealT& cZ );
+TRIBOL_HOST_DEVICE void PolyAreaCentroid( const RealT* const x, 
+                                          const int dim,
+                                          const int numVert,
+                                          RealT& cX, RealT& cY, RealT& cZ );
 
 /*!
  *
@@ -397,9 +397,9 @@ TRIBOL_HOST_DEVICE RealT Area2DPolygon( const RealT* const x,
  * \return area of triangle
  *
  */
-RealT Area3DTri( const RealT* const x,
-                const RealT* const y,
-                const RealT* const z );
+TRIBOL_HOST_DEVICE RealT Area3DTri( const RealT* const x,
+                                    const RealT* const y,
+                                    const RealT* const z );
 
 /*!
  *

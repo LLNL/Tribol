@@ -69,6 +69,15 @@ TRIBOL_HOST_DEVICE IndexT binarySearch( const ARRAY& array,
   return binarySearch(array.data(), range.data(), array.size(), value);
 }
 
+TRIBOL_HOST_DEVICE inline IndexT symmMatrixRow( IndexT value,
+                                                IndexT matrix_width )
+{
+  return binarySearch(
+    matrix_width,
+    [=] TRIBOL_HOST_DEVICE (IndexT i) { return (i + 1) * (i + 2) / 2 <= value; },
+    [=] TRIBOL_HOST_DEVICE (IndexT i) { return i * (i + 1) / 2 > value; });
+}
+
 template <MemorySpace MSPACE, typename T>
 TRIBOL_HOST_DEVICE void transpose( const ArrayT<T, 2, MSPACE>& in, 
                                    ArrayT<T, 2, MSPACE>& out )

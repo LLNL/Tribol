@@ -162,12 +162,21 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 //------------------------------------------------------------------------------
 void ComputeAlignedMortarGaps( const CouplingScheme* cs )
 {
+   MeshManager& meshManager = MeshManager::getInstance();
+   MeshData& nonmortarMeshBase = meshManager.at( cs->getMeshId2() );
+   int const dim = cs->spatialDimension();
+   // compute nodal normals (do this outside the element loop)
+   // This routine is guarded against a null mesh
+   nonmortarMeshBase.computeNodalNormals( dim );
+   // mesh data has changed.  update coupling scheme mesh view
+   // TODO: get rid of the const cast
+   auto cs_mutable = const_cast<CouplingScheme*>(cs);
+   cs_mutable->updateMeshViews();
+
    auto pairs = cs->getInterfacePairsView();
    const IndexT numPairs = pairs.size();
    auto planes = cs->get3DContactPlanesView();
 
-   MeshManager& meshManager = MeshManager::getInstance();
-   int const dim = cs->spatialDimension();
 
    ////////////////////////////////////////////////////////////////////////
    //
@@ -177,7 +186,6 @@ void ComputeAlignedMortarGaps( const CouplingScheme* cs )
    auto& mortarMesh = cs->getMesh1();
    auto& nonmortarMesh = cs->getMesh2();
 
-   MeshData& nonmortarMeshBase = meshManager.at( cs->getMeshId2() );
    const IndexT numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
    RealT const * const x1 = mortarMesh.getPosition()[0].data();
@@ -190,9 +198,6 @@ void ComputeAlignedMortarGaps( const CouplingScheme* cs )
    RealT const * const z2 = nonmortarMesh.getPosition()[2].data();
    const IndexT * nonmortarConn = nonmortarMesh.getConnectivity().data();
 
-   // compute nodal normals (do this outside the element loop)
-   // This routine is guarded against a null mesh
-   nonmortarMeshBase.computeNodalNormals( dim );
  
    // declare local variables to hold face nodal coordinates
    // and overlap vertex coordinates
@@ -271,8 +276,16 @@ void ComputeAlignedMortarGaps( const CouplingScheme* cs )
 
 //------------------------------------------------------------------------------
 template< >
-int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( const CouplingScheme* cs )
+int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
 {
+   ///////////////////////////////////////////////////////
+   //                                                   //
+   //            compute single mortar gaps             //
+   //                                                   //
+   // Note, this routine is guarded against a null mesh //
+   ///////////////////////////////////////////////////////
+   ComputeAlignedMortarGaps( cs );
+   
    auto pairs = cs->getInterfacePairsView();
    const IndexT numPairs = pairs.size();
    auto planes = cs->get3DContactPlanesView();
@@ -298,14 +311,6 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( const CouplingScheme* cs
    RealT * const fy2 = nonmortarMesh.getResponse()[1].data();
    RealT * const fz2 = nonmortarMesh.getResponse()[2].data();
    const IndexT * nonmortarConn = nonmortarMesh.getConnectivity().data();
-
-   ///////////////////////////////////////////////////////
-   //                                                   //
-   //            compute single mortar gaps             //
-   //                                                   //
-   // Note, this routine is guarded against a null mesh //
-   ///////////////////////////////////////////////////////
-   ComputeAlignedMortarGaps( cs );
 
    int numTotalNodes;
    int numRows;

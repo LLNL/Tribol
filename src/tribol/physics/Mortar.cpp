@@ -175,12 +175,20 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 //------------------------------------------------------------------------------
 void ComputeSingleMortarGaps( const CouplingScheme* cs )
 {
+   MeshManager& meshManager = MeshManager::getInstance();
+   MeshData& nonmortarMeshBase = meshManager.at( cs->getMeshId2() );
+   // compute nodal normals (do this outside the element loop)
+   // Note, this is guarded against zero element meshes
+   int const dim = cs->spatialDimension();
+   nonmortarMeshBase.computeNodalNormals( dim );
+   // mesh data has changed.  update coupling scheme mesh view
+   // TODO: get rid of the const cast
+   auto cs_mutable = const_cast<CouplingScheme*>(cs);
+   cs_mutable->updateMeshViews();
+
    auto pairs = cs->getInterfacePairsView();
    const IndexT numPairs = pairs.size();
    auto planes = cs->get3DContactPlanesView();
-
-   MeshManager& meshManager = MeshManager::getInstance();
-   int const dim = cs->spatialDimension();
 
    ////////////////////////////////////////////////////////////////////////
    //
@@ -190,7 +198,6 @@ void ComputeSingleMortarGaps( const CouplingScheme* cs )
    auto& mortarMesh = cs->getMesh1();
    auto& nonmortarMesh = cs->getMesh2();
 
-   MeshData& nonmortarMeshBase = meshManager.at( cs->getMeshId2() );
    IndexT const numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
    RealT const * const x1 = mortarMesh.getPosition()[0].data();
@@ -202,10 +209,6 @@ void ComputeSingleMortarGaps( const CouplingScheme* cs )
    RealT const * const y2 = nonmortarMesh.getPosition()[1].data();
    RealT const * const z2 = nonmortarMesh.getPosition()[2].data();
    IndexT const * nonmortarConn = nonmortarMesh.getConnectivity().data();
-
-   // compute nodal normals (do this outside the element loop)
-   // Note, this is guarded against zero element meshes
-   nonmortarMeshBase.computeNodalNormals( dim );
 
    // declare local variables to hold face nodal coordinates
    // and overlap vertex coordinates
@@ -312,8 +315,16 @@ void ComputeSingleMortarGaps( const CouplingScheme* cs )
 
 //------------------------------------------------------------------------------
 template< >
-int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( const CouplingScheme* cs )
+int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
 {
+   ///////////////////////////////////////////////////////
+   //                                                   //
+   //            compute single mortar gaps             //
+   //                                                   //
+   // Note, this routine is guarded against null meshes //
+   ///////////////////////////////////////////////////////
+   ComputeSingleMortarGaps( cs );
+
    auto pairs = cs->getInterfacePairsView();
    const IndexT numPairs = pairs.size();
    auto planes = cs->get3DContactPlanesView();
@@ -333,20 +344,12 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( const CouplingScheme* cs 
    RealT * const fx1 = mortarMesh.getResponse()[0].data();
    RealT * const fy1 = mortarMesh.getResponse()[1].data(); 
    RealT * const fz1 = mortarMesh.getResponse()[2].data(); 
-   IndexT const * const mortarConn= mortarMesh.getConnectivity().data();;
+   IndexT const * const mortarConn= mortarMesh.getConnectivity().data();
 
    RealT * const fx2 = nonmortarMesh.getResponse()[0].data(); 
    RealT * const fy2 = nonmortarMesh.getResponse()[1].data();
    RealT * const fz2 = nonmortarMesh.getResponse()[2].data();
-   IndexT const * nonmortarConn = nonmortarMesh.getConnectivity().data();;
-
-   ///////////////////////////////////////////////////////
-   //                                                   //
-   //            compute single mortar gaps             //
-   //                                                   //
-   // Note, this routine is guarded against null meshes //
-   ///////////////////////////////////////////////////////
-   ComputeSingleMortarGaps( cs );
+   IndexT const * nonmortarConn = nonmortarMesh.getConnectivity().data();
 
    int numTotalNodes = cs->getNumTotalNodes();
    int numRows = dim * numTotalNodes + numTotalNodes;
@@ -709,6 +712,13 @@ void ComputeSingleMortarJacobian( SurfaceContactElem & elem )
 template< >
 int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
 {
+   ////////////////////////////////
+   //                            //
+   // compute single mortar gaps //
+   //                            //
+   ////////////////////////////////
+   ComputeSingleMortarGaps( cs );
+   
    auto pairs = cs->getInterfacePairsView();
    IndexT const numPairs = pairs.size();
    auto planes = cs->get3DContactPlanesView();
@@ -718,13 +728,6 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs )
    auto& mortarMesh = cs->getMesh1();
    auto& nonmortarMesh = cs->getMesh2();
    IndexT const numNodesPerFace = mortarMesh.numberOfNodesPerElement();
-
-   ////////////////////////////////
-   //                            //
-   // compute single mortar gaps //
-   //                            //
-   ////////////////////////////////
-   ComputeSingleMortarGaps( cs );
 
    int numRows = cs->getNumTotalNodes();
    static_cast<MortarData*>( cs->getMethodData() )->allocateMfemSparseMatrix( numRows );

@@ -20,7 +20,7 @@ namespace tribol
 {
 
 template< >
-void EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
+TRIBOL_HOST_DEVICE void EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
                          ( SurfaceContactElem const & elem,
                            RealT * const integ1,
                            RealT * const integ2 )

@@ -198,9 +198,11 @@ public:
       , m_vertSet(m_meshData->numberOfNodes())
       , m_elemSet(m_meshData->numberOfElements())
    {
+      // TODO (EBC): How do we avoid this copy??
+      m_conn = ArrayViewT<IndexT>(const_cast<IndexT*>(meshData->getConnectivity().data()), 
+                                  meshData->getConnectivity().size());
       // Generate connectivity relation for elements
       using BuilderType = typename ElemVertRelation::RelationBuilder;
-      axom::Array<IndexT> conn;
 
       m_elemVertConnectivity = BuilderType()
           .fromSet( &m_elemSet)
@@ -209,7 +211,7 @@ public:
                    .stride( m_meshData->numberOfNodesPerElement()))
           .indices( typename BuilderType::IndicesSetBuilder()
                     .size( m_elemSet.size() * m_meshData->numberOfNodesPerElement())
-                    .data( &conn ));
+                    .data( &m_conn ));
    }
 
    /*!
@@ -284,6 +286,8 @@ public:
 private:
    const MeshData::Viewer* m_meshData;
 
+   ArrayT<IndexT> m_conn;
+
    VertSet m_vertSet;
    ElemSet m_elemSet;
    ElemVertRelation m_elemVertConnectivity;
@@ -357,6 +361,12 @@ public:
       // Reserve memory for boolean array indicating which pairs
       // are in contact
       int numPairs = mesh1NumElems * mesh2NumElems;
+      bool is_symm = m_coupling_scheme->getMeshId1() == m_coupling_scheme->getMeshId2();
+      if (is_symm)
+      {
+         // account for symmetry
+         numPairs = mesh1NumElems * (mesh1NumElems + 1) / 2;
+      }
       ArrayT<bool> contactArray(numPairs, numPairs, m_coupling_scheme->getAllocatorId());
       bool* inContact = contactArray.data();
 
@@ -373,6 +383,13 @@ public:
          {
             IndexT fromIdx = i / mesh1NumElems;
             IndexT toIdx = i % mesh2NumElems;
+            if (is_symm)
+            {
+               IndexT row = algorithm::symmMatrixRow(i, mesh1NumElems);
+               IndexT offset = row * (row + 1) / 2;
+               fromIdx = row;
+               toIdx = i - offset;
+            }
             inContact[i] = geomFilter( fromIdx, toIdx, 
                                        mesh1, mesh2,
                                        cmode );
@@ -750,7 +767,7 @@ public:
         pairs_view[idx] = InterfacePair(mesh1_elem, mesh2_elem, true);
       }
     );
-   } // end findInterfacePairs()
+  } // end findInterfacePairs()
 
   void buildMeshBBoxes(ArrayT<BoxT>& boxes, const MeshData::Viewer& mesh)
   {

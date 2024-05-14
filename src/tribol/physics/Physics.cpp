@@ -16,7 +16,7 @@
 namespace tribol
 {
 
-int ApplyInterfacePhysics( CouplingScheme const * cs,
+int ApplyInterfacePhysics( CouplingScheme* cs,
                            int TRIBOL_UNUSED_PARAM(cycle),
                            RealT TRIBOL_UNUSED_PARAM(t) )
 {

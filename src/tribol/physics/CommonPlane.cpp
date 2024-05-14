@@ -19,8 +19,8 @@
 namespace tribol
 {
 
-RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
-                                     const RealT K2_over_t2 )
+TRIBOL_HOST_DEVICE RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
+                                                         const RealT K2_over_t2 )
 {
    // compute face-pair specific penalty stiffness per unit area.
    // Note: This assumes that each face has a spring stiffness 
@@ -157,23 +157,26 @@ TRIBOL_HOST_DEVICE RealT ComputeGapRatePressure( ContactPlane& plane,
 
 //------------------------------------------------------------------------------
 template< >
-int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
+int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
 {
    LoggingLevel logLevel = cs->getLoggingLevel(); 
 
    ///////////////////////////////
    // loop over interface pairs //
    ///////////////////////////////
-   int cpID = 0;
-   int err = 0;
-   bool neg_thickness {false};
-   auto& mesh1 = cs->getMesh1();
-   auto& mesh2 = cs->getMesh2();
+   ArrayT<int> err_data({0}, cs->getAllocatorId());
+   ArrayViewT<int> err = err_data;
+   ArrayT<bool> neg_thickness_data({false}, cs->getAllocatorId());
+   ArrayViewT<bool> neg_thickness = neg_thickness_data;
+   auto cs_view = cs->getView();
    const auto num_pairs = cs->getNumActivePairs();
    forAllExec(cs->getExecutionMode(), num_pairs,
       [=] TRIBOL_HOST_DEVICE (IndexT i)
       {
-         auto& plane = cs->getContactPlane(i);
+         auto& plane = cs_view.getContactPlane(i);
+
+         auto& mesh1 = cs_view.getMesh1();
+         auto& mesh2 = cs_view.getMesh2();
 
          // get pair indices
          IndexT index1 = plane.getCpElementId1();
@@ -184,252 +187,273 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs )
 
          // don't proceed for gaps that don't violate the constraints. This check 
          // allows for numerically zero interpenetration.
-         RealT gap_tol = cs->getGapTol( index1, index2 );
+         RealT gap_tol = cs_view.getCommonPlaneGapTol( index1, index2 );
+
+        if ( gap > gap_tol )
+        {
+          // We are here if we have a pair that passes ALL geometric 
+          // filter checks, BUT does not actually violate this method's 
+          // gap constraint.
+          plane.m_inContact = false;
+          return;
+        }
+
+        // debug force sums
+        RealT dbg_sum_force1 {0.};
+        RealT dbg_sum_force2 {0.};
+        /////////////////////////////////////////////
+        // kinematic penalty stiffness calculation //
+        /////////////////////////////////////////////
+        RealT penalty_stiff_per_area {0.};
+        auto& enforcement_options = cs_view.getEnforcementOptions();
+        const PenaltyEnforcementOptions& pen_enfrc_options = enforcement_options.penalty_options;
+        RealT pen_scale1 = mesh1.getElementData().m_penalty_scale;
+        RealT pen_scale2 = mesh2.getElementData().m_penalty_scale;
+        switch (pen_enfrc_options.kinematic_calculation)
+        {
+          case KINEMATIC_CONSTANT: 
+          {
+              // pre-multiply each spring stiffness by each mesh's penalty scale
+              auto stiffness1 = pen_scale1 * mesh1.getElementData().m_penalty_stiffness;
+              auto stiffness2 = pen_scale2 * mesh2.getElementData().m_penalty_stiffness;
+              // compute the equivalent contact penalty spring stiffness per area
+              penalty_stiff_per_area  = ComputePenaltyStiffnessPerArea( stiffness1, stiffness2 );
+              break;
+          }
+          case KINEMATIC_ELEMENT:
+          {
+              // add tiny_length to element thickness to avoid division by zero
+              auto t1 = mesh1.getElementData().m_thickness[ index1 ] + pen_enfrc_options.tiny_length;
+              auto t2 = mesh2.getElementData().m_thickness[ index2 ] + pen_enfrc_options.tiny_length;
+
+              if (t1 < 0. || t2 < 0.)
+              {
+                neg_thickness[0] = true;
+                err[0] = 1;
+              }
+
+              // compute each element spring stiffness. Pre-multiply the material modulus 
+              // (i.e. material stiffness) by each mesh's penalty scale
+              auto stiffness1 = pen_scale1 * mesh1.getElementData().m_mat_mod[ index1 ] / t1;
+              auto stiffness2 = pen_scale2 * mesh2.getElementData().m_mat_mod[ index2 ] / t2;
+              // compute the equivalent contact penalty spring stiffness per area
+              penalty_stiff_per_area = ComputePenaltyStiffnessPerArea( stiffness1, stiffness2 );
+              break;
+          }
+          default:
+              // no-op, quiet compiler
+              break;
+        } // end switch on kinematic penalty calculation option
+
+        ////////////////////////////////////////////////////
+        // Compute contact pressure(s) on current overlap // 
+        ////////////////////////////////////////////////////
+
+        // compute total pressure based on constraint type
+        RealT totalPressure = 0.;
+        plane.m_pressure = gap * penalty_stiff_per_area; // kinematic contribution
+        switch(pen_enfrc_options.constraint_type)
+        {
+          case KINEMATIC_AND_RATE:
+          {
+              // kinematic contribution
+              totalPressure += plane.m_pressure;
+              // add gap-rate contribution
+              totalPressure += 
+                ComputeGapRatePressure( plane, penalty_stiff_per_area,
+                                        pen_enfrc_options.rate_calculation );
+              break;
+          }
+          case KINEMATIC:
+              // kinematic gap pressure contribution  only
+              totalPressure += plane.m_pressure;
+              break;
+          default:
+              // no-op
+              break;
+        } // end switch on registered penalty enforcement option
+
+        // debug prints. Comment out for now, but keep for future common plane 
+        // debugging
+  //         SLIC_DEBUG("gap: " << gap);
+  //         SLIC_DEBUG("area: " << A);
+  //         SLIC_DEBUG("penalty stiffness: " << penalty_stiff_per_area);
+  //         SLIC_DEBUG("pressure: " << cpManager.m_pressure[ cpID ]);
+
+        ///////////////////////////////////////////
+        // create surface contact element struct //
+        ///////////////////////////////////////////
+
+        // construct array of nodal coordinates
+        constexpr int max_dim = 3;
+        constexpr int max_nodes_per_face = 4;
+        constexpr int max_nodes_per_overlap = 8;
+        RealT xf1[ max_dim * max_nodes_per_face ];
+        RealT xf2[ max_dim * max_nodes_per_face ];
+        RealT xVert[ max_dim * max_nodes_per_overlap ];  
+        int dim = cs_view.spatialDimension();
+        int num_nodes_per_face = mesh1.numberOfNodesPerElement();
+        initRealArray( xf1, dim * num_nodes_per_face, 0. );
+        initRealArray( xf2, dim * num_nodes_per_face, 0. );
+        auto xVert_size = 4;
+        auto numPolyVert = 2;
+        if (dim == 3)
+        {
+          auto& cp3 = static_cast<ContactPlane3D&>(plane);
+          numPolyVert = cp3.m_numPolyVert;
+          xVert_size = 3 * numPolyVert;
+        }
+        initRealArray( xVert, dim * xVert_size, 0. );
+
+  //      // get projected face coordinates
+  //      cpManager.getProjectedFaceCoords( cpID, 0, &xf1[0] ); // face 0 = first face
+  //      cpManager.getProjectedFaceCoords( cpID, 1, &xf2[0] ); // face 1 = second face
+
+        // get current configuration, physical coordinates of each face
+        mesh1.getFaceCoords( index1, &xf1[0] );
+        mesh2.getFaceCoords( index2, &xf2[0] );
+
+        // construct array of polygon overlap vertex coordinates
+        if (dim == 2)
+        {
+          auto& cp2 = static_cast<ContactPlane2D&>(plane);
+          for (IndexT j{0}; j < numPolyVert; ++j)
+          {
+            xVert[dim*j] = cp2.m_segX[j];
+            xVert[dim*j + 1] = cp2.m_segY[j];
+          }
+        }
+        else
+        {
+          auto& cp3 = static_cast<ContactPlane3D&>(plane);
+          for (IndexT j{0}; j < numPolyVert; ++j)
+          {
+            xVert[dim*j] = cp3.m_polyX[j];
+            xVert[dim*j + 1] = cp3.m_polyY[j];
+            xVert[dim*j + 2] = cp3.m_polyZ[j];
+          }
+        }
+
+        // instantiate surface contact element struct. Note, this is done with current 
+        // configuration face coordinates (i.e. NOT on the contact plane) and overlap 
+        // coordinates ON the contact plane. The surface contact element does not need 
+        // to be used this way, but the developer should do the book-keeping.
+        SurfaceContactElem cntctElem( dim, &xf1[0], &xf2[0], &xVert[0],
+                                      num_nodes_per_face, numPolyVert,
+                                      &mesh1, &mesh2, index1, index2 );
+
+        // set SurfaceContactElem face normals and overlap normal
+        RealT faceNormal1[max_dim];
+        RealT faceNormal2[max_dim];
+        RealT overlapNormal[max_dim];
+
+        mesh1.getFaceNormal( index1, faceNormal1 );
+        mesh2.getFaceNormal( index2, faceNormal2 );
+        overlapNormal[0] = plane.m_nX;
+        overlapNormal[1] = plane.m_nY;
+        if (dim == 3)
+        {
+          overlapNormal[2] = plane.m_nZ;
+        }
+
+        cntctElem.faceNormal1 = &faceNormal1[0];
+        cntctElem.faceNormal2 = &faceNormal2[0];
+        cntctElem.overlapNormal = &overlapNormal[0];
+
+        // create arrays to hold nodal residual weak form integral evaluations
+        RealT phi1[max_nodes_per_face];
+        RealT phi2[max_nodes_per_face];
+        initRealArray( phi1, num_nodes_per_face, 0. );
+        initRealArray( phi2, num_nodes_per_face, 0. );
+
+        ////////////////////////////////////////////////////////////////////////
+        // Integration of contact integrals: integral of shape functions over //
+        // contact overlap patch                                              //
+        ////////////////////////////////////////////////////////////////////////
+        EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
+                            ( cntctElem, &phi1[0], &phi2[0] );
+
+        ///////////////////////////////////////////////////////////////////////
+        // Computation of full contact nodal force contributions             //
+        // (i.e. premultiplication of contact integrals by normal component, //
+        //  contact pressure, and overlap area)                              //
+        ///////////////////////////////////////////////////////////////////////
+
+        RealT phi_sum_1 = 0.;
+        RealT phi_sum_2 = 0.;
+
+        // compute contact force (spring force)
+        RealT contact_force = totalPressure * A;
+        RealT force_x = overlapNormal[0] * contact_force;
+        RealT force_y = overlapNormal[1] * contact_force;
+        RealT force_z = 0.;
+        if (dim == 3)
+        {
+          force_z = overlapNormal[2] * contact_force;
+        }
+
+        //////////////////////////////////////////////////////
+        // loop over nodes and compute contact nodal forces //
+        //////////////////////////////////////////////////////
+        for( IndexT a=0 ; a < num_nodes_per_face ; ++a )
+        {
+
+          IndexT node0 = mesh1.getGlobalNodeId(index1, a);
+          IndexT node1 = mesh2.getGlobalNodeId(index2, a);
+
+          if (logLevel == TRIBOL_DEBUG)
+          {
+            phi_sum_1 += phi1[a];
+            phi_sum_2 += phi2[a];
+          }
+  
+          const RealT nodal_force_x1 = force_x * phi1[a];
+          const RealT nodal_force_y1 = force_y * phi1[a];
+          const RealT nodal_force_z1 = force_z * phi1[a];
+
+          const RealT nodal_force_x2 = force_x * phi2[a];
+          const RealT nodal_force_y2 = force_y * phi2[a];
+          const RealT nodal_force_z2 = force_z * phi2[a];
+
+          if (logLevel == TRIBOL_DEBUG)
+          {
+            dbg_sum_force1 += magnitude( nodal_force_x1, 
+                                          nodal_force_y1, 
+                                          nodal_force_z1 );
+            dbg_sum_force2 += magnitude( nodal_force_x2,
+                                          nodal_force_y2,
+                                          nodal_force_z2 );
+          }
+
+          // accumulate contributions in host code's registered nodal force arrays
+          mesh1.getResponse()[0][ node0 ] -= nodal_force_x1;
+          mesh2.getResponse()[0][ node1 ] += nodal_force_x2;
+
+          mesh1.getResponse()[1][ node0 ] -= nodal_force_y1;
+          mesh2.getResponse()[1][ node1 ] += nodal_force_y2;
+
+          // there is no z component for 2D
+          if (dim)
+          {
+            mesh1.getResponse()[2][ node0 ] -= nodal_force_z1;
+            mesh2.getResponse()[2][ node1 ] += nodal_force_z2;
+          }
+        } // end for loop over face nodes
+
+        // comment out debug logs; too much output during tests. Keep for easy 
+        // debugging if needed
+        //SLIC_DEBUG("force sum, side 1, pair " << kp << ": " << -dbg_sum_force1 );
+        //SLIC_DEBUG("force sum, side 2, pair " << kp << ": " << dbg_sum_force2 );
+        //SLIC_DEBUG("phi 1 sum: " << phi_sum_1 );
+        //SLIC_DEBUG("phi 2 sum: " << phi_sum_2 );
       }
    );
-//    for (IndexT kp = 0; kp < numPairs; ++kp)
-//    {
-
-
-
-
-//       if ( gap > gap_tol )
-//       {
-//          // We are here if we have a pair that passes ALL geometric 
-//          // filter checks, BUT does not actually violate this method's 
-//          // gap constraint. There will be data in the contact plane 
-//          // manager so we MUST increment the counter.
-//          cpManager.m_inContact[ cpID ] = false;
-//          ++cpID; 
-//          continue;
-//       }
-
-//       // debug force sums
-//       RealT dbg_sum_force1 {0.};
-//       RealT dbg_sum_force2 {0.};
-
-//       /////////////////////////////////////////////
-//       // kinematic penalty stiffness calculation //
-//       /////////////////////////////////////////////
-//       RealT penalty_stiff_per_area {0.};
-//       const EnforcementOptions& enforcement_options = const_cast<EnforcementOptions&>(cs->getEnforcementOptions());
-//       const PenaltyEnforcementOptions& pen_enfrc_options = enforcement_options.penalty_options;
-//       RealT pen_scale1 = mesh1.getElementData().m_penalty_scale;
-//       RealT pen_scale2 = mesh2.getElementData().m_penalty_scale;
-//       switch (pen_enfrc_options.kinematic_calculation)
-//       {
-//          case KINEMATIC_CONSTANT: 
-//          {
-//             // pre-multiply each spring stiffness by each mesh's penalty scale
-//             auto stiffness1 = pen_scale1 * mesh1.getElementData().m_penalty_stiffness;
-//             auto stiffness2 = pen_scale2 * mesh2.getElementData().m_penalty_stiffness;
-//             // compute the equivalent contact penalty spring stiffness per area
-//             penalty_stiff_per_area  = ComputePenaltyStiffnessPerArea( stiffness1, stiffness2 );
-//             break;
-//          }
-//          case KINEMATIC_ELEMENT:
-//          {
-//             // add tiny_length to element thickness to avoid division by zero
-//             auto t1 = mesh1.getElementData().m_thickness[ index1 ] + pen_enfrc_options.tiny_length;
-//             auto t2 = mesh2.getElementData().m_thickness[ index2 ] + pen_enfrc_options.tiny_length;
-
-//             if (t1 < 0. || t2 < 0.)
-//             {
-//                neg_thickness = true;
-//                err = 1;
-//             }
-
-//             // compute each element spring stiffness. Pre-multiply the material modulus 
-//             // (i.e. material stiffness) by each mesh's penalty scale
-//             auto stiffness1 = pen_scale1 * mesh1.getElementData().m_mat_mod[ index1 ] / t1;
-//             auto stiffness2 = pen_scale2 * mesh2.getElementData().m_mat_mod[ index2 ] / t2;
-//             // compute the equivalent contact penalty spring stiffness per area
-//             penalty_stiff_per_area = ComputePenaltyStiffnessPerArea( stiffness1, stiffness2 );
-//             break;
-//          }
-//          default:
-//             // no-op, quiet compiler
-//             break;
-//       } // end switch on kinematic penalty calculation option
-
-//       ////////////////////////////////////////////////////
-//       // Compute contact pressure(s) on current overlap // 
-//       ////////////////////////////////////////////////////
-
-//       // compute total pressure based on constraint type
-//       RealT totalPressure = 0.;
-//       cpManager.m_pressure[ cpID ] = gap * penalty_stiff_per_area; // kinematic contribution
-//       switch(pen_enfrc_options.constraint_type)
-//       {
-//          case KINEMATIC_AND_RATE:
-//          {
-//             // kinematic contribution
-//             totalPressure += cpManager.m_pressure[ cpID ];
-//             // add gap-rate contribution
-//             totalPressure += 
-//                ComputeGapRatePressure( cpManager, cpID, mesh_id1, mesh_id2, 
-//                                        index1, index2, penalty_stiff_per_area, dim,
-//                                        pen_enfrc_options.rate_calculation );
-//             break;
-//          }
-//          case KINEMATIC:
-//             // kinematic gap pressure contribution  only
-//             totalPressure += cpManager.m_pressure[ cpID ];
-//             break;
-//          default:
-//             // no-op
-//             break;
-//       } // end switch on registered penalty enforcement option
-
-//       // debug prints. Comment out for now, but keep for future common plane 
-//       // debugging
-// //         SLIC_DEBUG("gap: " << gap);
-// //         SLIC_DEBUG("area: " << A);
-// //         SLIC_DEBUG("penalty stiffness: " << penalty_stiff_per_area);
-// //         SLIC_DEBUG("pressure: " << cpManager.m_pressure[ cpID ]);
-
-//       ///////////////////////////////////////////
-//       // create surface contact element struct //
-//       ///////////////////////////////////////////
-
-//       // construct array of nodal coordinates
-//       RealT xf1[ dim * numNodesPerFace ];
-//       RealT xf2[ dim * numNodesPerFace ];
-//       RealT xVert[dim * cpManager.m_numPolyVert[cpID]];  
-
-//       initRealArray( &xf1[0], dim*numNodesPerFace, 0. );
-//       initRealArray( &xf2[0], dim*numNodesPerFace, 0. );
-//       initRealArray( &xVert[0], dim*cpManager.m_numPolyVert[cpID], 0. );
-
-// //      // get projected face coordinates
-// //      cpManager.getProjectedFaceCoords( cpID, 0, &xf1[0] ); // face 0 = first face
-// //      cpManager.getProjectedFaceCoords( cpID, 1, &xf2[0] ); // face 1 = second face
-
-//       // get current configuration, physical coordinates of each face
-//       mesh1.getFaceCoords( index1, &xf1[0] );
-//       mesh2.getFaceCoords( index2, &xf2[0] );
-
-//       // construct array of polygon overlap vertex coordinates
-//       cpManager.getContactPlaneOverlapVerts( cpID, cpManager.m_numPolyVert[cpID], 
-//                                              &xVert[0] );
-
-//       // instantiate surface contact element struct. Note, this is done with current 
-//       // configuration face coordinates (i.e. NOT on the contact plane) and overlap 
-//       // coordinates ON the contact plane. The surface contact element does not need 
-//       // to be used this way, but the developer should do the book-keeping.
-//       SurfaceContactElem cntctElem( dim, &xf1[0], &xf2[0], &xVert[0],
-//                                     numNodesPerFace, 
-//                                     cpManager.m_numPolyVert[cpID],
-//                                     mesh_id1, mesh_id2, index1, index2 );
-
-//       // set SurfaceContactElem face normals and overlap normal
-//       RealT faceNormal1[dim];
-//       RealT faceNormal2[dim];
-//       RealT overlapNormal[dim];
-
-//       mesh1.getFaceNormal( index1, dim, &faceNormal1[0] );
-//       mesh2.getFaceNormal( index2, dim, &faceNormal2[0] );
-//       cpManager.getContactPlaneNormal( cpID, dim, &overlapNormal[0] );
-
-//       cntctElem.faceNormal1 = &faceNormal1[0];
-//       cntctElem.faceNormal2 = &faceNormal2[0];
-//       cntctElem.overlapNormal = &overlapNormal[0];
-
-//       // create arrays to hold nodal residual weak form integral evaluations
-//       RealT phi1[numNodesPerFace];
-//       RealT phi2[numNodesPerFace];
-//       initRealArray( &phi1[0], numNodesPerFace, 0. );
-//       initRealArray( &phi2[0], numNodesPerFace, 0. );
-
-//       ////////////////////////////////////////////////////////////////////////
-//       // Integration of contact integrals: integral of shape functions over //
-//       // contact overlap patch                                              //
-//       ////////////////////////////////////////////////////////////////////////
-//       EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
-//                           ( cntctElem, &phi1[0], &phi2[0] );
-
-//       ///////////////////////////////////////////////////////////////////////
-//       // Computation of full contact nodal force contributions             //
-//       // (i.e. premultiplication of contact integrals by normal component, //
-//       //  contact pressure, and overlap area)                              //
-//       ///////////////////////////////////////////////////////////////////////
-
-//       RealT phi_sum_1 = 0.;
-//       RealT phi_sum_2 = 0.;
-
-//       // compute contact force (spring force)
-//       RealT contact_force = totalPressure * A;
-//       RealT force_x = overlapNormal[0] * contact_force;
-//       RealT force_y = overlapNormal[1] * contact_force;
-//       RealT force_z = 0.;
-//       if (dim == 3)
-//       {
-//          force_z = overlapNormal[2] * contact_force;
-//       }
-
-//       //////////////////////////////////////////////////////
-//       // loop over nodes and compute contact nodal forces //
-//       //////////////////////////////////////////////////////
-//       for( IndexT a=0 ; a < numNodesPerFace ; ++a )
-//       {
-
-//         IndexT node0 = nodalConnectivity1[ index1*numNodesPerFace + a ];
-//         IndexT node1 = nodalConnectivity2[ index2*numNodesPerFace + a ];
-
-//         if (logLevel == TRIBOL_DEBUG)
-//         {
-//            phi_sum_1 += phi1[a];
-//            phi_sum_2 += phi2[a];
-//         }
- 
-//         const RealT nodal_force_x1 = force_x * phi1[a];
-//         const RealT nodal_force_y1 = force_y * phi1[a];
-//         const RealT nodal_force_z1 = force_z * phi1[a];
-
-//         const RealT nodal_force_x2 = force_x * phi2[a];
-//         const RealT nodal_force_y2 = force_y * phi2[a];
-//         const RealT nodal_force_z2 = force_z * phi2[a];
-
-//         if (logLevel == TRIBOL_DEBUG)
-//         {
-//            dbg_sum_force1 += magnitude( nodal_force_x1, 
-//                                         nodal_force_y1, 
-//                                         nodal_force_z1 );
-//            dbg_sum_force2 += magnitude( nodal_force_x2,
-//                                         nodal_force_y2,
-//                                         nodal_force_z2 );
-//         }
-
-//         // accumulate contributions in host code's registered nodal force arrays
-//         response1_x[ node0 ] -= nodal_force_x1;
-//         response2_x[ node1 ] += nodal_force_x2;
-
-//         response1_y[ node0 ] -= nodal_force_y1;
-//         response2_y[ node1 ] += nodal_force_y2;
-
-//         // there is no z component for 2D
-//         if (mesh1.dimension() == 3)
-//         {
-//            response1_z[ node0 ] -= nodal_force_z1;
-//            response2_z[ node1 ] += nodal_force_z2;
-//         }
-//       } // end for loop over face nodes
-
-//       // comment out debug logs; too much output during tests. Keep for easy 
-//       // debugging if needed
-//       //SLIC_DEBUG("force sum, side 1, pair " << kp << ": " << -dbg_sum_force1 );
-//       //SLIC_DEBUG("force sum, side 2, pair " << kp << ": " << dbg_sum_force2 );
-//       //SLIC_DEBUG("phi 1 sum: " << phi_sum_1 );
-//       //SLIC_DEBUG("phi 2 sum: " << phi_sum_2 );
-    
-//       // increment contact plane id 
-//       ++cpID;
-
-//    } // end loop over interface pairs
   
-   SLIC_DEBUG_IF(neg_thickness, "ApplyNormal<COMMON_PLANE, PENALTY>: negative element thicknesses encountered.");
+   ArrayT<bool, 1, MemorySpace::Host> neg_thickness_host(neg_thickness_data);
+   SLIC_DEBUG_IF(neg_thickness_host[0], "ApplyNormal<COMMON_PLANE, PENALTY>: negative element thicknesses encountered.");
 
-   return err;
+   ArrayT<int, 1, MemorySpace::Host> err_host(err_data);
+   return err_host[0];
 
 } // end ApplyNormal<COMMON_PLANE, PENALTY>()
 

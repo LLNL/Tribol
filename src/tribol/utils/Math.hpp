@@ -38,9 +38,9 @@ TRIBOL_HOST_DEVICE RealT dotProd( RealT const aX,  ///< [in] x-component of firs
                                 );
               
 /// returns the magnitude of the cross product of two 3-vectors
-RealT magCrossProd( RealT const a[3],  ///< [in] array of components of first 3-vector
-                    RealT const b[3]   ///< [in] array of components of second 3-vector
-                  );
+TRIBOL_HOST_DEVICE RealT magCrossProd( RealT const a[3],  ///< [in] array of components of first 3-vector
+                                       RealT const b[3]   ///< [in] array of components of second 3-vector
+                                     );
 
 /// computes and returns the constituent cross product terms of two 3-vectors with component-wise input
 TRIBOL_HOST_DEVICE void crossProd( RealT const aX,  ///< [in] x-component of first vector

@@ -72,7 +72,7 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem );
  *
  */
 template< >
-int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( const CouplingScheme* cs );
+int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs );
 
 /*!
  *

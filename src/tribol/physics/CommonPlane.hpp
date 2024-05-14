@@ -23,8 +23,8 @@ namespace tribol
  * \pre Bulk modulus and element thickness arrays are registered by host code 
  *
  */
-RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
-                                      const RealT K2_over_t2 );
+TRIBOL_HOST_DEVICE RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
+                                                         const RealT K2_over_t2 );
 
 /*!
  *
@@ -36,7 +36,7 @@ RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
  *
  */
 template< >
-int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs );
+int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs );
 
 } // end namespace tribol
 

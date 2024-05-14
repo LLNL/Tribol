@@ -86,6 +86,56 @@ class MethodData;
 class CouplingScheme
 {
 public:
+  template <typename T,
+            typename PARAM,
+            typename MESH,
+            typename CP,
+            typename CP2D,
+            typename CP3D>
+  class ViewerBase
+  {
+  public:
+    ViewerBase( T& cs );
+
+    TRIBOL_HOST_DEVICE int spatialDimension() const { return m_mesh1.spatialDimension(); }
+
+    TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh1() const { return m_mesh1; }
+
+    TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh2() const { return m_mesh2; }
+
+    TRIBOL_HOST_DEVICE const EnforcementOptions& getEnforcementOptions() const { return m_enforcement_options; }
+
+    TRIBOL_HOST_DEVICE CP& getContactPlane( IndexT id ) const;
+
+    /*!
+    * Get the gap tolerance that determines in contact face-pairs for each
+    * supported interface method
+    *
+    * \return the gap tolerance based on the method
+    */
+    TRIBOL_HOST_DEVICE RealT getCommonPlaneGapTol( int fid1, int fid2 ) const;
+
+  private:
+    PARAM& m_parameters;
+    ContactModel m_contact_model;
+    EnforcementOptions m_enforcement_options;
+    MESH& m_mesh1;
+    MESH& m_mesh2;
+    ArrayViewT<CP2D> m_contact_plane2d;
+    ArrayViewT<CP3D> m_contact_plane3d;
+  };
+  using Viewer = ViewerBase<CouplingScheme, 
+                            Parameters, 
+                            MeshData::Viewer,
+                            ContactPlane,
+                            ContactPlane2D,
+                            ContactPlane3D>;
+  using ConstViewer = ViewerBase<const CouplingScheme, 
+                                 const Parameters, 
+                                 const MeshData::Viewer,
+                                 const ContactPlane,
+                                 const ContactPlane2D,
+                                 const ContactPlane3D>;
 
   /*!
    * \brief Default constructor. Disabled.
@@ -161,12 +211,17 @@ public:
   CouplingSchemeErrors& getCouplingSchemeErrors() { return m_couplingSchemeErrors; }
   CouplingSchemeInfo&   getCouplingSchemeInfo()   { return m_couplingSchemeInfo; }
 
+  CouplingScheme::Viewer getView() { return *this; }
+  CouplingScheme::ConstViewer getView() const { return *this; }
+
   int spatialDimension() const
   {
     // same for both meshes since meshes are required to have the same element
     // types
     return m_mesh1->spatialDimension();
   }
+
+  void updateMeshViews();
 
   /*!
    * Disable/Enable per-cycle rebinning of interface pairs
@@ -246,7 +301,7 @@ public:
    */
   int getNumActivePairs( ) const
   { 
-    return spatialDimension() == 2 ? m_contact_plane2d.size() : m_contact_plane3d.size(); 
+    return std::max(m_contact_plane2d.size(), m_contact_plane3d.size()); 
   }
 
   const ContactPlane& getContactPlane(IndexT id) const
