@@ -556,7 +556,7 @@ public:
     * \brief Destructor 
     *        
     */
-   TRIBOL_HOST_DEVICE ~ContactPlane2D() = default;
+   ~ContactPlane2D() = default;
 
    TRIBOL_HOST_DEVICE ContactPlane2D(const ContactPlane2D& other);
 
