@@ -87,11 +87,13 @@ int runExample()
 {
 
   mfem::Device device;
+#ifdef TRIBOL_USE_CUDA
   if (MSPACE == tribol::MemorySpace::Device)
   {
     device.Configure("cuda");
   }
   else
+#endif
   {
     device.Configure("cpu");
   }
