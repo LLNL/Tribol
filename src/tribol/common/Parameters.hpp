@@ -475,7 +475,6 @@ public:
 
     int vis_cycle_incr          = 100;     ///! Frequency for visualizations dumps
     VisType vis_type            = VIS_OVERLAPS; ///! Type of interface physics visualization output
-    std::string output_directory = "";     ///! Output directory for visualization dumps
     bool enable_timestep_vote   = false;   ///! True if host-code desires the timestep vote to be calculated and returned
 
     RealT auto_contact_len_scale_factor;   ///! Scale factor applied to element thickness for auto contact length scale

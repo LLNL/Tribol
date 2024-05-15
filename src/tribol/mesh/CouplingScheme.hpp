@@ -441,6 +441,11 @@ public:
    */
   void computeTimeStep( RealT &dt );
 
+  void setOutputDirectory( const std::string& directory )
+  {
+    m_output_directory = directory;
+  }
+
   /*!
    * \brief Wrapper to call method specific visualization output routines
    *
@@ -671,6 +676,7 @@ private:
   int m_allocator_id; ///< Allocator for arrays used in kernels (set when init() is called)
 
   Parameters m_parameters;
+  std::string m_output_directory = "";     ///! Output directory for visualization dumps
 
   bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
   bool m_isValid {true}; ///< False if the coupling scheme is not valid per call to init()

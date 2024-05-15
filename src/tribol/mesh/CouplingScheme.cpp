@@ -948,18 +948,18 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   ArrayT<int> pair_err_data(1, 1, getAllocatorId());
   auto pair_err = pair_err_data.view();
   // clear contact planes to be populated/allocated anew for this cycle
+  ArrayT<ContactPlane2D> cp2d_temp(0, 1, getAllocatorId());
+  ArrayT<ContactPlane3D> cp3d_temp(0, 1, getAllocatorId());
   if (spatialDimension() == 2)
   {
-    m_contact_plane2d = ArrayT<ContactPlane2D>(numPairs, numPairs, getAllocatorId());
-    m_contact_plane3d = ArrayT<ContactPlane3D>(0, 1, getAllocatorId());
+    cp2d_temp = ArrayT<ContactPlane2D>(numPairs, numPairs, getAllocatorId());
   }
   else
   {
-    m_contact_plane2d = ArrayT<ContactPlane2D>(0, 1, getAllocatorId());
-    m_contact_plane3d = ArrayT<ContactPlane3D>(numPairs, numPairs, getAllocatorId());
+    cp3d_temp = ArrayT<ContactPlane3D>(numPairs, numPairs, getAllocatorId());
   }
-  auto planes_2d = m_contact_plane2d.view();
-  auto planes_3d = m_contact_plane3d.view();
+  auto planes_2d = cp2d_temp.view();
+  auto planes_3d = cp3d_temp.view();
   auto& mesh1 = getMesh1();
   auto& mesh2 = getMesh2();
   ArrayT<IndexT> planes_ct_data(1, 1, getAllocatorId());
@@ -1002,7 +1002,7 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
     }
   );
 
-  ArrayT<int> active_pair_ct_host(active_pair_ct_data);
+  ArrayT<int, 1, MemorySpace::Host> active_pair_ct_host(active_pair_ct_data);
   if (spatialDimension() == 2)
   {
     m_contact_plane2d.resize(active_pair_ct_host[0]);
@@ -1022,7 +1022,7 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   // may be reasonable and not an error. Alternatively, this warning may indicate a bug 
   // or issue in the cg that a host-code does desire to have resolved. For this reason, this
   // message is kept at the warning level.
-  ArrayT<int> pair_err_host(pair_err_data, getResourceAllocatorID(MemorySpace::Host));
+  ArrayT<int, 1, MemorySpace::Host> pair_err_host(pair_err_data);
   SLIC_INFO_IF( pair_err_host[0]!=0, "CouplingScheme::apply(): possible issues with orientation, " << 
                 "input, or invalid overlaps in CheckInterfacePair()." );
 
@@ -1046,7 +1046,7 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   }
 
   // write output
-  writeInterfaceOutput( params.output_directory,
+  writeInterfaceOutput( m_output_directory,
                         params.vis_type, 
                         cycle, t );
 

@@ -317,7 +317,7 @@ void setOutputDirectory( IndexT cs_id, const std::string& dir)
      axom::utilities::filesystem::makeDirsForPath(dir);
    }
 
-   cs->getParameters().output_directory = dir;
+   cs->setOutputDirectory(dir);
 
 } // end setOutputDirectory()
 
