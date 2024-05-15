@@ -1443,7 +1443,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
 
       real dt1 = 1.e6;  // initialize as large number
       real dt2 = 1.e6;  // initialize as large number
-      real alpha = 1.0; // multiplier on timestep estimate
+      real alpha = parameters.timestep_scale; // multiplier on timestep estimate
       bool dt1_check1 = false;
       bool dt2_check1 = false;
       bool dt1_vel_check = false;

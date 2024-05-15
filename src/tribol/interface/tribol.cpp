@@ -69,6 +69,7 @@ void set_defaults()
    parameters.projection_ratio             = 1.E-10;
    parameters.auto_contact_pen_frac        = 0.95;   // max allowable interpenetration as percent of element thickness for contact candidacy 
    parameters.timestep_pen_frac            = 3.e-1;  // max allowable interpenetration as percent of element thickness prior to triggering timestep vote (not exposed to API) 
+   parameters.timestep_scale               = 1.0;    // scale factor (>0) applied to the timestep vote
    parameters.enable_timestep_vote         = false;  // true if host-code wants to receive tribol timestep vote
    
    // Interpenetration check for auto-contact. If true, this will check a full-overlap 
@@ -213,6 +214,18 @@ void setTimestepPenFrac( double frac )
 
 } // end setTimestepPenFrac()
 
+//------------------------------------------------------------------------------
+void setTimestepScale( double scale )
+{
+   parameters_t & parameters = parameters_t::getInstance();
+   if (scale <= 0.)
+   {
+      // Don't set the timestep_scale. This will use default
+      return;
+   }
+
+   parameters.timestep_scale = scale;
+}
 //------------------------------------------------------------------------------
 void setContactAreaFrac( double frac )
 {
