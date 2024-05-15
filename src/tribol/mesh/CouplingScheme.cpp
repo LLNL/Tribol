@@ -1327,7 +1327,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       {
          continue;
       }
-   
+
       real x1[dim * numNodesPerCell1];
       real v1[dim * numNodesPerCell1];
       mesh1.getFaceCoords( pair.pairIndex1, &x1[0] );
@@ -1506,11 +1506,11 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          // in excess of the max allowable gap without causing timestep crashes.
          //
          // v1_dot_n1 > 0 and v2_dot_n2 > 0 for further interpen
-         dt1 = (dt1_check1) ? -alpha * max_delta1 / v1_dot_n1 : dt1;
-         dt2 = (dt2_check1) ? -alpha * max_delta2 / v2_dot_n2 : dt2;
+         dt1 = (dt1_check1) ? alpha * max_delta1 / v1_dot_n1 : dt1;
+         dt2 = (dt2_check1) ? alpha * max_delta2 / v2_dot_n2 : dt2;
 
-         //std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << delta1 << ", " << v1_dot_n1 << std::endl;
-         //std::cout << "dt2_check1, delta2 and v2_dot_n2: " << dt2_check1 << ", " << delta2 << ", " << v2_dot_n2 << std::endl;
+         //std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << max_delta1 << ", " << v1_dot_n1 << std::endl;
+         //std::cout << "dt2_check1, delta2 and v2_dot_n2: " << dt2_check1 << ", " << max_delta2 << ", " << v2_dot_n2 << std::endl;
          //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
          // update dt_temp1 only for positive dt1 and/or dt2
@@ -1524,6 +1524,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
             dt_temp1 = axom::utilities::min(dt_temp1, 
                        axom::utilities::min(1.e6, dt2));
          }
+
 
          if (dt1 < 0. || dt2 < 0.)
          {
@@ -1589,8 +1590,10 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          // the velocity projected gap does not exceed the max allowable gap. This avoid timestep
          // crashes for velocity projected gaps slightly in excess of the max allowable and still
          // allows for a soft contact response without a timestep crash.
-         dt1 = (dt1_vel_check) ? -alpha * max_delta1 / v1_dot_n1 : dt1;
-         dt2 = (dt2_vel_check) ? -alpha * max_delta2 / v2_dot_n2 : dt2; 
+         //
+         // v1_dot_n1 > 0 and v2_dot_n2 > 0 for further interpen
+         dt1 = (dt1_vel_check) ? alpha * max_delta1 / v1_dot_n1 : dt1;
+         dt2 = (dt2_vel_check) ? alpha * max_delta2 / v2_dot_n2 : dt2; 
 
          //std::cout << "dt1_vel_check, (proj_delta_n_1+max_delta1), v1_dot_n1: " << dt1_vel_check << ", " << proj_delta_n_1+max_delta1 << ", " << v1_dot_n1 << std::endl;
          //std::cout << "dt2_vel_check, (proj_delta_n_2+max_delta2), v2_dot_n2: " << dt2_vel_check << ", " << proj_delta_n_2+max_delta2 << ", " << v2_dot_n2 << std::endl;

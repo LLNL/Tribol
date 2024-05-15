@@ -63,6 +63,9 @@ protected:
 
 TEST_F( CommonPlaneTest, zero_velocity_small_gap )
 {
+   // This test uses a small gap with zero velocity to test both the 
+   // timestep vote gap check and velocity check with no resulting 
+   // change to dt
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
@@ -76,7 +79,7 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
 
-   // mesh bounding box with 'small' (0.055) interpenetration gap
+   // mesh bounding box with 'small' (<30% element thickness) interpenetration gap
    real x_min1 = 0.;
    real y_min1 = 0.;
    real z_min1 = 0.; 
@@ -86,7 +89,7 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
 
    real x_min2 = 0.;
    real y_min2 = 0.;
-   real z_min2 = 0.95;
+   real z_min2 = 0.99;
    real x_max2 = 1.;
    real y_max2 = 1.;
    real z_max2 = 2.;
@@ -109,7 +112,7 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
+   real dt = 1.0;
    real bulk_mod1 = 1.0; // something simple
    real bulk_mod2 = 1.0; 
    real velX1 = 0.;
@@ -144,8 +147,12 @@ TEST_F( CommonPlaneTest, zero_velocity_small_gap )
 
    tribol::finalize();
 }
+
 TEST_F( CommonPlaneTest, large_velocity_small_gap_no_api_call )
 {
+   // This test has a small gap and large interpen velocity, but does not
+   // call the API function to return a timestep vote. As such, we expect
+   // the timestep to be unchanged
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
@@ -192,7 +199,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap_no_api_call )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
+   real dt = 1.0;
    real bulk_mod1 = 1.0;
    real bulk_mod2 = 1.0;
    real vel_factor = 100.;
@@ -224,8 +231,8 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap_no_api_call )
                                          tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
+   EXPECT_EQ( parameters.dt, dt);
 
-   EXPECT_EQ( parameters.dt, dt );
 
    tribol::finalize();
 }
@@ -235,6 +242,9 @@ TEST_F( CommonPlaneTest, numerically_zero_velocity_small_gap )
    // this test is meant to test tolerancing in the timestep calculation 
    // when numerically zero velocities are present. This test caught a 
    // negative dt estimate bug that has since been fixed.
+   //
+   // Additionally, this test checks the case with 'zero' velocity and
+   // a small gap resulting in no timestep change
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
@@ -277,11 +287,7 @@ TEST_F( CommonPlaneTest, numerically_zero_velocity_small_gap )
                                      0., 0. );
 
    // specify dt and component velocities for each block.
-   // Large velocity in the z-direction will incite a change in the 
-   // timestep. This velocity is computed on the high side using the 
-   // hardcoded rule that one face cannot interpen the other 
-   // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
+   real dt = 1.0;
    real bulk_mod1 = 1.0; // something simple
    real bulk_mod2 = 1.0; 
    real velX1 = 1.e-12;
@@ -312,6 +318,8 @@ TEST_F( CommonPlaneTest, numerically_zero_velocity_small_gap )
                                          tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
+
+   // expect no change in dt
    EXPECT_EQ( parameters.dt, dt );
 
    tribol::finalize();
@@ -319,6 +327,9 @@ TEST_F( CommonPlaneTest, numerically_zero_velocity_small_gap )
 
 TEST_F( CommonPlaneTest, zero_velocity_large_gap )
 {
+   // This is a tricky test where even in the presence of a large gap, there
+   // is no change to the timestep because with zero velocity, no reduction in the 
+   // timestep via a contact timestep vote could reduce the amount of interpen
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
@@ -327,22 +338,23 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
    int nElemsYM = nMortarElems;
    int nElemsZM = nMortarElems;
 
-   int nNonmortarElems = 5; 
+   int nNonmortarElems = 4;
    int nElemsXS = nNonmortarElems;
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
 
-   // mesh bounding box with 0.1 interpenetration gap
+   // mesh bounding box with >= 30% element thickness interpenetration gap
+   real interpen_gap = 0.3 * 1.0 / nMortarElems;
    real x_min1 = 0.;
    real y_min1 = 0.;
    real z_min1 = 0.; 
    real x_max1 = 1.;
    real y_max1 = 1.;
-   real z_max1 = 1.05;
+   real z_max1 = 1.0 + 1.05*interpen_gap;
 
    real x_min2 = 0.;
    real y_min2 = 0.;
-   real z_min2 = 0.95;
+   real z_min2 = 1.0 - 1.05*interpen_gap;
    real x_max2 = 1.;
    real y_max2 = 1.;
    real z_max2 = 2.;
@@ -365,7 +377,7 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
+   real dt = 1.0;
    real bulk_mod1 = 1.0;
    real bulk_mod2 = 1.0;
    real velX1 = 0.;
@@ -397,7 +409,9 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
    // note that with very small velocity, the dt estimate will be 
-   // very large. 
+   // very large, and won't change the timestep, even if the gap is large. This 
+   // allows for a soft contact response in the presence of a small velocity that
+   // won't actually correct too much interpen with a contact dt vote
    EXPECT_EQ( parameters.dt, dt );
 
    tribol::finalize();
@@ -405,6 +419,8 @@ TEST_F( CommonPlaneTest, zero_velocity_large_gap )
 
 TEST_F( CommonPlaneTest, large_velocity_small_gap )
 {
+   // This test does call the timestep enabling API function and uses a large velocity
+   // and small gap to check that the timestep velocity check triggers a change in dt
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
@@ -413,7 +429,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
    int nElemsYM = nMortarElems;
    int nElemsZM = nMortarElems;
 
-   int nNonmortarElems = 5; 
+   int nNonmortarElems = 4;
    int nElemsXS = nNonmortarElems;
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
@@ -451,7 +467,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
+   real dt = 1.0;
    real bulk_mod1 = 1.0;
    real bulk_mod2 = 1.0;
    real vel_factor = 100.;
@@ -484,7 +500,8 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
-   real dt_diff = std::abs(parameters.dt - 0.000997297);
+   real dt_vote = 0.3*element_thickness1/velZ1;
+   real dt_diff = std::abs(parameters.dt - dt_vote);
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
@@ -493,6 +510,9 @@ TEST_F( CommonPlaneTest, large_velocity_small_gap )
 
 TEST_F( CommonPlaneTest, large_velocity_large_gap )
 {
+   // This test uses a large velocity AND large gap to ensure that 
+   // the minimum of both timestep checks modify the dt. If the gap
+   // governs, then a finite velocity means that a gap dt can control
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
@@ -501,22 +521,23 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
    int nElemsYM = nMortarElems;
    int nElemsZM = nMortarElems;
 
-   int nNonmortarElems = 5; 
+   int nNonmortarElems = 4;
    int nElemsXS = nNonmortarElems;
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
 
-   // mesh bounding box with 0.1 interpenetration gap
+   // mesh bounding box with >= 30% element thickness interpenetration gap
+   real interpen_gap = 0.3 * 1.0 / nMortarElems;
    real x_min1 = 0.;
    real y_min1 = 0.;
    real z_min1 = 0.; 
    real x_max1 = 1.;
    real y_max1 = 1.;
-   real z_max1 = 1.05;
+   real z_max1 = 1.0 + 1.05*interpen_gap;
 
    real x_min2 = 0.;
    real y_min2 = 0.;
-   real z_min2 = 0.95;
+   real z_min2 = 1.0 - 1.05*interpen_gap; 
    real x_max2 = 1.;
    real y_max2 = 1.;
    real z_max2 = 2.;
@@ -539,7 +560,7 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
+   real dt = 1.0;
    real bulk_mod1 = 1.0;
    real bulk_mod2 = 1.0;
    real vel_factor = 100.;
@@ -572,7 +593,8 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 
-   real dt_diff = std::abs(parameters.dt - 2.69841e-06);
+   real dt_vote = 0.3*element_thickness1/velZ1;
+   real dt_diff = std::abs(parameters.dt - dt_vote);
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
@@ -581,6 +603,8 @@ TEST_F( CommonPlaneTest, large_velocity_large_gap )
 
 TEST_F( CommonPlaneTest, separation_velocity_small_gap )
 {
+   // This test makes sure that there is no change to dt in 
+   // the presence of a separation velocity with small gap
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
@@ -627,7 +651,7 @@ TEST_F( CommonPlaneTest, separation_velocity_small_gap )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
+   real dt = 1.0;
    real bulk_mod1 = 1.0;
    real bulk_mod2 = 1.0;
    real vel_factor = 100.;
@@ -659,15 +683,18 @@ TEST_F( CommonPlaneTest, separation_velocity_small_gap )
                                          tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
+
+   // no change in dt because of separation velocities
    EXPECT_EQ( parameters.dt, dt );
 
    tribol::finalize();
 }
 
-TEST_F( CommonPlaneTest, large_velocity_separation )
+TEST_F( CommonPlaneTest, large_velocity_large_separation )
 {
-   // this test has two blocks has two blocks with initial separation
-   // and checks to make sure that the timestep is not altered. 
+   // This test uses two blocks with a large initial separation, and an interpen
+   // velocity small enough that it should not trigger a timestep vote from the 
+   // velocity projection check
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
@@ -714,7 +741,7 @@ TEST_F( CommonPlaneTest, large_velocity_separation )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
+   real dt = 1.0;
    real bulk_mod1 = 1.0;
    real bulk_mod2 = 1.0;
    real vel_factor = 10.;
@@ -746,6 +773,8 @@ TEST_F( CommonPlaneTest, large_velocity_separation )
                                          tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
+
+   // no change in dt due to separation velocities
    EXPECT_EQ( parameters.dt, dt );
 
    tribol::finalize();
@@ -755,7 +784,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
 {
    // this test checks the two blocks with a small initial separation 
    // and a large velocity. This should trigger a velocity projection 
-   // timestep vote
+   // timestep vote with the face pairs marked as contact candidates
    this->m_mesh.mortarMeshId = 0;
    this->m_mesh.nonmortarMeshId = 1;
 
@@ -764,7 +793,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
    int nElemsYM = nMortarElems;
    int nElemsZM = nMortarElems;
 
-   int nNonmortarElems = 5; 
+   int nNonmortarElems = 4;
    int nElemsXS = nNonmortarElems;
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
@@ -802,7 +831,7 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
    // timestep. This velocity is computed on the high side using the 
    // hardcoded rule that one face cannot interpen the other 
    // exceeding 30% of the other's element thickness.
-   real dt = 1.e-3;
+   real dt = 1.0;
    real bulk_mod1 = 1.0;
    real bulk_mod2 = 1.0;
    real vel_factor = 1.e6;
@@ -834,7 +863,8 @@ TEST_F( CommonPlaneTest, large_velocity_small_separation )
                                          tribol::FRICTIONLESS, tribol::NO_CASE, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
-   real dt_diff = std::abs(parameters.dt -0.00099999);
+   real dt_vote = 0.3*element_thickness1/velZ1;
+   real dt_diff = std::abs(parameters.dt - dt_vote);
    real dt_tol = 1.e-8;
    EXPECT_LT( dt_diff, dt_tol );
 
