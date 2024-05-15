@@ -42,13 +42,12 @@ TRIBOL_HOST_DEVICE RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
 } // end ComputePenaltyStiffnessPerArea
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE RealT ComputeGapRatePressure( ContactPlane& plane, 
+TRIBOL_HOST_DEVICE RealT ComputeGapRatePressure( ContactPlane& plane,
+                                                 const MeshData::Viewer& m1,
+                                                 const MeshData::Viewer& m2,
                                                  RealT element_penalty,
                                                  RatePenaltyCalculation rate_calc )
 {
-   auto m1 = plane.m_mesh1;
-   auto m2 = plane.m_mesh2;
-
    auto fId1 = plane.getCpElementId1();
    auto fId2 = plane.getCpElementId2();
 
@@ -64,15 +63,15 @@ TRIBOL_HOST_DEVICE RealT ComputeGapRatePressure( ContactPlane& plane,
       }
       case RATE_CONSTANT:
       {
-         rate_penalty = 0.5 * (m1->getElementData().m_rate_penalty_stiffness + 
-                               m2->getElementData().m_rate_penalty_stiffness);
+         rate_penalty = 0.5 * (m1.getElementData().m_rate_penalty_stiffness + 
+                               m2.getElementData().m_rate_penalty_stiffness);
          break;
       }
       case RATE_PERCENT:
       {
          rate_penalty = element_penalty * 0.5 * 
-                        (m1->getElementData().m_rate_percent_stiffness + 
-                         m2->getElementData().m_rate_percent_stiffness);
+                        (m1.getElementData().m_rate_percent_stiffness + 
+                         m2.getElementData().m_rate_percent_stiffness);
          break;
       }
       default:
@@ -86,13 +85,13 @@ TRIBOL_HOST_DEVICE RealT ComputeGapRatePressure( ContactPlane& plane,
 
    StackArrayT<RealT, max_dim * max_nodes_per_elem> x1;
    StackArrayT<RealT, max_dim * max_nodes_per_elem> v1;
-   m1->getFaceCoords( fId1, x1 );
-   m1->getFaceVelocities( fId1, v1 );
+   m1.getFaceCoords( fId1, x1 );
+   m1.getFaceVelocities( fId1, v1 );
 
    StackArrayT<RealT, max_dim * max_nodes_per_elem> x2;
    StackArrayT<RealT, max_dim * max_nodes_per_elem> v2;
-   m2->getFaceCoords( fId2, x2 );
-   m2->getFaceVelocities( fId2, v2 );
+   m2.getFaceCoords( fId2, x2 );
+   m2.getFaceVelocities( fId2, v2 );
 
    //////////////////////////////////////////////////////////
    // compute velocity Galerkin approximation at projected // 
@@ -110,16 +109,16 @@ TRIBOL_HOST_DEVICE RealT ComputeGapRatePressure( ContactPlane& plane,
    RealT cZf1 = (dim == 3) ? plane.m_cZf1 : 0.;
    GalerkinEval( x1, cXf1, cYf1, cZf1,
                  LINEAR, PHYSICAL, dim, dim, 
-                 &v1[0], &vel_f1[0] );
+                 v1, vel_f1 );
 
    // interpolate nodal velocity at overlap centroid as projected 
    // onto face 2
    RealT cXf2 = plane.m_cXf2;
    RealT cYf2 = plane.m_cYf2;
    RealT cZf2 = (dim == 3) ? plane.m_cZf2 : 0.;
-   GalerkinEval( &x2[0], cXf2, cYf2, cZf2,
+   GalerkinEval( x2, cXf2, cYf2, cZf2,
                  LINEAR, PHYSICAL, dim, dim, 
-                 &v2[0], &vel_f2[0] );
+                 v2, vel_f2 );
 
    // compute velocity gap vector
    RealT velGap[max_dim];
@@ -260,7 +259,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
               totalPressure += plane.m_pressure;
               // add gap-rate contribution
               totalPressure += 
-                ComputeGapRatePressure( plane, penalty_stiff_per_area,
+                ComputeGapRatePressure( plane, mesh1, mesh2, penalty_stiff_per_area,
                                         pen_enfrc_options.rate_calculation );
               break;
           }
@@ -303,7 +302,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
           numPolyVert = cp3.m_numPolyVert;
           xVert_size = 3 * numPolyVert;
         }
-        initRealArray( xVert, dim * xVert_size, 0. );
+        initRealArray( xVert, xVert_size, 0. );
 
   //      // get projected face coordinates
   //      cpManager.getProjectedFaceCoords( cpID, 0, &xf1[0] ); // face 0 = first face
@@ -338,7 +337,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
         // configuration face coordinates (i.e. NOT on the contact plane) and overlap 
         // coordinates ON the contact plane. The surface contact element does not need 
         // to be used this way, but the developer should do the book-keeping.
-        SurfaceContactElem cntctElem( dim, &xf1[0], &xf2[0], &xVert[0],
+        SurfaceContactElem cntctElem( dim, xf1, xf2, xVert,
                                       num_nodes_per_face, numPolyVert,
                                       &mesh1, &mesh2, index1, index2 );
 
@@ -371,7 +370,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
         // contact overlap patch                                              //
         ////////////////////////////////////////////////////////////////////////
         EvalWeakFormIntegral< COMMON_PLANE, SINGLE_POINT >
-                            ( cntctElem, &phi1[0], &phi2[0] );
+                            ( cntctElem, phi1, phi2 );
 
         ///////////////////////////////////////////////////////////////////////
         // Computation of full contact nodal force contributions             //
@@ -433,7 +432,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
           mesh2.getResponse()[1][ node1 ] += nodal_force_y2;
 
           // there is no z component for 2D
-          if (dim)
+          if (dim == 3)
           {
             mesh1.getResponse()[2][ node0 ] -= nodal_force_z1;
             mesh2.getResponse()[2][ node1 ] += nodal_force_z2;

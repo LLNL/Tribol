@@ -57,8 +57,8 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
       if (mesh1.spatialDimension() == 3)
       {
 
-        ContactPlane3D cpTemp( &pair, &mesh1, &mesh2, params.overlap_area_frac, interpenOverlap, intermediatePlane);
-        FaceGeomError face_err = CheckFacePair( cpTemp, params, full );
+        ContactPlane3D cpTemp( &pair, params.overlap_area_frac, interpenOverlap, intermediatePlane);
+        FaceGeomError face_err = CheckFacePair( cpTemp, mesh1, mesh2, params, full );
 
         SLIC_DEBUG("face_err: " << face_err );
 
@@ -80,8 +80,8 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
       }
       else 
       {
-        ContactPlane2D cpTemp( &pair, &mesh1, &mesh2, params.overlap_area_frac, interpenOverlap, intermediatePlane);
-        FaceGeomError edge_err = CheckEdgePair( pair, params, full, cpTemp );
+        ContactPlane2D cpTemp( &pair, params.overlap_area_frac, interpenOverlap, intermediatePlane);
+        FaceGeomError edge_err = CheckEdgePair( cpTemp, mesh1, mesh2, params, full );
 
         if (edge_err != NO_FACE_GEOM_ERROR)
         {
@@ -356,16 +356,12 @@ TRIBOL_HOST_DEVICE void ProjectEdgeNodesToSegment( const MeshData::Viewer& mesh,
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE ContactPlane::ContactPlane( InterfacePair* pair, 
-                                               const MeshData::Viewer* mesh1,
-                                               const MeshData::Viewer* mesh2,
                                                RealT areaFrac, 
                                                bool interpenOverlap, 
                                                bool interPlane,
                                                int dim )
   : m_pair( pair )
   , m_dim( dim )
-  , m_mesh1( mesh1 )
-  , m_mesh2( mesh2 )
   , m_intermediatePlane( interPlane )
   , m_interpenOverlap( interpenOverlap )
   , m_cX( 0.0 )
@@ -401,7 +397,7 @@ TRIBOL_HOST_DEVICE ContactPlane::ContactPlane( InterfacePair* pair,
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE ContactPlane::ContactPlane()
-  : ContactPlane(nullptr, nullptr, nullptr, 0.0, true, false, 0)
+  : ContactPlane(nullptr, 0.0, true, false, 0)
 {}
 
 //------------------------------------------------------------------------------
@@ -414,8 +410,6 @@ TRIBOL_HOST_DEVICE ContactPlane::~ContactPlane()
 TRIBOL_HOST_DEVICE ContactPlane::ContactPlane(const ContactPlane& other)
   : m_pair( other.m_pair )
   , m_dim( other.m_dim )
-  , m_mesh1( other.m_mesh1 )
-  , m_mesh2( other.m_mesh2 )
   , m_intermediatePlane( other.m_intermediatePlane )
   , m_interpenOverlap( other.m_interpenOverlap )
   , m_cX( other.m_cX )
@@ -449,8 +443,6 @@ TRIBOL_HOST_DEVICE ContactPlane::ContactPlane(const ContactPlane& other)
 TRIBOL_HOST_DEVICE ContactPlane::ContactPlane(ContactPlane&& other) noexcept
   : m_pair( other.m_pair )
   , m_dim( other.m_dim )
-  , m_mesh1( other.m_mesh1 )
-  , m_mesh2( other.m_mesh2 )
   , m_intermediatePlane( other.m_intermediatePlane )
   , m_interpenOverlap( other.m_interpenOverlap )
   , m_cX( other.m_cX )
@@ -567,8 +559,6 @@ TRIBOL_HOST_DEVICE void ContactPlane::moveData( ContactPlane&& other )
   m_pair = other.m_pair;
   m_dim = other.m_dim;
   m_numFaces = other.m_numFaces;
-  m_mesh1 = other.m_mesh1;
-  m_mesh2 = other.m_mesh2;
   m_intermediatePlane = other.m_intermediatePlane;
   m_inContact = other.m_inContact;
   m_interpenOverlap = other.m_interpenOverlap;
@@ -608,13 +598,11 @@ TRIBOL_HOST_DEVICE void ContactPlane::moveData( ContactPlane&& other )
 //-----------------------------------------------------------------------------
 // 3D contact plane member functions
 //-----------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE ContactPlane3D::ContactPlane3D( InterfacePair* pair, 
-                                                   const MeshData::Viewer* mesh1,
-                                                   const MeshData::Viewer* mesh2,
+TRIBOL_HOST_DEVICE ContactPlane3D::ContactPlane3D( InterfacePair* pair,
                                                    RealT areaFrac, 
                                                    bool interpenOverlap, 
                                                    bool interPlane )
-  : ContactPlane( pair, mesh1, mesh2, areaFrac, interpenOverlap, interPlane, 3 )
+  : ContactPlane( pair, areaFrac, interpenOverlap, interPlane, 3 )
   , m_e1X( 0.0 )
   , m_e1Y( 0.0 )
   , m_e1Z( 0.0 )
@@ -637,7 +625,7 @@ TRIBOL_HOST_DEVICE ContactPlane3D::ContactPlane3D( InterfacePair* pair,
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE ContactPlane3D::ContactPlane3D()
-  : ContactPlane3D( nullptr, nullptr, nullptr, 0.0, true, false )
+  : ContactPlane3D( nullptr, 0.0, true, false )
 {}
 
 //------------------------------------------------------------------------------
@@ -835,14 +823,14 @@ TRIBOL_HOST_DEVICE void ContactPlane3D::nullArrays( ContactPlane3D& plane )
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
+                                                const MeshData::Viewer& mesh1,
+                                                const MeshData::Viewer& mesh2,
                                                 const Parameters& params,
                                                 bool fullOverlap )
 {
    // Note: Checks #1-#4 are done in the binning
 
    // alias variables off the InterfacePair
-   auto& mesh1 = *cp.m_mesh1;
-   auto& mesh2 = *cp.m_mesh2;
    IndexT element_id1 = cp.getCpElementId1();
    IndexT element_id2 = cp.getCpElementId2();
 
@@ -946,7 +934,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
                             &projX2[0], &projY2[0], &projZ2[0] );
 
    // compute cp local coordinate basis
-   cp.computeLocalBasis();
+   cp.computeLocalBasis( mesh1 );
 
    // project the projected global nodal coordinates onto local 
    // contact plane 2D coordinate system. 
@@ -967,7 +955,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
    // compare to a minimum area tolerance, and in general the full 
    // overlap area will be bigger than the interpenetration overlap 
    // area case
-   cp.checkPolyOverlap( &projeX1[0], &projeY1[0], 
+   cp.checkPolyOverlap( mesh1, mesh2, &projeX1[0], &projeY1[0], 
                         &projeX2[0], &projeY2[0], 0 );
   
    // compute the overlap area tolerance
@@ -1041,13 +1029,13 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
       // centroid using the centroid computed in the check #5 calculations. This 
       // is not necessary for mortar formulations as the mortar plane is correctly 
       // located.
-      planePointAndCentroidGap( cp, 2. * 
+      cp.planePointAndCentroidGap( mesh1, mesh2, 2. * 
          axom::utilities::max( mesh1.getFaceRadii()[ element_id1 ], 
                                mesh2.getFaceRadii()[ element_id2 ] ));
 
       bool interpen = false;
-      FaceGeomError interpen_err = computeLocalInterpenOverlap3D( cp,
-        params, interpen ); // same for mortar
+      FaceGeomError interpen_err = cp.computeLocalInterpenOverlap( 
+        mesh1, mesh2, params, interpen ); // same for mortar
       if (interpen_err != NO_FACE_GEOM_ERROR)
       {
          cp.m_inContact = false;
@@ -1164,7 +1152,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
    // occurred prior to this call. This does not need to be done 
    // for mortar methods. We should just do a gap computation if 
    // needed. 
-   planePointAndCentroidGap( cp, 2. * 
+   cp.planePointAndCentroidGap( mesh1, mesh2, 2. * 
       axom::utilities::max( mesh1.getFaceRadii()[ element_id1 ], 
                             mesh2.getFaceRadii()[ element_id2 ] ));
 
@@ -1216,6 +1204,108 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
 } // end CheckFacePair()
 
 //------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE void ContactPlane::planePointAndCentroidGap( const MeshData::Viewer& m1,
+                                                                const MeshData::Viewer& m2,
+                                                                RealT scale )
+{
+   // project the overlap centroid back to each face using a 
+   // line-plane intersection method
+   RealT xc1 = 0.;
+   RealT yc1 = 0.;
+   RealT zc1 = 0.;
+   RealT xc2 = 0.;
+   RealT yc2 = 0.;
+   RealT zc2 = 0.;
+
+   RealT xcg = m_cX;
+   RealT ycg = m_cY;
+   RealT zcg = 0.0;
+
+   // first project the projected area of overlap's centroid in local 
+   // coordinates to global coordinates
+   if (m_dim == 3)
+   {
+      auto& cp3 = static_cast<ContactPlane3D&>(*this);
+      auto xloc = cp3.m_overlapCX;
+      auto yloc = cp3.m_overlapCY;
+      xcg = xloc * cp3.m_e1X + yloc * cp3.m_e2X +cp3.m_cX;
+      ycg = xloc * cp3.m_e1Y + yloc * cp3.m_e2Y +cp3.m_cY;
+      zcg = xloc * cp3.m_e1Z + yloc * cp3.m_e2Z +cp3.m_cZ;
+   }
+
+   // find where the overlap centroid (plane point) intersects each face
+
+   // set the line segment's first vertex at the contact plane centroid scaled 
+   // in the direction opposite the contact plane normal
+
+   RealT xA = xcg + m_nX * scale;
+   RealT yA = ycg + m_nY * scale;
+   RealT zA = 0.0;
+   if (m_dim == 3)
+   {
+      zA = zcg + m_nZ * scale;
+   }
+
+   // use the contact plane normal as the segment directional vector scale in 
+   // the direction of the contact plane
+   RealT xB = xcg - m_nX * scale;
+   RealT yB = ycg - m_nY * scale;
+   RealT zB = 0.0;
+   if (m_dim == 3)
+   {
+      zB = zcg - m_nZ * scale;
+   }
+   
+   auto fId1 = getCpElementId1();
+   auto fId2 = getCpElementId2();
+   RealT c1_z = 0.0;
+   RealT n1_z = 0.0;
+   RealT c2_z = 0.0;
+   RealT n2_z = 0.0;
+   if (m_dim == 3)
+   {
+    c1_z = m1.getElementCentroids()[2][fId1];
+    n1_z = m1.getElementNormals()[2][fId1];
+    c2_z = m2.getElementCentroids()[2][fId2];
+    n2_z = m2.getElementNormals()[2][fId2];
+   }
+   bool inPlane = false;
+   LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
+                          m1.getElementCentroids()[0][fId1], m1.getElementCentroids()[1][fId1], c1_z,
+                          m1.getElementNormals()[0][fId1], m1.getElementNormals()[1][fId1], n1_z,
+                          xc1, yc1, zc1, inPlane );
+
+   LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
+                          m2.getElementCentroids()[0][fId2], m2.getElementCentroids()[1][fId2], c2_z,
+                          m2.getElementNormals()[0][fId2], m2.getElementNormals()[1][fId2], n2_z,
+                          xc2, yc2, zc2, inPlane );
+
+   // for intermediate, or common plane methods, average the two contact plane 
+   // centroid-to-plane intersections and use this as the new point data for the 
+   // contact plane (do not do for mortar methods, or is redundant).
+   if ( m_dim == 2 || m_intermediatePlane )
+   {
+      m_cX = 0.5 * (xc1 + xc2);
+      m_cY = 0.5 * (yc1 + yc2);
+      m_cZ = 0.5 * (zc1 + zc2); 
+   }
+
+   // compute normal gap magnitude (x1 - x2 for positive gap in separation 
+   // and negative gap in penetration)
+   m_gap = (xc1 - xc2) * m_nX + (yc1 - yc2) * m_nY + (zc1 - zc2) * m_nZ;
+
+   // store the two face points corresponding to the contact plane centroid projection/intersection
+
+   m_cXf1 = xc1;
+   m_cYf1 = yc1;
+   m_cZf1 = zc1;
+
+   m_cXf2 = xc2;
+   m_cYf2 = yc2;
+   m_cZf2 = zc2;
+}
+
+//------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE ContactPlane3D CheckAlignedFacePair( InterfacePair& pair,
                                                         const MeshData::Viewer& mesh1,
                                                         const MeshData::Viewer& mesh2,
@@ -1233,7 +1323,7 @@ TRIBOL_HOST_DEVICE ContactPlane3D CheckAlignedFacePair( InterfacePair& pair,
    // instantiate temporary contact plane to be returned by this routine
    bool interpenOverlap = false;
    bool intermediatePlane = false;
-   ContactPlane3D cp( &pair, &mesh1, &mesh2, areaFrac, interpenOverlap, intermediatePlane);
+   ContactPlane3D cp( &pair, areaFrac, interpenOverlap, intermediatePlane);
 
    // TODO should probably stay consistent with the mortar convention and change 
    // the plane point and normal to the nonmortar surface. These calculations are only 
@@ -1330,13 +1420,9 @@ TRIBOL_HOST_DEVICE ContactPlane3D CheckAlignedFacePair( InterfacePair& pair,
 } // end CheckAlignedFacePair()
 
 //------------------------------------------------------------------------------
-void ContactPlane3D::computeNormal()
+void ContactPlane3D::computeNormal( const MeshData::Viewer& m1,
+                                    const MeshData::Viewer& m2 )
 {
-
-   // get the mesh data
-   auto m1 = m_mesh1;
-   auto m2 = m_mesh2;
-
    IndexT fId1 = m_pair->m_element_id1;
    IndexT fId2 = m_pair->m_element_id2;
 
@@ -1347,17 +1433,17 @@ void ContactPlane3D::computeNormal()
       // the direction such that the dot product between the cp normal and 
       // the normal of face 2 is positive. This is the default method of 
       // computing the cp normal
-      m_nX = 0.5 * ( m2->getElementNormals()[0][ fId2 ] - m1->getElementNormals()[0][ fId1 ] );
-      m_nY = 0.5 * ( m2->getElementNormals()[1][ fId2 ] - m1->getElementNormals()[1][ fId1 ] );
-      m_nZ = 0.5 * ( m2->getElementNormals()[2][ fId2 ] - m1->getElementNormals()[2][ fId1 ] );
+      m_nX = 0.5 * ( m2.getElementNormals()[0][ fId2 ] - m1.getElementNormals()[0][ fId1 ] );
+      m_nY = 0.5 * ( m2.getElementNormals()[1][ fId2 ] - m1.getElementNormals()[1][ fId1 ] );
+      m_nZ = 0.5 * ( m2.getElementNormals()[2][ fId2 ] - m1.getElementNormals()[2][ fId1 ] );
    }
    else // for mortar
    {
       // the projection plane is the nonmortar (i.e. mesh id 2) surface so 
       // we use the outward normal for face 2 on mesh 2 
-      m_nX = m2->getElementNormals()[0][ fId2 ];
-      m_nY = m2->getElementNormals()[1][ fId2 ];
-      m_nZ = m2->getElementNormals()[2][ fId2 ];
+      m_nX = m2.getElementNormals()[0][ fId2 ];
+      m_nY = m2.getElementNormals()[1][ fId2 ];
+      m_nZ = m2.getElementNormals()[2][ fId2 ];
    }
 
    // normalize the cp normal
@@ -1373,12 +1459,9 @@ void ContactPlane3D::computeNormal()
 } // end ContactPlane3D::computeNormal()
 
 //------------------------------------------------------------------------------
-void ContactPlane3D::computePlanePoint()
+void ContactPlane3D::computePlanePoint( const MeshData::Viewer& m1,
+                                        const MeshData::Viewer& m2 )
 {
-   // get the mesh data
-   auto m1 = m_mesh1;
-   auto m2 = m_mesh2;
-
    // compute the cp centroid as the average of the two face's centers. 
    // This is the default method of computing the cp centroid
    IndexT fId1 = m_pair->m_element_id1;
@@ -1388,17 +1471,17 @@ void ContactPlane3D::computePlanePoint()
    // average two face vertex averaged centroids
    if (m_intermediatePlane)
    {
-      m_cX = 0.5 * ( m1->getElementCentroids()[0][fId1] + m2->getElementCentroids()[0][fId2] );
-      m_cY = 0.5 * ( m1->getElementCentroids()[1][fId1] + m2->getElementCentroids()[1][fId2] );
-      m_cZ = 0.5 * ( m1->getElementCentroids()[2][fId1] + m2->getElementCentroids()[2][fId2] );
+      m_cX = 0.5 * ( m1.getElementCentroids()[0][fId1] + m2.getElementCentroids()[0][fId2] );
+      m_cY = 0.5 * ( m1.getElementCentroids()[1][fId1] + m2.getElementCentroids()[1][fId2] );
+      m_cZ = 0.5 * ( m1.getElementCentroids()[2][fId1] + m2.getElementCentroids()[2][fId2] );
    }
    // ELSE: MORTAR calculation using the vertex averaged 
    // centroid of the nonmortar face
    else
    {
-      m_cX = m2->getElementCentroids()[0][ fId2 ];
-      m_cY = m2->getElementCentroids()[1][ fId2 ];
-      m_cZ = m2->getElementCentroids()[2][ fId2 ];
+      m_cX = m2.getElementCentroids()[0][ fId2 ];
+      m_cY = m2.getElementCentroids()[1][ fId2 ];
+      m_cZ = m2.getElementCentroids()[2][ fId2 ];
    }
 
    return;
@@ -1406,21 +1489,18 @@ void ContactPlane3D::computePlanePoint()
 } // end ContactPlane3D::computePlanePoint()
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE void ContactPlane3D::computeLocalBasis()
+TRIBOL_HOST_DEVICE void ContactPlane3D::computeLocalBasis( const MeshData::Viewer& m1 )
 {
-   // get the mesh data associated with the first face
-   auto m1 = m_mesh1;
-
    // somewhat arbitrarily set the first local basis vector to be 
    // between contact plane centroid and first node on first face as 
    // projected onto the contact plane
-   const int nodeId = m1->getGlobalNodeId(m_pair->m_element_id1, 0);
+   const int nodeId = m1.getGlobalNodeId(m_pair->m_element_id1, 0);
 
    // project to plane
    RealT pX, pY, pZ;
-   ProjectPointToPlane( m1->getPosition()[0][nodeId],
-                        m1->getPosition()[1][nodeId],
-                        m1->getPosition()[2][nodeId],
+   ProjectPointToPlane( m1.getPosition()[0][nodeId],
+                        m1.getPosition()[1][nodeId],
+                        m1.getPosition()[2][nodeId],
                         m_nX, m_nY, m_nZ, m_cX,
                         m_cY, m_cZ, pX, pY, pZ );
 
@@ -1431,7 +1511,7 @@ TRIBOL_HOST_DEVICE void ContactPlane3D::computeLocalBasis()
    if (sqrMag < 1.E-12) // note: tolerance on the square of the magnitude
    {
       // translate projected first node by face radius
-      RealT radius = m1->getFaceRadii()[ m_pair->m_element_id1 ];
+      RealT radius = m1.getFaceRadii()[ m_pair->m_element_id1 ];
       RealT scale = 1.0 * radius;
    
       RealT pNewX = pX + scale;
@@ -1525,7 +1605,9 @@ void ContactPlane3D::globalTo2DLocalCoords( RealT pX, RealT pY, RealT pZ,
 } // end ContactPlane3D::globalTo2DLocalCoords()
 
 //------------------------------------------------------------------------------
-void ContactPlane3D::computeAreaTol( const Parameters& params )
+void ContactPlane3D::computeAreaTol( const MeshData::Viewer& m1,
+                                     const MeshData::Viewer& m2,
+                                     const Parameters& params )
 {
    if (m_areaFrac < params.overlap_area_frac ) {
       SLIC_DEBUG( "ContactPlane3D::computeAreaTol() the overlap area fraction too small or negative; " << 
@@ -1534,15 +1616,17 @@ void ContactPlane3D::computeAreaTol( const Parameters& params )
    }
 
    m_areaMin = m_areaFrac * 
-               axom::utilities::min( m_mesh1->getElementAreas()[ m_pair->m_element_id1 ], 
-               m_mesh2->getElementAreas()[ m_pair->m_element_id2 ] );
+               axom::utilities::min( m1.getElementAreas()[ m_pair->m_element_id1 ], 
+                                     m2.getElementAreas()[ m_pair->m_element_id2 ] );
 
    return;
 
 } // end ContactPlane3D::computeAreaTol()
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE void ContactPlane3D::checkPolyOverlap( RealT* projLocX1, RealT* projLocY1, 
+TRIBOL_HOST_DEVICE void ContactPlane3D::checkPolyOverlap( const MeshData::Viewer& m1,
+                                                          const MeshData::Viewer& m2,
+                                                          RealT* projLocX1, RealT* projLocY1, 
                                                           RealT* projLocX2, RealT* projLocY2, 
                                                           const int isym )
 {
@@ -1557,16 +1641,16 @@ TRIBOL_HOST_DEVICE void ContactPlane3D::checkPolyOverlap( RealT* projLocX1, Real
 
    // reorder
    int k = 1;
-   for (int i=(m_mesh2->numberOfNodesPerElement()-1); i>0; --i)
+   for (int i=(m1.numberOfNodesPerElement()-1); i>0; --i)
    {
       x2Temp[k] = projLocX2[i];
       y2Temp[k] = projLocY2[i];
       ++k;
    }
 
-   PolyInterYCentroid( m_mesh1->numberOfNodesPerElement(), projLocX1, projLocY1, m_mesh2->numberOfNodesPerElement(), 
+   PolyInterYCentroid( m1.numberOfNodesPerElement(), projLocX1, projLocY1, m2.numberOfNodesPerElement(), 
                        x2Temp, y2Temp, isym, m_area, m_overlapCY );
-   PolyInterYCentroid( m_mesh1->numberOfNodesPerElement(), projLocY1, projLocX1, m_mesh2->numberOfNodesPerElement(), 
+   PolyInterYCentroid( m1.numberOfNodesPerElement(), projLocY1, projLocX1, m2.numberOfNodesPerElement(), 
                        y2Temp, x2Temp, isym, m_area, m_overlapCX );
 
    return;
@@ -1607,7 +1691,9 @@ TRIBOL_HOST_DEVICE void ContactPlane3D::local2DToGlobalCoords( RealT xloc, RealT
 } // end ContactPlane3D::local2DToGlobalCoords()
 
 //------------------------------------------------------------------------------
-void ContactPlane3D::centroidGap( RealT scale )
+void ContactPlane3D::centroidGap( const MeshData::Viewer& m1,
+                                  const MeshData::Viewer& m2,
+                                  RealT scale )
 {
    // project the overlap centroid back to each face using a 
    // line-plane intersection method
@@ -1640,20 +1726,18 @@ void ContactPlane3D::centroidGap( RealT scale )
    RealT yB = ycg - m_nY * scale;
    RealT zB = zcg - m_nZ * scale;
 
-   auto m1 = m_mesh1;
-   auto m2 = m_mesh2;
    bool inPlane = false;
    IndexT fId1 = m_pair->m_element_id1;
    IndexT fId2 = m_pair->m_element_id2;
 
    bool intersect1 = LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
-                                            m1->getElementCentroids()[0][fId1], m1->getElementCentroids()[1][fId1], m1->getElementCentroids()[2][fId1],
-                                            m1->getElementNormals()[0][fId1], m1->getElementNormals()[1][fId1], m1->getElementNormals()[2][fId1],
+                                            m1.getElementCentroids()[0][fId1], m1.getElementCentroids()[1][fId1], m1.getElementCentroids()[2][fId1],
+                                            m1.getElementNormals()[0][fId1], m1.getElementNormals()[1][fId1], m1.getElementNormals()[2][fId1],
                                             xc1, yc1, zc1, inPlane );
 
    bool intersect2 = LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
-                                            m2->getElementCentroids()[0][fId2], m2->getElementCentroids()[1][fId2], m2->getElementCentroids()[2][fId2],
-                                            m2->getElementNormals()[0][fId2], m2->getElementNormals()[1][fId2], m2->getElementNormals()[2][fId2],
+                                            m2.getElementCentroids()[0][fId2], m2.getElementCentroids()[1][fId2], m2.getElementCentroids()[2][fId2],
+                                            m2.getElementNormals()[0][fId2], m2.getElementNormals()[1][fId2], m2.getElementNormals()[2][fId2],
                                             xc2, yc2, zc2, inPlane );
    TRIBOL_UNUSED_VAR(intersect1); // We don't currently use these bool variabeles
    TRIBOL_UNUSED_VAR(intersect2); // but the above function calls modify some parameters
@@ -1676,926 +1760,10 @@ void ContactPlane3D::centroidGap( RealT scale )
 
 } // end ContactPlane3D::centroidGap()
 
-//-----------------------------------------------------------------------------
-// Contact Plane 2D routines
-//-----------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D( InterfacePair* pair,
-                                                   const MeshData::Viewer* mesh1,
-                                                   const MeshData::Viewer* mesh2,
-                                                   RealT lenFrac,
-                                                   bool interpenOverlap,
-                                                   bool interPlane )
-  : ContactPlane( pair, mesh1, mesh2, lenFrac, interpenOverlap, interPlane, 2 )
-{
-   for (int i=0; i<2; ++i)
-   {
-      m_segX[i] = 0.0;
-      m_segY[i] = 0.0;
-   }
-} // end ContactPlane2D::ContactPlane2D()
-
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D()
-  : ContactPlane2D( nullptr, nullptr, nullptr, 0.0, true, false )
-{}
-
-//------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D(const ContactPlane2D& other)
-  : ContactPlane( other )
-{
-   for (int i=0; i<2; ++i)
-   {
-      m_segX[i] = other.m_segX[i];
-      m_segY[i] = other.m_segY[i];
-   }
-}
-
-//------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D(ContactPlane2D&& other) noexcept
-  : ContactPlane( std::move(other) )
-{
-   for (int i=0; i<2; ++i)
-   {
-      m_segX[i] = other.m_segX[i];
-      m_segY[i] = other.m_segY[i];
-   }
-}
-
-//------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE ContactPlane2D& ContactPlane2D::operator=(const ContactPlane2D& other)
-{
-   return *this = ContactPlane2D(other);
-}
-
-//------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE ContactPlane2D& ContactPlane2D::operator=(ContactPlane2D&& other) noexcept
-{
-   ContactPlane::moveData(std::move(other));
-   
-   for (int i=0; i<2; ++i)
-   {
-      m_segX[i] = other.m_segX[i];
-      m_segY[i] = other.m_segY[i];
-   }
-
-   return *this;
-}
-
-//------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE FaceGeomError CheckEdgePair( InterfacePair& pair,
-                                                const Parameters& params,
-                                                bool fullOverlap,
-                                                ContactPlane2D& cp )
-{
-   // Note: Checks #1-#4 are done in the binning
-
-   // alias variables off the InterfacePair
-   IndexT& edgeId1 = pair.m_element_id1;
-   IndexT& edgeId2 = pair.m_element_id2;
-
-   // get instance of mesh data
-   auto mesh1 = cp.m_mesh1;
-   auto mesh2 = cp.m_mesh2;
-
-   // instantiate temporary contact plane to be returned by this routine
-   bool interpenOverlap = (!fullOverlap) ? true : false;
-
-   // CHECK #5: check if edge2 vertices have passed through edge1, and 
-   // vice-versa. If both vertices have done so for either edge, we trigger 
-   // a fullOverlap computation, but we don't know if there is a positive 
-   // length of overlap and will have to construct the contact plane 
-   // (contact segment) and perform this check. Note, this tolerance is 
-   // inclusive up to a separation of a fraction of the edge-radius.
-   // This is done for the mortar method per 3D testing.
-   RealT separationTol = params.gap_separation_ratio * 
-                        axom::utilities::max( mesh1->getFaceRadii()[ edgeId1 ], 
-                                              mesh2->getFaceRadii()[ edgeId2 ] );
-   bool all = false;
-   bool ls = EdgeInterCheck( *mesh1, *mesh2, edgeId1, edgeId2, separationTol, all );
-   if (!ls) 
-   {
-      cp.m_inContact = false;
-      return NO_FACE_GEOM_ERROR;
-   }
-
-   // if all the vertices lie on the other side of edge1, then use full 
-   // projection
-   if (all)
-   {
-      fullOverlap = true;
-      interpenOverlap = false;
-      cp.m_interpenOverlap = interpenOverlap;
-   }
-
-   // CHECK #6: compute the projected length of overlap on the contact plane.
-   // At this point the edges are proximate and likely have a positive 
-   // projected length of overlap.
-
-   if (cp.m_intermediatePlane)
-   {
-      // COMMON_PLANE normal calculation:
-      // compute the cp normal as the average of the two face normals, and in 
-      // the direction such that the dot product between the cp normal and 
-      // the normal of face 2 is positive.
-      cp.m_nX = 0.5 * (mesh2->getElementNormals()[0][ edgeId2 ] - mesh1->getElementNormals()[0][ edgeId1 ]);
-      cp.m_nY = 0.5 * (mesh2->getElementNormals()[1][ edgeId2 ] - mesh1->getElementNormals()[1][ edgeId1 ]);
-      cp.m_nZ = 0.0; // zero out the third component of the normal
-   }
-   else
-   {
-      // MORTAR normal calculation. This is the normal of the nonmortar surface
-      cp.m_nX = mesh2->getElementNormals()[0][ edgeId2 ];
-      cp.m_nY = mesh2->getElementNormals()[1][ edgeId2 ];
-      cp.m_nZ = 0.;
-   }
-
-   // normalize the cp normal
-   RealT mag;
-   RealT invMag;
-
-   mag = magnitude( cp.m_nX, cp.m_nY );
-   invMag = 1.0 / mag;
-
-   cp.m_nX *= invMag;
-   cp.m_nY *= invMag;
-   
-   // compute the cp centroid as the average of 
-   // the two face's centers. This is the default 
-   // method of compute the cp centroid
-   cp.m_cX = 0.5 * ( mesh1->getElementCentroids()[0][edgeId1] + mesh2->getElementCentroids()[0][edgeId2] );
-   cp.m_cY = 0.5 * ( mesh1->getElementCentroids()[1][edgeId1] + mesh2->getElementCentroids()[1][edgeId2] );
-   cp.m_cZ = 0.0;
-
-   // project each edge's nodes onto the contact segment.
-   constexpr int max_nodes_per_elem = 2;
-   RealT projX1[max_nodes_per_elem];
-   RealT projY1[max_nodes_per_elem];
-   RealT projX2[max_nodes_per_elem];
-   RealT projY2[max_nodes_per_elem];
-
-   ProjectEdgeNodesToSegment( *mesh1, edgeId1, cp.m_nX, cp.m_nY,
-                              cp.m_cX, cp.m_cY, &projX1[0], &projY1[0] );
-   ProjectEdgeNodesToSegment( *mesh2, edgeId2, cp.m_nX, cp.m_nY,
-                              cp.m_cX, cp.m_cY, &projX2[0], &projY2[0] );
-
-   // compute the full overlap. Even if we are using the interpenetration 
-   // overlap, we have to compute the full overlap in order to properly 
-   // locate the contact plane (segment) for the interpenetration calculation
-   cp.checkSegOverlap( params, &projX1[0], &projY1[0], &projX2[0], &projY2[0], 
-                       mesh1->numberOfNodesPerElement(), mesh2->numberOfNodesPerElement() );
-
-   // compute the overlap length tolerance
-   cp.computeAreaTol( params ); 
-
-   // check the contact plane length against the minimum length. 
-   // In general the interpen length is going to be less than 
-   // the full overlap length so we can do this check prior to 
-   // any interpenetration overlap calculation
-   if (cp.m_area < cp.m_areaMin)
-   {
-      cp.m_inContact = false;
-      return NO_FACE_GEOM_ERROR;
-   }
-
-   if (interpenOverlap)
-   {
-      // properly locate the contact plane (segment)
-      planePointAndCentroidGap( cp, 2. * 
-         axom::utilities::max( mesh1->getFaceRadii()[ edgeId1 ], 
-                               mesh2->getFaceRadii()[ edgeId2 ] )); 
-      bool interpen = false;
-      FaceGeomError interpen_err = computeLocalInterpenOverlap2D( cp, params, interpen );
-      if (interpen_err != NO_FACE_GEOM_ERROR)
-      {
-         cp.m_inContact = false;
-         return interpen_err;
-      }
-      else if (!interpen) 
-      {
-         cp.m_inContact = false;
-         return NO_FACE_GEOM_ERROR;
-      }
-   }
-
-   // recompute the plane point and centroid gap. For the full overlap 
-   // the centroid (i.e. plane point) of the contact plane has been modified 
-   // based on the computed segment overlap. This routine will relocate the 
-   // contact plane and compute the centroid gap. For the interpenetration 
-   // overlap, this ought to only amount to a centroid gap calculation as the 
-   // contact plane was properly located wrt the two edges, but the contact 
-   // plane point moved (in-contact segment) due to the interpen overlap 
-   // segment calc
-   planePointAndCentroidGap( cp, 2. * 
-      axom::utilities::max( mesh1->getFaceRadii()[ edgeId1 ], 
-                            mesh2->getFaceRadii()[ edgeId2 ] )); 
-
-   // Per 3D mortar testing, allow for separation up to the edge-radius
-   cp.m_gapTol = params.gap_separation_ratio * 
-                 axom::utilities::max( mesh1->getFaceRadii()[ edgeId1 ], 
-                                       mesh2->getFaceRadii()[ edgeId2 ] );
-   if (cp.m_gap > cp.m_gapTol)
-   {
-      cp.m_inContact = false;
-      return NO_FACE_GEOM_ERROR;
-   }
-
-   // for auto-contact, remove contact candidacy for full-overlap 
-   // face-pairs with interpenetration exceeding contact penetration fraction. 
-   // Note, this check is solely meant to exclude face-pairs composed of faces 
-   // on opposite sides of thin structures/plates
-   //
-   // Recall that interpen gaps are negative
-   if (fullOverlap)
-   {
-      if (ExceedsMaxAutoInterpen( *mesh1, *mesh2, edgeId1, edgeId2, 
-                                  params, cp.m_gap ))
-      {
-         cp.m_inContact = false;
-         return NO_FACE_GEOM_ERROR;
-      }
-   }
-
-   // for the full overlap case we need to project the overlap segment
-   // onto the updated contact plane
-   if (fullOverlap)
-   {
-      // allocate dummy space for the interpen topology so adding the 
-      // contact plane to the contact plane manager doesn't seg fault.
-      // Fix this later...
-      cp.m_numInterpenPoly1Vert = 2;
-      cp.m_numInterpenPoly2Vert = 2;
-      cp.m_interpenG1X = new RealT[ cp.m_numInterpenPoly1Vert ];
-      cp.m_interpenG1Y = new RealT[ cp.m_numInterpenPoly1Vert ];
-      cp.m_interpenG2X = new RealT[ cp.m_numInterpenPoly2Vert ];
-      cp.m_interpenG2Y = new RealT[ cp.m_numInterpenPoly2Vert ];
-
-      cp.m_interpenG1Z = nullptr;
-      cp.m_interpenG2Z = nullptr;
-
-      for (int i=0; i<2; ++i)
-      {
-         RealT xproj, yproj;
-         ProjectPointToSegment( cp.m_segX[i], cp.m_segY[i], 
-                                cp.m_nX, cp.m_nY, 
-                                cp.m_cX, cp.m_cY, xproj, yproj );
-         cp.m_segX[i] = xproj;
-         cp.m_segY[i] = yproj;
-
-         // set the interpen vertices to the full overlap vertices
-         cp.m_interpenG1X[i] = 0.0;
-         cp.m_interpenG1Y[i] = 0.0;
-         cp.m_interpenG2X[i] = 0.0;
-         cp.m_interpenG2Y[i] = 0.0;
-      }
-  
-   }
-
-   cp.m_inContact = true;
-   return NO_FACE_GEOM_ERROR;
-
-} // end CheckEdgePair()
-
-//------------------------------------------------------------------------------
-void ContactPlane2D::computeNormal()
-{
-   // get the mesh data
-   auto m1 = m_mesh1;
-   auto m2 = m_mesh2;
-
-   if (m_intermediatePlane)
-   {
-      // COMMON_PLANE normal calculation:
-      // compute the cp normal as the average of the two face normals, and in 
-      // the direction such that the dot product between the cp normal and 
-      // the normal of face 2 is positive.
-      m_nX = 0.5 * (m2->getElementNormals()[0][ m_pair->m_element_id2 ] - m1->getElementNormals()[0][ m_pair->m_element_id1 ]);
-      m_nY = 0.5 * (m2->getElementNormals()[1][ m_pair->m_element_id2 ] - m1->getElementNormals()[1][ m_pair->m_element_id1 ]);
-      m_nZ = 0.0; // zero out the third component of the normal
-   }
-   else
-   {
-      // MORTAR normal calculation. This is the normal of the nonmortar surface
-      m_nX = m2->getElementNormals()[0][ m_pair->m_element_id2 ];
-      m_nY = m2->getElementNormals()[1][ m_pair->m_element_id2 ];
-      m_nZ = 0.;
-   }
-
-   // normalize the cp normal
-   RealT mag;
-   RealT invMag;
-
-   mag = magnitude( m_nX, m_nY );
-   invMag = 1.0 / mag;
-
-   m_nX *= invMag;
-   m_nY *= invMag;
-
-   return;
-
-} // end ContactPlane2D::computeNormal()
-
-//------------------------------------------------------------------------------
-void ContactPlane2D::computePlanePoint()
-{
-   // get the mesh data
-   auto m1 = m_mesh1;
-   auto m2 = m_mesh2;
-
-   // compute the cp centroid as the average of 
-   // the two face's centers. This is the default 
-   // method of compute the cp centroid
-   m_cX = 0.5 * ( m1->getElementCentroids()[0][m_pair->m_element_id1] + m2->getElementCentroids()[0][m_pair->m_element_id2] );
-   m_cY = 0.5 * ( m1->getElementCentroids()[1][m_pair->m_element_id1] + m2->getElementCentroids()[1][m_pair->m_element_id2] );
-   m_cZ = 0.0;
-   return;
-
-} // end ContactPlane2D::computePlanePoint()
-
-//------------------------------------------------------------------------------
-void ContactPlane2D::computeIntegralGap()
-{
-   // TODO implement this routine
-   // This will be contact method dependent
-   return;
-
-} // end ContactPlane2D::computeIntegralGap()
-
-//------------------------------------------------------------------------------
-void ContactPlane2D::computeAreaTol( const Parameters& params )
-{
-   if (m_areaFrac < params.overlap_area_frac)
-   {
-      SLIC_DEBUG( "ContactPlane2D::computeAreaTol() the overlap area fraction too small or negative; " << 
-                  "setting to overlap_area_frac parameter." );
-      m_areaFrac = params.overlap_area_frac;
-   }
-
-   m_areaMin = m_areaFrac * 
-               axom::utilities::min( m_mesh1->getElementAreas()[ m_pair->m_element_id1 ], 
-                                     m_mesh2->getElementAreas()[ m_pair->m_element_id2 ] );
-   return;
-
-} // ContactPlane2D::computeAreaTol()
-
-//------------------------------------------------------------------------------
-void ContactPlane2D::centroidGap( RealT scale )
-{
-   // project the overlap centroid, which is taken to be the point data 
-   // (i.e. centroid) of the contact plane, back to each edge using the 
-   // line-plane intersection method where each edge is imagined to be 
-   // within a plane defined by the edge's centroid and normal
-   RealT xc1 = 0.;
-   RealT yc1 = 0.;
-   RealT zc1 = 0.;
-   RealT xc2 = 0.;
-   RealT yc2 = 0.;
-   RealT zc2 = 0.;
-
-   // find where the overlap centroid (plane point) intersects each face.
-   // The following variables store the end vertices of 
-   // a fictitious line co-directional with the contact plane normal 
-   // passing through each edge
-
-   // set the line segment's first vertex at the contact plane centroid, 
-   // scaled in the direction opposite the contact plane normal
-   RealT xA = m_cX + m_nX * scale;
-   RealT yA = m_cY + m_nY * scale;
-   RealT zA = 0.0;
-
-   // use the contact plane normal as the directional vector scale 
-   // in the direction of the contact plane
-   RealT xB = m_cX - m_nX * scale;
-   RealT yB = m_cY - m_nY * scale;
-   RealT zB = 0.0;
-
-   // get mesh data
-   auto m1 = m_mesh1;
-   auto m2 = m_mesh2; 
-   bool inPlane = false;
-   IndexT fId1 = m_pair->m_element_id1;
-   IndexT fId2 = m_pair->m_element_id2;
-   bool intersect1 = LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
-                                            m1->getElementCentroids()[0][fId1], m1->getElementCentroids()[1][fId1], 0.0,
-                                            m1->getElementNormals()[0][fId1], m1->getElementNormals()[1][fId1], 0.0,
-                                            xc1, yc1, zc1, inPlane );
-
-   bool intersect2 = LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
-                                            m2->getElementCentroids()[0][fId2], m2->getElementCentroids()[1][fId2], 0.0,
-                                            m2->getElementNormals()[0][fId2], m2->getElementNormals()[1][fId2], 0.0,
-                                            xc2, yc2, zc2, inPlane );
-   TRIBOL_UNUSED_VAR(intersect1); // We don't currently use these bool variabeles
-   TRIBOL_UNUSED_VAR(intersect2); // but the above function calls modify some parameters
-
-   // compute the normal gap magnitude (x1 - x2 for positive gap in separation 
-   // and negative gap in penetration).
-   m_gap = (xc1 - xc2) * m_nX + (yc1 - yc2) * m_nY;
-
-   // store the two edge points corresponding to the contact plane centroid 
-   // projection/intersection
-   m_cXf1 = xc1;
-   m_cYf1 = yc1;
-   m_cZf1 = 0.0;
-
-   m_cXf2 = xc2;
-   m_cYf2 = yc2;
-   m_cZf2 = 0.0;
-
-   return;
-
-} // end ContactPlane2D::centroidGap()
-
-//------------------------------------------------------------------------------
-void ContactPlane2D::checkSegOverlap( const Parameters& params,
-                                      const RealT* const pX1, const RealT* const pY1, 
-                                      const RealT* const pX2, const RealT* const pY2, 
-                                      const int nV1, const int nV2 )
-{
-   SLIC_ASSERT( nV1 == 2 );
-   SLIC_ASSERT( nV2 == 2 );
-
-   // get edge ids
-   int e1Id = getCpElementId1();
-   int e2Id = getCpElementId2();
-
-   //
-   // perform the all-in-1 check
-   //
-
-   // define the edge 1 non-unit directional vector between vertices 
-   // 2 and 1
-   RealT lvx1 = pX1[1] - pX1[0];
-   RealT lvy1 = pY1[1] - pY1[0];
-
-   // compute vector between each edge 2 vertex and vertex 1 on edge 1.
-   // Then dot that vector with the directional vector of edge 1 to see 
-   // if they are codirectional. If so, check, that this vector length is 
-   // less than edge 1 length indicating that the vertex lies within edge 1
-   RealT projTol = params.projection_ratio * 
-                  axom::utilities::max( m_mesh1->getFaceRadii()[ e1Id ], 
-                                        m_mesh2->getFaceRadii()[ e2Id ] );
-   RealT vLenTol = projTol;
-   int inter2 = 0;
-   int twoInOneId = -1;
-   for (int i=0; i<nV2; ++i)
-   {
-      RealT vx = pX2[i] - pX1[0];
-      RealT vy = pY2[i] - pY1[0]; 
-
-      // compute projection onto edge 1 directional vector
-      RealT proj = vx * lvx1 + vy * lvy1;
-
-      // compute length of <vx,vy>; if vLen < some tolerance we have a 
-      // coincident node
-      RealT vLen = magnitude( vx, vy );
-
-      if (vLen < vLenTol) // coincident vertex
-      {
-         twoInOneId = i;
-         ++inter2;
-      }
-      else if (proj > projTol && vLen <= m_mesh1->getElementAreas()[e1Id]) // interior vertex
-      {
-         twoInOneId = i;
-         ++inter2;
-      }
-   }
-
-   // if both vertices pass the above criteria than 2 is in 1
-   if (inter2 == 2) 
-   {
-      // set the contact plane (segment) length
-      m_area = m_mesh2->getElementAreas()[e2Id];
-
-      // set the vertices of the overlap segment
-      m_segX[0] = pX2[0];
-      m_segY[0] = pY2[0];
-  
-      m_segX[1] = pX2[1];
-      m_segY[1] = pY2[1];
-
-      // relocate the centroid within the currently defined contact 
-      // segment
-      m_cX = 0.5 * (m_segX[0] + m_segX[1]);
-      m_cY = 0.5 * (m_segY[0] + m_segY[1]);
-      m_cZ = 0.0;
-      return;
-   }
-
-   //
-   // perform the all-in-2 check
-   //
-
-   // define the edge 2 non-unit directional vector between vertices 
-   // 2 and 1
-   RealT lvx2 = pX2[1] - pX2[0];
-   RealT lvy2 = pY2[1] - pY2[0];
-
-   // compute vector between each edge 1 vertex and vertex 1 on edge 2.
-   // Then dot that vector with the directional vector of edge 2 to see 
-   // if they are codirectional. If so, check, that this vector length is 
-   // less than edge 2 length indicating that the vertex is within edge 2
-   int inter1 = 0;
-   int oneInTwoId = -1;
-   for (int i=0; i<nV1; ++i)
-   {
-      RealT vx = pX1[i] - pX2[0];
-      RealT vy = pY1[i] - pY2[0]; 
-
-      // compute projection onto edge 2 directional vector
-      RealT proj = vx * lvx2 + vy * lvy2;
-
-      // compute length of <vx,vy>
-      RealT vLen = magnitude( vx, vy );
-
-      if (vLen < vLenTol) // coincident vertex
-      {
-         oneInTwoId = i;
-         ++inter1;
-      }
-      else if (proj > projTol && vLen <= m_mesh2->getElementAreas()[e2Id]) // interior vertex
-      {
-         oneInTwoId = i;
-         ++inter1;
-      }
-   }
-
-   // if both vertices pass the above criteria then 1 is in 2.
-   if (inter1 == 2)
-   {
-      // set the contact plane (segment) length
-      m_area = m_mesh1->getElementAreas()[e1Id];
-
-      // set the overlap segment vertices on the contact plane object
-      m_segX[0] = pX1[0];
-      m_segY[0] = pY1[0];
-  
-      m_segX[1] = pX1[1];
-      m_segY[1] = pY1[1];
-  
-      // relocate the centroid within the currently defined contact 
-      // segment
-      m_cX = 0.5 * (m_segX[0] + m_segX[1]);
-      m_cY = 0.5 * (m_segY[0] + m_segY[1]);
-      m_cZ = 0.0;
-      return;
-   }
-
-   // if inter1 == 0 and inter2 == 0 then there is no overlap
-   if (inter1 == 0 && inter2 == 0)
-   {
-      m_area = 0.0;
-      m_cX = m_cY = m_cZ = 0.0;
-      return;
-   }
-
-   // there is a chance that oneInTowId or twoInOneId is not actually set, 
-   // in which case we don't have an overlap. 
-   if (oneInTwoId == -1 || twoInOneId == -1)
-   {
-      m_area = 0.0;
-      m_cX = m_cY = m_cZ = 0.0;
-      return;
-   }
-
-   // if we are here, we have ruled out all-in-1 and all-in-2 overlaps, 
-   // and non-overlapping edges, but have the case where edge 1 and 
-   // edge 2 overlap some finite distance that is less than either of their 
-   // lengths. We have vertex information from the all-in-one checks 
-   // indicating which vertices on one edge are within the other edge
-
-   // set the segment vertices
-   m_segX[0] = pX1[ oneInTwoId ];
-   m_segY[0] = pY1[ oneInTwoId ];
-   m_segX[1] = pX2[ twoInOneId ];
-   m_segY[1] = pY2[ twoInOneId ];
-
-   // compute vector between "inter"-vertices
-   RealT vecX = m_segX[1] - m_segX[0];
-   RealT vecY = m_segY[1] - m_segY[0];
-
-   // compute the length of the overlapping segment
-   m_area = magnitude( vecX, vecY );
-
-   // compute the overlap centroid
-   m_cX = 0.5 * (m_segX[0] + m_segX[1]);
-   m_cY = 0.5 * (m_segY[0] + m_segY[1]);
-   m_cZ = 0.0;
-
-   return;
-
-} // end ContactPlane2D::checkSegOverlap()
-
-//------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE void planePointAndCentroidGap( ContactPlane& cp, 
-                                                  RealT scale )
-{
-   // project the overlap centroid back to each face using a 
-   // line-plane intersection method
-   RealT xc1 = 0.;
-   RealT yc1 = 0.;
-   RealT zc1 = 0.;
-   RealT xc2 = 0.;
-   RealT yc2 = 0.;
-   RealT zc2 = 0.;
-
-   RealT xcg = cp.m_cX;
-   RealT ycg = cp.m_cY;
-   RealT zcg = 0.0;
-
-   // first project the projected area of overlap's centroid in local 
-   // coordinates to global coordinates
-   if (cp.m_dim == 3)
-   {
-      auto& cp3 = static_cast<ContactPlane3D&>(cp);
-      auto xloc = cp3.m_overlapCX;
-      auto yloc = cp3.m_overlapCY;
-      xcg = xloc * cp3.m_e1X + yloc * cp3.m_e2X +cp3.m_cX;
-      ycg = xloc * cp3.m_e1Y + yloc * cp3.m_e2Y +cp3.m_cY;
-      zcg = xloc * cp3.m_e1Z + yloc * cp3.m_e2Z +cp3.m_cZ;
-   }
-
-   // find where the overlap centroid (plane point) intersects each face
-
-   // set the line segment's first vertex at the contact plane centroid scaled 
-   // in the direction opposite the contact plane normal
-
-   RealT xA = xcg + cp.m_nX * scale;
-   RealT yA = ycg + cp.m_nY * scale;
-   RealT zA = 0.0;
-   if (cp.m_dim == 3)
-   {
-      zA = zcg + cp.m_nZ * scale;
-   }
-
-   // use the contact plane normal as the segment directional vector scale in 
-   // the direction of the contact plane
-   RealT xB = xcg - cp.m_nX * scale;
-   RealT yB = ycg - cp.m_nY * scale;
-   RealT zB = 0.0;
-   if (cp.m_dim == 3)
-   {
-      zB = zcg - cp.m_nZ * scale;
-   }
-   
-   auto m1 = cp.m_mesh1;
-   auto m2 = cp.m_mesh2;
-   auto fId1 = cp.getCpElementId1();
-   auto fId2 = cp.getCpElementId2();
-   RealT c1_z = 0.0;
-   RealT n1_z = 0.0;
-   RealT c2_z = 0.0;
-   RealT n2_z = 0.0;
-   if (cp.m_dim == 3)
-   {
-    c1_z = m1->getElementCentroids()[2][fId1];
-    n1_z = m1->getElementNormals()[2][fId1];
-    c2_z = m2->getElementCentroids()[2][fId2];
-    n2_z = m2->getElementNormals()[2][fId2];
-   }
-   bool inPlane = false;
-   LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
-                          m1->getElementCentroids()[0][fId1], m1->getElementCentroids()[1][fId1], c1_z,
-                          m1->getElementNormals()[0][fId1], m1->getElementNormals()[1][fId1], n1_z,
-                          xc1, yc1, zc1, inPlane );
-
-   LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
-                          m2->getElementCentroids()[0][fId2], m2->getElementCentroids()[1][fId2], c2_z,
-                          m2->getElementNormals()[0][fId2], m2->getElementNormals()[1][fId2], n2_z,
-                          xc2, yc2, zc2, inPlane );
-
-   // for intermediate, or common plane methods, average the two contact plane 
-   // centroid-to-plane intersections and use this as the new point data for the 
-   // contact plane (do not do for mortar methods, or is redundant).
-   if ( cp.m_dim == 2 || cp.m_intermediatePlane )
-   {
-      cp.m_cX = 0.5 * (xc1 + xc2);
-      cp.m_cY = 0.5 * (yc1 + yc2);
-      cp.m_cZ = 0.5 * (zc1 + zc2); 
-   }
-
-   // compute normal gap magnitude (x1 - x2 for positive gap in separation 
-   // and negative gap in penetration)
-   cp.m_gap = (xc1 - xc2) * cp.m_nX + (yc1 - yc2) * cp.m_nY + (zc1 - zc2) * cp.m_nZ;
-
-   // store the two face points corresponding to the contact plane centroid projection/intersection
-
-   cp.m_cXf1 = xc1;
-   cp.m_cYf1 = yc1;
-   cp.m_cZf1 = zc1;
-
-   cp.m_cXf2 = xc2;
-   cp.m_cYf2 = yc2;
-   cp.m_cZf2 = zc2;
-}
-
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap2D( ContactPlane2D& cp, 
-                                                                const Parameters& params,
-                                                                bool& interpen )
-{
-   //
-   // Note: the contact plane has to be properly located prior to calling 
-   // this routine. 
-   //
-
-   interpen = false;
-
-   // all edge-edge interactions suitable for an interpenetration overlap 
-   // calculation are edges that intersect at a single point
-   auto mesh1 = cp.m_mesh1;
-   auto mesh2 = cp.m_mesh2;
-   int edgeId1 = cp.getCpElementId1();
-   int edgeId2 = cp.getCpElementId2();
-   int nodeA1 = mesh1->getGlobalNodeId( edgeId1, 0 );
-   int nodeB1 = mesh1->getGlobalNodeId( edgeId1, 1 );
-   int nodeA2 = mesh2->getGlobalNodeId( edgeId2, 0 );
-   int nodeB2 = mesh2->getGlobalNodeId( edgeId2, 1 );
-
-   RealT xposA1 = mesh1->getPosition()[0][ nodeA1 ];
-   RealT yposA1 = mesh1->getPosition()[1][ nodeA1 ];
-   RealT xposB1 = mesh1->getPosition()[0][ nodeB1 ];
-   RealT yposB1 = mesh1->getPosition()[1][ nodeB1 ];
-
-   RealT xposA2 = mesh2->getPosition()[0][ nodeA2 ];
-   RealT yposA2 = mesh2->getPosition()[1][ nodeA2 ];
-   RealT xposB2 = mesh2->getPosition()[0][ nodeB2 ];
-   RealT yposB2 = mesh2->getPosition()[1][ nodeB2 ];
-
-   RealT xInter, yInter;
-   bool duplicatePoint = false;
-
-   // check if the segments intersect
-   RealT len_tol = params.len_collapse_ratio * 
-                  axom::utilities::max( mesh1->getFaceRadii()[ edgeId1 ], 
-                                        mesh2->getFaceRadii()[ edgeId2 ] );
-
-   bool edgeIntersect = SegmentIntersection2D( xposA1, yposA1, xposB1, yposB1,
-                                               xposA2, yposA2, xposB2, yposB2,
-                                               nullptr, xInter, yInter, 
-                                               duplicatePoint, len_tol );
-   
-   // check to make sure the edges are actually intersecting. Note 
-   // that an intersection point within the specified tolerance of 
-   // an edge vertex is collapsed to that vertex point and duplicatePoint 
-   // is marked true, but the SegmentIntersection2D returns false
-   if (!edgeIntersect && !duplicatePoint)
-   {
-      cp.m_interpenArea = 0.0;
-      interpen = false;
-      return NO_FACE_GEOM_ERROR;
-   }
-
-   // check if a duplicate point (i.e. vertex) was registered. 
-   // That is, if the intersection point is at an edge vertex, 
-   // in which case we don't register the interaction
-   if (duplicatePoint)
-   {
-      cp.m_interpenArea = 0.0;
-      interpen = false;
-      return NO_FACE_GEOM_ERROR;
-   }
-   
-   // project unique intersection point to the contact plane. 
-   // The contact plane should have been properly located prior 
-   // to this subroutine, in which case the intersection point lies 
-   // on the contact plane (segment). We can still do this projection 
-   // to be safe and the routine will handle a point that is already 
-   // on the plane
-   RealT xInterProj, yInterProj;
-   ProjectPointToSegment( xInter, yInter, cp.m_nX, cp.m_nY, 
-                          cp.m_cX, cp.m_cY, xInterProj, yInterProj );
-
-   // now isolate which vertex on edge 1 and which vertex on edge 2 lie 
-   // on the "wrong" side of the contact plane. 
-
-   // define vectors between an edge vertex and the contact plane centroid;
-   int interId1 = -1;
-   int interId2 = -1;
-   int k = 0;
-   for (int i=0; i<mesh1->numberOfNodesPerElement(); ++i)
-   {
-      int nodeId1 = mesh1->getGlobalNodeId( edgeId1, i );
-      int nodeId2 = mesh2->getGlobalNodeId( edgeId2, i );
-      RealT lvx1 = mesh1->getPosition()[0][ nodeId1 ] - cp.m_cX;
-      RealT lvy1 = mesh1->getPosition()[1][ nodeId1 ] - cp.m_cY;
-      RealT lvx2 = mesh2->getPosition()[0][ nodeId2 ] - cp.m_cX;
-      RealT lvy2 = mesh2->getPosition()[1][ nodeId2 ] - cp.m_cY;
-
-      // dot each vector with the contact plane normal
-      RealT proj1 = lvx1 * cp.m_nX + lvy1 * cp.m_nY;
-      RealT proj2 = lvx2 * cp.m_nX + lvy2 * cp.m_nY;
-
-      // check the projection to detect interpenetration and 
-      // mark the node id if true
-      if (proj1 > 0.0) 
-      {
-         interId1 = i; 
-         ++k;
-      }
-      if (proj2 < 0.0) 
-      {    
-         interId2 = i; 
-         ++k;
-      }
-   }
-
-   // Debug check the number of interpenetrating vertices
-   if (k > 2)
-   {
-      SLIC_DEBUG("ContactPlane2D::computeLocalInterpenOverlap() more than 2 interpenetrating vertices detected; " << 
-                 "check for degenerate geometry for edges (" << edgeId1 << ", " << edgeId2 << ") on meshes (" << 
-                 mesh1->meshId() << ", " << mesh2->meshId() << ").");
-      interpen = false;
-      return DEGENERATE_OVERLAP;
-   }
-
-   // now that we have marked the interpenetrating vertex of each edge, 
-   // compute the distance between the interpenetrating vertex and the 
-   // edge intersection point
-   int nodeInter1 = mesh1->getGlobalNodeId( edgeId1, interId1 );
-   int nodeInter2 = mesh2->getGlobalNodeId( edgeId2, interId2 ); 
-
-   RealT vix1 = mesh1->getPosition()[0][ nodeInter1 ] - xInterProj;
-   RealT viy1 = mesh1->getPosition()[1][ nodeInter1 ] - yInterProj;
-   RealT vix2 = mesh2->getPosition()[0][ nodeInter2 ] - xInterProj;
-   RealT viy2 = mesh2->getPosition()[1][ nodeInter2 ] - yInterProj;
-
-   // determine magnitude of each vector
-   RealT mag1 = magnitude( vix1, viy1 );
-   RealT mag2 = magnitude( vix2, viy2 );
-
-   // the interpenetration overlap length is the minimum of the above 
-   // vectors
-   cp.m_interpenArea = (mag1 <= mag2) ? mag1 : mag2;
-
-   if (cp.m_interpenArea > cp.m_areaMin) 
-   {
-      // determine the edge vertex that forms the overlap segment along 
-      // with the intersection point previously computed
-      RealT vx1 = (mag1 <= mag2) ? mesh1->getPosition()[0][ nodeInter1 ] 
-                                : mesh2->getPosition()[0][ nodeInter2 ];
-
-      RealT vy1 = (mag1 <= mag2) ? mesh1->getPosition()[1][ nodeInter1 ]
-                                : mesh2->getPosition()[1][ nodeInter2 ];
-     
-      RealT vx2 = xInterProj;
-      RealT vy2 = yInterProj;
-
-      // allocate space to store the interpen vertices for visualization
-      // (stored on contact plane base class)
-      cp.m_numInterpenPoly1Vert = 2;
-      cp.m_numInterpenPoly2Vert = 2;
-      cp.m_interpenG1X = new RealT[2];
-      cp.m_interpenG1Y = new RealT[2];
-      cp.m_interpenG2X = new RealT[2];
-      cp.m_interpenG2Y = new RealT[2];
-     
-      cp.m_interpenG1Z = nullptr;
-      cp.m_interpenG2Z = nullptr;
-
-      cp.m_interpenG1X[0] = vix1;
-      cp.m_interpenG1Y[0] = viy1;
-      cp.m_interpenG1X[1] = xInter;
-      cp.m_interpenG1Y[1] = yInter;
-   
-      cp.m_interpenG2X[0] = vix2;
-      cp.m_interpenG2Y[0] = viy2;
-      cp.m_interpenG2X[1] = xInter;
-      cp.m_interpenG2Y[1] = yInter;
-
-      // project these points to the contact plane
-      ProjectPointToSegment(vx1, vy1, cp.m_nX, cp.m_nY, cp.m_cX, cp.m_cY, 
-                            cp.m_segX[0], cp.m_segY[0]);
-                             
-      ProjectPointToSegment(vx2, vy2, cp.m_nX, cp.m_nY, cp.m_cX, cp.m_cY, 
-                            cp.m_segX[1], cp.m_segY[1]);
-
-      // compute the new contact plane overlap centroid (segment point)
-      cp.m_cX = 0.5 * (cp.m_segX[0] + cp.m_segX[1]);
-      cp.m_cY = 0.5 * (cp.m_segY[0] + cp.m_segY[1]);
-
-      interpen = true;
-      return NO_FACE_GEOM_ERROR;
-   }
- 
-   cp.m_interpenG1X = nullptr;
-   cp.m_interpenG1Y = nullptr;
-   cp.m_interpenG2X = nullptr;
-   cp.m_interpenG2Y = nullptr;
-   cp.m_interpenG1Z = nullptr;
-   cp.m_interpenG2Z = nullptr;
-
-   interpen = false;
-   return NO_FACE_GEOM_ERROR;
-
-} // end computeLocalInterpenOverlap2D()
-
-//------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& cp, 
-                                                                const Parameters& params,
-                                                                bool& interpen )
+TRIBOL_HOST_DEVICE FaceGeomError ContactPlane3D::computeLocalInterpenOverlap(
+  const MeshData::Viewer& m1, const MeshData::Viewer& m2,  
+  const Parameters& params, bool& interpen )
 {
    // for each face, loop over current configuration segments and 
    // determine the two (there should be at most two, or in the odd 
@@ -2615,12 +1783,12 @@ TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& 
    
    // set up vertex id arrays to indicate which vertices pass through
    // contact plane
-   StackArrayT<const MeshData::Viewer*, 2> mesh({cp.m_mesh1, cp.m_mesh2});
+   StackArrayT<const MeshData::Viewer*, 2> mesh({&m1, &m2});
    constexpr int max_nodes_per_elem = 4;
    int interpenVertex1[ max_nodes_per_elem ];
    int interpenVertex2[ max_nodes_per_elem ];
 
-   StackArrayT<IndexT, 2> element_id({cp.getCpElementId1(), cp.getCpElementId2()});
+   StackArrayT<IndexT, 2> element_id({getCpElementId1(), getCpElementId2()});
 
    for (int i=0; i<2; ++i) // loop over two constituent faces
    {
@@ -2668,8 +1836,8 @@ TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& 
          if (k < 2) // we haven't found both intersection points yet
          {
             bool inter = LinePlaneIntersection( x1, y1, z1, x2, y2, z2,
-                                                cp.m_cX, cp.m_cY, cp.m_cZ,
-                                                cp.m_nX, cp.m_nY, cp.m_nZ,
+                                                m_cX, m_cY, m_cZ,
+                                                m_nX, m_nY, m_nZ,
                                                 xInter[2*i+k], yInter[2*i+k], 
                                                 zInter[2*i+k], inPlane );
 
@@ -2679,12 +1847,12 @@ TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& 
          // we now have the two vertices for the ith face that represent segment-plane intersections.
          // Now determine the existing current configuration face vertices that lie 
          // "on the other side" of the contact plane.
-         RealT vX = x1 - cp.m_cX;
-         RealT vY = y1 - cp.m_cY; 
-         RealT vZ = z1 - cp.m_cZ; 
+         RealT vX = x1 - m_cX;
+         RealT vY = y1 - m_cY; 
+         RealT vZ = z1 - m_cZ; 
 
          // project the vector onto the contact plane normal
-         RealT proj = vX*cp.m_nX + vY*cp.m_nY + vZ*cp.m_nZ;
+         RealT proj = vX*m_nX + vY*m_nY + vZ*m_nZ;
        
          // if the projection for face 1 vertices is positive then that vertex crosses 
          // (i.e. interpenetrates) the contact plane. if the projection for face 2 vertices
@@ -2751,7 +1919,7 @@ TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& 
    {
       if (interpenVertex1[m] != -1)
       {
-         int fNodeId = mesh[0]->getGlobalNodeId(cp.getCpElementId1(), interpenVertex1[m]);
+         int fNodeId = mesh[0]->getGlobalNodeId(getCpElementId1(), interpenVertex1[m]);
          cfx1[ k ] = mesh[0]->getPosition()[0][ fNodeId ];
          cfy1[ k ] = mesh[0]->getPosition()[1][ fNodeId ];
          cfz1[ k ] = mesh[0]->getPosition()[2][ fNodeId ];
@@ -2765,7 +1933,7 @@ TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& 
    {
       if (interpenVertex2[m] != -1)
       {
-         int fNodeId = mesh[1]->getGlobalNodeId(cp.getCpElementId2(), interpenVertex2[m]);
+         int fNodeId = mesh[1]->getGlobalNodeId(getCpElementId2(), interpenVertex2[m]);
          cfx2[ k ] = mesh[1]->getPosition()[0][ fNodeId ];
          cfy2[ k ] = mesh[1]->getPosition()[1][ fNodeId ];
          cfz2[ k ] = mesh[1]->getPosition()[2][ fNodeId ];
@@ -2786,16 +1954,16 @@ TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& 
    for (int i=0; i<numV[0]; ++i)
    {
       ProjectPointToPlane( cfx1[i], cfy1[i], cfz1[i],
-                           cp.m_nX, cp.m_nY, cp.m_nZ,
-                           cp.m_cX, cp.m_cY, cp.m_cZ,
+                           m_nX, m_nY, m_nZ,
+                           m_cX, m_cY, m_cZ,
                            cfx1_proj[i], cfy1_proj[i], cfz1_proj[i] );
    }
 
    for (int i=0; i<numV[1]; ++i)
    {
       ProjectPointToPlane( cfx2[i], cfy2[i], cfz2[i],
-                           cp.m_nX, cp.m_nY, cp.m_nZ,
-                           cp.m_cX, cp.m_cY, cp.m_cZ,
+                           m_nX, m_nY, m_nZ,
+                           m_cX, m_cY, m_cZ,
                            cfx2_proj[i], cfy2_proj[i], cfz2_proj[i] ); 
    }
  
@@ -2808,15 +1976,15 @@ TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& 
 
    // convert global coords to local contact plane coordinates
    GlobalTo2DLocalCoords( cfx1_proj, cfy1_proj, cfz1_proj,
-                          cp.m_e1X, cp.m_e1Y, cp.m_e1Z,
-                          cp.m_e2X, cp.m_e2Y, cp.m_e2Z,
-                          cp.m_cX, cp.m_cY, cp.m_cZ,
+                          m_e1X, m_e1Y, m_e1Z,
+                          m_e2X, m_e2Y, m_e2Z,
+                          m_cX, m_cY, m_cZ,
                           cfx1_loc, cfy1_loc, numV[0] ); 
 
    GlobalTo2DLocalCoords( cfx2_proj, cfy2_proj, cfz2_proj,
-                          cp.m_e1X, cp.m_e1Y, cp.m_e1Z,
-                          cp.m_e2X, cp.m_e2Y, cp.m_e2Z,
-                          cp.m_cX, cp.m_cY, cp.m_cZ,
+                          m_e1X, m_e1Y, m_e1Z,
+                          m_e2X, m_e2Y, m_e2Z,
+                          m_cX, m_cY, m_cZ,
                           cfx2_loc, cfy2_loc, numV[1] );
 
    // reorder potentially unordered set of vertices
@@ -2825,14 +1993,14 @@ TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& 
 
    // call intersection routine to get intersecting polygon
    RealT pos_tol = params.len_collapse_ratio * 
-                  axom::utilities::max( mesh[0]->getFaceRadii()[ cp.getCpElementId1() ], 
-                                        mesh[1]->getFaceRadii()[ cp.getCpElementId2() ] );
+                  axom::utilities::max( mesh[0]->getFaceRadii()[ getCpElementId1() ], 
+                                        mesh[1]->getFaceRadii()[ getCpElementId2() ] );
    RealT len_tol = pos_tol;
    FaceGeomError inter_err = Intersection2DPolygon( cfx1_loc, cfy1_loc, numV[0],
                                                     cfx2_loc, cfy2_loc, numV[1],
-                                                    pos_tol, len_tol, &cp.m_polyLocX,
-                                                    &cp.m_polyLocY, cp.m_numPolyVert,
-                                                    cp.m_interpenArea, true );
+                                                    pos_tol, len_tol, &m_polyLocX,
+                                                    &m_polyLocY, m_numPolyVert,
+                                                    m_interpenArea, true );
 
    if (inter_err != NO_FACE_GEOM_ERROR)
    {
@@ -2842,30 +2010,832 @@ TRIBOL_HOST_DEVICE FaceGeomError computeLocalInterpenOverlap3D( ContactPlane3D& 
 
    // store the local intersection polygons on the contact plane object, 
    // primarily for visualization
-   cp.m_interpenPoly1X = new RealT[ numV[0] ];
-   cp.m_interpenPoly1Y = new RealT[ numV[0] ];
-   cp.m_interpenPoly2X = new RealT[ numV[1] ];
-   cp.m_interpenPoly2Y = new RealT[ numV[1] ];
+   m_interpenPoly1X = new RealT[ numV[0] ];
+   m_interpenPoly1Y = new RealT[ numV[0] ];
+   m_interpenPoly2X = new RealT[ numV[1] ];
+   m_interpenPoly2Y = new RealT[ numV[1] ];
 
-   cp.m_numInterpenPoly1Vert = numV[0];
-   cp.m_numInterpenPoly2Vert = numV[1];
+   m_numInterpenPoly1Vert = numV[0];
+   m_numInterpenPoly2Vert = numV[1];
 
    for (int i=0; i<numV[0]; ++i)
    {
-      cp.m_interpenPoly1X[i] = cfx1_loc[i];
-      cp.m_interpenPoly1Y[i] = cfy1_loc[i];
+      m_interpenPoly1X[i] = cfx1_loc[i];
+      m_interpenPoly1Y[i] = cfy1_loc[i];
    }
 
    for (int i=0; i<numV[1]; ++i)
    {
-      cp.m_interpenPoly2X[i] = cfx2_loc[i];
-      cp.m_interpenPoly2Y[i] = cfy2_loc[i];
+      m_interpenPoly2X[i] = cfx2_loc[i];
+      m_interpenPoly2Y[i] = cfy2_loc[i];
    }
 
    interpen = true;
    return NO_FACE_GEOM_ERROR;
  
-} // end computeLocalInterpenOverlap3D()
+} // end ContactPlane3D::computeLocalInterpenOverlap()
+
+//-----------------------------------------------------------------------------
+// Contact Plane 2D routines
+//-----------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D( InterfacePair* pair,
+                                                   RealT lenFrac,
+                                                   bool interpenOverlap,
+                                                   bool interPlane )
+  : ContactPlane( pair, lenFrac, interpenOverlap, interPlane, 2 )
+{
+   for (int i=0; i<2; ++i)
+   {
+      m_segX[i] = 0.0;
+      m_segY[i] = 0.0;
+   }
+} // end ContactPlane2D::ContactPlane2D()
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D()
+  : ContactPlane2D( nullptr, 0.0, true, false )
+{}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D(const ContactPlane2D& other)
+  : ContactPlane( other )
+{
+   for (int i=0; i<2; ++i)
+   {
+      m_segX[i] = other.m_segX[i];
+      m_segY[i] = other.m_segY[i];
+   }
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D::ContactPlane2D(ContactPlane2D&& other) noexcept
+  : ContactPlane( std::move(other) )
+{
+   for (int i=0; i<2; ++i)
+   {
+      m_segX[i] = other.m_segX[i];
+      m_segY[i] = other.m_segY[i];
+   }
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D& ContactPlane2D::operator=(const ContactPlane2D& other)
+{
+   return *this = ContactPlane2D(other);
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE ContactPlane2D& ContactPlane2D::operator=(ContactPlane2D&& other) noexcept
+{
+   ContactPlane::moveData(std::move(other));
+   
+   for (int i=0; i<2; ++i)
+   {
+      m_segX[i] = other.m_segX[i];
+      m_segY[i] = other.m_segY[i];
+   }
+
+   return *this;
+}
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE FaceGeomError CheckEdgePair( ContactPlane2D& cp,
+                                                const MeshData::Viewer& mesh1,
+                                                const MeshData::Viewer& mesh2,
+                                                const Parameters& params,
+                                                bool fullOverlap )
+{
+   // Note: Checks #1-#4 are done in the binning
+
+   // alias variables off the InterfacePair
+   IndexT edgeId1 = cp.getCpElementId1();
+   IndexT edgeId2 = cp.getCpElementId2();
+
+   // instantiate temporary contact plane to be returned by this routine
+   bool interpenOverlap = (!fullOverlap) ? true : false;
+
+   // CHECK #5: check if edge2 vertices have passed through edge1, and 
+   // vice-versa. If both vertices have done so for either edge, we trigger 
+   // a fullOverlap computation, but we don't know if there is a positive 
+   // length of overlap and will have to construct the contact plane 
+   // (contact segment) and perform this check. Note, this tolerance is 
+   // inclusive up to a separation of a fraction of the edge-radius.
+   // This is done for the mortar method per 3D testing.
+   RealT separationTol = params.gap_separation_ratio * 
+                        axom::utilities::max( mesh1.getFaceRadii()[ edgeId1 ], 
+                                              mesh2.getFaceRadii()[ edgeId2 ] );
+   bool all = false;
+   bool ls = EdgeInterCheck( mesh1, mesh2, edgeId1, edgeId2, separationTol, all );
+   if (!ls) 
+   {
+      cp.m_inContact = false;
+      return NO_FACE_GEOM_ERROR;
+   }
+
+   // if all the vertices lie on the other side of edge1, then use full 
+   // projection
+   if (all)
+   {
+      fullOverlap = true;
+      interpenOverlap = false;
+      cp.m_interpenOverlap = interpenOverlap;
+   }
+
+   // CHECK #6: compute the projected length of overlap on the contact plane.
+   // At this point the edges are proximate and likely have a positive 
+   // projected length of overlap.
+
+   if (cp.m_intermediatePlane)
+   {
+      // COMMON_PLANE normal calculation:
+      // compute the cp normal as the average of the two face normals, and in 
+      // the direction such that the dot product between the cp normal and 
+      // the normal of face 2 is positive.
+      cp.m_nX = 0.5 * (mesh2.getElementNormals()[0][ edgeId2 ] - mesh1.getElementNormals()[0][ edgeId1 ]);
+      cp.m_nY = 0.5 * (mesh2.getElementNormals()[1][ edgeId2 ] - mesh1.getElementNormals()[1][ edgeId1 ]);
+      cp.m_nZ = 0.0; // zero out the third component of the normal
+   }
+   else
+   {
+      // MORTAR normal calculation. This is the normal of the nonmortar surface
+      cp.m_nX = mesh2.getElementNormals()[0][ edgeId2 ];
+      cp.m_nY = mesh2.getElementNormals()[1][ edgeId2 ];
+      cp.m_nZ = 0.;
+   }
+
+   // normalize the cp normal
+   RealT mag;
+   RealT invMag;
+
+   mag = magnitude( cp.m_nX, cp.m_nY );
+   invMag = 1.0 / mag;
+
+   cp.m_nX *= invMag;
+   cp.m_nY *= invMag;
+   
+   // compute the cp centroid as the average of 
+   // the two face's centers. This is the default 
+   // method of compute the cp centroid
+   cp.m_cX = 0.5 * ( mesh1.getElementCentroids()[0][edgeId1] + mesh2.getElementCentroids()[0][edgeId2] );
+   cp.m_cY = 0.5 * ( mesh1.getElementCentroids()[1][edgeId1] + mesh2.getElementCentroids()[1][edgeId2] );
+   cp.m_cZ = 0.0;
+
+   // project each edge's nodes onto the contact segment.
+   constexpr int max_nodes_per_elem = 2;
+   RealT projX1[max_nodes_per_elem];
+   RealT projY1[max_nodes_per_elem];
+   RealT projX2[max_nodes_per_elem];
+   RealT projY2[max_nodes_per_elem];
+
+   ProjectEdgeNodesToSegment( mesh1, edgeId1, cp.m_nX, cp.m_nY,
+                              cp.m_cX, cp.m_cY, &projX1[0], &projY1[0] );
+   ProjectEdgeNodesToSegment( mesh2, edgeId2, cp.m_nX, cp.m_nY,
+                              cp.m_cX, cp.m_cY, &projX2[0], &projY2[0] );
+
+   // compute the full overlap. Even if we are using the interpenetration 
+   // overlap, we have to compute the full overlap in order to properly 
+   // locate the contact plane (segment) for the interpenetration calculation
+   cp.checkSegOverlap( mesh1, mesh2, params, &projX1[0], &projY1[0], &projX2[0], &projY2[0], 
+                       mesh1.numberOfNodesPerElement(), mesh2.numberOfNodesPerElement() );
+
+   // compute the overlap length tolerance
+   cp.computeAreaTol( mesh1, mesh2, params ); 
+
+   // check the contact plane length against the minimum length. 
+   // In general the interpen length is going to be less than 
+   // the full overlap length so we can do this check prior to 
+   // any interpenetration overlap calculation
+   if (cp.m_area < cp.m_areaMin)
+   {
+      cp.m_inContact = false;
+      return NO_FACE_GEOM_ERROR;
+   }
+
+   if (interpenOverlap)
+   {
+      // properly locate the contact plane (segment)
+      cp.planePointAndCentroidGap( mesh1, mesh2, 2. * 
+         axom::utilities::max( mesh1.getFaceRadii()[ edgeId1 ], 
+                               mesh2.getFaceRadii()[ edgeId2 ] )); 
+      bool interpen = false;
+      FaceGeomError interpen_err = cp.computeLocalInterpenOverlap(
+        mesh1, mesh2, params, interpen );
+      if (interpen_err != NO_FACE_GEOM_ERROR)
+      {
+         cp.m_inContact = false;
+         return interpen_err;
+      }
+      else if (!interpen) 
+      {
+         cp.m_inContact = false;
+         return NO_FACE_GEOM_ERROR;
+      }
+   }
+
+   // recompute the plane point and centroid gap. For the full overlap 
+   // the centroid (i.e. plane point) of the contact plane has been modified 
+   // based on the computed segment overlap. This routine will relocate the 
+   // contact plane and compute the centroid gap. For the interpenetration 
+   // overlap, this ought to only amount to a centroid gap calculation as the 
+   // contact plane was properly located wrt the two edges, but the contact 
+   // plane point moved (in-contact segment) due to the interpen overlap 
+   // segment calc
+   cp.planePointAndCentroidGap( mesh1, mesh2, 2. * 
+      axom::utilities::max( mesh1.getFaceRadii()[ edgeId1 ], 
+                            mesh2.getFaceRadii()[ edgeId2 ] )); 
+
+   // Per 3D mortar testing, allow for separation up to the edge-radius
+   cp.m_gapTol = params.gap_separation_ratio * 
+                 axom::utilities::max( mesh1.getFaceRadii()[ edgeId1 ], 
+                                       mesh2.getFaceRadii()[ edgeId2 ] );
+   if (cp.m_gap > cp.m_gapTol)
+   {
+      cp.m_inContact = false;
+      return NO_FACE_GEOM_ERROR;
+   }
+
+   // for auto-contact, remove contact candidacy for full-overlap 
+   // face-pairs with interpenetration exceeding contact penetration fraction. 
+   // Note, this check is solely meant to exclude face-pairs composed of faces 
+   // on opposite sides of thin structures/plates
+   //
+   // Recall that interpen gaps are negative
+   if (fullOverlap)
+   {
+      if (ExceedsMaxAutoInterpen( mesh1, mesh2, edgeId1, edgeId2, 
+                                  params, cp.m_gap ))
+      {
+         cp.m_inContact = false;
+         return NO_FACE_GEOM_ERROR;
+      }
+   }
+
+   // for the full overlap case we need to project the overlap segment
+   // onto the updated contact plane
+   if (fullOverlap)
+   {
+      // allocate dummy space for the interpen topology so adding the 
+      // contact plane to the contact plane manager doesn't seg fault.
+      // Fix this later...
+      cp.m_numInterpenPoly1Vert = 2;
+      cp.m_numInterpenPoly2Vert = 2;
+      cp.m_interpenG1X = new RealT[ cp.m_numInterpenPoly1Vert ];
+      cp.m_interpenG1Y = new RealT[ cp.m_numInterpenPoly1Vert ];
+      cp.m_interpenG2X = new RealT[ cp.m_numInterpenPoly2Vert ];
+      cp.m_interpenG2Y = new RealT[ cp.m_numInterpenPoly2Vert ];
+
+      cp.m_interpenG1Z = nullptr;
+      cp.m_interpenG2Z = nullptr;
+
+      for (int i=0; i<2; ++i)
+      {
+         RealT xproj, yproj;
+         ProjectPointToSegment( cp.m_segX[i], cp.m_segY[i], 
+                                cp.m_nX, cp.m_nY, 
+                                cp.m_cX, cp.m_cY, xproj, yproj );
+         cp.m_segX[i] = xproj;
+         cp.m_segY[i] = yproj;
+
+         // set the interpen vertices to the full overlap vertices
+         cp.m_interpenG1X[i] = 0.0;
+         cp.m_interpenG1Y[i] = 0.0;
+         cp.m_interpenG2X[i] = 0.0;
+         cp.m_interpenG2Y[i] = 0.0;
+      }
+  
+   }
+
+   cp.m_inContact = true;
+   return NO_FACE_GEOM_ERROR;
+
+} // end CheckEdgePair()
+
+//------------------------------------------------------------------------------
+void ContactPlane2D::computeNormal( const MeshData::Viewer& m1, 
+                                    const MeshData::Viewer& m2 )
+{
+   if (m_intermediatePlane)
+   {
+      // COMMON_PLANE normal calculation:
+      // compute the cp normal as the average of the two face normals, and in 
+      // the direction such that the dot product between the cp normal and 
+      // the normal of face 2 is positive.
+      m_nX = 0.5 * (m2.getElementNormals()[0][ m_pair->m_element_id2 ] - m1.getElementNormals()[0][ m_pair->m_element_id1 ]);
+      m_nY = 0.5 * (m2.getElementNormals()[1][ m_pair->m_element_id2 ] - m1.getElementNormals()[1][ m_pair->m_element_id1 ]);
+      m_nZ = 0.0; // zero out the third component of the normal
+   }
+   else
+   {
+      // MORTAR normal calculation. This is the normal of the nonmortar surface
+      m_nX = m2.getElementNormals()[0][ m_pair->m_element_id2 ];
+      m_nY = m2.getElementNormals()[1][ m_pair->m_element_id2 ];
+      m_nZ = 0.;
+   }
+
+   // normalize the cp normal
+   RealT mag;
+   RealT invMag;
+
+   mag = magnitude( m_nX, m_nY );
+   invMag = 1.0 / mag;
+
+   m_nX *= invMag;
+   m_nY *= invMag;
+
+   return;
+
+} // end ContactPlane2D::computeNormal()
+
+//------------------------------------------------------------------------------
+void ContactPlane2D::computePlanePoint( const MeshData::Viewer& m1,
+                                        const MeshData::Viewer& m2 )
+{
+   // compute the cp centroid as the average of 
+   // the two face's centers. This is the default 
+   // method of compute the cp centroid
+   m_cX = 0.5 * ( m1.getElementCentroids()[0][m_pair->m_element_id1] + m2.getElementCentroids()[0][m_pair->m_element_id2] );
+   m_cY = 0.5 * ( m1.getElementCentroids()[1][m_pair->m_element_id1] + m2.getElementCentroids()[1][m_pair->m_element_id2] );
+   m_cZ = 0.0;
+   return;
+
+} // end ContactPlane2D::computePlanePoint()
+
+//------------------------------------------------------------------------------
+void ContactPlane2D::computeIntegralGap()
+{
+   // TODO implement this routine
+   // This will be contact method dependent
+   return;
+
+} // end ContactPlane2D::computeIntegralGap()
+
+//------------------------------------------------------------------------------
+void ContactPlane2D::computeAreaTol( const MeshData::Viewer& m1,
+                                     const MeshData::Viewer& m2,
+                                     const Parameters& params )
+{
+   if (m_areaFrac < params.overlap_area_frac)
+   {
+      SLIC_DEBUG( "ContactPlane2D::computeAreaTol() the overlap area fraction too small or negative; " << 
+                  "setting to overlap_area_frac parameter." );
+      m_areaFrac = params.overlap_area_frac;
+   }
+
+   m_areaMin = m_areaFrac * 
+               axom::utilities::min( m1.getElementAreas()[ m_pair->m_element_id1 ], 
+                                     m2.getElementAreas()[ m_pair->m_element_id2 ] );
+   return;
+
+} // ContactPlane2D::computeAreaTol()
+
+//------------------------------------------------------------------------------
+void ContactPlane2D::centroidGap( const MeshData::Viewer& m1,
+                                  const MeshData::Viewer& m2,
+                                  RealT scale )
+{
+   // project the overlap centroid, which is taken to be the point data 
+   // (i.e. centroid) of the contact plane, back to each edge using the 
+   // line-plane intersection method where each edge is imagined to be 
+   // within a plane defined by the edge's centroid and normal
+   RealT xc1 = 0.;
+   RealT yc1 = 0.;
+   RealT zc1 = 0.;
+   RealT xc2 = 0.;
+   RealT yc2 = 0.;
+   RealT zc2 = 0.;
+
+   // find where the overlap centroid (plane point) intersects each face.
+   // The following variables store the end vertices of 
+   // a fictitious line co-directional with the contact plane normal 
+   // passing through each edge
+
+   // set the line segment's first vertex at the contact plane centroid, 
+   // scaled in the direction opposite the contact plane normal
+   RealT xA = m_cX + m_nX * scale;
+   RealT yA = m_cY + m_nY * scale;
+   RealT zA = 0.0;
+
+   // use the contact plane normal as the directional vector scale 
+   // in the direction of the contact plane
+   RealT xB = m_cX - m_nX * scale;
+   RealT yB = m_cY - m_nY * scale;
+   RealT zB = 0.0;
+
+   bool inPlane = false;
+   IndexT fId1 = m_pair->m_element_id1;
+   IndexT fId2 = m_pair->m_element_id2;
+   bool intersect1 = LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
+                                            m1.getElementCentroids()[0][fId1], m1.getElementCentroids()[1][fId1], 0.0,
+                                            m1.getElementNormals()[0][fId1], m1.getElementNormals()[1][fId1], 0.0,
+                                            xc1, yc1, zc1, inPlane );
+
+   bool intersect2 = LinePlaneIntersection( xA, yA, zA, xB, yB, zB,
+                                            m2.getElementCentroids()[0][fId2], m2.getElementCentroids()[1][fId2], 0.0,
+                                            m2.getElementNormals()[0][fId2], m2.getElementNormals()[1][fId2], 0.0,
+                                            xc2, yc2, zc2, inPlane );
+   TRIBOL_UNUSED_VAR(intersect1); // We don't currently use these bool variabeles
+   TRIBOL_UNUSED_VAR(intersect2); // but the above function calls modify some parameters
+
+   // compute the normal gap magnitude (x1 - x2 for positive gap in separation 
+   // and negative gap in penetration).
+   m_gap = (xc1 - xc2) * m_nX + (yc1 - yc2) * m_nY;
+
+   // store the two edge points corresponding to the contact plane centroid 
+   // projection/intersection
+   m_cXf1 = xc1;
+   m_cYf1 = yc1;
+   m_cZf1 = 0.0;
+
+   m_cXf2 = xc2;
+   m_cYf2 = yc2;
+   m_cZf2 = 0.0;
+
+   return;
+
+} // end ContactPlane2D::centroidGap()
+
+//------------------------------------------------------------------------------
+void ContactPlane2D::checkSegOverlap( const MeshData::Viewer& m1,
+                                      const MeshData::Viewer& m2,
+                                      const Parameters& params,
+                                      const RealT* const pX1, const RealT* const pY1, 
+                                      const RealT* const pX2, const RealT* const pY2, 
+                                      const int nV1, const int nV2 )
+{
+   SLIC_ASSERT( nV1 == 2 );
+   SLIC_ASSERT( nV2 == 2 );
+
+   // get edge ids
+   int e1Id = getCpElementId1();
+   int e2Id = getCpElementId2();
+
+   //
+   // perform the all-in-1 check
+   //
+
+   // define the edge 1 non-unit directional vector between vertices 
+   // 2 and 1
+   RealT lvx1 = pX1[1] - pX1[0];
+   RealT lvy1 = pY1[1] - pY1[0];
+
+   // compute vector between each edge 2 vertex and vertex 1 on edge 1.
+   // Then dot that vector with the directional vector of edge 1 to see 
+   // if they are codirectional. If so, check, that this vector length is 
+   // less than edge 1 length indicating that the vertex lies within edge 1
+   RealT projTol = params.projection_ratio * 
+                  axom::utilities::max( m1.getFaceRadii()[ e1Id ], 
+                                        m2.getFaceRadii()[ e2Id ] );
+   RealT vLenTol = projTol;
+   int inter2 = 0;
+   int twoInOneId = -1;
+   for (int i=0; i<nV2; ++i)
+   {
+      RealT vx = pX2[i] - pX1[0];
+      RealT vy = pY2[i] - pY1[0]; 
+
+      // compute projection onto edge 1 directional vector
+      RealT proj = vx * lvx1 + vy * lvy1;
+
+      // compute length of <vx,vy>; if vLen < some tolerance we have a 
+      // coincident node
+      RealT vLen = magnitude( vx, vy );
+
+      if (vLen < vLenTol) // coincident vertex
+      {
+         twoInOneId = i;
+         ++inter2;
+      }
+      else if (proj > projTol && vLen <= m1.getElementAreas()[e1Id]) // interior vertex
+      {
+         twoInOneId = i;
+         ++inter2;
+      }
+   }
+
+   // if both vertices pass the above criteria than 2 is in 1
+   if (inter2 == 2) 
+   {
+      // set the contact plane (segment) length
+      m_area = m2.getElementAreas()[e2Id];
+
+      // set the vertices of the overlap segment
+      m_segX[0] = pX2[0];
+      m_segY[0] = pY2[0];
+  
+      m_segX[1] = pX2[1];
+      m_segY[1] = pY2[1];
+
+      // relocate the centroid within the currently defined contact 
+      // segment
+      m_cX = 0.5 * (m_segX[0] + m_segX[1]);
+      m_cY = 0.5 * (m_segY[0] + m_segY[1]);
+      m_cZ = 0.0;
+      return;
+   }
+
+   //
+   // perform the all-in-2 check
+   //
+
+   // define the edge 2 non-unit directional vector between vertices 
+   // 2 and 1
+   RealT lvx2 = pX2[1] - pX2[0];
+   RealT lvy2 = pY2[1] - pY2[0];
+
+   // compute vector between each edge 1 vertex and vertex 1 on edge 2.
+   // Then dot that vector with the directional vector of edge 2 to see 
+   // if they are codirectional. If so, check, that this vector length is 
+   // less than edge 2 length indicating that the vertex is within edge 2
+   int inter1 = 0;
+   int oneInTwoId = -1;
+   for (int i=0; i<nV1; ++i)
+   {
+      RealT vx = pX1[i] - pX2[0];
+      RealT vy = pY1[i] - pY2[0]; 
+
+      // compute projection onto edge 2 directional vector
+      RealT proj = vx * lvx2 + vy * lvy2;
+
+      // compute length of <vx,vy>
+      RealT vLen = magnitude( vx, vy );
+
+      if (vLen < vLenTol) // coincident vertex
+      {
+         oneInTwoId = i;
+         ++inter1;
+      }
+      else if (proj > projTol && vLen <= m2.getElementAreas()[e2Id]) // interior vertex
+      {
+         oneInTwoId = i;
+         ++inter1;
+      }
+   }
+
+   // if both vertices pass the above criteria then 1 is in 2.
+   if (inter1 == 2)
+   {
+      // set the contact plane (segment) length
+      m_area = m1.getElementAreas()[e1Id];
+
+      // set the overlap segment vertices on the contact plane object
+      m_segX[0] = pX1[0];
+      m_segY[0] = pY1[0];
+  
+      m_segX[1] = pX1[1];
+      m_segY[1] = pY1[1];
+  
+      // relocate the centroid within the currently defined contact 
+      // segment
+      m_cX = 0.5 * (m_segX[0] + m_segX[1]);
+      m_cY = 0.5 * (m_segY[0] + m_segY[1]);
+      m_cZ = 0.0;
+      return;
+   }
+
+   // if inter1 == 0 and inter2 == 0 then there is no overlap
+   if (inter1 == 0 && inter2 == 0)
+   {
+      m_area = 0.0;
+      m_cX = m_cY = m_cZ = 0.0;
+      return;
+   }
+
+   // there is a chance that oneInTowId or twoInOneId is not actually set, 
+   // in which case we don't have an overlap. 
+   if (oneInTwoId == -1 || twoInOneId == -1)
+   {
+      m_area = 0.0;
+      m_cX = m_cY = m_cZ = 0.0;
+      return;
+   }
+
+   // if we are here, we have ruled out all-in-1 and all-in-2 overlaps, 
+   // and non-overlapping edges, but have the case where edge 1 and 
+   // edge 2 overlap some finite distance that is less than either of their 
+   // lengths. We have vertex information from the all-in-one checks 
+   // indicating which vertices on one edge are within the other edge
+
+   // set the segment vertices
+   m_segX[0] = pX1[ oneInTwoId ];
+   m_segY[0] = pY1[ oneInTwoId ];
+   m_segX[1] = pX2[ twoInOneId ];
+   m_segY[1] = pY2[ twoInOneId ];
+
+   // compute vector between "inter"-vertices
+   RealT vecX = m_segX[1] - m_segX[0];
+   RealT vecY = m_segY[1] - m_segY[0];
+
+   // compute the length of the overlapping segment
+   m_area = magnitude( vecX, vecY );
+
+   // compute the overlap centroid
+   m_cX = 0.5 * (m_segX[0] + m_segX[1]);
+   m_cY = 0.5 * (m_segY[0] + m_segY[1]);
+   m_cZ = 0.0;
+
+   return;
+
+} // end ContactPlane2D::checkSegOverlap()
+
+//------------------------------------------------------------------------------
+TRIBOL_HOST_DEVICE FaceGeomError ContactPlane2D::computeLocalInterpenOverlap(
+      const MeshData::Viewer& m1, const MeshData::Viewer& m2, 
+      const Parameters& params, bool& interpen )
+{
+   //
+   // Note: the contact plane has to be properly located prior to calling 
+   // this routine. 
+   //
+
+   interpen = false;
+
+   // all edge-edge interactions suitable for an interpenetration overlap 
+   // calculation are edges that intersect at a single point
+   int edgeId1 = getCpElementId1();
+   int edgeId2 = getCpElementId2();
+   int nodeA1 = m1.getGlobalNodeId( edgeId1, 0 );
+   int nodeB1 = m1.getGlobalNodeId( edgeId1, 1 );
+   int nodeA2 = m2.getGlobalNodeId( edgeId2, 0 );
+   int nodeB2 = m2.getGlobalNodeId( edgeId2, 1 );
+
+   RealT xposA1 = m1.getPosition()[0][ nodeA1 ];
+   RealT yposA1 = m1.getPosition()[1][ nodeA1 ];
+   RealT xposB1 = m1.getPosition()[0][ nodeB1 ];
+   RealT yposB1 = m1.getPosition()[1][ nodeB1 ];
+
+   RealT xposA2 = m2.getPosition()[0][ nodeA2 ];
+   RealT yposA2 = m2.getPosition()[1][ nodeA2 ];
+   RealT xposB2 = m2.getPosition()[0][ nodeB2 ];
+   RealT yposB2 = m2.getPosition()[1][ nodeB2 ];
+
+   RealT xInter, yInter;
+   bool duplicatePoint = false;
+
+   // check if the segments intersect
+   RealT len_tol = params.len_collapse_ratio * 
+                  axom::utilities::max( m1.getFaceRadii()[ edgeId1 ], 
+                                        m2.getFaceRadii()[ edgeId2 ] );
+
+   bool edgeIntersect = SegmentIntersection2D( xposA1, yposA1, xposB1, yposB1,
+                                               xposA2, yposA2, xposB2, yposB2,
+                                               nullptr, xInter, yInter, 
+                                               duplicatePoint, len_tol );
+   
+   // check to make sure the edges are actually intersecting. Note 
+   // that an intersection point within the specified tolerance of 
+   // an edge vertex is collapsed to that vertex point and duplicatePoint 
+   // is marked true, but the SegmentIntersection2D returns false
+   if (!edgeIntersect && !duplicatePoint)
+   {
+      m_interpenArea = 0.0;
+      interpen = false;
+      return NO_FACE_GEOM_ERROR;
+   }
+
+   // check if a duplicate point (i.e. vertex) was registered. 
+   // That is, if the intersection point is at an edge vertex, 
+   // in which case we don't register the interaction
+   if (duplicatePoint)
+   {
+      m_interpenArea = 0.0;
+      interpen = false;
+      return NO_FACE_GEOM_ERROR;
+   }
+   
+   // project unique intersection point to the contact plane. 
+   // The contact plane should have been properly located prior 
+   // to this subroutine, in which case the intersection point lies 
+   // on the contact plane (segment). We can still do this projection 
+   // to be safe and the routine will handle a point that is already 
+   // on the plane
+   RealT xInterProj, yInterProj;
+   ProjectPointToSegment( xInter, yInter, m_nX, m_nY, 
+                          m_cX, m_cY, xInterProj, yInterProj );
+
+   // now isolate which vertex on edge 1 and which vertex on edge 2 lie 
+   // on the "wrong" side of the contact plane. 
+
+   // define vectors between an edge vertex and the contact plane centroid;
+   int interId1 = -1;
+   int interId2 = -1;
+   int k = 0;
+   for (int i=0; i<m1.numberOfNodesPerElement(); ++i)
+   {
+      int nodeId1 = m1.getGlobalNodeId( edgeId1, i );
+      int nodeId2 = m2.getGlobalNodeId( edgeId2, i );
+      RealT lvx1 = m1.getPosition()[0][ nodeId1 ] - m_cX;
+      RealT lvy1 = m1.getPosition()[1][ nodeId1 ] - m_cY;
+      RealT lvx2 = m2.getPosition()[0][ nodeId2 ] - m_cX;
+      RealT lvy2 = m2.getPosition()[1][ nodeId2 ] - m_cY;
+
+      // dot each vector with the contact plane normal
+      RealT proj1 = lvx1 * m_nX + lvy1 * m_nY;
+      RealT proj2 = lvx2 * m_nX + lvy2 * m_nY;
+
+      // check the projection to detect interpenetration and 
+      // mark the node id if true
+      if (proj1 > 0.0) 
+      {
+         interId1 = i; 
+         ++k;
+      }
+      if (proj2 < 0.0) 
+      {    
+         interId2 = i; 
+         ++k;
+      }
+   }
+
+   // Debug check the number of interpenetrating vertices
+   if (k > 2)
+   {
+      SLIC_DEBUG("ContactPlane2D::computeLocalInterpenOverlap() more than 2 interpenetrating vertices detected; " << 
+                 "check for degenerate geometry for edges (" << edgeId1 << ", " << edgeId2 << ") on meshes (" << 
+                 m1.meshId() << ", " << m2.meshId() << ").");
+      interpen = false;
+      return DEGENERATE_OVERLAP;
+   }
+
+   // now that we have marked the interpenetrating vertex of each edge, 
+   // compute the distance between the interpenetrating vertex and the 
+   // edge intersection point
+   int nodeInter1 = m1.getGlobalNodeId( edgeId1, interId1 );
+   int nodeInter2 = m2.getGlobalNodeId( edgeId2, interId2 ); 
+
+   RealT vix1 = m1.getPosition()[0][ nodeInter1 ] - xInterProj;
+   RealT viy1 = m1.getPosition()[1][ nodeInter1 ] - yInterProj;
+   RealT vix2 = m2.getPosition()[0][ nodeInter2 ] - xInterProj;
+   RealT viy2 = m2.getPosition()[1][ nodeInter2 ] - yInterProj;
+
+   // determine magnitude of each vector
+   RealT mag1 = magnitude( vix1, viy1 );
+   RealT mag2 = magnitude( vix2, viy2 );
+
+   // the interpenetration overlap length is the minimum of the above 
+   // vectors
+   m_interpenArea = (mag1 <= mag2) ? mag1 : mag2;
+
+   if (m_interpenArea > m_areaMin) 
+   {
+      // determine the edge vertex that forms the overlap segment along 
+      // with the intersection point previously computed
+      RealT vx1 = (mag1 <= mag2) ? m1.getPosition()[0][ nodeInter1 ] 
+                                : m2.getPosition()[0][ nodeInter2 ];
+
+      RealT vy1 = (mag1 <= mag2) ? m1.getPosition()[1][ nodeInter1 ]
+                                : m2.getPosition()[1][ nodeInter2 ];
+     
+      RealT vx2 = xInterProj;
+      RealT vy2 = yInterProj;
+
+      // allocate space to store the interpen vertices for visualization
+      // (stored on contact plane base class)
+      m_numInterpenPoly1Vert = 2;
+      m_numInterpenPoly2Vert = 2;
+      m_interpenG1X = new RealT[2];
+      m_interpenG1Y = new RealT[2];
+      m_interpenG2X = new RealT[2];
+      m_interpenG2Y = new RealT[2];
+     
+      m_interpenG1Z = nullptr;
+      m_interpenG2Z = nullptr;
+
+      m_interpenG1X[0] = vix1;
+      m_interpenG1Y[0] = viy1;
+      m_interpenG1X[1] = xInter;
+      m_interpenG1Y[1] = yInter;
+   
+      m_interpenG2X[0] = vix2;
+      m_interpenG2Y[0] = viy2;
+      m_interpenG2X[1] = xInter;
+      m_interpenG2Y[1] = yInter;
+
+      // project these points to the contact plane
+      ProjectPointToSegment(vx1, vy1, m_nX, m_nY, m_cX, m_cY, 
+                            m_segX[0], m_segY[0]);
+                             
+      ProjectPointToSegment(vx2, vy2, m_nX, m_nY, m_cX, m_cY, 
+                            m_segX[1], m_segY[1]);
+
+      // compute the new contact plane overlap centroid (segment point)
+      m_cX = 0.5 * (m_segX[0] + m_segX[1]);
+      m_cY = 0.5 * (m_segY[0] + m_segY[1]);
+
+      interpen = true;
+      return NO_FACE_GEOM_ERROR;
+   }
+ 
+   m_interpenG1X = nullptr;
+   m_interpenG1Y = nullptr;
+   m_interpenG2X = nullptr;
+   m_interpenG2Y = nullptr;
+   m_interpenG1Z = nullptr;
+   m_interpenG2Z = nullptr;
+
+   interpen = false;
+   return NO_FACE_GEOM_ERROR;
+
+} // end ContactPlane2D::computeLocalInterpenOverlap()
 
 //------------------------------------------------------------------------------
 

@@ -574,8 +574,10 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
 
    tribol::registerNodalVelocities( mesh_id, vx, vy, vz );
 
-   RealT bulk_mod = 1.;
-   tribol::registerRealElementField( mesh_id, tribol::BULK_MODULUS, &bulk_mod );
+   RealT bulk_mod[2];
+   bulk_mod[0] = 1.0;
+   bulk_mod[1] = 1.0;
+   tribol::registerRealElementField( mesh_id, tribol::BULK_MODULUS, bulk_mod );
    tribol::registerRealElementField( mesh_id, tribol::ELEMENT_THICKNESS, &element_thickness[0] );
 
    int csIndex = 0;

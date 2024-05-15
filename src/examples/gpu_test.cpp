@@ -42,6 +42,7 @@ int main( int argc, char** argv )
   //                            //
   ////////////////////////////////
 
+#ifdef TRIBOL_USE_CUDA
   // initialize
 #ifdef TRIBOL_USE_MPI
   MPI_Init( &argc, &argv );
@@ -90,5 +91,6 @@ int main( int argc, char** argv )
 #endif
 
   return 0;
+#endif
 }
 

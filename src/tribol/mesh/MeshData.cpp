@@ -826,7 +826,7 @@ TRIBOL_HOST_DEVICE void MeshData::Viewer::getFaceCoords( IndexT face_id, RealT* 
     IndexT node_id = getGlobalNodeId(face_id, a);
     for (int d{0}; d < dim; ++d)
     {
-      coords[dim*a + d] = m_position[0][node_id];
+      coords[dim*a + d] = m_position[d][node_id];
     }
   }
 
@@ -844,7 +844,7 @@ TRIBOL_HOST_DEVICE void MeshData::Viewer::getFaceVelocities( IndexT face_id, Rea
     IndexT node_id = getGlobalNodeId(face_id, a);
     for (int d{0}; d < dim; ++d)
     {
-      vels[dim*a + d] = m_vel[0][node_id];
+      vels[dim*a + d] = m_vel[d][node_id];
     }
   }
 
