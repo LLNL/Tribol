@@ -353,16 +353,14 @@ spack:
       - spec: pdsh@2.33
         prefix: /usr
 
-    # Globally lock version of third party libraries
+    # Globally lock version of third party libraries that work on this platform
     axom:
       variants: ~examples~fortran~lua~tools
     camp:
-      require: "@2023.06.0"
+      require: "@2024.02.0"
     conduit:
-      require: "@0.8.8~shared~test~examples~utilities"
-    hypre:
-      version: [2.24.0]
+      require: "@0.9.1~shared~test~examples~utilities"
     raja:
-      require: "@2023.06.0~shared~examples~exercises"
+      require: "@2024.02.0~shared~examples~exercises"
     umpire:
-      require: "@2023.06.0~shared~examples"
+      require: "@2024.02.0~shared~examples"

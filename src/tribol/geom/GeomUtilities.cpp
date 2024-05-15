@@ -829,25 +829,37 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
       }
    }
 
-   // order the unordered vertices (in counter clockwise fashion)
-   PolyReorder( polyXTemp, polyYTemp, numPolyVert );
-
-   // check length of segs against tolerance and collapse short segments if necessary
-   // This is where polyX and polyY get allocated.
-   int numFinalVert = 0; 
-
-   FaceGeomError segErr = CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
-                                         lenTol, polyX, polyY, numFinalVert );
-
-   if (segErr != 0)
+   // reorder the unordered vertices and check segment length against tolerance for edge collapse.
+   // Only do this for overlaps with 3 or more vertices. We skip any overlap that degenerates to <3 vertices
+   if (numPolyVert>2)
    {
-      return segErr;
+      // order the unordered vertices (in counter clockwise fashion)
+      PolyReorder( polyXTemp, polyYTemp, numPolyVert );
+
+      // check length of segs against tolerance and collapse short segments if necessary
+      // This is where polyX and polyY get allocated for any overlap that remains with 
+      // > 3 vertices
+      int numFinalVert = 0; 
+
+      FaceGeomError segErr = CheckPolySegs( polyXTemp, polyYTemp, numPolyVert, 
+                                            lenTol, polyX, polyY, numFinalVert );
+
+      // check for an error in the segment check routine
+      if (segErr != 0)
+      {
+         return segErr;
+      }
+ 
+      // check to see if the overlap was degenerated to have 2 or less vertices.
+      if (numFinalVert<3)
+      {
+         area = 0.0;
+         return NO_FACE_GEOM_ERROR; // punt on degenerated or collapsed overlaps
+      }
+
+      numPolyVert = numFinalVert;
    }
-
-   numPolyVert = numFinalVert;
-
-   // check to see if numPolyVert has degenerated to less than a triangle
-   if (numPolyVert < 3)
+   else
    {
       area = 0.0;
       return NO_FACE_GEOM_ERROR; // don't return error here. We should tolerate 'collapsed' (zero area) overlaps
@@ -1240,6 +1252,14 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const Real
       }
    }
 
+   // check to make sure numNewPoints >= 3 for valid overlap polygons prior
+   // to memory allocation
+   if (numNewPoints < 3)
+   {
+      // return and degenerated polygon will be skipped over. 
+      return NO_FACE_GEOM_ERROR;
+   }
+
    // allocate space for xnew and ynew. These are the input/output pointers 
    // to the overlapping polygon's vertex coordinates in the main polygon intersection 
    // routine
@@ -1272,7 +1292,11 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const Real
 TRIBOL_HOST_DEVICE void PolyReorder( RealT* const x, RealT* const y, const int numPoints )
 {
 
-  //  SLIC_ERROR_IF(numPoints<3, "PolyReorder: numPoints < 3.");
+   if (numPoints<3)
+   {
+      // SLIC_DEBUG("PolyReorder: numPoints (" << numPoints << ") < 3.");
+      return;
+   }
 
    RealT xC, yC, zC;
    RealT * z = nullptr;
