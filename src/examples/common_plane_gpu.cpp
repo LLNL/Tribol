@@ -56,7 +56,7 @@ int main( int argc, char** argv )
   umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
 #endif
 
-  auto mem_space = tribol::MemorySpace::Device;
+  auto mem_space = tribol::MemorySpace::Host;
 
   int err = 0;
   if (mem_space == tribol::MemorySpace::Device)
