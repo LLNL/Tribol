@@ -1528,7 +1528,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
       RealT t2 = m_mesh2->getElementData().m_thickness[index2];
 
       // compute the gap vector (recall gap is x1-x2 by convention)
-      RealT gapVec[dim];
+      RealT gapVec[max_dim];
       gapVec[0] = plane.m_cXf1 - plane.m_cXf2;
       gapVec[1] = plane.m_cYf1 - plane.m_cYf2;
       if (dim == 3)

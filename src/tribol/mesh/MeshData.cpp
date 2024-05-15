@@ -233,9 +233,14 @@ MeshData::MeshData( IndexT mesh_id, IndexT num_elements, IndexT num_nodes,
   }
 
   // Find unique surface node ids
-  if (mem_space != MemorySpace::Device && num_elements > 0)
+  if (num_elements > 0)
   {
-    sortSurfaceNodeIds();
+#ifdef TRIBOL_USE_UMPIRE
+    if (mem_space != MemorySpace::Device)
+#endif
+    {
+      sortSurfaceNodeIds();
+    }
   }
 
   getElementData().m_num_cells = num_elements;
