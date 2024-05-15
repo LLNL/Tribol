@@ -545,7 +545,8 @@ public:
    /*!
     * \brief Check whether two polygons (faces) have a positive area of overlap
     *
-    * \note Wrapper routine that calls the ALE3D polygon intersection routine
+    * \note Wrapper routine that calls the polygon intersection routine. That routine
+    *  does not return vertices, just overlap area.
     */
    void checkPolyOverlap( real* RESTRICT projLocX1, real* RESTRICT projLocY1, 
                           real* RESTRICT projLocX2, real* RESTRICT projLocY2, 
