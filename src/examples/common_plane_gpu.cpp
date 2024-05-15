@@ -56,10 +56,10 @@ int main( int argc, char** argv )
   umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
 #endif
 
-  auto mem_space = tribol::MemorySpace::Device;
-
   int err = 0;
 #ifdef TRIBOL_USE_CUDA
+  auto mem_space = tribol::MemorySpace::Device;
+
   if (mem_space == tribol::MemorySpace::Device)
   {
     err = runExample<tribol::MemorySpace::Device, tribol::ExecutionMode::Cuda>();
