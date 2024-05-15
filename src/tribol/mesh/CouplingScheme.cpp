@@ -932,12 +932,7 @@ void CouplingScheme::performBinning()
 int CouplingScheme::apply( int cycle, RealT t, RealT &dt ) 
 {
   auto& params = m_parameters;
-
-  // clear contact plane manager to be populated/allocated anew for this
-  // coupling-scheme/cycle.
-  m_contact_plane2d.clear();
-  m_contact_plane3d.clear();
-
+  
   // loop over number of interface pairs
   IndexT numPairs = m_interface_pairs.size();
 
@@ -945,25 +940,28 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
 
   // loop over all pairs and perform geometry checks to see if they are
   // interacting
-  ArrayViewT<InterfacePair> pairs = getInterfacePairs();
+  auto pairs = getInterfacePairsView();
   auto contact_method = m_contactMethod;
   auto contact_case = m_contactCase;
   ArrayT<int> active_pair_ct_data(1, 1, getAllocatorId());
   auto active_pair_ct = active_pair_ct_data.view();
   ArrayT<int> pair_err_data(1, 1, getAllocatorId());
   auto pair_err = pair_err_data.view();
+  // clear contact planes to be populated/allocated anew for this cycle
   if (spatialDimension() == 2)
   {
-    m_contact_plane2d.resize(numPairs);
+    m_contact_plane2d = ArrayT<ContactPlane2D>(numPairs, numPairs, getAllocatorId());
+    m_contact_plane3d = ArrayT<ContactPlane3D>(0, 1, getAllocatorId());
   }
-  ArrayViewT<ContactPlane2D> planes_2d = m_contact_plane2d.view();
-  if (spatialDimension() == 3)
+  else
   {
-    m_contact_plane3d.resize(numPairs);
+    m_contact_plane2d = ArrayT<ContactPlane2D>(0, 1, getAllocatorId());
+    m_contact_plane3d = ArrayT<ContactPlane3D>(numPairs, numPairs, getAllocatorId());
   }
-  ArrayViewT<ContactPlane3D> planes_3d = m_contact_plane3d.view();
-  MeshData::Viewer& mesh1 = getMesh1();
-  MeshData::Viewer& mesh2 = getMesh2();
+  auto planes_2d = m_contact_plane2d.view();
+  auto planes_3d = m_contact_plane3d.view();
+  auto& mesh1 = getMesh1();
+  auto& mesh2 = getMesh2();
   ArrayT<IndexT> planes_ct_data(1, 1, getAllocatorId());
   auto planes_ct = planes_ct_data.view();
   forAllExec(getExecutionMode(), numPairs,

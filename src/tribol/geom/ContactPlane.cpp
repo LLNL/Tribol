@@ -38,101 +38,101 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
 {
   isInteracting = false;
 
-  // note: will likely need the ContactCase for specialized 
-  // geometry check(s)/routine(s)
+  // // note: will likely need the ContactCase for specialized 
+  // // geometry check(s)/routine(s)
 
-  switch (cMethod)
-  {
-    case SINGLE_MORTAR:
-    case MORTAR_WEIGHTS:
-    case COMMON_PLANE:
-    {
-      // set whether full overlap is to be used or not. Note: SINGLE_MORTAR and 
-      // MORTAR_WEIGHTS drop into this 'case', so the method still needs to be checked
-      const bool full = (cMethod == COMMON_PLANE) ? false : true;
-      const bool interpenOverlap = (full) ? false : true;
-      const bool intermediatePlane = (cMethod == COMMON_PLANE) ? true : false;
+  // switch (cMethod)
+  // {
+  //   case SINGLE_MORTAR:
+  //   case MORTAR_WEIGHTS:
+  //   case COMMON_PLANE:
+  //   {
+  //     // set whether full overlap is to be used or not. Note: SINGLE_MORTAR and 
+  //     // MORTAR_WEIGHTS drop into this 'case', so the method still needs to be checked
+  //     const bool full = (cMethod == COMMON_PLANE) ? false : true;
+  //     const bool interpenOverlap = (full) ? false : true;
+  //     const bool intermediatePlane = (cMethod == COMMON_PLANE) ? true : false;
 
-      // Perform contact plane specific computations (2D and 3D)
-      if (mesh1.spatialDimension() == 3)
-      {
+  //     // Perform contact plane specific computations (2D and 3D)
+  //     if (mesh1.spatialDimension() == 3)
+  //     {
 
-        ContactPlane3D cpTemp( &pair, params.overlap_area_frac, interpenOverlap, intermediatePlane);
-        FaceGeomError face_err = CheckFacePair( cpTemp, mesh1, mesh2, params, full );
+  //       ContactPlane3D cpTemp( &pair, params.overlap_area_frac, interpenOverlap, intermediatePlane);
+  //       FaceGeomError face_err = CheckFacePair( cpTemp, mesh1, mesh2, params, full );
 
-        SLIC_DEBUG("face_err: " << face_err );
+  //       SLIC_DEBUG("face_err: " << face_err );
 
-        if (face_err != NO_FACE_GEOM_ERROR)
-        {
-          isInteracting = false;
-        }
-        else if (cpTemp.m_inContact)
-        {
-          auto idx = RAJA::atomicInc<RAJA::auto_atomic>(plane_ct);
-          planes_3d[idx] = std::move(cpTemp);
-          isInteracting = true;
-        }
-        else
-        {
-          isInteracting = false;
-        }
-        return face_err;
-      }
-      else 
-      {
-        ContactPlane2D cpTemp( &pair, params.overlap_area_frac, interpenOverlap, intermediatePlane);
-        FaceGeomError edge_err = CheckEdgePair( cpTemp, mesh1, mesh2, params, full );
+  //       if (face_err != NO_FACE_GEOM_ERROR)
+  //       {
+  //         isInteracting = false;
+  //       }
+  //       else if (cpTemp.m_inContact)
+  //       {
+  //         auto idx = RAJA::atomicInc<RAJA::auto_atomic>(plane_ct);
+  //         planes_3d[idx] = std::move(cpTemp);
+  //         isInteracting = true;
+  //       }
+  //       else
+  //       {
+  //         isInteracting = false;
+  //       }
+  //       return face_err;
+  //     }
+  //     else 
+  //     {
+  //       ContactPlane2D cpTemp( &pair, params.overlap_area_frac, interpenOverlap, intermediatePlane);
+  //       FaceGeomError edge_err = CheckEdgePair( cpTemp, mesh1, mesh2, params, full );
 
-        if (edge_err != NO_FACE_GEOM_ERROR)
-        {
-          isInteracting = false;
-        }
-        else if (cpTemp.m_inContact)
-        {
-          auto idx = RAJA::atomicInc<RAJA::auto_atomic>(plane_ct);
-          planes_2d[idx] = std::move(cpTemp);
-          isInteracting = true;
-        }
-        else
-        {
-          isInteracting = false;
-        }
-        return edge_err;
-      }
-      break;
-    }
+  //       if (edge_err != NO_FACE_GEOM_ERROR)
+  //       {
+  //         isInteracting = false;
+  //       }
+  //       else if (cpTemp.m_inContact)
+  //       {
+  //         auto idx = RAJA::atomicInc<RAJA::auto_atomic>(plane_ct);
+  //         planes_2d[idx] = std::move(cpTemp);
+  //         isInteracting = true;
+  //       }
+  //       else
+  //       {
+  //         isInteracting = false;
+  //       }
+  //       return edge_err;
+  //     }
+  //     break;
+  //   }
 
-    case ALIGNED_MORTAR:
-    {
-      if (mesh1.spatialDimension() == 3)
-      {
-        // TODO refactor to make consistent with CheckFacePair, SRW
-        ContactPlane3D cpTemp = CheckAlignedFacePair( pair, mesh1, mesh2, params );
+  //   case ALIGNED_MORTAR:
+  //   {
+  //     if (mesh1.spatialDimension() == 3)
+  //     {
+  //       // TODO refactor to make consistent with CheckFacePair, SRW
+  //       ContactPlane3D cpTemp = CheckAlignedFacePair( pair, mesh1, mesh2, params );
 
-        if (cpTemp.m_inContact)
-        {
-          //cpMgr.addContactPlane( cpTemp );
-          isInteracting = true;
-        }
-        else
-        {
-          isInteracting = false;
-        }
-        return NO_FACE_GEOM_ERROR;
-      }
-      else
-      {
-        // SLIC_ERROR_IF(true, "2D ALIGNED_MORTAR not yet implemented.");
-      }
-      break;
-    }
+  //       if (cpTemp.m_inContact)
+  //       {
+  //         //cpMgr.addContactPlane( cpTemp );
+  //         isInteracting = true;
+  //       }
+  //       else
+  //       {
+  //         isInteracting = false;
+  //       }
+  //       return NO_FACE_GEOM_ERROR;
+  //     }
+  //     else
+  //     {
+  //       // SLIC_ERROR_IF(true, "2D ALIGNED_MORTAR not yet implemented.");
+  //     }
+  //     break;
+  //   }
 
-    default:
-    {
-      // don't do anything
-      break;
-    }
-  }
+  //   default:
+  //   {
+  //     // don't do anything
+  //     break;
+  //   }
+  // }
 
   return NO_FACE_GEOM_ERROR; // quiet compiler
 

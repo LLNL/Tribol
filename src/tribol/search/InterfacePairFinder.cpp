@@ -26,6 +26,7 @@
 #include "umpire/TypedAllocator.hpp"
 #include "umpire/strategy/DynamicPoolList.hpp"
 #include <RAJA/pattern/atomic.hpp>
+#include <RAJA/policy/atomic_auto.hpp>
 #include <axom/core/Array.hpp>
 
 // Define some namespace aliases to help with axom usage
@@ -741,13 +742,10 @@ public:
     );
 
     // Add filtered pairs to interface pairs
-    ArrayT<IndexT> filtered_candidates_host( filtered_candidates_data, 
-                                             getResourceAllocatorID(MemorySpace::Host) );
+    ArrayT<IndexT, 1, MemorySpace::Host> filtered_candidates_host( filtered_candidates_data );
     m_coupling_scheme->getInterfacePairs().resize(filtered_candidates_host[0]);
-    filtered_candidates_host[0] = 0;
-    filtered_candidates_data = filtered_candidates_host;
+    filtered_candidates_data.fill(0);
 
-    filtered_candidates = filtered_candidates_data.view();
     auto pairs_view = m_coupling_scheme->getInterfacePairsView();
     forAllExec(m_coupling_scheme->getExecutionMode(), m_candidates.size(),
       [=] TRIBOL_HOST_DEVICE (IndexT i)
