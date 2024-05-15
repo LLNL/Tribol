@@ -93,7 +93,7 @@ struct SurfaceContactElem
 
    int numActiveGaps;  ///< Number of local face-pair active gaps
 
-   ArrayT<mfem::DenseMatrix, 2> blockJ;
+   StackArrayT<mfem::DenseMatrix, 9> blockJ;
 
    /// routine to allocate space to store mortar weights
    void allocateMortarWts();
@@ -188,7 +188,7 @@ struct SurfaceContactElem
    void allocateBlockJ( EnforcementMethod enf );
 
    /// delete routine
-   void deallocateElem( );
+   TRIBOL_HOST_DEVICE void deallocateElem( );
 
 } ; // end of SurfaceContactElem definition
 
@@ -225,7 +225,7 @@ public:
     */
    void storeElemBlockJ( 
       ArrayT<int>&& blockJElemIds,
-      ArrayT<mfem::DenseMatrix, 2>& blockJ
+      StackArrayT<mfem::DenseMatrix, 9>& blockJ
    );
 
    /*!

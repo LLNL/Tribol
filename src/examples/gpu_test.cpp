@@ -13,12 +13,14 @@
 namespace tribol
 {
 
+#ifdef TRIBOL_USE_CUDA
 struct ExampleMesh
 {
   ArrayT<RealT, 2, MemorySpace::Device> coords;
   ArrayT<IndexT, 2, MemorySpace::Device> connectivity;
   ArrayT<RealT, 2, MemorySpace::Device> response;
 };
+#endif
 
 TRIBOL_HOST_DEVICE void FillMesh(int i, RealT* coords, IndexT* conn, RealT* force)
 {

@@ -39,9 +39,9 @@ TRIBOL_HOST_DEVICE RealT magnitude( RealT const vx, RealT const vy )
 }
 
 //------------------------------------------------------------------------------
-RealT dotProd( RealT const * const v, 
-               RealT const * const w, 
-               int const dim )
+TRIBOL_HOST_DEVICE RealT dotProd( RealT const * const v, 
+                                  RealT const * const w, 
+                                  int const dim )
 {
    RealT z = 0;
    for (int i=0; i<dim; ++i)

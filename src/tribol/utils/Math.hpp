@@ -23,10 +23,10 @@ TRIBOL_HOST_DEVICE RealT magnitude( RealT const vx,  ///< [in] x-component of th
                );
 
 /// returns the dot product of two vectors
-RealT dotProd( RealT const * const v,  ///< [in] first vector
-               RealT const * const w,  ///< [in] second vector 
-               int const dim          ///< [in] dimension of the vectors
-             );
+TRIBOL_HOST_DEVICE RealT dotProd( RealT const * const v,  ///< [in] first vector
+                                  RealT const * const w,  ///< [in] second vector 
+                                  int const dim          ///< [in] dimension of the vectors
+                                );
 
 /// returns the dot product of two 3-vectors with component-wise input
 TRIBOL_HOST_DEVICE RealT dotProd( RealT const aX,  ///< [in] x-component of first vector

@@ -1480,8 +1480,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 
       // get face normals
       RealT fn1[max_dim], fn2[max_dim];
-      m_mesh1->getFaceNormal( index1, fn1 );
-      m_mesh2->getFaceNormal( index2, fn2 );
+      mesh1.getFaceNormal( index1, fn1 );
+      mesh2.getFaceNormal( index2, fn2 );
 
       // compute projections
       v1_dot_n  = dotProd( vel_f1, overlapNormal, dim );
@@ -1524,8 +1524,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
 
       // get volume element thicknesses associated with each 
       // face in this pair and find minimum
-      RealT t1 = m_mesh1->getElementData().m_thickness[index1];
-      RealT t2 = m_mesh2->getElementData().m_thickness[index2];
+      RealT t1 = mesh1.getElementData().m_thickness[index1];
+      RealT t2 = mesh2.getElementData().m_thickness[index2];
 
       // compute the gap vector (recall gap is x1-x2 by convention)
       RealT gapVec[max_dim];
