@@ -407,15 +407,8 @@ enum EnforcementInfo
 struct LagrangeMultiplierImplicitOptions
 {
 public:
-   // default constructor
-   LagrangeMultiplierImplicitOptions() {};
-
-   ~LagrangeMultiplierImplicitOptions() {};
-
-   bool is_enforcement_option_set() { return enforcement_option_set; }
- 
    bool enforcement_option_set {false};
-
+   
    ImplicitEvalMode eval_mode;    ///! Implicit evaluation mode for residual, jacobian and gaps
    SparseMode sparse_mode;        ///! Mode for assembling sparse matrix contributions
 };
@@ -426,18 +419,9 @@ public:
 struct PenaltyEnforcementOptions
 {
 public:
-   // default constructor
-   PenaltyEnforcementOptions() {};
-
-   ~PenaltyEnforcementOptions() {};
-
    PenaltyConstraintType constraint_type;
    KinematicPenaltyCalculation kinematic_calculation;
    RatePenaltyCalculation rate_calculation;
-
-   bool is_constraint_type_set()       { return constraint_type_set; }
-   bool is_kinematic_calculation_set() { return kinematic_calc_set; }
-   bool is_rate_calculation_set()      { return rate_calc_set; }
  
    bool constraint_type_set {false};
    bool kinematic_calc_set  {false};

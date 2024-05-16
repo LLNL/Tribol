@@ -158,8 +158,6 @@ TRIBOL_HOST_DEVICE RealT ComputeGapRatePressure( ContactPlane& plane,
 template< >
 int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
 {
-   LoggingLevel logLevel = cs->getLoggingLevel(); 
-
    ///////////////////////////////
    // loop over interface pairs //
    ///////////////////////////////
@@ -184,8 +182,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
          RealT gap = plane.m_gap;
          RealT A = plane.m_area; // face-pair overlap area
 
-         // don't proceed for gaps that don't violate the constraints. This check 
-         // allows for numerically zero interpenetration.
+        //  don't proceed for gaps that don't violate the constraints. This check 
+        //  allows for numerically zero interpenetration.
          RealT gap_tol = cs_view.getCommonPlaneGapTol( index1, index2 );
 
         if ( gap > gap_tol )
@@ -198,8 +196,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
         }
 
         // debug force sums
-        RealT dbg_sum_force1 {0.};
-        RealT dbg_sum_force2 {0.};
+        // RealT dbg_sum_force1 {0.};
+        // RealT dbg_sum_force2 {0.};
         /////////////////////////////////////////////
         // kinematic penalty stiffness calculation //
         /////////////////////////////////////////////
@@ -378,8 +376,8 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
         //  contact pressure, and overlap area)                              //
         ///////////////////////////////////////////////////////////////////////
 
-        RealT phi_sum_1 = 0.;
-        RealT phi_sum_2 = 0.;
+        // RealT phi_sum_1 = 0.;
+        // RealT phi_sum_2 = 0.;
 
         // compute contact force (spring force)
         RealT contact_force = totalPressure * A;
@@ -400,11 +398,11 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
           IndexT node0 = mesh1.getGlobalNodeId(index1, a);
           IndexT node1 = mesh2.getGlobalNodeId(index2, a);
 
-          if (logLevel == TRIBOL_DEBUG)
-          {
-            phi_sum_1 += phi1[a];
-            phi_sum_2 += phi2[a];
-          }
+          // if (logLevel == TRIBOL_DEBUG)
+          // {
+          //   phi_sum_1 += phi1[a];
+          //   phi_sum_2 += phi2[a];
+          // }
   
           const RealT nodal_force_x1 = force_x * phi1[a];
           const RealT nodal_force_y1 = force_y * phi1[a];
@@ -414,28 +412,28 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
           const RealT nodal_force_y2 = force_y * phi2[a];
           const RealT nodal_force_z2 = force_z * phi2[a];
 
-          if (logLevel == TRIBOL_DEBUG)
-          {
-            dbg_sum_force1 += magnitude( nodal_force_x1, 
-                                          nodal_force_y1, 
-                                          nodal_force_z1 );
-            dbg_sum_force2 += magnitude( nodal_force_x2,
-                                          nodal_force_y2,
-                                          nodal_force_z2 );
-          }
+          // if (logLevel == TRIBOL_DEBUG)
+          // {
+          //   dbg_sum_force1 += magnitude( nodal_force_x1, 
+          //                                 nodal_force_y1, 
+          //                                 nodal_force_z1 );
+          //   dbg_sum_force2 += magnitude( nodal_force_x2,
+          //                                 nodal_force_y2,
+          //                                 nodal_force_z2 );
+          // }
 
           // accumulate contributions in host code's registered nodal force arrays
-          mesh1.getResponse()[0][ node0 ] -= nodal_force_x1;
-          mesh2.getResponse()[0][ node1 ] += nodal_force_x2;
+          RAJA::atomicAdd<RAJA::auto_atomic>(&mesh1.getResponse()[0][node0], -nodal_force_x1);
+          RAJA::atomicAdd<RAJA::auto_atomic>(&mesh2.getResponse()[0][node1],  nodal_force_x2);
 
-          mesh1.getResponse()[1][ node0 ] -= nodal_force_y1;
-          mesh2.getResponse()[1][ node1 ] += nodal_force_y2;
+          RAJA::atomicAdd<RAJA::auto_atomic>(&mesh1.getResponse()[1][node0], -nodal_force_y1);
+          RAJA::atomicAdd<RAJA::auto_atomic>(&mesh2.getResponse()[1][node1],  nodal_force_y2);
 
           // there is no z component for 2D
           if (dim == 3)
           {
-            mesh1.getResponse()[2][ node0 ] -= nodal_force_z1;
-            mesh2.getResponse()[2][ node1 ] += nodal_force_z2;
+            RAJA::atomicAdd<RAJA::auto_atomic>(&mesh1.getResponse()[2][node0], -nodal_force_z1);
+            RAJA::atomicAdd<RAJA::auto_atomic>(&mesh2.getResponse()[2][node1],  nodal_force_z2);
           }
         } // end for loop over face nodes
 

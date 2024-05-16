@@ -773,7 +773,7 @@ bool CouplingScheme::isValidEnforcement()
          }
          else if ( this->m_enforcementMethod == LAGRANGE_MULTIPLIER )
          {
-            if ( !this->m_enforcementOptions.lm_implicit_options.is_enforcement_option_set() )
+            if ( !this->m_enforcementOptions.lm_implicit_options.enforcement_option_set )
             {
                this->m_couplingSchemeErrors.cs_enforcement_error = 
                   OPTIONS_NOT_SET;
@@ -808,7 +808,7 @@ bool CouplingScheme::isValidEnforcement()
                INVALID_ENFORCEMENT_FOR_REGISTERED_METHOD;
             return false;
          }
-         else if ( !this->m_enforcementOptions.penalty_options.is_constraint_type_set() )
+         else if ( !this->m_enforcementOptions.penalty_options.constraint_type_set )
          {
             this->m_couplingSchemeErrors.cs_enforcement_error = 
                OPTIONS_NOT_SET;

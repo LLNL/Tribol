@@ -65,12 +65,10 @@ int main( int argc, char** argv )
     err = runExample<tribol::MemorySpace::Device, tribol::ExecutionMode::Cuda>();
   }
   else
+#endif
   {
-#endif
     err = runExample<tribol::MemorySpace::Host, tribol::ExecutionMode::Sequential>();
-#ifdef TRIBOL_USE_CUDA
   }
-#endif
 
   axom::slic::flushStreams();
   finalize_logger();
@@ -99,8 +97,15 @@ int runExample()
   }
   device.Print();
 
-  std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_apart.mesh";
+  std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_overlap.mesh";
   mfem::Mesh mesh(mesh_file);
+
+  int ref_ct = 3;
+  for (int i{0}; i < ref_ct; ++i)
+  {
+    mesh.UniformRefinement();
+  }
+
   mfem::H1_FECollection fe_coll(1, mesh.SpaceDimension());
   mfem::FiniteElementSpace fe_space(&mesh, &fe_coll, mesh.SpaceDimension());
   mfem::GridFunction coords(&fe_space);
@@ -111,9 +116,12 @@ int runExample()
   auto y_coords_ptr = &coords_ptr[fe_space.DofToVDof(0, 1)];
   auto z_coords_ptr = &coords_ptr[fe_space.DofToVDof(0, 2)];
 
+  int num_contact_elems = std::pow(2, ref_ct * 2);
+
   // mesh 1 connectivity (build on cpu)
   auto mesh1_bdry_attrib = 4;
-  tribol::ArrayT<tribol::IndexT, 2, tribol::MemorySpace::Host> host_conn_1(1, 4);
+  tribol::ArrayT<tribol::IndexT, 2, tribol::MemorySpace::Host> host_conn_1(num_contact_elems, 4);
+  int elem_ct = 0;
   for (int be{0}; be < mesh.GetNBE(); ++be)
   {
     if (mesh.GetBdrAttribute(be) == mesh1_bdry_attrib)
@@ -122,8 +130,9 @@ int runExample()
       fe_space.GetBdrElementDofs(be, be_dofs);
       for (int i{0}; i < 4; ++i)
       {
-        host_conn_1(0, i) = be_dofs[i];
+        host_conn_1(elem_ct, i) = be_dofs[i];
       }
+      ++elem_ct;
     }
   }
   // move to gpu
@@ -131,7 +140,8 @@ int runExample()
 
   // mesh 2 connectivity (build on cpu)
   auto mesh2_bdry_attrib = 5;
-  tribol::ArrayT<tribol::IndexT, 2, tribol::MemorySpace::Host> host_conn_2(1, 4);
+  tribol::ArrayT<tribol::IndexT, 2, tribol::MemorySpace::Host> host_conn_2(num_contact_elems, 4);
+  elem_ct = 0;
   for (int be{0}; be < mesh.GetNBE(); ++be)
   {
     if (mesh.GetBdrAttribute(be) == mesh2_bdry_attrib)
@@ -142,6 +152,7 @@ int runExample()
       {
         host_conn_2(0, i) = be_dofs[i];
       }
+      ++elem_ct;
     }
   }
   // move to gpu
@@ -194,12 +205,14 @@ int runExample()
   RealT dt = 1.0;
   tribol::update(cycle, time, dt);
 
-  axom::slic::flushStreams();
-  finalize_logger();
+  RealT max_force = force.Max();
+  std::cout << "Max force: " << max_force << std::endl;
 
-#ifdef TRIBOL_USE_MPI
-  MPI_Finalize();
-#endif
+  RealT min_force = force.Min();
+  std::cout << "Min force: " << min_force << std::endl;
+
+  RealT tot_force = force.Norml1();
+  std::cout << "Total |force|: " << tot_force << std::endl;
 
   return 0;
 }

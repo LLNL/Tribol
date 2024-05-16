@@ -116,11 +116,11 @@ public:
     TRIBOL_HOST_DEVICE RealT getCommonPlaneGapTol( int fid1, int fid2 ) const;
 
   private:
-    PARAM& m_parameters;
+    PARAM m_parameters;
     ContactModel m_contact_model;
     EnforcementOptions m_enforcement_options;
-    MESH& m_mesh1;
-    MESH& m_mesh2;
+    MESH m_mesh1;
+    MESH m_mesh2;
     ArrayViewT<CP2D> m_contact_plane2d;
     ArrayViewT<CP3D> m_contact_plane3d;
   };

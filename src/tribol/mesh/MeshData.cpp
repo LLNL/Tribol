@@ -34,7 +34,7 @@ bool MeshElemData::isValidKinematicPenalty( PenaltyEnforcementOptions& pen_optio
   }
   // a kinematic penalty should always be set. Right now Tribol does not support 
   // rate only enforcement
-  else if ( !pen_options.is_kinematic_calculation_set() )
+  else if ( !pen_options.kinematic_calc_set )
   {
     SLIC_WARNING( "MeshElemData::isValidKinematic(): kinematic penalty calculation data not set; " << 
                   "call tribol::setPenaltyOptions()." );
@@ -120,7 +120,7 @@ bool MeshElemData::isValidRatePenalty( PenaltyEnforcementOptions& pen_options )
     return false;
   }
   // the rate_calc could be set to NONE and this boolean will be true
-  else if ( !pen_options.is_rate_calculation_set() )
+  else if ( !pen_options.rate_calc_set )
   {
     SLIC_WARNING( "MeshElemData::isValidRatePenalty(): rate penalty calculation data not set. " << 
                   "call tribol::setPenaltyOptions()." );
