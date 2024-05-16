@@ -491,6 +491,7 @@ struct parameters_t
   double projection_ratio;       ///! Ratio for defining nonzero projections
   double auto_contact_pen_frac;  ///! Max allowable interpenetration as percent of element thickness for contact candidacy
   double timestep_pen_frac;      ///! Max allowable interpenetration as percent of element thickness prior to triggering timestep vote
+  double timestep_scale;         ///! Scale factor (>0) applied to the timestep vote giving users some control over the vote
 
   int vis_cycle_incr;            ///! Frequency for visualizations dumps
   VisType vis_type;              ///! Type of interface physics visualization output

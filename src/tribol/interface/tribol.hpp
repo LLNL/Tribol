@@ -111,6 +111,17 @@ void setAutoContactPenScale( double scale );
 void setTimestepPenFrac( double frac );
 
 /*!
+ *
+ * \brief sets the timestep scale factor applied to the timestep vote 
+ *
+ * \param [in] scale the scale factor applied to the timestep vote 
+ *
+ * \pre scale > 0
+ *
+ */
+void setTimestepScale( double scale );
+
+/*!
  * \brief Sets the area fraction for inclusion of a contact overlap 
  * \param [in] frac area fraction tolerance
  *

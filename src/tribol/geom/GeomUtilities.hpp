@@ -63,8 +63,6 @@ void ProjectPointToSegment( const real x, const real y,
  *
  * \brief Method to find the intersection area between two polygons and 
  *  the local y-coordinate of the centroid 
- * \note taken from Ben Liu's implementation of 
- *  Eric Herbold's routine in ALE3D.
  *
  * \param [in] namax number of vertices in polygon a
  * \param [in] xa array of local x coordinates of polygon a vertices

@@ -1007,6 +1007,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                  this->faceConn2, this->cellType, x, y, z );
 
    enableTimestepVote(params.enable_timestep_vote);
+   setTimestepPenFrac(params.timestep_pen_frac);
+   setTimestepScale(params.timestep_scale);
 
    // register nodal forces. Note, I was getting a seg fault when 
    // registering the same pointer to a single set of force arrays 
