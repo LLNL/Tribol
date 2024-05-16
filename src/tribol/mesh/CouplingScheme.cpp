@@ -1393,6 +1393,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       v1_dot_n1 = dotProd( &vel_f1[0], &fn1[0], dim );
       v2_dot_n2 = dotProd( &vel_f2[0], &fn2[0], dim );
 
+      // Keep debug print statements. This routine is still in the testing phase
       //std::cout << "face 1 normal: " << fn1[0] << ", " << fn1[1] << ", " << fn1[2] << std::endl;
       //std::cout << "face 2 normal: " << fn2[0] << ", " << fn2[1] << ", " << fn2[2] << std::endl;
       //std::cout << " " << std::endl;
@@ -1419,6 +1420,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
       v1_dot_n1 += tiny1;
       v2_dot_n2 += tiny2;
 
+      // Keep debug print statements. This routine is still in the testing phase
       //std::cout << "Second v1_dot_n1 calc: " << v1_dot_n1 << std::endl;
       //std::cout << "Second v2_dot_n2 calc: " << v2_dot_n2 << std::endl;
       //std::cout << "Second v1_dot_n: " << v1_dot_n << std::endl;
@@ -1509,6 +1511,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          dt1 = (dt1_check1) ? alpha * max_delta1 / v1_dot_n1 : dt1;
          dt2 = (dt2_check1) ? alpha * max_delta2 / v2_dot_n2 : dt2;
 
+         // Keep debug print statements. This routine is still in the testing phase
          //std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << max_delta1 << ", " << v1_dot_n1 << std::endl;
          //std::cout << "dt2_check1, delta2 and v2_dot_n2: " << dt2_check1 << ", " << max_delta2 << ", " << v2_dot_n2 << std::endl;
          //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
@@ -1595,8 +1598,11 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
          dt1 = (dt1_vel_check) ? alpha * max_delta1 / v1_dot_n1 : dt1;
          dt2 = (dt2_vel_check) ? alpha * max_delta2 / v2_dot_n2 : dt2; 
 
-         //std::cout << "dt1_vel_check, (proj_delta_n_1+max_delta1), v1_dot_n1: " << dt1_vel_check << ", " << proj_delta_n_1+max_delta1 << ", " << v1_dot_n1 << std::endl;
-         //std::cout << "dt2_vel_check, (proj_delta_n_2+max_delta2), v2_dot_n2: " << dt2_vel_check << ", " << proj_delta_n_2+max_delta2 << ", " << v2_dot_n2 << std::endl;
+         // Keep debug print statements. This routine is still in the testing phase
+         //std::cout << "dt1_vel_check, (proj_delta_n_1+max_delta1), v1_dot_n1: " << dt1_vel_check << ", " 
+         //          << proj_delta_n_1+max_delta1 << ", " << v1_dot_n1 << std::endl;
+         //std::cout << "dt2_vel_check, (proj_delta_n_2+max_delta2), v2_dot_n2: " << dt2_vel_check << ", " 
+         //          << proj_delta_n_2+max_delta2 << ", " << v2_dot_n2 << std::endl;
          //std::cout << "dt1 and dt2: " << dt1 << ", " << dt2 << std::endl;
 
          // update dt_temp2 only for positive dt1 and/or dt2
