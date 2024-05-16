@@ -1306,7 +1306,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(real &dt)
    int numNodesPerCell1 = mesh1.m_numNodesPerCell;
    int numNodesPerCell2 = mesh2.m_numNodesPerCell;
 
-   // Loop over interface pairs and check exising gaps for pairs in 
+   // Loop over interface pairs and check existing gaps for pairs in 
    // contact, and perform velocity projection check for all contact 
    // candidates.
    IndexType numPairs = m_interfacePairs->getNumPairs();
