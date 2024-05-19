@@ -195,7 +195,7 @@ int runExample()
     tribol::COMMON_PLANE, 
     tribol::FRICTIONLESS,
     tribol::PENALTY,
-    tribol::BINNING_BVH,
+    tribol::BINNING_CARTESIAN_PRODUCT,
     EXEC);
 
   tribol::setPenaltyOptions(cs_id, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT);

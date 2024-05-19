@@ -10,6 +10,7 @@
 #include "tribol/search/InterfacePairFinder.hpp"
 
 #include "tribol/common/ExecModel.hpp"
+#include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MeshManager.hpp"
 #include "tribol/mesh/MeshData.hpp"
@@ -18,19 +19,14 @@
 #include "tribol/utils/Math.hpp"
 
 #include "axom/slic.hpp"
-#include "axom/slam.hpp"
 #include "axom/primal.hpp"
 #include "axom/spin.hpp"
 
 #include "umpire/ResourceManager.hpp"
 #include "umpire/TypedAllocator.hpp"
 #include "umpire/strategy/DynamicPoolList.hpp"
-#include <RAJA/pattern/atomic.hpp>
-#include <RAJA/policy/atomic_auto.hpp>
-#include <axom/core/Array.hpp>
 
 // Define some namespace aliases to help with axom usage
-namespace slam = axom::slam;
 namespace primal = axom::primal;
 namespace spin = axom::spin;
 
@@ -73,226 +69,92 @@ TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
     }
   }
 
-   /// CHECK #3: Check that face normals are opposing up to some tolerance.
-   ///           This uses a hard coded normal tolerance for this check.
-   RealT nrmlTol = -0.173648177; // taken as cos(100) between face pair
-   
-   RealT nrmlCheck = 0.0;
-   for (int d{0}; d < dim; ++d)
-   {
-      nrmlCheck += mesh1.getElementNormals()[d][element1]
-        * mesh2.getElementNormals()[d][element2];
-   }
+  /// CHECK #3: Check that face normals are opposing up to some tolerance.
+  ///           This uses a hard coded normal tolerance for this check.
+  RealT nrmlTol = -0.173648177; // taken as cos(100) between face pair
+  
+  RealT nrmlCheck = 0.0;
+  for (int d{0}; d < dim; ++d)
+  {
+    nrmlCheck += mesh1.getElementNormals()[d][element1]
+      * mesh2.getElementNormals()[d][element2];
+  }
 
-   // check normal projection against tolerance
-   if (nrmlCheck > nrmlTol) {
+  // check normal projection against tolerance
+  if (nrmlCheck > nrmlTol) {
+    return false;
+  }
+
+  /// CHECK #4 (3D): Perform radius check, which involves seeing if 
+  ///                the distance between the two face vertex averaged
+  ///                centroid is less than the sum of the two face radii.
+  ///                The face radii are taken to be the magnitude of the 
+  ///                longest vector from that face's vertex averaged 
+  ///                centroid to one its nodes.
+  RealT offset_tol = 0.05;
+  if (dim == 3)
+  {
+    RealT r1 = mesh1.getFaceRadii()[ element1 ];
+    RealT r2 = mesh2.getFaceRadii()[ element2 ];
+
+    // set maximum offset of face centroids for inclusion
+    RealT distMax = r1 + r2; // default is sum of face radii
+
+    // check if the contact mode is conforming, in which case the 
+    // faces are supposed to be aligned
+    if (mode == SURFACE_TO_SURFACE_CONFORMING)
+    { 
+      // use 5% of max face radius for conforming case as 
+      // tolerance on face offsets
+      distMax *= offset_tol; 
+    }
+
+    // compute the distance between the two face centroids
+    RealT distX = mesh2.getElementCentroids()[0][ element2 ] - mesh1.getElementCentroids()[0][ element1 ];
+    RealT distY = mesh2.getElementCentroids()[1][ element2 ] - mesh1.getElementCentroids()[1][ element1 ];
+    RealT distZ = mesh2.getElementCentroids()[2][ element2 ] - mesh1.getElementCentroids()[2][ element1 ];
+    
+    RealT distMag = magnitude(distX, distY, distZ );
+
+    if (distMag >= (distMax)) {
       return false;
-   }
+    } 
+  } // end of dim == 3
+  else if (dim == 2)
+  {
+    // get 1/2 edge length off the mesh data
+    RealT e1 = 0.5 * mesh1.getElementAreas()[ element1 ];
+    RealT e2 = 0.5 * mesh2.getElementAreas()[ element2 ];
 
-   /// CHECK #4 (3D): Perform radius check, which involves seeing if 
-   ///                the distance between the two face vertex averaged
-   ///                centroid is less than the sum of the two face radii.
-   ///                The face radii are taken to be the magnitude of the 
-   ///                longest vector from that face's vertex averaged 
-   ///                centroid to one its nodes.
-   RealT offset_tol = 0.05;
-   if (dim == 3)
-   {
-      RealT r1 = mesh1.getFaceRadii()[ element1 ];
-      RealT r2 = mesh2.getFaceRadii()[ element2 ];
+    // set maximum offset of edge centroids for inclusion
+    RealT distMax = e1 + e2; // default is sum of 1/2 edge lengths
 
-      // set maximum offset of face centroids for inclusion
-      RealT distMax = r1 + r2; // default is sum of face radii
+    // check if the contact mode is conforming, in which case the 
+    // edges are supposed to be aligned
+    if (mode == SURFACE_TO_SURFACE_CONFORMING)
+    { 
+      // use 5% of max face radius for conforming case as 
+      // tolerance on face offsets
+      distMax *= offset_tol; 
+    }
 
-      // check if the contact mode is conforming, in which case the 
-      // faces are supposed to be aligned
-      if (mode == SURFACE_TO_SURFACE_CONFORMING)
-      { 
-         // use 5% of max face radius for conforming case as 
-         // tolerance on face offsets
-         distMax *= offset_tol; 
-      }
+    // compute the distance between the two edge centroids
+    RealT distX = mesh2.getElementCentroids()[0][ element2 ] - mesh1.getElementCentroids()[0][ element1 ];
+    RealT distY = mesh2.getElementCentroids()[1][ element2 ] - mesh1.getElementCentroids()[1][ element1 ];
 
-      // compute the distance between the two face centroids
-      RealT distX = mesh2.getElementCentroids()[0][ element2 ] - mesh1.getElementCentroids()[0][ element1 ];
-      RealT distY = mesh2.getElementCentroids()[1][ element2 ] - mesh1.getElementCentroids()[1][ element1 ];
-      RealT distZ = mesh2.getElementCentroids()[2][ element2 ] - mesh1.getElementCentroids()[2][ element1 ];
-      
-      RealT distMag = magnitude(distX, distY, distZ );
+    RealT distMag = magnitude(distX, distY);
 
-      if (distMag >= (distMax)) {
-         return false;
-      } 
-   } // end of dim == 3
-   else if (dim == 2)
-   {
-      // get 1/2 edge length off the mesh data
-      RealT e1 = 0.5 * mesh1.getElementAreas()[ element1 ];
-      RealT e2 = 0.5 * mesh2.getElementAreas()[ element2 ];
+    if (distMag >= (distMax)) 
+    {
+      return false;
+    }
+  } // end of dim == 2
 
-      // set maximum offset of edge centroids for inclusion
-      RealT distMax = e1 + e2; // default is sum of 1/2 edge lengths
-
-      // check if the contact mode is conforming, in which case the 
-      // edges are supposed to be aligned
-      if (mode == SURFACE_TO_SURFACE_CONFORMING)
-      { 
-         // use 5% of max face radius for conforming case as 
-         // tolerance on face offsets
-         distMax *= offset_tol; 
-      }
-
-      // compute the distance between the two edge centroids
-      RealT distX = mesh2.getElementCentroids()[0][ element2 ] - mesh1.getElementCentroids()[0][ element1 ];
-      RealT distY = mesh2.getElementCentroids()[1][ element2 ] - mesh1.getElementCentroids()[1][ element1 ];
-
-      RealT distMag = magnitude(distX, distY);
-
-      if (distMag >= (distMax)) 
-      {
-         return false;
-      }
-   } // end of dim == 2
-
-   // if we made it here we passed all checks
-   return true;
+  // if we made it here we passed all checks
+  return true;
 
 } // end geomFilter()
 
-
-//------------------------------------------------------------------------------
-
-
-/*!
- * Wraps a MeshData instance to simplify operations like accessing
- * vertex positions and element bounding boxes
- *
- * \tparam D The spatial dimension of the mesh vertices
- *
- * \note Assumes that all elements of the mesh have the same number of
- * vertices (as does the MeshData class)
- */
-template<int D>
-class MeshWrapper
-{
-private:
-   using VertSet = slam::PositionSet<IndexT>;
-   using ElemSet = slam::PositionSet<IndexT>;
-   using RTStride = slam::policies::RuntimeStride<IndexT>;
-   using Card = slam::policies::ConstantCardinality<IndexT, RTStride>;
-   using Ind = slam::policies::ArrayIndirection<IndexT, IndexT>;
-   using ElemVertRelation = slam::StaticRelation<IndexT, IndexT, Card, Ind,ElemSet,VertSet>;
-
-public:
-   using PointT = primal::Point<RealT, D>;
-   using VectorT = primal::Vector<RealT, D>;
-   using BBox = primal::BoundingBox<RealT, D>;
-
-   MeshWrapper() : m_meshData(nullptr) {}
-
-   /*!
-    * Constructs MeshWrapper instance from a non-null meshdata pointer
-    */
-   MeshWrapper(const MeshData::Viewer* meshData)
-      : m_meshData(meshData)
-
-      , m_vertSet(m_meshData->numberOfNodes())
-      , m_elemSet(m_meshData->numberOfElements())
-   {
-      // TODO (EBC): How do we avoid this copy??
-      m_conn = ArrayViewT<IndexT>(const_cast<IndexT*>(meshData->getConnectivity().data()), 
-                                  meshData->getConnectivity().size());
-      // Generate connectivity relation for elements
-      using BuilderType = typename ElemVertRelation::RelationBuilder;
-
-      m_elemVertConnectivity = BuilderType()
-          .fromSet( &m_elemSet)
-          .toSet( &m_vertSet)
-          .begins( typename BuilderType::BeginsSetBuilder()
-                   .stride( m_meshData->numberOfNodesPerElement()))
-          .indices( typename BuilderType::IndicesSetBuilder()
-                    .size( m_elemSet.size() * m_meshData->numberOfNodesPerElement())
-                    .data( &m_conn ));
-   }
-
-   /*!
-    * Gets the vertex at global (host) index \a vId from the mesh
-    * \param vId Vertex Id
-    * \return A primal Point instance
-    */
-   PointT getVertex(IndexT vId)
-   {
-      return PointT::make_point(
-            m_meshData->getPosition()[0][vId],
-            m_meshData->getPosition()[1][vId],
-            (D == 3) ? m_meshData->getPosition()[2][vId] : RealT() );
-   }
-
-   /*!
-    * Returns the area for the element with index \a eId
-    * \param eId element Id
-    * \return A primal Vector instance
-    */
-   RealT getFaceArea(IndexT eId)
-   {
-      return m_meshData->getElementAreas()[eId];
-   }
-
-   /*!
-    * Returns the effective radius of the element with index \a eId
-    * \param eId element Id
-    * \return face area
-    */
-   RealT getFaceRadius(IndexT eId)
-   {
-      return m_meshData->getFaceRadii()[eId];
-   }
-
-   /*!
-    * Gets the normal vector for the element with index \a eId
-    * \param eId element Id
-    * \return A primal Vector instance
-    */
-   VectorT getFaceNormal(IndexT eId)
-   {
-      return VectorT::make_vector(
-            m_meshData->getElementNormals()[0][eId],
-            m_meshData->getElementNormals()[1][eId],
-            (D == 3) ? m_meshData->getElementNormals()[2][eId] : RealT() );
-   }
-
-   /*!
-    * Gets the bounding box for the element with index \a eId
-    * \param eId element Id
-    * \return A primal BoundingBox instance
-    */
-   BBox elementBoundingBox(IndexT eId)
-   {
-      BBox box;
-
-      for(auto vId : m_elemVertConnectivity[eId])
-      {
-         box.addPoint( getVertex(vId) );
-      }
-      return box;
-   }
-
-
-   /*! Returns the number of vertices in the mesh */
-   IndexT numVerts() const { return m_vertSet.size(); }
-
-   /*! Returns the number of elements in the mesh */
-   IndexT numElems() const { return m_elemSet.size(); }
-
-private:
-   const MeshData::Viewer* m_meshData;
-
-   ArrayT<IndexT> m_conn;
-
-   VertSet m_vertSet;
-   ElemSet m_elemSet;
-   ElemVertRelation m_elemVertConnectivity;
-};
 
 /*!
  * \brief Base class to compute the candidate pairs for a coupling scheme
@@ -302,21 +164,21 @@ private:
  */
 class SearchBase
 {
-   public:
-   //using SpacePoint = typename ImplicitGridType::SpacePoint;
-   //using SpaceVec = typename ImplicitGridType::SpaceVec;
-   //using SpatialBoundingBox = typename ImplicitGridType::SpatialBoundingBox;
-   SearchBase() {};
-   virtual ~SearchBase() {};
-   /*!
-    * Prepares the object for spatial searches
-    */
-   virtual void initialize() = 0;
+  public:
+  //using SpacePoint = typename ImplicitGridType::SpacePoint;
+  //using SpaceVec = typename ImplicitGridType::SpaceVec;
+  //using SpatialBoundingBox = typename ImplicitGridType::SpatialBoundingBox;
+  SearchBase() {};
+  virtual ~SearchBase() {};
+  /*!
+  * Prepares the object for spatial searches
+  */
+  virtual void initialize() = 0;
 
-   /*!
-    * Find candidates in first mesh for each element in second mesh of coupling scheme.
-    */
-   virtual void findInterfacePairs() = 0;
+  /*!
+  * Find candidates in first mesh for each element in second mesh of coupling scheme.
+  */
+  virtual void findInterfacePairs() = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -336,104 +198,118 @@ template<int D>
 class CartesianProduct : public SearchBase
 {
 public:
-   /*!
-    * Constructs a CartesianProduct instance over CouplingScheme \a couplingScheme
-    * \pre couplingScheme is not null
-    */
-   CartesianProduct(CouplingScheme* couplingScheme)
-      : m_coupling_scheme(couplingScheme)
-   {
-   }
+  /*!
+  * Constructs a CartesianProduct instance over CouplingScheme \a couplingScheme
+  * \pre couplingScheme is not null
+  */
+  CartesianProduct(CouplingScheme* couplingScheme)
+    : m_coupling_scheme(couplingScheme)
+  {
+  }
 
 
-   void initialize() override 
-   {
-   }
+  void initialize() override 
+  {
+  }
 
 
-   void findInterfacePairs() override
-   {
-      auto& mesh1 = m_coupling_scheme->getMesh1();
-      IndexT mesh1NumElems = mesh1.numberOfElements();
+  void findInterfacePairs() override
+  {
+    auto& mesh1 = m_coupling_scheme->getMesh1();
+    IndexT mesh1NumElems = mesh1.numberOfElements();
 
-      auto& mesh2 = m_coupling_scheme->getMesh2();
-      IndexT mesh2NumElems = mesh2.numberOfElements();
+    auto& mesh2 = m_coupling_scheme->getMesh2();
+    IndexT mesh2NumElems = mesh2.numberOfElements();
 
-      // Reserve memory for boolean array indicating which pairs
-      // are in contact
-      int numPairs = mesh1NumElems * mesh2NumElems;
-      bool is_symm = m_coupling_scheme->getMeshId1() == m_coupling_scheme->getMeshId2();
-      if (is_symm)
+    // Reserve memory for boolean array indicating which pairs
+    // are in contact
+    int numPairs = mesh1NumElems * mesh2NumElems;
+    bool is_symm = m_coupling_scheme->getMeshId1() == m_coupling_scheme->getMeshId2();
+    if (is_symm)
+    {
+        // account for symmetry
+        numPairs = mesh1NumElems * (mesh1NumElems + 1) / 2;
+    }
+    ArrayT<bool> contactArray(numPairs, numPairs, m_coupling_scheme->getAllocatorId());
+    bool* inContact = contactArray.data();
+
+    // Allocate memory for a counter
+    ArrayT<int> countArray(1, 1, m_coupling_scheme->getAllocatorId());
+    int* pCount = countArray.data();
+
+    ContactMode cmode = m_coupling_scheme->getContactMode();
+
+    try
+    {
+      forAllExec(m_coupling_scheme->getExecutionMode(), numPairs,
+        [mesh1NumElems, mesh2NumElems, is_symm, inContact, mesh1, mesh2, cmode, 
+          pCount] TRIBOL_HOST_DEVICE (IndexT i)
+        {
+          IndexT fromIdx = i / mesh1NumElems;
+          IndexT toIdx = i % mesh2NumElems;
+          if (is_symm)
+          {
+            IndexT row = algorithm::symmMatrixRow(i, mesh1NumElems);
+            IndexT offset = row * (row + 1) / 2;
+            fromIdx = row;
+            toIdx = i - offset;
+          }
+          inContact[i] = geomFilter( fromIdx, toIdx, 
+                                     mesh1, mesh2,
+                                     cmode );
+          RAJA::atomicAdd<RAJA::auto_atomic>(pCount, static_cast<int>(inContact[i]));
+      });
+    }  // End of profiling block
+    catch(const std::exception& e)
+    {
+      std::cerr << e.what() << std::endl;
+    }
+    catch(...)
+    {
+      std::cerr << "unknown exception encountered during findInterfacePairs/geomFilter" << std::endl;
+    }
+    
+    ArrayT<int, 1, MemorySpace::Host> countArray_host(countArray);
+    SLIC_INFO("Found " << countArray_host[0] << " pairs in contact" );
+
+    auto& contactPairs = m_coupling_scheme->getInterfacePairs();
+    contactPairs.resize(countArray_host[0]);
+
+    countArray.fill(0);
+    auto pairs_view = m_coupling_scheme->getInterfacePairsView();
+    forAllExec(m_coupling_scheme->getExecutionMode(), numPairs,
+      [inContact, pCount, pairs_view, mesh1NumElems, mesh2NumElems, is_symm] 
+        TRIBOL_HOST_DEVICE (IndexT i)
       {
-         // account for symmetry
-         numPairs = mesh1NumElems * (mesh1NumElems + 1) / 2;
+        // Filtering removed this case
+        if (!inContact[i])
+        {
+          return;
+        }
+        
+        IndexT fromIdx = i / mesh1NumElems;
+        IndexT toIdx = i % mesh2NumElems;
+        if (is_symm)
+        {
+          IndexT row = algorithm::symmMatrixRow(i, mesh1NumElems);
+          IndexT offset = row * (row + 1) / 2;
+          fromIdx = row;
+          toIdx = i - offset;
+        }
+
+        // get unique index for the array
+        auto idx = RAJA::atomicInc<RAJA::auto_atomic>(pCount);
+
+        pairs_view[idx] = InterfacePair(fromIdx, toIdx, true);
       }
-      ArrayT<bool> contactArray(numPairs, numPairs, m_coupling_scheme->getAllocatorId());
-      bool* inContact = contactArray.data();
+    );
 
-      // Allocate memory for a counter
-      ArrayT<int> countArray(1, 1, m_coupling_scheme->getAllocatorId());
-      int* pCount = countArray.data();
-
-      ContactMode cmode = m_coupling_scheme->getContactMode();
-
-      try
-      {
-         forAllExec(m_coupling_scheme->getExecutionMode(), numPairs,
-         [=] TRIBOL_HOST_DEVICE (IndexT i)
-         {
-            IndexT fromIdx = i / mesh1NumElems;
-            IndexT toIdx = i % mesh2NumElems;
-            if (is_symm)
-            {
-               IndexT row = algorithm::symmMatrixRow(i, mesh1NumElems);
-               IndexT offset = row * (row + 1) / 2;
-               fromIdx = row;
-               toIdx = i - offset;
-            }
-            inContact[i] = geomFilter( fromIdx, toIdx, 
-                                       mesh1, mesh2,
-                                       cmode );
-            RAJA::atomicAdd< RAJA::auto_atomic >(pCount, static_cast<int>(inContact[i]));
-         });
-      }  // End of profiling block
-      catch(const std::exception& e)
-      {
-         std::cerr << e.what() << std::endl;
-      }
-      catch(...)
-      {
-         std::cerr << "unknown exception encountered during findInterfacePairs/geomFilter" << std::endl;
-      }
-      
-      SLIC_INFO("Found " << countArray[0] << " pairs in contact" );
-
-      auto& contactPairs = m_coupling_scheme->getInterfacePairs();
-      contactPairs.clear();
-      contactPairs.reserve(countArray[0]);
-      
-      int idx = 0;
-      {
-         for (int k=0; k<numPairs; k++) 
-         {
-            if (inContact[k])
-            {
-               IndexT fromIdx = k / mesh1NumElems;
-               IndexT toIdx = k % mesh2NumElems;
-               // SLIC_INFO("Interface pair " << idx << " = " << toIdx << ", " << fromIdx);  // Debug only
-               contactPairs.emplace_back( fromIdx, toIdx, true );
-               idx++;
-            }
-         }
-      }
-      SLIC_INFO("Added " << idx << " pairs to contact list" );  // Debug only
-
-      SLIC_INFO("Coupling scheme has " << contactPairs.size()
-            << " pairs out of a maximum possible of " << numPairs
-            << " = " << mesh1NumElems << " * " << mesh2NumElems << ".");
-   }
+    SLIC_INFO("Coupling scheme has " << contactPairs.size()
+          << " pairs out of a maximum possible of " << numPairs
+          << " = " << mesh1NumElems << " * " << mesh2NumElems << ".");
+  }
 private:
-   CouplingScheme* m_coupling_scheme;
+  CouplingScheme* m_coupling_scheme;
 };  // End of CartesianProduct definition
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -455,178 +331,198 @@ template<int D>
 class GridSearch : public SearchBase
 {
 public:
-   using ImplicitGridType = spin::ImplicitGrid<D,axom::SEQ_EXEC,int>;
-   using SpacePoint = typename ImplicitGridType::SpacePoint;
-   using SpaceVec = typename ImplicitGridType::SpaceVec;
-   using SpatialBoundingBox = typename ImplicitGridType::SpatialBoundingBox;
+  using BBox = primal::BoundingBox<RealT, D>;
+  using PointT = primal::Point<RealT, D>;
 
-   /*!
-    * Constructs a GridSearch instance over CouplingScheme \a couplingScheme
-    * \pre couplingScheme is not null
-    */
-   GridSearch( CouplingScheme* couplingScheme )
-      : m_coupling_scheme( couplingScheme )
-      , m_mesh_wrapper1( &m_coupling_scheme->getMesh1() )
-      , m_mesh_wrapper2( &m_coupling_scheme->getMesh2() )
-   {}
+  using ImplicitGridType = spin::ImplicitGrid<D,axom::SEQ_EXEC,int>;
+  using SpacePoint = typename ImplicitGridType::SpacePoint;
+  using SpaceVec = typename ImplicitGridType::SpaceVec;
+  using SpatialBoundingBox = typename ImplicitGridType::SpatialBoundingBox;
 
-   /*!
-    * Constructs spatial index over elements of coupling scheme's first mesh
-    */
-   void initialize() override
-   {
-      // TODO does this tolerance need to scale with the mesh?
-      const RealT bboxTolerance = 1e-6;
+  /*!
+   * Constructs a GridSearch instance over CouplingScheme \a couplingScheme
+   * \pre couplingScheme is not null
+   */
+  GridSearch( CouplingScheme* couplingScheme )
+    : m_coupling_scheme( couplingScheme )
+    , m_mesh1( m_coupling_scheme->getMesh1() )
+    , m_mesh2( m_coupling_scheme->getMesh2() )
+  {}
 
-      m_coupling_scheme->getInterfacePairs().clear();
+  /*!
+   * Constructs spatial index over elements of coupling scheme's first mesh
+   */
+  void initialize() override
+  {
+    // TODO does this tolerance need to scale with the mesh?
+    const RealT bboxTolerance = 1e-6;
 
-      // Find the bounding boxes of the elements in the first mesh
-      // Store them in an array for efficient reuse
-      m_gridBBox.clear();
-      m_meshBBoxes1.reserve(m_mesh_wrapper1.numElems());
-      for(int i=0; i< m_mesh_wrapper1.numElems(); ++i)
+    m_coupling_scheme->getInterfacePairs().clear();
+
+    // Find the bounding boxes of the elements in the first mesh
+    // Store them in an array for efficient reuse
+    m_gridBBox.clear();
+    m_meshBBoxes1.reserve(m_mesh1.numberOfElements());
+    for(int i=0; i< m_mesh1.numberOfElements(); ++i)
+    {
+      m_meshBBoxes1.emplace_back(elementBoundingBox(m_mesh1, i));
+    }
+
+    // Find an appropriate resolution for the spatial index grid
+    //
+    // (Note KW) This implementation is a bit ad-hoc
+    // * Inflate bounding boxes by 33% of longest dimension
+    //   to avoid zero-width dimensions
+    // * Find the average extents (range) of the boxes
+    //   Assumption is that elements are roughly the same size
+    // * Grid resolution for each dimension is overall box width
+    //   divided by half the average element width
+    SpaceVec ranges;
+    for(int i=0; i< m_mesh1.numberOfElements(); ++i)
+    {
+      auto& bbox = m_meshBBoxes1[i];
+      inflateBBox(bbox);
+
+      ranges += bbox.range();
+
+      // build up overall bounding box along the way
+      m_gridBBox.addBox( bbox );
+    }
+
+    // inflate grid box slightly so elem bounding boxes are not on grid bdry
+    m_gridBBox.scale(1 + bboxTolerance);
+
+    ranges /= m_mesh1.numberOfElements();
+
+    // Compute grid resolution from average bbox size
+    typename ImplicitGridType::GridCell resolution;
+    SpaceVec bboxRange = m_gridBBox.range();
+    const RealT scaleFac = 0.5; // TODO is this mesh dependent?
+    for(int i=0; i < D; ++i)
+    {
+      resolution[i] = static_cast<IndexT>(
+            std::ceil( scaleFac * bboxRange[i] / ranges[i] ));
+    }
+
+    // Next, initialize the ImplicitGrid
+    m_grid.initialize( m_gridBBox, &resolution, m_mesh1.numberOfElements());
+
+    // Finally, insert the elements
+    for(int i=0; i< m_mesh1.numberOfElements(); ++i)
+    {
+      m_grid.insert(m_meshBBoxes1[i], i);
+    }
+
+    // Output some info for debugging
+    if(true)
+    {
+      SLIC_INFO("Implicit Grid info: "
+          << "\n Mesh 1 bounding box (inflated): " << m_gridBBox
+          << "\n Avg range: " << ranges
+          << "\n Computed resolution: " << resolution );
+
+      SpatialBoundingBox bbox2;
+      for(int i=0; i< m_mesh2.numberOfElements(); ++i)
       {
-         m_meshBBoxes1.emplace_back(m_mesh_wrapper1.elementBoundingBox(i));
+        bbox2.addBox( elementBoundingBox(m_mesh2, i) );
       }
 
-      // Find an appropriate resolution for the spatial index grid
-      //
-      // (Note KW) This implementation is a bit ad-hoc
-      // * Inflate bounding boxes by 33% of longest dimension
-      //   to avoid zero-width dimensions
-      // * Find the average extents (range) of the boxes
-      //   Assumption is that elements are roughly the same size
-      // * Grid resolution for each dimension is overall box width
-      //   divided by half the average element width
-      SpaceVec ranges;
-      for(int i=0; i< m_mesh_wrapper1.numElems(); ++i)
+      SLIC_INFO( "Mesh 2 bounding box is: " << bbox2 );
+    }
+  }; // end initialize()
+
+  /*!
+   * Use the spatial index to find candidates in first mesh for each
+   * element in second mesh of coupling scheme.
+   */
+  void findInterfacePairs() override
+  {
+    using BitsetType = typename ImplicitGridType::BitsetType;
+
+    // Extract some mesh metadata from coupling scheme
+    auto& mesh1 = m_coupling_scheme->getMesh1();
+    auto& mesh2 = m_coupling_scheme->getMesh2();
+    auto& contactPairs = m_coupling_scheme->getInterfacePairs();
+
+    // Find matches in first mesh (with index 'fromIdx')
+    // with candidate elements in second mesh (with index 'toIdx')
+    int k = 0;
+    for(int toIdx=0; toIdx< m_mesh2.numberOfElements(); ++toIdx)
+    {
+      SpatialBoundingBox bbox = elementBoundingBox(m_mesh2, toIdx);
+      inflateBBox(bbox);
+
+      // Query the mesh
+      auto candidateBits = m_grid.getCandidates( bbox );
+
+      // Add candidates
+      for(IndexT fromIdx = candidateBits.find_first() ;
+          fromIdx != BitsetType::npos ;
+          fromIdx = candidateBits.find_next( fromIdx) )
       {
-         auto& bbox = m_meshBBoxes1[i];
-         inflateBBox(bbox);
+        // if meshId1 = meshId2, then check to make sure fromIdx < toIdx 
+        // so we don't double count
+        if ( (mesh1.meshId() == mesh2.meshId()) && (fromIdx < toIdx) )
+        {
+          continue;
+        }
 
-         ranges += bbox.range();
+        // TODO: Add extra filter by bbox
 
-         // build up overall bounding box along the way
-         m_gridBBox.addBox( bbox );
+        // Preliminary geometry/proximity checks, SRW
+        bool contact = geomFilter( fromIdx, toIdx,
+                                   mesh1, mesh2,
+                                   m_coupling_scheme->getContactMode() );
+
+        if (contact)
+        {
+          contactPairs.emplace_back( fromIdx, toIdx, true );
+          // SLIC_INFO("Interface pair " << k << " = " << toIdx << ", " << fromIdx);  // Debug only
+          ++k;
+        }
       }
-
-      // inflate grid box slightly so elem bounding boxes are not on grid bdry
-      m_gridBBox.scale(1 + bboxTolerance);
-
-      ranges /= m_mesh_wrapper1.numElems();
-
-      // Compute grid resolution from average bbox size
-      typename ImplicitGridType::GridCell resolution;
-      SpaceVec bboxRange = m_gridBBox.range();
-      const RealT scaleFac = 0.5; // TODO is this mesh dependent?
-      for(int i=0; i < D; ++i)
-      {
-         resolution[i] = static_cast<IndexT>(
-               std::ceil( scaleFac * bboxRange[i] / ranges[i] ));
-      }
-
-      // Next, initialize the ImplicitGrid
-      m_grid.initialize( m_gridBBox, &resolution, m_mesh_wrapper1.numElems());
-
-      // Finally, insert the elements
-      for(int i=0; i< m_mesh_wrapper1.numElems(); ++i)
-      {
-         m_grid.insert(m_meshBBoxes1[i], i);
-      }
-
-      // Output some info for debugging
-      if(true)
-      {
-         SLIC_INFO("Implicit Grid info: "
-             << "\n Mesh 1 bounding box (inflated): " << m_gridBBox
-             << "\n Avg range: " << ranges
-             << "\n Computed resolution: " << resolution );
-
-         SpatialBoundingBox bbox2;
-         for(int i=0; i< m_mesh_wrapper2.numElems(); ++i)
-         {
-            bbox2.addBox( m_mesh_wrapper2.elementBoundingBox(i) );
-         }
-
-         SLIC_INFO( "Mesh 2 bounding box is: " << bbox2 );
-      }
-   }; // end initialize()
-
-   /*!
-    * Use the spatial index to find candidates in first mesh for each
-    * element in second mesh of coupling scheme.
-    */
-   void findInterfacePairs() override
-   {
-      using BitsetType = typename ImplicitGridType::BitsetType;
-
-      // Extract some mesh metadata from coupling scheme
-      auto& mesh1 = m_coupling_scheme->getMesh1();
-      auto& mesh2 = m_coupling_scheme->getMesh2();
-      auto& contactPairs = m_coupling_scheme->getInterfacePairs();
-
-      // Find matches in first mesh (with index 'fromIdx')
-      // with candidate elements in second mesh (with index 'toIdx')
-      int k = 0;
-      for(int toIdx=0; toIdx< m_mesh_wrapper2.numElems(); ++toIdx)
-      {
-         SpatialBoundingBox bbox = m_mesh_wrapper2.elementBoundingBox(toIdx);
-         inflateBBox(bbox);
-
-         // Query the mesh
-         auto candidateBits = m_grid.getCandidates( bbox );
-
-         // Add candidates
-         for(IndexT fromIdx = candidateBits.find_first() ;
-             fromIdx != BitsetType::npos ;
-             fromIdx = candidateBits.find_next( fromIdx) )
-         {
-            // if meshId1 = meshId2, then check to make sure fromIdx < toIdx 
-            // so we don't double count
-            if ( (mesh1.meshId() == mesh2.meshId()) && (fromIdx < toIdx) )
-            {
-               continue;
-            }
-
-            // TODO: Add extra filter by bbox
-
-            // Preliminary geometry/proximity checks, SRW
-            bool contact = geomFilter( fromIdx, toIdx,
-                                       mesh1, mesh2,
-                                       m_coupling_scheme->getContactMode() );
-
-            if (contact)
-            {
-               contactPairs.emplace_back( fromIdx, toIdx, true );
-               // SLIC_INFO("Interface pair " << k << " = " << toIdx << ", " << fromIdx);  // Debug only
-               ++k;
-            }
-         }
-      }  // end of loop over candidates in second mesh
+    }  // end of loop over candidates in second mesh
 
    } // end findInterfacePairs()
 
 
 private:
-   /*!
-    * Expands bounding box by 33% of longest dimension's range
-    */
-   void inflateBBox(SpatialBoundingBox& bbox)
-   {
-      constexpr double sc = 1./3.;
+  BBox elementBoundingBox(const MeshData::Viewer& mesh, IndexT eId)
+  {
+    BBox box;
 
-      int d = bbox.getLongestDimension();
-      const RealT expansionFac =  sc * bbox.range()[d];
-      bbox.expand(expansionFac);
-   }
+    for (int i{0}; i < mesh.numberOfNodesPerElement(); ++i)
+    {
+      axom::primal::NumericArray<RealT, D> vert_array;
+      auto vert_id = mesh.getGlobalNodeId(eId, i);
+      for (int d{0}; d < D; ++d)
+      {
+        vert_array[d] = mesh.getPosition()[d][vert_id];
+      }
+      box.addPoint( PointT(vert_array) );
+    }
 
-   CouplingScheme* m_coupling_scheme;
-   MeshWrapper<D> m_mesh_wrapper1;
-   MeshWrapper<D> m_mesh_wrapper2;
+    return box;
+  }
+  /*!
+   * Expands bounding box by 33% of longest dimension's range
+   */
+  void inflateBBox(SpatialBoundingBox& bbox)
+  {
+    constexpr double sc = 1./3.;
 
-   ImplicitGridType m_grid;
-   SpatialBoundingBox m_gridBBox;
-   ArrayT<SpatialBoundingBox> m_meshBBoxes1;
+    int d = bbox.getLongestDimension();
+    const RealT expansionFac =  sc * bbox.range()[d];
+    bbox.expand(expansionFac);
+  }
+
+  CouplingScheme* m_coupling_scheme;
+  const MeshData::Viewer& m_mesh1;
+  const MeshData::Viewer& m_mesh2;
+
+  ImplicitGridType m_grid;
+  SpatialBoundingBox m_gridBBox;
+  ArrayT<SpatialBoundingBox> m_meshBBoxes1;
 
 }; // End of GridSearch class definition
 
@@ -663,27 +559,27 @@ public:
   */
   BvhSearch(CouplingScheme* coupling_scheme)
     : m_coupling_scheme( coupling_scheme )
-    , m_mesh_wrapper1( &m_coupling_scheme->getMesh1() )
-    , m_mesh_wrapper2( &m_coupling_scheme->getMesh2() )
+    , m_mesh1( m_coupling_scheme->getMesh1() )
+    , m_mesh2( m_coupling_scheme->getMesh2() )
     , m_boxes1( axom::ArrayOptions::Uninitialized{},
-                m_mesh_wrapper1.numElems(),
-                m_mesh_wrapper1.numElems(),
+                m_mesh1.numberOfElements(),
+                m_mesh1.numberOfElements(),
                 m_coupling_scheme->getAllocatorId() )
     , m_boxes2( axom::ArrayOptions::Uninitialized{},
-                m_mesh_wrapper2.numElems(),
-                m_mesh_wrapper2.numElems(),
+                m_mesh2.numberOfElements(),
+                m_mesh2.numberOfElements(),
                 m_coupling_scheme->getAllocatorId() )
     , m_candidates( axom::ArrayOptions::Uninitialized{},
                     0,
                     0,
                     m_coupling_scheme->getAllocatorId() )
     , m_offsets( axom::ArrayOptions::Uninitialized{},
-                 m_mesh_wrapper2.numElems(),
-                 m_mesh_wrapper2.numElems(),
+                 m_mesh2.numberOfElements(),
+                 m_mesh2.numberOfElements(),
                  m_coupling_scheme->getAllocatorId() )
     , m_counts( axom::ArrayOptions::Uninitialized{},
-                m_mesh_wrapper2.numElems(),
-                m_mesh_wrapper2.numElems(),
+                m_mesh2.numberOfElements(),
+                m_mesh2.numberOfElements(),
                 m_coupling_scheme->getAllocatorId() )
   {}
 
@@ -712,7 +608,7 @@ public:
     bvh.findBoundingBoxes(m_offsets.view(),
                           m_counts.view(),
                           m_candidates,
-                          m_mesh_wrapper2.numElems(),
+                          m_mesh2.numberOfElements(),
                           m_boxes2.view());
 
     // Apply geom filter to check if intersecting bounding boxes are in contact
@@ -726,7 +622,8 @@ public:
     auto& mesh2 = m_coupling_scheme->getMesh2();
     auto cmode = m_coupling_scheme->getContactMode();
     forAllExec(m_coupling_scheme->getExecutionMode(), m_candidates.size(),
-      [=] TRIBOL_HOST_DEVICE (IndexT i) 
+      [mesh1, mesh2, offsets_view, counts_view, candidates_view, 
+        filtered_candidates, cmode] TRIBOL_HOST_DEVICE (IndexT i) 
       {
         auto mesh1_elem = algorithm::binarySearch(offsets_view, counts_view, i);
         auto mesh2_elem = candidates_view[i];
@@ -748,7 +645,8 @@ public:
 
     auto pairs_view = m_coupling_scheme->getInterfacePairsView();
     forAllExec(m_coupling_scheme->getExecutionMode(), m_candidates.size(),
-      [=] TRIBOL_HOST_DEVICE (IndexT i)
+      [candidates_view, offsets_view, counts_view, filtered_candidates, 
+        pairs_view] TRIBOL_HOST_DEVICE (IndexT i)
       {
         // Filtering removed this case
         if (candidates_view[i] == -1)
@@ -771,7 +669,7 @@ public:
   {
     auto boxes1_view = boxes.view();
     forAllExec(m_coupling_scheme->getExecutionMode(), mesh.numberOfElements(),
-      [=] TRIBOL_HOST_DEVICE (IndexT i) {
+      [this, mesh, boxes1_view] TRIBOL_HOST_DEVICE (IndexT i) {
         BoxT box;
         auto num_nodes_per_elem = mesh.numberOfNodesPerElement();
         for(IndexT j{0}; j < num_nodes_per_elem; ++j)
@@ -824,8 +722,8 @@ private:
    }
 
   CouplingScheme* m_coupling_scheme;
-  MeshWrapper<D> m_mesh_wrapper1;
-  MeshWrapper<D> m_mesh_wrapper2;
+  const MeshData::Viewer& m_mesh1;
+  const MeshData::Viewer& m_mesh2;
   ArrayT<BoxT> m_boxes1;
   ArrayT<BoxT> m_boxes2;
   ArrayT<IndexT> m_candidates;
@@ -842,6 +740,13 @@ InterfacePairFinder::InterfacePairFinder(CouplingScheme* cs)
    const int dim = m_coupling_scheme->spatialDimension();
    axom::slic::flushStreams();
    m_search = nullptr;
+
+   if (isOnDevice(cs->getExecutionMode()) && cs->getBinningMethod() == BINNING_GRID)
+   {
+      SLIC_WARNING_ROOT("BINNING_GRID is not supported on GPU. Switching to BINNING_BVH.");
+      cs->setBinningMethod(BINNING_BVH);
+   }
+
    switch(cs->getBinningMethod() )
    {
    case BINNING_CARTESIAN_PRODUCT:

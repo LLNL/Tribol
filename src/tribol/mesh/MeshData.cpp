@@ -376,39 +376,32 @@ bool MeshData::computeFaceData()
   constexpr RealT nrml_mag_tol = 1.0e-15;
 
   // allocate m_c
-  VectorArray<RealT> c_host(m_dim, m_dim);
-  for (auto& c_dim : c_host)
-  {
-    c_dim = ArrayT<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
-  }
-  m_c = VectorArray<RealT>(c_host, m_allocator_id);
+  m_c = Array2D<RealT>({numberOfElements(), m_dim}, m_allocator_id);
 
   // allocate m_n
-  VectorArray<RealT> n_host(m_dim, m_dim);
-  for (auto& n_dim : n_host)
-  {
-    n_dim = ArrayT<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
-  }
-  m_n = VectorArray<RealT>(n_host, m_allocator_id);
+  m_n = Array2D<RealT>({numberOfElements(), m_dim}, m_allocator_id);
+
+  auto temp = Array1D<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
 
   // allocate m_area
-  m_area = ScalarArray<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
+  m_area = Array1D<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
 
   // allocate face_radius
-  m_face_radius = ScalarArray<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
+  m_face_radius = Array1D<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
+  
+  ArrayT<bool> face_data_ok_data({true}, m_allocator_id);
 
   // loop over all elements in the mesh
-  ArrayViewT<ArrayT<RealT>> c = m_c;
-  ArrayViewT<ArrayViewT<const RealT>> x = m_position;
-  ArrayViewT<ArrayT<RealT>> n = m_n;
-  ArrayViewT<RealT> area = m_area;
-  ArrayViewT<RealT> radius = m_face_radius;
+  Array2DView<RealT> c = m_c;
+  MultiViewArrayView<const RealT> x = m_position;
+  Array2DView<RealT> n = m_n;
+  Array1DView<RealT> area = m_area;
+  Array1DView<RealT> radius = m_face_radius;
   auto dim = m_dim;
   auto conn = m_connectivity;
-  ArrayT<bool> face_data_ok_data({true}, m_allocator_id);
   ArrayViewT<bool> face_data_ok = face_data_ok_data;
   forAllExec(getExecutionMode(m_mem_space), numberOfElements(), 
-    [=] TRIBOL_HOST_DEVICE (IndexT i) {
+    [c, x, n, area, radius, dim, conn, face_data_ok] TRIBOL_HOST_DEVICE (IndexT i) {
 
       // compute the vertex average centroid. This will lie in the 
       // plane of the face for planar faces, and will be used as 
@@ -591,11 +584,7 @@ void MeshData::computeNodalNormals( int const dim )
          SLIC_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
       }
 
-      m_node_n = VectorArray<RealT>(m_dim, m_dim, m_allocator_id);
-      for (IndexT i{0}; i < m_dim; ++i)
-      {
-        m_node_n[i] = ArrayT<RealT>(m_num_nodes, m_num_nodes, m_allocator_id);
-      }
+      m_node_n = Array2D<RealT>({m_num_nodes, m_dim}, m_allocator_id);
 
       // allocate space for nodal normal array
       int size = m_num_nodes; 
@@ -619,8 +608,8 @@ void MeshData::computeNodalNormals( int const dim )
          // piece of memory and there may be a memory issue when numFaceNrmlsToNodes is deleted
          // at the end of this routine.
          int nodeId = getGlobalNodeId(i, j);
-         m_node_n[0][ nodeId ] += this->m_n[0][ i ]; // m_n[0][i] is the ith face normal x-component
-         m_node_n[1][ nodeId ] += this->m_n[1][ i ]; // see above...
+         m_node_n(0, nodeId) += this->m_n[0][ i ]; // m_n[0][i] is the ith face normal x-component
+         m_node_n(1, nodeId) += this->m_n[1][ i ]; // see above...
 
          // increment face-normal-to-node contribution counter
          ++numFaceNrmlsToNodes[ nodeId ];
@@ -786,16 +775,16 @@ void MeshData::print(std::ostream& os) const
    }
 
    // normals
-   if( !m_n.empty() )
-   {
-      os << axom::fmt::format("\n\tnx: {}", axom::fmt::join(m_n[0].data(), m_n[0].data()+num_elem, ", "));
-      os << axom::fmt::format("\n\tny: {}", axom::fmt::join(m_n[1].data(), m_n[1].data()+num_elem, ", "));
-      if(m_dim == 3)
-      {  
-         os << axom::fmt::format("\n\tnz: {}", axom::fmt::join(m_n[2].data(), m_n[2].data()+num_elem, ", "));
-      }
-   }
-   os << "\n  }";
+  //  if( !m_n.empty() )
+  //  {
+  //     os << axom::fmt::format("\n\tnx: {}", axom::fmt::join(m_n[0].data(), m_n[0].data()+num_elem, ", "));
+  //     os << axom::fmt::format("\n\tny: {}", axom::fmt::join(m_n[1].data(), m_n[1].data()+num_elem, ", "));
+  //     if(m_dim == 3)
+  //     {  
+  //        os << axom::fmt::format("\n\tnz: {}", axom::fmt::join(m_n[2].data(), m_n[2].data()+num_elem, ", "));
+  //     }
+  //  }
+  //  os << "\n  }";
 
    os << "\n}";
 }

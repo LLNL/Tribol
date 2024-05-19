@@ -28,13 +28,22 @@ template <typename T, int N>
 using StackArrayT = axom::StackArray<T, N>;
 
 template <typename T, MemorySpace SPACE = MemorySpace::Dynamic>
-using ScalarArray = ArrayT<T, 1, SPACE>;
+using Array1D = ArrayT<T, 1, SPACE>;
 
 template <typename T, MemorySpace SPACE = MemorySpace::Dynamic>
-using VectorArray = ArrayT<ArrayT<T, 1, SPACE>, 1, SPACE>;
+using Array2D = ArrayT<T, 2, SPACE>;
 
 template <typename T, MemorySpace SPACE = MemorySpace::Dynamic>
-using VectorArrayView = ArrayT<ArrayViewT<T, 1, SPACE>, 1, SPACE>;
+using Array1DView = ArrayViewT<T, 1, SPACE>;
+
+template <typename T, MemorySpace SPACE = MemorySpace::Dynamic>
+using Array2DView = ArrayViewT<T, 2, SPACE>;
+
+template <typename T, MemorySpace SPACE = MemorySpace::Dynamic>
+using MultiArrayView = ArrayT<ArrayViewT<T, 1, SPACE>, 1, SPACE>;
+
+template <typename T, MemorySpace SPACE = MemorySpace::Dynamic>
+using MultiViewArrayView = ArrayViewT<const ArrayViewT<T, 1, SPACE>, 1, SPACE>;
 
 } // namespace tribol
 

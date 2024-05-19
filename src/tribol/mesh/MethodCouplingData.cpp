@@ -220,10 +220,6 @@ void MethodData::storeElemBlockJ(
 {
    SLIC_ASSERT_MSG(blockJElemIds.size() == getNSpaces(),
       "Number of element ID vectors does not match the number of Jacobian spaces.");
-   SLIC_ASSERT_MSG(blockJ.shape()[0] == getNSpaces(),
-      "Number of rows in blockJ does not match the number of Jacobian spaces.");
-   SLIC_ASSERT_MSG(blockJ.shape()[1] == getNSpaces(),
-      "Number of columns in blockJ does not match the number of Jacobian spaces.");
    for (IndexT i{}; i < getNSpaces(); ++i)
    {
       IndexT blockIdxI = static_cast<IndexT>(m_blockJSpaces[i]);
@@ -231,7 +227,7 @@ void MethodData::storeElemBlockJ(
       for (IndexT j{}; j < getNSpaces(); ++j)
       {
          IndexT blockIdxJ = static_cast<IndexT>(m_blockJSpaces[j]);
-         m_blockJ(blockIdxI, blockIdxJ).push_back(blockJ[i*3+j]);
+         m_blockJ(blockIdxI, blockIdxJ).push_back(blockJ[i+j*3]);
       }
    }
 } 

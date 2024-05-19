@@ -202,6 +202,8 @@ public:
   EnforcementMethod getEnforcementMethod() const { return m_enforcementMethod; }
   BinningMethod getBinningMethod() const { return m_binningMethod; }
 
+  void setBinningMethod(BinningMethod binningMethod) { m_binningMethod = binningMethod; }
+
   MethodData* getMethodData() const { return m_methodData; }
 
   // TODO test these getters

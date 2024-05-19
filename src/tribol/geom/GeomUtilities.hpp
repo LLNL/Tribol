@@ -301,8 +301,8 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
                                                         const RealT* const yB, 
                                                         const int numVertexB,
                                                         RealT posTol, RealT lenTol, 
-                                                        RealT* * polyX, 
-                                                        RealT* * polyY, 
+                                                        RealT* polyX, 
+                                                        RealT* polyY, 
                                                         int& numPolyVert, RealT& area,
                                                         bool orientCheck=true );
                            
@@ -468,7 +468,7 @@ TRIBOL_HOST_DEVICE bool SegmentIntersection2D( const RealT xA1, const RealT yA1,
  */
 TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const RealT* const y, 
                                                 const int numPoints, const RealT tol, 
-                                                RealT* * xnew, RealT* * ynew, 
+                                                RealT* xnew, RealT* ynew, 
                                                 int& numNewPoints );
 
 /*!

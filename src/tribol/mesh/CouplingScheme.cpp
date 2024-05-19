@@ -943,8 +943,6 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   auto pairs = getInterfacePairsView();
   auto contact_method = m_contactMethod;
   auto contact_case = m_contactCase;
-  ArrayT<int> active_pair_ct_data(1, 1, getAllocatorId());
-  auto active_pair_ct = active_pair_ct_data.view();
   ArrayT<int> pair_err_data(1, 1, getAllocatorId());
   auto pair_err = pair_err_data.view();
   // clear contact planes to be populated/allocated anew for this cycle
@@ -965,7 +963,8 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   ArrayT<IndexT> planes_ct_data(1, 1, getAllocatorId());
   auto planes_ct = planes_ct_data.view();
   forAllExec(getExecutionMode(), numPairs,
-    [=] TRIBOL_HOST_DEVICE (IndexT i) mutable
+    [pairs, mesh1, mesh2, params, contact_method, contact_case, planes_2d, 
+      planes_3d, planes_ct, pair_err] TRIBOL_HOST_DEVICE (IndexT i) mutable
     {
       auto& pair = pairs[i];
       
@@ -997,19 +996,18 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
       else
       {
         pair.m_is_contact_candidate = true;
-        RAJA::atomicInc<RAJA::auto_atomic>(active_pair_ct.data());
       }
     }
   );
 
-  ArrayT<int, 1, MemorySpace::Host> active_pair_ct_host(active_pair_ct_data);
+  ArrayT<int, 1, MemorySpace::Host> planes_ct_host(planes_ct_data);
   if (spatialDimension() == 2)
   {
-    m_contact_plane2d.resize(active_pair_ct_host[0]);
+    m_contact_plane2d.resize(planes_ct_host[0]);
   }
   else
   {
-    m_contact_plane3d.resize(active_pair_ct_host[0]); 
+    m_contact_plane3d.resize(planes_ct_host[0]); 
   }
   
   // Here, the pair_err is checked, which detects an issue with a face-pair geometry
@@ -1076,25 +1074,13 @@ bool CouplingScheme::init()
       auto& mesh_data1 = MeshManager::getInstance().at( this->m_mesh_id1 );
       auto& mesh_data2 = MeshManager::getInstance().at( this->m_mesh_id2 );
 
-      // compute the face data
-      mesh_data1.computeFaceData();
-      if (this->m_mesh_id2 != this->m_mesh_id1)
-      {
-         mesh_data2.computeFaceData();
-      }
-
-      // set mesh pointers (with computed face data)
-      m_mesh1 = mesh_data1.getView();
-      m_mesh2 = mesh_data2.getView();
-
       // set individual coupling scheme logging level
       this->setSlicLoggingLevel();
-      this->allocateMethodData();
 
       // determine execution mode for kernels (already verified the memory
       // spaces of each mesh match in isValidCouplingScheme())
 #ifdef TRIBOL_USE_RAJA
-      switch (m_mesh1->getMemorySpace())
+      switch (mesh_data1.getMemorySpace())
       {
         case MemorySpace::Dynamic:
   #ifdef TRIBOL_USE_UMPIRE
@@ -1102,7 +1088,7 @@ bool CouplingScheme::init()
           m_exec_mode = m_given_exec_mode;
           if (m_exec_mode == ExecutionMode::Dynamic)
           {
-            SLIC_DEBUG_ROOT("Dynamic execution with dynamic memory space. "
+            SLIC_WARNING_ROOT("Dynamic execution with dynamic memory space. "
               "Assuming sequential execution on host.");
             m_exec_mode = ExecutionMode::Sequential;
           }
@@ -1129,6 +1115,7 @@ bool CouplingScheme::init()
     #endif
           }
           break;
+  #endif
         case MemorySpace::Host:
           switch (m_given_exec_mode)
           {
@@ -1156,6 +1143,7 @@ bool CouplingScheme::init()
               break;
           }
           break;
+  #ifdef TRIBOL_USE_UMPIRE
         case MemorySpace::Device:
           switch (m_given_exec_mode)
           {
@@ -1178,7 +1166,58 @@ bool CouplingScheme::init()
 #else
       m_exec_mode = ExecutionMode::Sequential;
 #endif
-      m_allocator_id = m_mesh1->getAllocatorId();
+
+      // Update memory spaces of mesh data which are originally set as dynamic
+      // (ensures data owned by MeshData is in the right memory space)
+#ifdef TRIBOL_USE_UMPIRE
+      if (mesh_data1.getMemorySpace() == MemorySpace::Dynamic)
+      {
+        switch (m_exec_mode)
+        {
+          case ExecutionMode::Sequential:
+  #ifdef TRIBOL_USE_RAJA
+    #ifdef TRIBOL_USE_OPENMP
+          case ExecutionMode::OpenMP:
+    #endif
+  #endif
+            mesh_data1.updateAllocatorId(getResourceAllocatorID(MemorySpace::Host));
+            mesh_data2.updateAllocatorId(getResourceAllocatorID(MemorySpace::Host));
+            break;
+  #ifdef TRIBOL_USE_RAJA
+    #ifdef TRIBOL_USE_CUDA
+          case ExecutionMode::Cuda:
+            mesh_data1.updateAllocatorId(getResourceAllocatorID(MemorySpace::Device));
+            mesh_data2.updateAllocatorId(getResourceAllocatorID(MemorySpace::Device));
+            break;
+    #endif
+    #ifdef TRIBOL_USE_HIP
+          case ExecutionMode::Hip:
+            mesh_data1.updateAllocatorId(getResourceAllocatorID(MemorySpace::Device));
+            mesh_data2.updateAllocatorId(getResourceAllocatorID(MemorySpace::Device));
+            break;
+    #endif
+  #endif
+          default:
+            // no-op
+            break;
+        }
+      }
+#endif
+      m_allocator_id = mesh_data1.getAllocatorId();
+
+      // compute the face data
+      mesh_data1.computeFaceData();
+      if (this->m_mesh_id2 != this->m_mesh_id1)
+      {
+         mesh_data2.computeFaceData();
+      }
+      
+      this->allocateMethodData();
+
+      // set mesh viewers (with computed face data) to send to device, if
+      // required
+      m_mesh1 = mesh_data1.getView();
+      m_mesh2 = mesh_data2.getView();
 
       return true;
    }
@@ -1228,12 +1267,14 @@ void CouplingScheme::setSlicLoggingLevel()
 //------------------------------------------------------------------------------
 void CouplingScheme::allocateMethodData()
 {
+   auto& mesh1 = MeshManager::getInstance().getData(m_mesh_id1);
+   auto& mesh2 = MeshManager::getInstance().getData(m_mesh_id2);
    // check for valid coupling schemes for those with non-null meshes.
    // Note: keep if-block for non-null meshes here. A valid coupling scheme 
    // may have null meshes, but we don't want to allocate unnecessary memory here.
-   if (m_mesh1->numberOfElements() > 0 && m_mesh2->numberOfElements() > 0)
+   if (mesh1.numberOfElements() > 0 && mesh2.numberOfElements() > 0)
    {
-      this->m_numTotalNodes = m_mesh1->numberOfNodes();
+      this->m_numTotalNodes = mesh1.numberOfNodes();
 
       // dynamically allocate method data object for mortar method
       switch (this->m_contactMethod)
@@ -1403,7 +1444,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
   //  for (IndexT kp = 0; kp < numPairs; ++kp)
   //  {
   forAllExec(getExecutionMode(), getNumActivePairs(),
-    [=] TRIBOL_HOST_DEVICE (IndexT i)
+    [cs_view, dim, proj_ratio, msg, dt_temp, dt] TRIBOL_HOST_DEVICE (IndexT i)
     {
       auto& plane = cs_view.getContactPlane(i);
 
@@ -1799,22 +1840,22 @@ void CouplingScheme::updatePairReportingData( const FaceGeomError face_error )
 //------------------------------------------------------------------------------
 void CouplingScheme::printPairReportingData()
 {
-   SLIC_DEBUG(this->m_numActivePairs*100./getInterfacePairs().size() << "% of binned interface " <<
+   SLIC_DEBUG(this->getNumActivePairs()*100./getInterfacePairs().size() << "% of binned interface " <<
               "pairs are active contact candidates.");
 
    SLIC_DEBUG_IF(this->m_pairReportingData.numBadOrientation>0,
                  "Number of bad orientations is " << this->m_pairReportingData.numBadOrientation <<
-                 " equaling " << this->m_pairReportingData.numBadOrientation*100./numInterfacePairs <<
+                 " equaling " << this->m_pairReportingData.numBadOrientation*100./getInterfacePairs().size() <<
                  "% of total number of binned interface pairs.");
 
    SLIC_DEBUG_IF(this->m_pairReportingData.numBadFaceGeometry>0,
                  "Number of bad face geometries is " << this->m_pairReportingData.numBadFaceGeometry <<
-                 " equaling " << this->m_pairReportingData.numBadFaceGeometry*100./numInterfacePairs <<
+                 " equaling " << this->m_pairReportingData.numBadFaceGeometry*100./getInterfacePairs().size() <<
                  "% of total number of binned interface pairs.");
 
    SLIC_DEBUG_IF(this->m_pairReportingData.numBadOverlaps>0,
                  "Number of bad contact overlaps is " << this->m_pairReportingData.numBadOverlaps <<
-                 " equaling " << this->m_pairReportingData.numBadOverlaps*100./numInterfacePairs <<
+                 " equaling " << this->m_pairReportingData.numBadOverlaps*100./getInterfacePairs().size() <<
                  "% of total number of binned interface pairs.");
 }
 

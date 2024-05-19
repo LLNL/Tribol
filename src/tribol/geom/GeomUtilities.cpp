@@ -541,8 +541,8 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
                                                         const RealT* const yB, 
                                                         const int numVertexB,
                                                         RealT posTol, RealT lenTol, 
-                                                        RealT* * polyX, 
-                                                        RealT* * polyY, 
+                                                        RealT* polyX, 
+                                                        RealT* polyY, 
                                                         int& numPolyVert, RealT& area, bool orientCheck )
 {
    // for tribol, if you have called this routine it is because a positive area of 
@@ -557,7 +557,7 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // check numVertexA and numVertexB to make sure they are 3 (triangle) or more
    if (numVertexA < 3 || numVertexB < 3) 
    {
-      SLIC_DEBUG( "Intersection2DPolygon(): one or more degenerate faces with < 3 vertices." );
+      // SLIC_DEBUG( "Intersection2DPolygon(): one or more degenerate faces with < 3 vertices." );
       area = 0.0;
       return INVALID_FACE_INPUT; 
    }
@@ -574,7 +574,7 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
 
       if (!orientA || !orientB)
       {
-         SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face A." );
+        //  SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face A." );
          return FACE_ORIENTATION;
       }
    }
@@ -621,17 +621,13 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // check to see if ALL of A is in B; then A is the overlapping polygon.
    if (numVAI == numVertexA)
    {
-      *polyX = new RealT[ numVertexA ];
-      *polyY = new RealT[ numVertexA ];
       numPolyVert = numVertexA;
       for (int i=0; i<numVertexA; ++i)
       {
-         (*polyX)[i] = xA[i];
-         (*polyY)[i] = yA[i];
+         polyX[i] = xA[i];
+         polyY[i] = yA[i];
       }
-      RealT* xVert = *polyX;
-      RealT* yVert = *polyY;
-      area = Area2DPolygon( xVert, yVert, numVertexA );
+      area = Area2DPolygon( polyX, polyY, numVertexA );
       return NO_FACE_GEOM_ERROR;
    }
 
@@ -649,17 +645,13 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // check to see if ALL of B is in A; then B is the overlapping polygon.
    if (numVBI == numVertexB)
    {
-      *polyX = new RealT[ numVertexB ];
-      *polyY = new RealT[ numVertexB ];
       numPolyVert = numVertexB;
       for (int i=0; i<numVertexB; ++i)
       {
-         (*polyX)[i] = xB[i];
-         (*polyY)[i] = yB[i];
+         polyX[i] = xB[i];
+         polyY[i] = yB[i];
       }
-      RealT* xVert = *polyX;
-      RealT* yVert = *polyY;
-      area = Area2DPolygon( xVert, yVert, numVertexB );
+      area = Area2DPolygon( polyX, polyY, numVertexB );
       return NO_FACE_GEOM_ERROR;
    }
 
@@ -745,8 +737,8 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
          {
             if (interId >= maxSegInter) 
             {
-               SLIC_DEBUG("Intersection2DPolygon: number of segment/segment intersections exceeds precomputed maximum; " << 
-                          "check for degenerate overlap.");
+              //  SLIC_DEBUG("Intersection2DPolygon: number of segment/segment intersections exceeds precomputed maximum; " << 
+              //             "check for degenerate overlap.");
                return DEGENERATE_OVERLAP;
             }
 
@@ -800,8 +792,8 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
          // debug
          if (k > numPolyVert)
          {
-            SLIC_DEBUG("Intersection2DPolygon(): number of A vertices interior to B " << 
-                       "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+            // SLIC_DEBUG("Intersection2DPolygon(): number of A vertices interior to B " << 
+            //            "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
             return FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
@@ -818,8 +810,8 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
          // debug
          if (k > numPolyVert)
          {
-            SLIC_DEBUG("Intersection2DPolygon(): number of B vertices interior to A " << 
-                       "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+            // SLIC_DEBUG("Intersection2DPolygon(): number of B vertices interior to A " << 
+            //            "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
             return FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
@@ -866,10 +858,7 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    }
 
    // compute the area of the polygon
-   RealT* xVert = *polyX;
-   RealT* yVert = *polyY;
-   area = 0.0;
-   area = Area2DPolygon( xVert, yVert, numPolyVert );
+   area = Area2DPolygon( polyX, polyY, numPolyVert );
 
    return NO_FACE_GEOM_ERROR;
 
@@ -1130,8 +1119,8 @@ TRIBOL_HOST_DEVICE bool SegmentIntersection2D( const RealT xA1, const RealT yA1,
      yDiff = (yDiff < 0.) ? -1.0 * yDiff : yDiff;
 
      RealT diffTol = 1.0E-3;
-     SLIC_DEBUG_IF( xDiff > diffTol || yDiff > diffTol, 
-                   "SegmentIntersection2D(): Intersection coordinates are not equally derived." );
+    //  SLIC_DEBUG_IF( xDiff > diffTol || yDiff > diffTol, 
+    //                "SegmentIntersection2D(): Intersection coordinates are not equally derived." );
    }
 
    // if we get here then it means we have an intersection point.
@@ -1211,7 +1200,7 @@ TRIBOL_HOST_DEVICE bool SegmentIntersection2D( const RealT xA1, const RealT yA1,
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const RealT* const y, 
                                                 const int numPoints, const RealT tol, 
-                                                RealT* * xnew, RealT* * ynew, 
+                                                RealT* xnew, RealT* ynew, 
                                                 int& numNewPoints )
 {
    constexpr int max_nodes_per_overlap = 8;
@@ -1259,12 +1248,6 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const Real
       // return and degenerated polygon will be skipped over. 
       return NO_FACE_GEOM_ERROR;
    }
-
-   // allocate space for xnew and ynew. These are the input/output pointers 
-   // to the overlapping polygon's vertex coordinates in the main polygon intersection 
-   // routine
-   *xnew = new RealT[ numNewPoints ];
-   *ynew = new RealT[ numNewPoints ];
    
    // set the coordinates in xnew and ynew 
    int k = 0;
@@ -1274,12 +1257,12 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const Real
       {
          if (k > numNewPoints)
          {
-            SLIC_DEBUG("checkPolySegs(): index into polyX/polyY exceeds allocated space");
+            // SLIC_DEBUG("checkPolySegs(): index into polyX/polyY exceeds allocated space");
             return FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
-         (*xnew)[k] = x[i];
-         (*ynew)[k] = y[i];
+         xnew[k] = x[i];
+         ynew[k] = y[i];
          ++k;
       }
    }

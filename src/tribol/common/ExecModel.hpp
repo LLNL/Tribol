@@ -170,6 +170,34 @@ inline ExecutionMode getExecutionMode(MemorySpace mem_space)
   }
 }
 
+inline bool isOnDevice(ExecutionMode exec)
+{
+  switch (exec)
+  {
+#ifdef TRIBOL_USE_RAJA
+  #if defined(TRIBOL_USE_CUDA)
+    case ExecutionMode::Cuda:
+      return true;
+  #elif defined(TRIBOL_USE_HIP)
+    case ExecutionMode::Hip:
+      return true;
+  #endif
+  #ifdef TRIBOL_USE_OPENMP
+    case ExecutionMode::OpenMP:
+      return false;
+  #endif
+    case ExecutionMode::Dynamic:
+      SLIC_ERROR_ROOT("Dynamic execution mode does not define a memory space location.");
+      return false;
+#endif
+    case ExecutionMode::Sequential:
+      return false;
+    default:
+      SLIC_ERROR_ROOT("Unknown execution mode.");
+      return false;
+  }
+}
+
 } // namespace tribol
 
 

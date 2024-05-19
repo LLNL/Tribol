@@ -134,13 +134,13 @@ namespace detail
 }
 
 #define TRIBOL_BLOCK_SIZE 256
-template <ExecutionMode EXEC, typename BODY, bool ASYNC = false, int BLOCK_SIZE = TRIBOL_BLOCK_SIZE>
+template <ExecutionMode EXEC, typename BODY, bool ASYNC = true, int BLOCK_SIZE = TRIBOL_BLOCK_SIZE>
 void forAllExec(IndexT N, BODY&& body)
 {
   detail::forAllImpl<BODY, ASYNC, BLOCK_SIZE>(detail::forAllType<EXEC>(), N, std::move(body));
 }
 
-template <typename BODY, bool ASYNC = false, int BLOCK_SIZE = TRIBOL_BLOCK_SIZE>
+template <bool ASYNC = true, int BLOCK_SIZE = TRIBOL_BLOCK_SIZE, typename BODY>
 void forAllExec(ExecutionMode exec_mode, IndexT N, BODY&& body)
 {
   switch (exec_mode)

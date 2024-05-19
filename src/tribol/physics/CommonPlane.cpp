@@ -168,7 +168,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
    auto cs_view = cs->getView();
    const auto num_pairs = cs->getNumActivePairs();
    forAllExec(cs->getExecutionMode(), num_pairs,
-      [=] TRIBOL_HOST_DEVICE (IndexT i)
+      [cs_view, err, neg_thickness] TRIBOL_HOST_DEVICE (IndexT i)
       {
          auto& plane = cs_view.getContactPlane(i);
 

@@ -21,7 +21,7 @@ TRIBOL_HOST_DEVICE IndexT binarySearch( IndexT size,
 {
   if (size == 0)
   {
-    SLIC_DEBUG("binarySearch: empty array given");
+    // SLIC_DEBUG("binarySearch: empty array given");
     return -1;
   }
 
@@ -44,7 +44,7 @@ TRIBOL_HOST_DEVICE IndexT binarySearch( IndexT size,
     }
   }
 
-  SLIC_DEBUG("binary_search: could not locate value in provided array.");
+  // SLIC_DEBUG("binary_search: could not locate value in provided array.");
   return -1;
 }
 

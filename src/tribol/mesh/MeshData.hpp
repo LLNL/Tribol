@@ -6,12 +6,12 @@
 #ifndef SRC_MESH_MESHDATA_HPP_
 #define SRC_MESH_MESHDATA_HPP_
 
+#include <ostream>
+
 #include "tribol/common/ArrayTypes.hpp"
 #include "tribol/common/LoopExec.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/utils/DataManager.hpp"
-
-#include <ostream>
 
 namespace tribol
 {
@@ -111,60 +111,60 @@ public:
       return m_connectivity(element_id, local_node_id);
     }
 
-    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayViewT<const RealT>>& getPosition() const
+    TRIBOL_HOST_DEVICE const MultiViewArrayView<const RealT>& getPosition() const
     {
       return m_position;
     }
     
     TRIBOL_HOST_DEVICE bool hasDisplacement() const { return !m_disp.empty(); }
-    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayViewT<const RealT>>& getDisplacement() const
+    TRIBOL_HOST_DEVICE const MultiViewArrayView<const RealT>& getDisplacement() const
     {
       return m_disp;
     }
 
     TRIBOL_HOST_DEVICE bool hasVelocity() const { return !m_vel.empty(); }
-    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayViewT<const RealT>>& getVelocity() const
+    TRIBOL_HOST_DEVICE const MultiViewArrayView<const RealT>& getVelocity() const
     {
       return m_vel;
     }
     
     TRIBOL_HOST_DEVICE bool hasResponse() const { return !m_response.empty(); }
-    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayViewT<RealT>>& getResponse() const
+    TRIBOL_HOST_DEVICE const MultiViewArrayView<RealT>& getResponse() const
     {
       return m_response;
     }
     
     TRIBOL_HOST_DEVICE bool hasNodalNormals() const { return !m_node_n.empty(); }
-    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayT<RealT>>& getNodalNormals() const
+    TRIBOL_HOST_DEVICE const Array2DView<RealT>& getNodalNormals() const
     {
       return m_node_n;
     }
 
     TRIBOL_HOST_DEVICE bool hasElementCentroids() const { return !m_c.empty(); }
-    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayT<RealT>>& getElementCentroids() const
+    TRIBOL_HOST_DEVICE const Array2DView<RealT>& getElementCentroids() const
     {
       return m_c;
     }
 
     TRIBOL_HOST_DEVICE bool hasElementNormals() const { return !m_n.empty(); }
-    TRIBOL_HOST_DEVICE const ArrayViewT<const ArrayT<RealT>>& getElementNormals() const
+    TRIBOL_HOST_DEVICE const Array2DView<RealT>& getElementNormals() const
     {
       return m_n;
     }
 
     TRIBOL_HOST_DEVICE bool hasFaceRadii() const { return !m_face_radius.empty(); }
-    TRIBOL_HOST_DEVICE const ArrayViewT<RealT>& getFaceRadii() const
+    TRIBOL_HOST_DEVICE const Array1DView<RealT>& getFaceRadii() const
     {
       return m_face_radius;
     }
 
     TRIBOL_HOST_DEVICE bool hasElementAreas() const { return !m_area.empty(); }
-    TRIBOL_HOST_DEVICE const ArrayViewT<RealT>& getElementAreas() const
+    TRIBOL_HOST_DEVICE const Array1DView<RealT>& getElementAreas() const
     {
       return m_area;
     }
 
-    TRIBOL_HOST_DEVICE const ArrayViewT<const IndexT, 2>& getConnectivity() const 
+    TRIBOL_HOST_DEVICE const Array2DView<const IndexT>& getConnectivity() const 
     {
       return m_connectivity;
     }
@@ -207,17 +207,17 @@ public:
     const MemorySpace m_mem_space;
     const int m_allocator_id;
 
-    const ArrayViewT<const ArrayViewT<const RealT>> m_position;
-    const ArrayViewT<const ArrayViewT<const RealT>> m_disp;
-    const ArrayViewT<const ArrayViewT<const RealT>> m_vel;
-    const ArrayViewT<const ArrayViewT<RealT>> m_response;
+    const MultiViewArrayView<const RealT> m_position;
+    const MultiViewArrayView<const RealT> m_disp;
+    const MultiViewArrayView<const RealT> m_vel;
+    const MultiViewArrayView<RealT> m_response;
 
-    const ArrayViewT<const ArrayT<RealT>> m_node_n;
+    const Array2DView<RealT> m_node_n;
 
-    const ArrayViewT<const IndexT, 2> m_connectivity;
+    const Array2DView<const IndexT> m_connectivity;
 
-    const ArrayViewT<const ArrayT<RealT>> m_c;
-    const ArrayViewT<const ArrayT<RealT>> m_n;
+    const Array2DView<RealT> m_c;
+    const Array2DView<RealT> m_n;
     const ArrayViewT<RealT> m_face_radius;
     const ArrayViewT<RealT> m_area;
     
@@ -237,6 +237,8 @@ public:
   InterfaceElementType getElementType() const { return m_element_type; }
   int spatialDimension() const { return m_dim; }
   MemorySpace getMemorySpace() const { return m_mem_space; }
+  int getAllocatorId() const { return m_allocator_id; }
+  void updateAllocatorId(int allocator_id ) { m_allocator_id = allocator_id; }
 
   bool& isMeshValid() { return m_is_valid; }
 
@@ -247,7 +249,7 @@ public:
   IndexT numberOfNodes() const { return m_num_nodes; }
   IndexT numberOfElements() const { return m_connectivity.shape()[0]; }
   IndexT numberOfNodesPerElement() const { return m_connectivity.shape()[1]; }
-  TRIBOL_HOST_DEVICE IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
+  IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
   {
     return m_connectivity(element_id, local_node_id);
   }
@@ -277,7 +279,7 @@ private:
   int getDimFromElementType() const;
 
   template <typename T>
-  VectorArrayView<T> createNodalVector( T* x, 
+  MultiArrayView<T> createNodalVector( T* x, 
                                         T* y,
                                         T* z ) const;
 
@@ -301,21 +303,21 @@ private:
   MeshElemData  m_element_data; ///< method/enforcement specific element data
 
   // Nodal field data
-  VectorArrayView<const RealT> m_position; ///< Coordinates of nodes in mesh
-  VectorArrayView<const RealT> m_disp;     ///< Nodal displacements
-  VectorArrayView<const RealT> m_vel;      ///< Nodal velocity
-  VectorArrayView<RealT> m_response;       ///< Nodal responses (forces)
+  MultiArrayView<const RealT> m_position; ///< Coordinates of nodes in mesh
+  MultiArrayView<const RealT> m_disp;     ///< Nodal displacements
+  MultiArrayView<const RealT> m_vel;      ///< Nodal velocity
+  MultiArrayView<RealT> m_response;       ///< Nodal responses (forces)
 
-  VectorArray<RealT> m_node_n;             ///< Outward unit node normals
+  Array2D<RealT> m_node_n;             ///< Outward unit node normals
 
   // Element field data
-  ArrayViewT<const IndexT, 2> m_connectivity;  ///< Element connectivity arrays
-  ArrayT<IndexT, 1> m_sorted_surface_node_ids; ///< List of sorted node ids from connectivity w/o duplicates
+  Array2DView<const IndexT> m_connectivity;  ///< Element connectivity arrays
+  Array1D<IndexT> m_sorted_surface_node_ids; ///< List of sorted node ids from connectivity w/o duplicates
 
-  VectorArray<RealT> m_c;   ///< Vertex averaged element centroids
-  VectorArray<RealT> m_n;   ///< Outward unit element normals
-  ScalarArray<RealT> m_face_radius; ///< Face radius used in low level proximity check
-  ScalarArray<RealT> m_area;        ///< Element areas
+  Array2D<RealT> m_c;   ///< Vertex averaged element centroids
+  Array2D<RealT> m_n;   ///< Outward unit element normals
+  Array1D<RealT> m_face_radius; ///< Face radius used in low level proximity check
+  Array1D<RealT> m_area;        ///< Element areas
 
 public:
 
@@ -368,16 +370,16 @@ public:
 
 //------------------------------------------------------------------------------
 template <typename T>
-VectorArrayView<T> MeshData::createNodalVector( T* x, T* y, T* z ) const
+MultiArrayView<T> MeshData::createNodalVector( T* x, T* y, T* z ) const
 {
-  VectorArrayView<T> host_nodal_vector(m_dim, m_dim);
+  MultiArrayView<T> host_nodal_vector(m_dim, m_dim);
   host_nodal_vector[0] = ArrayViewT<T>(x, m_num_nodes);
   host_nodal_vector[1] = ArrayViewT<T>(y, m_num_nodes);
   if (m_dim == 3)
   {
     host_nodal_vector[2] = ArrayViewT<T>(z, m_num_nodes);
   }
-  return VectorArrayView<T>(host_nodal_vector, m_allocator_id);
+  return MultiArrayView<T>(host_nodal_vector, m_allocator_id);
 }
 
 using MeshManager = DataManager<MeshData>;

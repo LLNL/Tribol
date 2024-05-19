@@ -141,11 +141,9 @@ protected:
 
    TRIBOL_HOST_DEVICE ContactPlane();
 
-   TRIBOL_HOST_DEVICE virtual ~ContactPlane();
+   virtual ~ContactPlane() = default;
 
-   TRIBOL_HOST_DEVICE ContactPlane(const ContactPlane& other);
-
-   TRIBOL_HOST_DEVICE ContactPlane(ContactPlane&& other) noexcept;
+   static constexpr int max_nodes_per_overlap {8};
 
 public:
 
@@ -169,14 +167,14 @@ public:
    RealT m_cZf2; ///< global z-coordinate of contact plane centroid projected to face 2
 
    int m_numInterpenPoly1Vert; ///< Number of vertices on face 1 interpenetrating polygon
-   RealT* m_interpenG1X;   ///< Global x-coordinate of face 1 interpenetrating polygon
-   RealT* m_interpenG1Y;   ///< Global y-coordinate of face 1 interpenetrating polygon
-   RealT* m_interpenG1Z;   ///< Global z-coordinate of face 1 interpenetrating polygon
+   RealT m_interpenG1X[max_nodes_per_overlap];   ///< Global x-coordinate of face 1 interpenetrating polygon
+   RealT m_interpenG1Y[max_nodes_per_overlap];   ///< Global y-coordinate of face 1 interpenetrating polygon
+   RealT m_interpenG1Z[max_nodes_per_overlap];   ///< Global z-coordinate of face 1 interpenetrating polygon
    
    int m_numInterpenPoly2Vert; ///< Number of vertices on face 2 interpenetrating polygon
-   RealT* m_interpenG2X;   ///< Global x-coordinate of face 2 interpenetrating polygon
-   RealT* m_interpenG2Y;   ///< Global y-coordinate of face 2 interpenetrating polygon
-   RealT* m_interpenG2Z;   ///< Global z-coordinate of face 2 interpenetrating polygon
+   RealT m_interpenG2X[max_nodes_per_overlap];   ///< Global x-coordinate of face 2 interpenetrating polygon
+   RealT m_interpenG2Y[max_nodes_per_overlap];   ///< Global y-coordinate of face 2 interpenetrating polygon
+   RealT m_interpenG2Z[max_nodes_per_overlap];   ///< Global z-coordinate of face 2 interpenetrating polygon
 
    RealT m_nX; ///< Global x-component of contact plane unit normal 
    RealT m_nY; ///< Global y-component of contact plane unit normal
@@ -313,16 +311,6 @@ public:
      m_numFaces = num;
    }
 
-protected:
-
-   TRIBOL_HOST_DEVICE static void deleteArrays( const ContactPlane& plane );
-
-   TRIBOL_HOST_DEVICE void copyArrays( const ContactPlane& other );
-
-   TRIBOL_HOST_DEVICE static void nullArrays( ContactPlane& plane );
-
-   TRIBOL_HOST_DEVICE void moveData( ContactPlane&& other );
-
    /// @}
 };
 
@@ -354,20 +342,6 @@ public:
     */
    TRIBOL_HOST_DEVICE ContactPlane3D();
 
-   /*!
-    * Destructor 
-    *
-    */
-   TRIBOL_HOST_DEVICE ~ContactPlane3D();
-
-   TRIBOL_HOST_DEVICE ContactPlane3D(const ContactPlane3D& other);
-
-   TRIBOL_HOST_DEVICE ContactPlane3D(ContactPlane3D&& other) noexcept;
-
-   TRIBOL_HOST_DEVICE ContactPlane3D& operator=(const ContactPlane3D& other);
-
-   TRIBOL_HOST_DEVICE ContactPlane3D& operator=(ContactPlane3D&& other) noexcept;
-
    RealT m_e1X; ///< Global x-component of first in-plane basis vector
    RealT m_e1Y; ///< Global y-component of first in-plane basis vector
    RealT m_e1Z; ///< Global z-component of first in-plane basis vector
@@ -376,23 +350,23 @@ public:
    RealT m_e2Y; ///< Global y-component of second in-plane basis vector
    RealT m_e2Z; ///< Global z-component of second in-plane basis vector
 
-   RealT* m_polyLocX; ///< Pointer to local x-components of overlap polygon's vertices
-   RealT* m_polyLocY; ///< Pointer to local y-components of overlap polygon's vertices 
+   RealT m_polyLocX[max_nodes_per_overlap]; ///< Pointer to local x-components of overlap polygon's vertices
+   RealT m_polyLocY[max_nodes_per_overlap]; ///< Pointer to local y-components of overlap polygon's vertices 
 
-   RealT* m_polyX; ///< Global x-components of overlap polygon's vertices
-   RealT* m_polyY; ///< Global y-components of overlap polygon's vertices
-   RealT* m_polyZ; ///< Global z-components of overlap polygon's vertices
+   RealT m_polyX[max_nodes_per_overlap]; ///< Global x-components of overlap polygon's vertices
+   RealT m_polyY[max_nodes_per_overlap]; ///< Global y-components of overlap polygon's vertices
+   RealT m_polyZ[max_nodes_per_overlap]; ///< Global z-components of overlap polygon's vertices
 
    int m_numPolyVert; ///< Number of vertices in overlapping polygon
 
    RealT m_overlapCX; ///< Local x-coordinate of overlap centroid
    RealT m_overlapCY; ///< Local y-coordinate of overlap centroid
 
-   RealT* m_interpenPoly1X; ///< Local x-coordinates of face 1 interpenetrating overlap
-   RealT* m_interpenPoly1Y; ///< Local y-coordinates of face 1 interpenetrating overlap
+   RealT m_interpenPoly1X[max_nodes_per_overlap]; ///< Local x-coordinates of face 1 interpenetrating overlap
+   RealT m_interpenPoly1Y[max_nodes_per_overlap]; ///< Local y-coordinates of face 1 interpenetrating overlap
 
-   RealT* m_interpenPoly2X; ///< Local x-coordinates of face 2 interpenetrating overlap
-   RealT* m_interpenPoly2Y; ///< Local y-coordinates of face 2 interpenetrating overlap
+   RealT m_interpenPoly2X[max_nodes_per_overlap]; ///< Local x-coordinates of face 2 interpenetrating overlap
+   RealT m_interpenPoly2Y[max_nodes_per_overlap]; ///< Local y-coordinates of face 2 interpenetrating overlap
 
    /*!
     * \brief Compute the unit normal that defines the contact plane
@@ -557,14 +531,6 @@ public:
     *        
     */
    ~ContactPlane2D() = default;
-
-   TRIBOL_HOST_DEVICE ContactPlane2D(const ContactPlane2D& other);
-
-   TRIBOL_HOST_DEVICE ContactPlane2D(ContactPlane2D&& other) noexcept;
-
-   TRIBOL_HOST_DEVICE ContactPlane2D& operator=(const ContactPlane2D& other);
-
-   TRIBOL_HOST_DEVICE ContactPlane2D& operator=(ContactPlane2D&& other) noexcept;
 
    /*!
     * \brief Compute the unit normal that defines the contact plane
