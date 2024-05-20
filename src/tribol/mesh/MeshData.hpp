@@ -291,7 +291,7 @@ private:
 
   IndexT m_mesh_id;                    ///< Mesh Id associated with this data
   InterfaceElementType m_element_type; ///< Type of interface element in mesh
-  int m_dim;
+  int m_dim;                           ///< Spatial dimension of the mesh coordinates
   IndexT m_num_nodes;
 
   MemorySpace m_mem_space; ///< Memory space for mesh data
@@ -314,8 +314,8 @@ private:
   Array2DView<const IndexT> m_connectivity;  ///< Element connectivity arrays
   Array1D<IndexT> m_sorted_surface_node_ids; ///< List of sorted node ids from connectivity w/o duplicates
 
-  Array2D<RealT> m_c;   ///< Vertex averaged element centroids
-  Array2D<RealT> m_n;   ///< Outward unit element normals
+  Array2D<RealT> m_c;           ///< Vertex averaged element centroids
+  Array2D<RealT> m_n;           ///< Outward unit element normals
   Array1D<RealT> m_face_radius; ///< Face radius used in low level proximity check
   Array1D<RealT> m_area;        ///< Element areas
 

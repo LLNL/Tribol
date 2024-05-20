@@ -305,6 +305,8 @@ spack:
         prefix: /collab/usr/gapps/axom/devtools/toss_4_x86_64_ib/latest/python-3.10.10
 
     # Globally lock version of third party libraries that work on this platform
+    axom:
+      variants: ~shared~examples~fortran~lua~tools~openmp
     conduit:
       variants: ~shared~test~examples~utilities
     raja:

@@ -238,7 +238,7 @@ spack:
 
     # Globally lock version of third party libraries that work on this platform
     axom:
-      variants: ~examples~fortran~lua~tools~openmp
+      variants: ~shared~examples~fortran~lua~tools~openmp
     camp:
       require: "@2024.02.0"
     conduit:
