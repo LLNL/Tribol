@@ -376,17 +376,19 @@ bool MeshData::computeFaceData()
   constexpr RealT nrml_mag_tol = 1.0e-15;
 
   // allocate m_c
-  m_c = Array2D<RealT>({numberOfElements(), m_dim}, m_allocator_id);
+  m_c = Array2D<RealT>({m_dim, numberOfElements()}, m_allocator_id);
+  // initialize m_c
+  m_c.fill(0.0);
 
   // allocate m_n
-  m_n = Array2D<RealT>({numberOfElements(), m_dim}, m_allocator_id);
+  m_n = Array2D<RealT>({m_dim, numberOfElements()}, m_allocator_id);
+  // initialize m_n
+  m_n.fill(0.0);
 
-  auto temp = Array1D<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
-
-  // allocate m_area
+  // allocate m_area (initialized to 0.0)
   m_area = Array1D<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
 
-  // allocate face_radius
+  // allocate face_radius (initialized to 0.0)
   m_face_radius = Array1D<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
   
   ArrayT<bool> face_data_ok_data({true}, m_allocator_id);
@@ -584,7 +586,8 @@ void MeshData::computeNodalNormals( int const dim )
          SLIC_ERROR("MeshData::computeNodalNormals: required face normals not computed.");
       }
 
-      m_node_n = Array2D<RealT>({m_num_nodes, m_dim}, m_allocator_id);
+      m_node_n = Array2D<RealT>({m_dim, m_num_nodes}, m_allocator_id);
+      m_node_n.fill(0.0);
 
       // allocate space for nodal normal array
       int size = m_num_nodes; 

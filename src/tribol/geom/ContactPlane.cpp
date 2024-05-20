@@ -111,7 +111,8 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
 
         if (cpTemp.m_inContact)
         {
-          //cpMgr.addContactPlane( cpTemp );
+          auto idx = RAJA::atomicInc<RAJA::auto_atomic>(plane_ct);
+          planes_3d[idx] = std::move(cpTemp);
           isInteracting = true;
         }
         else

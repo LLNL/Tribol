@@ -150,7 +150,7 @@ int runExample()
       fe_space.GetBdrElementDofs(be, be_dofs);
       for (int i{0}; i < 4; ++i)
       {
-        host_conn_2(0, i) = be_dofs[i];
+        host_conn_2(elem_ct, i) = be_dofs[i];
       }
       ++elem_ct;
     }
@@ -159,10 +159,10 @@ int runExample()
   tribol::ArrayT<tribol::IndexT, 2, MSPACE> conn_2(host_conn_2);
 
   constexpr tribol::IndexT mesh1_id = 0;
-  tribol::registerMesh(mesh1_id, 1, fe_space.GetNDofs(), conn_1.data(), tribol::LINEAR_QUAD,
+  tribol::registerMesh(mesh1_id, num_contact_elems, fe_space.GetNDofs(), conn_1.data(), tribol::LINEAR_QUAD,
     x_coords_ptr, y_coords_ptr, z_coords_ptr, MSPACE);
   constexpr tribol::IndexT mesh2_id = 1;
-  tribol::registerMesh(mesh2_id, 1, fe_space.GetNDofs(), conn_2.data(), tribol::LINEAR_QUAD,
+  tribol::registerMesh(mesh2_id, num_contact_elems, fe_space.GetNDofs(), conn_2.data(), tribol::LINEAR_QUAD,
     x_coords_ptr, y_coords_ptr, z_coords_ptr, MSPACE);
 
   constexpr tribol::RealT penalty = 1000.0;
@@ -195,7 +195,7 @@ int runExample()
     tribol::COMMON_PLANE, 
     tribol::FRICTIONLESS,
     tribol::PENALTY,
-    tribol::BINNING_CARTESIAN_PRODUCT,
+    tribol::BINNING_BVH,
     EXEC);
 
   tribol::setPenaltyOptions(cs_id, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT);
