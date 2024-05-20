@@ -12,6 +12,7 @@
 // Axom includes
 #include "axom/core/memory_management.hpp"
 #include "axom/slic.hpp"
+#include <umpire/resource/MemoryResourceTypes.hpp>
 
 namespace tribol
 {
@@ -104,7 +105,10 @@ inline int getResourceAllocatorID(MemorySpace mem_space)
   }
   else
   {
+    umpire::resource::MemoryResourceType umpire_type = toUmpireMemoryType(mem_space);
+    std::cout << "Umpire resource type: " << umpire::resource::resource_to_string(umpire_type) << std::endl;
     allocator_id = axom::getUmpireResourceAllocatorID(toUmpireMemoryType(mem_space));
+    std::cout << "Umpire allocator ID: " << allocator_id << std::endl;
   }
 #endif
   return allocator_id;
