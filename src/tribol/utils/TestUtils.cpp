@@ -997,10 +997,10 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
    // ids for the connectivity and array lengths of numTotalNodes. 
    registerMesh( this->mortarMeshId, this->numMortarFaces, 
                  this->numTotalNodes,
-                 this->faceConn1, this->cellType, x, y, z );
+                 this->faceConn1, this->cellType, x, y, z, MemorySpace::Host );
    registerMesh( this->nonmortarMeshId, this->numNonmortarFaces, 
                  this->numTotalNodes,
-                 this->faceConn2, this->cellType, x, y, z );
+                 this->faceConn2, this->cellType, x, y, z, MemorySpace::Host );
 
    // register nodal forces. Note, I was getting a seg fault when 
    // registering the same pointer to a single set of force arrays 
@@ -1160,7 +1160,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                            method,
                            model,
                            enforcement,
-                           BINNING_GRID );
+                           BINNING_GRID,
+                           ExecutionMode::Sequential );
 
    enableTimestepVote( csIndex, params.enable_timestep_vote );
 

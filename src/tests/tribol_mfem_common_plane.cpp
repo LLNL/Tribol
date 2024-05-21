@@ -186,7 +186,6 @@ protected:
     solver.Init(op);
 
     // set up tribol
-    tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
     int coupling_scheme_id = 0;
     int mesh1_id = 0;
     int mesh2_id = 1;

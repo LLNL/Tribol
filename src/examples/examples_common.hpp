@@ -226,14 +226,6 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
                                 bool visualization,
                                 tribol::TestControlParameters* params )
 {
-   ///////////////////////////////
-   //                           //
-   // STEP 0: initialize tribol //
-   //                           //
-   ///////////////////////////////
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( mesh.dim, problem_comm );
-
    /////////////////////////////////////////////
    //                                         //
    // STEP 1: register the interacting meshes //
@@ -256,11 +248,11 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
    tribol::registerMesh( block1_id, mesh.numMortarFaces, 
                          mesh.numTotalNodes,
                          mesh.faceConn1, cellType, 
-                         mesh.x, mesh.y, mesh.z );
+                         mesh.x, mesh.y, mesh.z, tribol::MemorySpace::Host );
    tribol::registerMesh( block2_id, mesh.numNonmortarFaces, 
                          mesh.numTotalNodes,
                          mesh.faceConn2, cellType, 
-                         mesh.x, mesh.y, mesh.z );
+                         mesh.x, mesh.y, mesh.z, tribol::MemorySpace::Host );
    ///////////////////////////////////
    //                               //
    // STEP 2: register field arrays //
@@ -395,7 +387,8 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
                            method,
                            model,
                            enforcement,
-                           tribol::BINNING_GRID );
+                           tribol::BINNING_GRID,
+                           tribol::ExecutionMode::Sequential );
 
    //////////////////////////////////////////////////////////
    //                                                      //

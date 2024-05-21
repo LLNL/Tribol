@@ -322,9 +322,6 @@ int main( int argc, char** argv )
 
   // This block of code does initial setup of Tribol.
   timer.start();
-  // First, Tribol is initialized with the dimension of the space and the MPI
-  // communicator. These are stored globally.
-  tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
   // Next, we create a Tribol coupling scheme between the contact surfaces on
   // the MFEM mesh. To create the coupling scheme requires several steps: 1)
   // building a boundary submesh, 2) building a LOR mesh (if required), 3)

@@ -28,8 +28,9 @@ if(NOT TRIBOL_FOUND)
   # Language features
   set(TRIBOL_USE_FORTRAN          "@ENABLE_FORTRAN@")
   set(TRIBOL_USE_MPI              "@ENABLE_MPI@")
-  #set(TRIBOL_USE_CUDA            "@TRIBOL_USE_CUDA@")
-  #set(TRIBOL_USE_OPENMP          "@TRIBOL_USE_OPENMP@")
+  set(TRIBOL_USE_CUDA             "@TRIBOL_USE_CUDA@")
+  set(TRIBOL_USE_HIP              "@TRIBOL_USE_HIP@")
+  set(TRIBOL_USE_OPENMP           "@TRIBOL_USE_OPENMP@")
 
   # Config options
   set(TRIBOL_USE_SINGLE_PRECISION "@TRIBOL_USE_SINGLE_PRECISION@")
@@ -37,6 +38,7 @@ if(NOT TRIBOL_FOUND)
 
   # TPLs
   set(TRIBOL_USE_UMPIRE "@TRIBOL_USE_UMPIRE@")
+  set(TRIBOL_USE_RAJA   "@TRIBOL_USE_RAJA@")
   
   #----------------------------------------------------------------------------
   # Bring in required dependencies for this axom configuration
@@ -55,6 +57,15 @@ if(NOT TRIBOL_FOUND)
       set(UMPIRE_DIR "${TRIBOL_UMPIRE_DIR}")
     endif()
     find_dependency(umpire REQUIRED PATHS "${UMPIRE_DIR}")
+  endif()
+
+  # RAJA is optional
+  if(TRIBOL_USE_RAJA)
+    set(TRIBOL_RAJA_DIR  "@RAJA_DIR@")
+    if(NOT RAJA_DIR) 
+      set(RAJA_DIR "${TRIBOL_RAJA_DIR}")
+    endif()
+    find_dependency(RAJA REQUIRED PATHS "${RAJA_DIR}")
   endif()
 
   # axom is a required TPL. It is either external, or built-in

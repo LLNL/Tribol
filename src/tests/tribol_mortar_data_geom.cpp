@@ -574,13 +574,12 @@ int main(int argc, char* argv[])
   ::testing::InitGoogleTest(&argc, argv);
 
   // Initialize Tribol via simple Tribol interface
-  Initialize(3);
+  Initialize();
 
 #ifdef TRIBOL_USE_UMPIRE
   umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
 #endif
 
-  axom::slic::SimpleLogger logger;                // create & initialize logger,
   tribol::SimpleMPIWrapper wrapper(argc, argv);   // initialize and finalize MPI, when applicable
 
   result = RUN_ALL_TESTS();

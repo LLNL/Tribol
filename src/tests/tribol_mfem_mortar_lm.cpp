@@ -32,7 +32,7 @@
  * @brief This tests the Tribol MFEM interface running a contact patch test.
  *
  */
-class MfemCommonPlaneTest : public testing::TestWithParam<int> {
+class MfemMortarTest : public testing::TestWithParam<int> {
 protected:
   tribol::RealT max_disp_;
   void SetUp() override
@@ -153,7 +153,6 @@ protected:
     a.FormSystemMatrix(ess_tdof_list, *A);
 
     // set up tribol
-    tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
     int coupling_scheme_id = 0;
     int mesh1_id = 0;
     int mesh2_id = 1;
@@ -221,14 +220,14 @@ protected:
   }
 };
 
-TEST_P(MfemCommonPlaneTest, mass_matrix_transfer)
+TEST_P(MfemMortarTest, mass_matrix_transfer)
 {
   EXPECT_LT(std::abs(max_disp_ - 0.005), 1.0e-6);
 
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(2));
+INSTANTIATE_TEST_SUITE_P(tribol, MfemMortarTest, testing::Values(2));
 
 //------------------------------------------------------------------------------
 #include "axom/slic/core/SimpleLogger.hpp"

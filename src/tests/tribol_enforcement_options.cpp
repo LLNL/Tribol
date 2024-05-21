@@ -55,9 +55,6 @@ protected:
    // Setup boiler plate data and register mesh, nodal response, and coupling scheme
    void SetupTest( tribol::TestMesh* mesh )
    {
-      tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-      tribol::initialize( 3, problem_comm );
-
       ////////////////////////////////////////////////
       // setup simple non-null contacting test mesh //
       ////////////////////////////////////////////////

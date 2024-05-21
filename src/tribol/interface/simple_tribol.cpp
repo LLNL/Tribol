@@ -6,6 +6,8 @@
 #include "tribol.hpp"
 
 // Tribol includes
+#include "tribol/common/ExecModel.hpp"
+#include "tribol/common/Parameters.hpp"
 #include "tribol/interface/simple_tribol.hpp"
 
 // Axom includes
@@ -25,7 +27,7 @@
 // free functions for simple API usage
 //------------------------------------------------------------------------------
 
-int Initialize(const int dim, bool init_slic)
+int Initialize(bool init_slic)
 {
    // initialize slic
    if (init_slic)
@@ -38,10 +40,6 @@ int Initialize(const int dim, bool init_slic)
       axom::slic::addStreamToAllMsgLevels(
          new axom::slic::GenericOutputStream( &std::cout,format ) );
    }
-
-   // Initialize tribol
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( dim, problem_comm );
 
    return 0;
 }
@@ -92,14 +90,14 @@ void SimpleCouplingSetup( const int dim,
    tribol::registerMesh( mortarMeshId, mortar_numCells, 
                          mortar_lengthNodalData,
                          mortar_connectivity, cell_type,
-                         mortar_x, mortar_y, mortar_z );
+                         mortar_x, mortar_y, mortar_z, tribol::MemorySpace::Host );
 
    // register nonmortar mesh
    int nonmortarMeshId = 1;
    tribol::registerMesh( nonmortarMeshId, nonmortar_numCells,
                          nonmortar_lengthNodalData,
                          nonmortar_connectivity, cell_type,
-                         nonmortar_x, nonmortar_y, nonmortar_z );
+                         nonmortar_x, nonmortar_y, nonmortar_z, tribol::MemorySpace::Host );
 
    // Register mortar gaps and pressures, if provided
    if( mortar_gaps != nullptr)
@@ -118,7 +116,9 @@ void SimpleCouplingSetup( const int dim,
                                    tribol::AUTO,
                                    contact_method,
                                    tribol::NULL_MODEL,
-                                   tribol::NULL_ENFORCEMENT );
+                                   tribol::NULL_ENFORCEMENT,
+                                   tribol::DEFAULT_BINNING_METHOD,
+                                   tribol::ExecutionMode::Sequential );
 
    // set contact area fraction 
    tribol::setContactAreaFrac( 0, area_frac );

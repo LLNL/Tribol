@@ -67,7 +67,17 @@ int main( int argc, char** argv )
   else
 #endif
   {
-    err = runExample<tribol::MemorySpace::Host, tribol::ExecutionMode::Sequential>();
+#ifdef TRIBOL_USE_OPENMP
+    auto exec_mode = tribol::ExecutionMode::OpenMP;
+    if (exec_mode == tribol::ExecutionMode::OpenMP)
+    {
+      err = runExample<tribol::MemorySpace::Host, tribol::ExecutionMode::OpenMP>();
+    }
+    else
+#endif
+    {
+      err = runExample<tribol::MemorySpace::Host, tribol::ExecutionMode::Sequential>();
+    }
   }
 
   axom::slic::flushStreams();
@@ -85,27 +95,43 @@ int runExample()
 {
 
   mfem::Device device;
+  switch (MSPACE)
+  {
 #ifdef TRIBOL_USE_CUDA
-  if (MSPACE == tribol::MemorySpace::Device)
-  {
-    device.Configure("cuda");
-  }
-  else
+    case tribol::MemorySpace::Device:
+      device.Configure("cuda");
+      break;
 #endif
-  {
-    device.Configure("cpu");
+    default:
+// #ifdef TRIBOL_USE_OPENMP
+//       if (EXEC == tribol::ExecutionMode::OpenMP)
+//       {
+//         device.Configure("omp");
+//       }
+//       else
+// #endif
+      {
+        device.Configure("cpu");
+      }
+      break;
   }
   device.Print();
+
+  std::cout << "Creating MFEM mesh..." << std::endl;
+  axom::utilities::Timer timer(true);
 
   std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_overlap.mesh";
   mfem::Mesh mesh(mesh_file);
 
-  int ref_ct = 3;
+  int ref_ct = 7;
   for (int i{0}; i < ref_ct; ++i)
   {
     mesh.UniformRefinement();
   }
+  std::cout << "MFEM mesh created (" << timer.elapsedTimeInMilliSec() << " ms)" << std::endl;
 
+  std::cout << "Creating MFEM grid function..." << std::endl;
+  timer.start();
   mfem::H1_FECollection fe_coll(1, mesh.SpaceDimension());
   mfem::FiniteElementSpace fe_space(&mesh, &fe_coll, mesh.SpaceDimension());
   mfem::GridFunction coords(&fe_space);
@@ -115,7 +141,10 @@ int runExample()
   auto x_coords_ptr = &coords_ptr[fe_space.DofToVDof(0, 0)];
   auto y_coords_ptr = &coords_ptr[fe_space.DofToVDof(0, 1)];
   auto z_coords_ptr = &coords_ptr[fe_space.DofToVDof(0, 2)];
+  std::cout << "MFEM grid function created (" << timer.elapsedTimeInMilliSec() << " ms)" << std::endl;
 
+  std::cout << "Creating Tribol connectivity..." << std::endl;
+  timer.start();
   int num_contact_elems = std::pow(2, ref_ct * 2);
 
   // mesh 1 connectivity (build on cpu)
@@ -157,7 +186,10 @@ int runExample()
   }
   // move to gpu
   tribol::ArrayT<tribol::IndexT, 2, MSPACE> conn_2(host_conn_2);
+  std::cout << "Tribol connectivity created (" << timer.elapsedTimeInMilliSec() << " ms)" << std::endl;
 
+  std::cout << "Registering Tribol mesh data..." << std::endl;
+  timer.start();
   constexpr tribol::IndexT mesh1_id = 0;
   tribol::registerMesh(mesh1_id, num_contact_elems, fe_space.GetNDofs(), conn_1.data(), tribol::LINEAR_QUAD,
     x_coords_ptr, y_coords_ptr, z_coords_ptr, MSPACE);
@@ -168,7 +200,10 @@ int runExample()
   constexpr tribol::RealT penalty = 1000.0;
   tribol::setKinematicConstantPenalty(mesh1_id, penalty);
   tribol::setKinematicConstantPenalty(mesh2_id, penalty);
+  std::cout << "Tribol mesh data registered (" << timer.elapsedTimeInMilliSec() << " ms)" << std::endl;
 
+  std::cout << "Creating and registering velocity and force..." << std::endl;
+  timer.start();
   mfem::GridFunction velocity(&fe_space);
   velocity = 0.0;
   auto velocity_ptr = velocity.Read();
@@ -187,7 +222,10 @@ int runExample()
   auto z_force_ptr = &force_ptr[fe_space.DofToVDof(0, 2)];
   tribol::registerNodalResponse(mesh1_id, x_force_ptr, y_force_ptr, z_force_ptr);
   tribol::registerNodalResponse(mesh2_id, x_force_ptr, y_force_ptr, z_force_ptr);
+  std::cout << "Velocity and force registered (" << timer.elapsedTimeInMilliSec() << " ms)" << std::endl;
 
+  std::cout << "Registering Tribol coupling scheme..." << std::endl;
+  timer.start();
   constexpr tribol::IndexT cs_id = 0;
   tribol::registerCouplingScheme(cs_id, mesh1_id, mesh2_id,
     tribol::SURFACE_TO_SURFACE, 
@@ -199,11 +237,15 @@ int runExample()
     EXEC);
 
   tribol::setPenaltyOptions(cs_id, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT);
+  std::cout << "Tribol coupling scheme registered (" << timer.elapsedTimeInMilliSec() << " ms)" << std::endl;
 
+  std::cout << "Calling Tribol update..." << std::endl;
+  timer.start();
   int cycle = 1;
-  RealT time = 1.0;
+  RealT t = 1.0;
   RealT dt = 1.0;
-  tribol::update(cycle, time, dt);
+  tribol::update(cycle, t, dt);
+  std::cout << "Tribol update complete (" << timer.elapsedTimeInMilliSec() << " ms)" << std::endl;
 
   RealT max_force = force.Max();
   std::cout << "Max force: " << max_force << std::endl;

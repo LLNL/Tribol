@@ -79,9 +79,9 @@ void SurfaceContactElem::allocateBlockJ( EnforcementMethod enf )
       int nDual = this->numFaceVert;
       for (int i{}; i < 2; ++i)
       {
-         blockJ[3*i+2].SetSize(nDual, nPrimal);
+         blockJ[3*i+2].SetSize(nPrimal, nDual);
          // transpose
-         blockJ[6+i].SetSize(nPrimal, nDual);
+         blockJ[6+i].SetSize(nDual, nPrimal);
       }
       blockJ[8].SetSize(nDual, nDual);
    }
@@ -227,7 +227,7 @@ void MethodData::storeElemBlockJ(
       for (IndexT j{}; j < getNSpaces(); ++j)
       {
          IndexT blockIdxJ = static_cast<IndexT>(m_blockJSpaces[j]);
-         m_blockJ(blockIdxI, blockIdxJ).push_back(blockJ[i+j*3]);
+         m_blockJ(blockIdxI, blockIdxJ).push_back(blockJ[i*3+j]);
       }
    }
 } 

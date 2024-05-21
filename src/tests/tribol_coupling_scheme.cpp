@@ -243,9 +243,6 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
 {
    // expect the coupling scheme to fail because 2D 
    // is not yet implemented
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    registerDummy2DMesh( 0 );
    registerDummy2DMesh( 1 );
 
@@ -279,9 +276,6 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
 
 TEST_F( CouplingSchemeTest, aligned_mortar_2D )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    registerDummy2DMesh( 0 );
    registerDummy2DMesh( 1 );
 
@@ -315,9 +309,6 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
 
 TEST_F( CouplingSchemeTest, mortar_weights_2D )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 2, problem_comm );
-
    registerDummy2DMesh( 0 );
    registerDummy2DMesh( 1 );
 
@@ -343,9 +334,6 @@ TEST_F( CouplingSchemeTest, mortar_weights_2D )
 
 TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
@@ -379,9 +367,6 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
 
 TEST_F( CouplingSchemeTest, common_plane_lagrange_multiplier )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
@@ -405,9 +390,6 @@ TEST_F( CouplingSchemeTest, common_plane_lagrange_multiplier )
 
 TEST_F( CouplingSchemeTest, mortar_no_nodal_gaps_or_pressures )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
@@ -433,9 +415,6 @@ TEST_F( CouplingSchemeTest, mortar_no_nodal_gaps_or_pressures )
 
 TEST_F( CouplingSchemeTest, mortar_tied )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
@@ -469,9 +448,6 @@ TEST_F( CouplingSchemeTest, mortar_tied )
 
 TEST_F( CouplingSchemeTest, mortar_coulomb )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
@@ -505,9 +481,6 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
 
 TEST_F( CouplingSchemeTest, common_plane_tied )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
@@ -537,9 +510,6 @@ TEST_F( CouplingSchemeTest, common_plane_tied )
 
 TEST_F( CouplingSchemeTest, common_plane_coulomb )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
@@ -569,9 +539,6 @@ TEST_F( CouplingSchemeTest, common_plane_coulomb )
 
 TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    ////////////////////////////////////////////////
    // setup simple non-null contacting test mesh //
    ////////////////////////////////////////////////
@@ -724,9 +691,6 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
 
 TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    // register meshes
    int id1 = 0;
    int id2 = 1;
@@ -794,9 +758,6 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
 
 TEST_F( CouplingSchemeTest, finalize )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    ////////////////////////////////////////////////
    // setup simple non-null contacting test mesh //
    ////////////////////////////////////////////////
@@ -896,9 +857,6 @@ TEST_F( CouplingSchemeTest, finalize )
 
 TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
@@ -936,9 +894,6 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
 
 TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    registerDummy3DMesh( 0 );
    registerDummy3DMesh( 1 );
 
@@ -976,9 +931,6 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
 
 TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    bool setResponse = false;
    int numCells = 1;
    registerDummy3DMesh( 0, numCells, setResponse );
@@ -1006,9 +958,6 @@ TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
 
 TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    bool setResponse = false;
    int numCells = 1;
    registerDummy3DMesh( 0, numCells, setResponse );
@@ -1042,9 +991,6 @@ TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
 
 TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    int numCells = 1;
    bool setResponse = false;
    registerDummy3DMesh( 0, numCells, setResponse );
@@ -1076,9 +1022,6 @@ TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
 
 TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    int numCells = 0;
    bool setResponse = false;
    registerDummy3DMesh( 0, numCells, setResponse );
@@ -1122,9 +1065,6 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
 
 TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    tribol::IndexT mesh_id = 0;
    int csId = 0;
    registerDummy3DMesh( mesh_id );
@@ -1151,9 +1091,6 @@ TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
 
 TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    tribol::IndexT mesh_id = 0;
    int numElements = 1;
    int csId = 0;
@@ -1184,9 +1121,6 @@ TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
 
 TEST_F( CouplingSchemeTest, two_meshes_with_auto_case )
 {
-   tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( 3, problem_comm );
-
    tribol::IndexT mesh_id1 = 0;
    tribol::IndexT mesh_id2 = 1;
    int numElements = 1;

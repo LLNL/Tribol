@@ -40,9 +40,9 @@ void registerMfemCouplingScheme( IndexT cs_id,
    );
    // register empty meshes so the coupling scheme is valid
    registerMesh(
-      mesh_id_1, 0, 0, nullptr, 1, nullptr, nullptr);
+      mesh_id_1, 0, 0, nullptr, 1, nullptr, nullptr, nullptr, MemorySpace::Host);
    registerMesh(
-      mesh_id_2, 0, 0, nullptr, 1, nullptr, nullptr);
+      mesh_id_2, 0, 0, nullptr, 1, nullptr, nullptr, nullptr, MemorySpace::Host);
    registerCouplingScheme(
       cs_id,
       mesh_id_1,
@@ -52,7 +52,8 @@ void registerMfemCouplingScheme( IndexT cs_id,
       contact_method,
       contact_model,
       enforcement_method,
-      binning_method
+      binning_method,
+      ExecutionMode::Sequential
    );
    auto& coupling_scheme = CouplingSchemeManager::getInstance().at(cs_id);
    coupling_scheme.setMPIComm(mesh.GetComm());
@@ -385,7 +386,8 @@ void updateMfemParallelDecomposition()
             mfem_data->GetElemType(),
             coord_ptrs[0],
             coord_ptrs[1],
-            coord_ptrs[2]
+            coord_ptrs[2], 
+            MemorySpace::Host
          );
          registerMesh(
             mesh_ids[1],
@@ -395,7 +397,8 @@ void updateMfemParallelDecomposition()
             mfem_data->GetElemType(),
             coord_ptrs[0],
             coord_ptrs[1],
-            coord_ptrs[2]
+            coord_ptrs[2], 
+            MemorySpace::Host
          );
 
          auto f_ptrs = mfem_data->GetRedecompResponsePtrs();

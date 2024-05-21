@@ -306,10 +306,10 @@ spack:
 
     # Globally lock version of third party libraries that work on this platform
     axom:
-      variants: ~shared~examples~fortran~lua~tools~openmp
+      variants: ~shared~examples~fortran~lua~tools
     conduit:
       variants: ~shared~test~examples~utilities
     raja:
-      require: "@2024.02.0~shared~examples~exercises~openmp"
+      require: "@2024.02.0~shared~examples~exercises"
     umpire:
-      require: "@2024.02.0~shared~examples~openmp"
+      require: "@2024.02.0~shared~examples"

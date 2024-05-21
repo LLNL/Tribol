@@ -49,10 +49,14 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
             description="Build examples")
     variant("devtools", default=False, 
             description="Build development tools (Sphinx, Doxygen, Shroud, clang-format)")
+    variant("asan", default=False,
+            description="Build with address sanitizer flags")
     variant("umpire",   default=False,
             description="Build with portable memory access support")
     variant("raja",     default=False,
             description="Build with portable kernel execution support")
+    variant("openmp",   default=False,
+            description="Build with OpenMP support")
 
     # -----------------------------------------------------------------------
     # Dependencies
@@ -70,14 +74,16 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on("raja@2024.02.0:", when="+raja")
     depends_on("umpire@2024.02.0:", when="+umpire")
+    
+    depends_on("axom+raja", when="+raja")
+    depends_on("axom+umpire", when="+umpire")
 
-    with when("+redecomp"):
-        depends_on("mfem+metis+mpi")
-        depends_on("mfem+raja", when="+raja")
-        # MFEM is not yet aware of umpire's fmt dependency
-        # depends_on("mfem+umpire", when="+umpire")
-        depends_on("axom+raja", when="+raja")
-        depends_on("axom+umpire", when="+umpire")
+    depends_on("mfem+metis+mpi", when="+redecomp")
+    
+    with when("+openmp"):
+        depends_on("axom+openmp")
+        depends_on("raja+openmp", when="+raja")
+        depends_on("umpire+openmp", when="+openmp")
 
     for val in CudaPackage.cuda_arch_values:
         ext_cuda_dep = f"+cuda cuda_arch={val}"
@@ -106,6 +112,22 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
     # Required but not CMake
     for dep in ["hypre", "mfem"]:
         depends_on("{0}+debug".format(dep), when="build_type=Debug")
+        
+    # ASan is only supported by GCC and (some) LLVM-derived
+    # compilers.
+    asan_compiler_denylist = {"aocc", "arm", "cce", "fj", "intel", "nag",
+                              "nvhpc", "oneapi", "pgi", "xl", "xl_r"}
+    asan_compiler_allowlist = {"gcc", "clang", "apple-clang"}
+
+    # ASan compiler denylist and allowlist should be disjoint.
+    assert len(asan_compiler_denylist & asan_compiler_allowlist) == 0
+
+    for compiler_ in asan_compiler_denylist:
+        conflicts(
+            "%{0}".format(compiler_),
+            when="+asan",
+            msg="{0} compilers do not support Address Sanitizer".format(compiler_)
+        )
 
     # Devtool dependencies these need to match tribol_devtools/package.py
     depends_on("doxygen", when="+devtools")
@@ -115,6 +137,7 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on("llvm+clang@10.0.0", when="+devtools", type="build")
 
     conflicts("+cuda", when="+rocm")
+    conflicts("+openmp", when="+rocm")
 
     def _get_sys_type(self, spec):
         sys_type = spec.architecture
@@ -177,6 +200,9 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
     def initconfig_hardware_entries(self):
         spec = self.spec
         entries = super(Tribol, self).initconfig_hardware_entries()
+
+        entries.append(cmake_cache_option("ENABLE_OPENMP",
+                                          spec.satisfies("+openmp")))
 
         if "+cuda" in spec:
             entries.append(cmake_cache_option("ENABLE_CUDA", True))
@@ -380,13 +406,22 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
 
 
     def cmake_args(self):
+        is_asan_compiler = self.compiler.name in self.asan_compiler_allowlist
+        if self.spec.satisfies("+asan") and not is_asan_compiler:
+            raise UnsupportedCompilerError(
+                "Tribol cannot be built with Address Sanitizer flags "
+                "using {0} compilers".format(self.compiler.name)
+            )
+        
         options = []
 
         options.append("-DBLT_SOURCE_DIR:PATH={0}".format(self.spec["blt"].prefix))
 
         options.append(self.define_from_variant(
-            'TRIBOL_ENABLE_EXAMPLES', 'examples'))
+            "TRIBOL_ENABLE_EXAMPLES", "examples"))
         options.append(self.define_from_variant(
-            'TRIBOL_ENABLE_TESTS', 'tests'))
+            "TRIBOL_ENABLE_TESTS", "tests"))
+        options.append(self.define_from_variant(
+            "TRIBOL_ENABLE_ASAN", "asan"))
 
         return options
