@@ -172,11 +172,11 @@ public:
       tribol::registerMesh( mortarMeshId, 1,
                             this->numNodesPerFace,
                             conn1, cellType,
-                            x1, y1, z1 );
+                            x1, y1, z1, tribol::MemorySpace::Host );
       tribol::registerMesh( nonmortarMeshId, 1,
                             this->numNodesPerFace,
                             conn2, cellType,
-                            x2, y2, z2 );
+                            x2, y2, z2, tribol::MemorySpace::Host );
 
       // get instance of meshes to compute face data required for other calculations
       tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();

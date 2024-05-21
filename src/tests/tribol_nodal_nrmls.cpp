@@ -48,7 +48,7 @@ public:
       // register the mesh with tribol
       const tribol::IndexT mesh_id = 0;
       tribol::registerMesh( mesh_id, numCells, numNodes, 
-                            conn, cell_type, x, y, z );
+                            conn, cell_type, x, y, z, tribol::MemorySpace::Host );
 
 
       // get instance of mesh in order to compute nodally averaged normals

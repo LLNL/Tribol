@@ -183,6 +183,18 @@ void setTimestepPenFrac( IndexT cs_id, RealT frac )
 } // end setTimestepPenFrac()
 
 //------------------------------------------------------------------------------
+void setTimestepScale( IndexT cs_id, RealT scale )
+{
+   auto cs = CouplingSchemeManager::getInstance().findData(cs_id);
+  
+   // check to see if coupling scheme exists
+   SLIC_ERROR_ROOT_IF( !cs, 
+                       "tribol::setTimestepScale(): call tribol::registerCouplingScheme() " <<
+                       "prior to calling this routine." );
+
+   cs->getParameters().timestep_scale = scale;
+}
+//------------------------------------------------------------------------------
 void setContactAreaFrac( IndexT cs_id, RealT frac )
 {
    auto cs = CouplingSchemeManager::getInstance().findData(cs_id);

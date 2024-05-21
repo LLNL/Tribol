@@ -126,6 +126,18 @@ void setAutoContactPenScale( IndexT cs_id, RealT scale );
 void setTimestepPenFrac( IndexT cs_id, RealT frac );
 
 /*!
+ *
+ * \brief sets the timestep scale factor applied to the timestep vote 
+ *
+ * \param [in] cs_id coupling scheme id
+ * \param [in] scale the scale factor applied to the timestep vote 
+ *
+ * \pre scale > 0
+ *
+ */
+void setTimestepScale( IndexT cs_id, RealT scale );
+
+/*!
  * \brief Sets the area fraction for inclusion of a contact overlap 
  *
  * \param [in] cs_id coupling scheme id

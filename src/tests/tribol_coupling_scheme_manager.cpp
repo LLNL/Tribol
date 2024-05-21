@@ -50,11 +50,11 @@ protected:
 
       mesh_id[0] = 0;
       tribol::registerMesh(mesh_id[0], 1, 4, &connectivity[0], 
-            3, &x[0], &y[0], &z[0]);
+            3, &x[0], &y[0], &z[0], tribol::MemorySpace::Host);
 
       mesh_id[1] = 1;
       tribol::registerMesh(mesh_id[1], 1, 4, &connectivity[0],
-            3, &x[0], &y[0], &z[0]);
+            3, &x[0], &y[0], &z[0], tribol::MemorySpace::Host);
    }
 
    void TearDown() override

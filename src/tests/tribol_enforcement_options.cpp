@@ -99,13 +99,13 @@ protected:
                             mesh->numMortarFaces,
                             mesh->numTotalNodes,
                             mesh->faceConn1, 3, 
-                            mesh->x, mesh->y, mesh->z );
+                            mesh->x, mesh->y, mesh->z, tribol::MemorySpace::Host );
 
       tribol::registerMesh( mesh->nonmortarMeshId,
                             mesh->numNonmortarFaces,
                             mesh->numTotalNodes,
                             mesh->faceConn2, 3,
-                            mesh->x, mesh->y, mesh->z );
+                            mesh->x, mesh->y, mesh->z, tribol::MemorySpace::Host );
 
       // register nodal responses (i.e. nodal forces)
       tribol::allocRealArray( &mesh->fx1, mesh->numTotalNodes, 0. );
@@ -144,7 +144,8 @@ protected:
                                      tribol::COMMON_PLANE,
                                      tribol::FRICTIONLESS,
                                      tribol::PENALTY,
-                                     tribol::BINNING_GRID );
+                                     tribol::BINNING_GRID,
+                                     tribol::ExecutionMode::Sequential );
   
    }
 

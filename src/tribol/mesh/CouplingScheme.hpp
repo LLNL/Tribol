@@ -107,6 +107,8 @@ public:
 
     TRIBOL_HOST_DEVICE CP& getContactPlane( IndexT id ) const;
 
+    TRIBOL_HOST_DEVICE RealT getTimestepScale() const { return m_parameters.timestep_scale; }
+
     /*!
     * Get the gap tolerance that determines in contact face-pairs for each
     * supported interface method

@@ -105,11 +105,11 @@ public:
       tribol::registerMesh( mortarMeshId, 1, 
                             this->numNodes,
                             conn1, cellType, 
-                            x, y, z );
+                            x, y, z, tribol::MemorySpace::Host );
       tribol::registerMesh( nonmortarMeshId, 1, 
                             this->numNodes,
                             conn2, cellType, 
-                            x, y, z );
+                            x, y, z, tribol::MemorySpace::Host );
 
       // register nodal forces
       RealT *fx1, *fy1, *fz1;
@@ -172,7 +172,9 @@ public:
                                       tribol::NO_CASE,
                                       method,
                                       tribol::FRICTIONLESS,
-                                      tribol::LAGRANGE_MULTIPLIER );
+                                      tribol::LAGRANGE_MULTIPLIER,
+                                      tribol::DEFAULT_BINNING_METHOD,
+                                      tribol::ExecutionMode::Sequential );
     
       tribol::setLagrangeMultiplierOptions( csIndex, tribol::ImplicitEvalMode::MORTAR_RESIDUAL,
                                             tribol::SparseMode::MFEM_LINKED_LIST );

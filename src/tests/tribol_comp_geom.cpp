@@ -395,8 +395,8 @@ TEST_F( CompGeomTest, 2d_projections_1 )
    tribol::IndexT conn1[2] = {0,1};
    tribol::IndexT conn2[2] = {0,1};
 
-   tribol::registerMesh( 0, 1, 2, &conn1[0], (int)(tribol::LINEAR_EDGE), &x1[0], &y1[0], nullptr );
-   tribol::registerMesh( 1, 1, 2, &conn2[0], (int)(tribol::LINEAR_EDGE), &x2[0], &y2[0], nullptr );
+   tribol::registerMesh( 0, 1, 2, &conn1[0], (int)(tribol::LINEAR_EDGE), &x1[0], &y1[0], nullptr, tribol::MemorySpace::Host );
+   tribol::registerMesh( 1, 1, 2, &conn2[0], (int)(tribol::LINEAR_EDGE), &x2[0], &y2[0], nullptr, tribol::MemorySpace::Host );
 
    RealT fx1[2] = {0., 0.};
    RealT fy1[2] = {0., 0.};
@@ -415,7 +415,8 @@ TEST_F( CompGeomTest, 2d_projections_1 )
                                    tribol::COMMON_PLANE,
                                    tribol::FRICTIONLESS,
                                    tribol::PENALTY,
-                                   tribol::BINNING_GRID );
+                                   tribol::BINNING_GRID,
+                                   tribol::ExecutionMode::Sequential );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC, tribol::KINEMATIC_CONSTANT );
    tribol::setContactAreaFrac( 0, 1.e-4 );
@@ -546,7 +547,7 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
    // register contact mesh
    tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,5,6,7}; // hard coded for a two face problem
-   tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+   tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0], tribol::MemorySpace::Host );
 
    RealT *fx;
    RealT *fy;
@@ -587,7 +588,8 @@ TEST_F( CompGeomTest, codirectional_normals_3d )
                                    tribol::COMMON_PLANE,
                                    tribol::FRICTIONLESS,
                                    tribol::PENALTY,
-                                   tribol::BINNING_CARTESIAN_PRODUCT );
+                                   tribol::BINNING_CARTESIAN_PRODUCT,
+                                   tribol::ExecutionMode::Sequential );
 
    tribol::enableTimestepVote( csIndex, true );
 
@@ -674,7 +676,7 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
    // register contact mesh
    tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
-   tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+   tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0], tribol::MemorySpace::Host );
 
    RealT *fx;
    RealT *fy;
@@ -712,7 +714,8 @@ TEST_F( CompGeomTest, auto_contact_lt_max_interpen )
                                    tribol::COMMON_PLANE,
                                    tribol::FRICTIONLESS,
                                    tribol::PENALTY,
-                                   tribol::BINNING_CARTESIAN_PRODUCT );
+                                   tribol::BINNING_CARTESIAN_PRODUCT,
+                                   tribol::ExecutionMode::Sequential );
                                    
    tribol::setAutoContactPenScale( csIndex, max_interpen_frac );
 
@@ -800,7 +803,7 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
    // register contact mesh
    tribol::IndexT mesh_id = 0;
    tribol::IndexT conn[8] = {0,1,2,3,4,7,6,5}; // hard coded for a two face problem
-   tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0] );
+   tribol::registerMesh( mesh_id, numCells, lengthNodalData, &conn[0], (int)(tribol::LINEAR_QUAD), &x[0], &y[0], &z[0], tribol::MemorySpace::Host );
 
    RealT *fx;
    RealT *fy;
@@ -838,7 +841,8 @@ TEST_F( CompGeomTest, auto_contact_gt_max_interpen )
                                    tribol::COMMON_PLANE,
                                    tribol::FRICTIONLESS,
                                    tribol::PENALTY,
-                                   tribol::BINNING_CARTESIAN_PRODUCT );
+                                   tribol::BINNING_CARTESIAN_PRODUCT,
+                                   tribol::ExecutionMode::Sequential );
 
    tribol::setAutoContactPenScale( csIndex, max_interpen_frac );
 

@@ -52,6 +52,8 @@ struct TestControlParameters
       , rate_penalty_ratio       (0.0)
       , const_penalty            (1.0)
       , enable_timestep_vote     (false)
+      , timestep_pen_frac        (0.30)
+      , timestep_scale           (1.0)
    {}
 
    ~TestControlParameters() 
@@ -70,6 +72,8 @@ struct TestControlParameters
    RealT rate_penalty_ratio;
    RealT const_penalty;
    bool enable_timestep_vote;
+   RealT timestep_pen_frac;
+   RealT timestep_scale;
 };
 
 /*!

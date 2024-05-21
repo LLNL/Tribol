@@ -120,7 +120,8 @@ protected:
                             m_lengthNodalData,
                             m_connectivity,
                             m_elementType,
-                            m_x, m_y, m_z ); 
+                            m_x, m_y, m_z,
+                            tribol::MemorySpace::Host ); 
 
       tribol::registerNodalResponse( mesh_id, m_fx, m_fy, m_fz );
 
@@ -193,7 +194,8 @@ protected:
                             m_lengthNodalData,
                             m_connectivity,
                             m_elementType,
-                            m_x, m_y, m_z ); 
+                            m_x, m_y, m_z,
+                            tribol::MemorySpace::Host ); 
 
       tribol::registerNodalResponse( mesh_id, m_fx, m_fy, m_fz );
 
@@ -260,7 +262,8 @@ TEST_F( CouplingSchemeTest, single_mortar_2D )
                                   tribol::SINGLE_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN, 
                                          tribol::SparseMode::MFEM_LINKED_LIST );
@@ -293,7 +296,8 @@ TEST_F( CouplingSchemeTest, aligned_mortar_2D )
                                   tribol::ALIGNED_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN, 
                                          tribol::SparseMode::MFEM_LINKED_LIST );
@@ -318,7 +322,8 @@ TEST_F( CouplingSchemeTest, mortar_weights_2D )
                                   tribol::MORTAR_WEIGHTS,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_WEIGHTS_EVAL, 
                                          tribol::SparseMode::MFEM_LINKED_LIST );
@@ -351,7 +356,8 @@ TEST_F( CouplingSchemeTest, single_mortar_3D_penalty )
                                   tribol::SINGLE_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -376,7 +382,8 @@ TEST_F( CouplingSchemeTest, common_plane_lagrange_multiplier )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN, 
                                          tribol::SparseMode::MFEM_LINKED_LIST );
@@ -399,7 +406,8 @@ TEST_F( CouplingSchemeTest, mortar_no_nodal_gaps_or_pressures )
                                   tribol::SINGLE_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN, 
                                          tribol::SparseMode::MFEM_LINKED_LIST );
@@ -432,7 +440,8 @@ TEST_F( CouplingSchemeTest, mortar_tied )
                                   tribol::SINGLE_MORTAR,
                                   tribol::TIED,
                                   tribol::LAGRANGE_MULTIPLIER,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN, 
                                          tribol::SparseMode::MFEM_LINKED_LIST );
@@ -465,7 +474,8 @@ TEST_F( CouplingSchemeTest, mortar_coulomb )
                                   tribol::SINGLE_MORTAR,
                                   tribol::COULOMB,
                                   tribol::LAGRANGE_MULTIPLIER,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN, 
                                          tribol::SparseMode::MFEM_LINKED_LIST );
@@ -494,7 +504,8 @@ TEST_F( CouplingSchemeTest, common_plane_tied )
                                   tribol::COMMON_PLANE,
                                   tribol::TIED,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -523,7 +534,8 @@ TEST_F( CouplingSchemeTest, common_plane_coulomb )
                                   tribol::COMMON_PLANE,
                                   tribol::COULOMB,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -584,13 +596,15 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
                          mesh.numMortarFaces,
                          mesh.numTotalNodes,
                          mesh.faceConn1, (int)(tribol::LINEAR_QUAD),
-                         mesh.x, mesh.y, mesh.z );
+                         mesh.x, mesh.y, mesh.z,
+                         tribol::MemorySpace::Host );
 
    tribol::registerMesh( mesh.nonmortarMeshId,
                          mesh.numNonmortarFaces,
                          mesh.numTotalNodes,
                          mesh.faceConn2, (int)(tribol::LINEAR_QUAD),
-                         mesh.x, mesh.y, mesh.z );
+                         mesh.x, mesh.y, mesh.z,
+                         tribol::MemorySpace::Host );
 
    // set penalty data so coupling scheme initialization passes 
    RealT penalty = 1.0;
@@ -619,7 +633,8 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
   
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -645,8 +660,8 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
 
    // register same mesh IDs as NULL meshes
    int elementType = (int)(tribol::LINEAR_QUAD);
-   tribol::registerMesh( 0, 0, 0, nullptr, elementType, nullptr, nullptr, nullptr );
-   tribol::registerMesh( 1, 0, 0, nullptr, elementType, nullptr, nullptr, nullptr );
+   tribol::registerMesh( 0, 0, 0, nullptr, elementType, nullptr, nullptr, nullptr, tribol::MemorySpace::Host );
+   tribol::registerMesh( 1, 0, 0, nullptr, elementType, nullptr, nullptr, nullptr, tribol::MemorySpace::Host );
 
    // set penalty data for valid coupling scheme with penalty enforcement. 
    // Previous meshes and mesh associated penalty data is overwritten with 
@@ -661,7 +676,8 @@ TEST_F( CouplingSchemeTest, non_null_to_null_meshes )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -719,11 +735,11 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
 
    tribol::registerMesh( id1, numFaces1, numTotalNodes1,
                          &faceConn1[0], (int)(tribol::LINEAR_EDGE),
-                         &x1[0], &y1[0], &z1[0] );
+                         &x1[0], &y1[0], &z1[0], tribol::MemorySpace::Host );
 
    tribol::registerMesh( id2, numFaces2, numTotalNodes2,
                          &faceConn2[0], (int)(tribol::LINEAR_QUAD),
-                         &x2[0], &y2[0], &z2[0] );
+                         &x2[0], &y2[0], &z2[0], tribol::MemorySpace::Host );
 
    // set penalty data so coupling scheme initialization passes 
    RealT penalty = 1.0;
@@ -742,7 +758,8 @@ TEST_F( CouplingSchemeTest, invalid_mesh_in_coupling_scheme )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
   
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -803,13 +820,13 @@ TEST_F( CouplingSchemeTest, finalize )
                          mesh.numMortarFaces,
                          mesh.numTotalNodes,
                          mesh.faceConn1, (int)(tribol::LINEAR_QUAD),
-                         mesh.x, mesh.y, mesh.z );
+                         mesh.x, mesh.y, mesh.z, tribol::MemorySpace::Host );
 
    tribol::registerMesh( mesh.nonmortarMeshId,
                          mesh.numNonmortarFaces,
                          mesh.numTotalNodes,
                          mesh.faceConn2, (int)(tribol::LINEAR_QUAD),
-                         mesh.x, mesh.y, mesh.z );
+                         mesh.x, mesh.y, mesh.z, tribol::MemorySpace::Host );
 
    // set penalty data so coupling scheme initialization passes 
    RealT penalty = 1.0;
@@ -838,7 +855,8 @@ TEST_F( CouplingSchemeTest, finalize )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
    
    tribol::setPenaltyOptions( csIndex, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -870,7 +888,8 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_penalty )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -907,7 +926,8 @@ TEST_F( CouplingSchemeTest, null_velocity_kinematic_and_rate_penalty )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC_AND_RATE,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -942,7 +962,8 @@ TEST_F( CouplingSchemeTest, mortar_weights_null_response_pointers )
                                   tribol::MORTAR_WEIGHTS,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_WEIGHTS_EVAL, 
                                          tribol::SparseMode::MFEM_LINKED_LIST );
@@ -975,7 +996,8 @@ TEST_F( CouplingSchemeTest, single_mortar_null_response_pointers )
                                   tribol::SINGLE_MORTAR,
                                   tribol::FRICTIONLESS,
                                   tribol::LAGRANGE_MULTIPLIER,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setLagrangeMultiplierOptions( 0, tribol::ImplicitEvalMode::MORTAR_RESIDUAL_JACOBIAN, 
                                          tribol::SparseMode::MFEM_LINKED_LIST );
@@ -1006,7 +1028,8 @@ TEST_F( CouplingSchemeTest, common_plane_null_response_pointers )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setPenaltyOptions( 0, tribol::KINEMATIC,
                               tribol::KINEMATIC_CONSTANT ); 
@@ -1037,7 +1060,8 @@ TEST_F( CouplingSchemeTest, null_mesh_with_null_pointers )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    // register null nodal velocity pointers. The coupling scheme 
    // should NOT initialize correctly for kinematic-and-rate penalty.
@@ -1075,7 +1099,8 @@ TEST_F( CouplingSchemeTest, auto_common_plane_no_element_thickness )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
  
    tribol::setKinematicConstantPenalty( mesh_id, 1.0 );
 
@@ -1102,7 +1127,8 @@ TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setKinematicConstantPenalty( mesh_id, 1.0 );
 
@@ -1134,7 +1160,8 @@ TEST_F( CouplingSchemeTest, two_meshes_with_auto_case )
                                   tribol::COMMON_PLANE,
                                   tribol::FRICTIONLESS,
                                   tribol::PENALTY,
-                                  tribol::BINNING_GRID );
+                                  tribol::BINNING_GRID,
+                                  tribol::ExecutionMode::Sequential );
 
    tribol::setKinematicConstantPenalty( mesh_id1, 1.0 );
    tribol::setKinematicConstantPenalty( mesh_id2, 1.0 );

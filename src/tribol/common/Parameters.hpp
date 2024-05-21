@@ -456,6 +456,7 @@ public:
     RealT projection_ratio      = 1.0e-10; ///! Ratio for defining nonzero projections
     RealT auto_contact_pen_frac = 0.95;    ///! Max allowable interpenetration as percent of element thickness for contact candidacy
     RealT timestep_pen_frac     = 3.0e-1;  ///! Max allowable interpenetration as percent of element thickness prior to triggering timestep vote
+    RealT timestep_scale        = 1.0;     ///! Scale factor (>0) applied to the timestep vote giving users some control over the vote
 
     int vis_cycle_incr          = 100;     ///! Frequency for visualizations dumps
     VisType vis_type            = VIS_OVERLAPS; ///! Type of interface physics visualization output

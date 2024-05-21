@@ -440,7 +440,8 @@ public:
    /*!
     * \brief Check whether two polygons (faces) have a positive area of overlap
     *
-    * \note Wrapper routine that calls the ALE3D polygon intersection routine
+    * \note Wrapper routine that calls the polygon intersection routine. That routine
+    *  does not return vertices, just overlap area.
     */
    TRIBOL_HOST_DEVICE void checkPolyOverlap( const MeshData::Viewer& m1,
                                              const MeshData::Viewer& m2,

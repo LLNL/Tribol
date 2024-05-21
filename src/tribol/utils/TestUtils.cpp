@@ -1164,6 +1164,8 @@ int TestMesh::tribolSetupAndUpdate( ContactMethod method,
                            ExecutionMode::Sequential );
 
    enableTimestepVote( csIndex, params.enable_timestep_vote );
+   setTimestepPenFrac( csIndex, params.timestep_pen_frac );
+   setTimestepScale( csIndex, params.timestep_scale );
 
    // if enforcement is penalty, register penalty parameters
    if (enforcement == PENALTY)
