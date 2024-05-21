@@ -76,14 +76,21 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on("umpire@2024.02.0:", when="+umpire")
     
     depends_on("axom+raja", when="+raja")
+    depends_on("axom~raja", when="~raja")
     depends_on("axom+umpire", when="+umpire")
+    depends_on("axom~umpire", when="~umpire")
 
     depends_on("mfem+metis+mpi", when="+redecomp")
     
     with when("+openmp"):
         depends_on("axom+openmp")
         depends_on("raja+openmp", when="+raja")
-        depends_on("umpire+openmp", when="+openmp")
+        depends_on("umpire+openmp", when="+umpire")
+    
+    with when("~openmp"):
+        depends_on("axom~openmp")
+        depends_on("raja~openmp", when="+raja")
+        depends_on("umpire~openmp", when="+umpire")
 
     for val in CudaPackage.cuda_arch_values:
         ext_cuda_dep = f"+cuda cuda_arch={val}"

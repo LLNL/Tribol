@@ -28,19 +28,19 @@ enum class MemorySpace
 
 enum class ExecutionMode
 {
-   Sequential,
+  Sequential,
 #ifdef TRIBOL_USE_RAJA
 #ifdef TRIBOL_USE_OPENMP
-   OpenMP,
+  OpenMP,
 #endif
 #ifdef TRIBOL_USE_CUDA
-   Cuda,
+  Cuda,
 #endif
 #ifdef TRIBOL_USE_HIP
-   Hip,
+  Hip,
 #endif
-   Dynamic
 #endif
+  Dynamic
 };
 
 template <MemorySpace MSPACE>
@@ -106,6 +106,8 @@ inline int getResourceAllocatorID(MemorySpace mem_space)
   {
     allocator_id = axom::getUmpireResourceAllocatorID(toUmpireMemoryType(mem_space));
   }
+#else
+  TRIBOL_UNUSED_VAR(mem_space);
 #endif
   return allocator_id;
 }
