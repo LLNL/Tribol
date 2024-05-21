@@ -7,7 +7,6 @@ variables:
   Clang_14_ImageName: 'seracllnl/tpls:clang-14_04-16-24_07h-15m'
   GCC_13_ImageName: 'seracllnl/tpls:gcc-13_04-16-24_07h-15m'
   HOME_DIR: '/home/serac'
-  BASE_CMAKE_OPTS: '-UUMPIRE_DIR'
 
 jobs:
 - job: Build_and_Test
