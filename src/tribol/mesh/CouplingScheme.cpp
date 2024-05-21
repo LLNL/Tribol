@@ -1205,6 +1205,16 @@ bool CouplingScheme::init()
 #endif
       m_allocator_id = mesh_data1.getAllocatorId();
 
+      if (m_contactMethod != COMMON_PLANE)
+      {
+        if (m_exec_mode != ExecutionMode::Sequential)
+        {
+          SLIC_ERROR_ROOT("Only sequential execution on host supported for contact methods "
+            "other than COMMON_PLANE.");
+          return false;
+        }
+      }
+
       // compute the face data
       mesh_data1.computeFaceData();
       if (this->m_mesh_id2 != this->m_mesh_id1)
