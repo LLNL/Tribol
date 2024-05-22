@@ -67,7 +67,10 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, RealT * gaps )
    SLIC_ERROR_IF(I==nullptr, "Mortar wts test, I is null.");
 
    // get mortar node id offset to distinguish mortar from nonmortar column contributions
-   int nodeOffset = 1;//mortarMesh.getSortedSurfaceNodeIds().back() + 1;
+   // sorts unique surface node ids from connectivity
+   auto mortar_id = mortarMesh.meshId();
+   auto sorted_surface_node_ids = tribol::MeshManager::getInstance().at(mortar_id).sortSurfaceNodeIds();
+   int nodeOffset = sorted_surface_node_ids.back() + 1;
 
    ////////////////////////////////////////////////////////////////
    // compute nonmortar gaps to determine active set of contact dofs //

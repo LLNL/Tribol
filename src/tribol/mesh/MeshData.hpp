@@ -268,12 +268,10 @@ public:
 
   void setResponse( RealT* rx, RealT* ry, RealT* rz );
 
-  const ArrayT<IndexT, 1>& getSortedSurfaceNodeIds() const 
-  { 
-    return m_sorted_surface_node_ids;
-  }
-
   std::unique_ptr<Viewer> getView() { return std::make_unique<Viewer>(*this); }
+
+  /// sorts unique surface node ids from connectivity and stores them on the mesh object in ascending order
+  Array1D<IndexT> sortSurfaceNodeIds();
 
 private:
   int getDimFromElementType() const;
@@ -285,9 +283,6 @@ private:
 
   ArrayViewT<const IndexT, 2> createConnectivity( IndexT num_elements, 
                                                   const IndexT* connectivity );
-
-  /// sorts unique surface node ids from connectivity and stores them on the mesh object in ascending order
-  void sortSurfaceNodeIds();
 
   IndexT m_mesh_id;                    ///< Mesh Id associated with this data
   InterfaceElementType m_element_type; ///< Type of interface element in mesh
@@ -312,7 +307,6 @@ private:
 
   // Element field data
   Array2DView<const IndexT> m_connectivity;  ///< Element connectivity arrays
-  Array1D<IndexT> m_sorted_surface_node_ids; ///< List of sorted node ids from connectivity w/o duplicates
 
   Array2D<RealT> m_c;           ///< Vertex averaged element centroids
   Array2D<RealT> m_n;           ///< Outward unit element normals

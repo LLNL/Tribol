@@ -25,7 +25,7 @@
 // srun -n1 ./common_plane_ex --block1_res 4 4 4      --block1_min 0 0 0. --block1_max 1 1 1.05  --block2_res 4 4 4      --block2_min 0 0 0.95  --block2_max 1 1 2
 
 template <tribol::MemorySpace MSPACE, tribol::ExecutionMode EXEC>
-int runExample();
+int runExample(const std::string& mesh_file, int num_contact_elems);
 
 /*!
  * \brief Program main.
@@ -57,26 +57,35 @@ int main( int argc, char** argv )
 #endif
 
   int err = 0;
-#ifdef TRIBOL_USE_CUDA
-  auto mem_space = tribol::MemorySpace::Device;
 
-  if (mem_space == tribol::MemorySpace::Device)
+  for (int i{0}; i < 10; ++i)
   {
-    err = runExample<tribol::MemorySpace::Device, tribol::ExecutionMode::Cuda>();
-  }
-  else
-#endif
-  {
-#ifdef TRIBOL_USE_OPENMP
-    auto exec_mode = tribol::ExecutionMode::OpenMP;
-    if (exec_mode == tribol::ExecutionMode::OpenMP)
+    int num_elems_1d = std::pow(2, i);
+    int num_contact_elems = std::pow(num_elems_1d, 2);
+    std::string mesh_file = TRIBOL_REPO_DIR "/data/single_layer_";
+    mesh_file = mesh_file + std::to_string(num_elems_1d) + ".mesh";
+    std::cout << "Running mesh file " << mesh_file << std::endl;
+#ifdef TRIBOL_USE_CUDA
+    auto mem_space = tribol::MemorySpace::Device;
+
+    if (mem_space == tribol::MemorySpace::Device)
     {
-      err = runExample<tribol::MemorySpace::Host, tribol::ExecutionMode::OpenMP>();
+      err = runExample<tribol::MemorySpace::Device, tribol::ExecutionMode::Cuda>(mesh_file, num_contact_elems);
     }
     else
 #endif
     {
-      err = runExample<tribol::MemorySpace::Host, tribol::ExecutionMode::Sequential>();
+#ifdef TRIBOL_USE_OPENMP
+      auto exec_mode = tribol::ExecutionMode::Sequential;
+      if (exec_mode == tribol::ExecutionMode::OpenMP)
+      {
+        err = runExample<tribol::MemorySpace::Host, tribol::ExecutionMode::OpenMP>(mesh_file, num_contact_elems);
+      }
+      else
+#endif
+      {
+        err = runExample<tribol::MemorySpace::Host, tribol::ExecutionMode::Sequential>(mesh_file, num_contact_elems);
+      }
     }
   }
 
@@ -91,7 +100,7 @@ int main( int argc, char** argv )
 }
 
 template <tribol::MemorySpace MSPACE, tribol::ExecutionMode EXEC>
-int runExample()
+int runExample(const std::string& mesh_file, int num_contact_elems)
 {
 
   mfem::Device device;
@@ -120,10 +129,9 @@ int runExample()
   std::cout << "Creating MFEM mesh..." << std::endl;
   axom::utilities::Timer timer(true);
 
-  std::string mesh_file = TRIBOL_REPO_DIR "/data/two_hex_overlap.mesh";
   mfem::Mesh mesh(mesh_file);
 
-  int ref_ct = 7;
+  int ref_ct = 0;
   for (int i{0}; i < ref_ct; ++i)
   {
     mesh.UniformRefinement();
@@ -145,7 +153,6 @@ int runExample()
 
   std::cout << "Creating Tribol connectivity..." << std::endl;
   timer.start();
-  int num_contact_elems = std::pow(2, ref_ct * 2);
 
   // mesh 1 connectivity (build on cpu)
   auto mesh1_bdry_attrib = 4;
@@ -197,7 +204,7 @@ int runExample()
   tribol::registerMesh(mesh2_id, num_contact_elems, fe_space.GetNDofs(), conn_2.data(), tribol::LINEAR_QUAD,
     x_coords_ptr, y_coords_ptr, z_coords_ptr, MSPACE);
 
-  constexpr tribol::RealT penalty = 1000.0;
+  constexpr tribol::RealT penalty = 5000.0;
   tribol::setKinematicConstantPenalty(mesh1_id, penalty);
   tribol::setKinematicConstantPenalty(mesh2_id, penalty);
   std::cout << "Tribol mesh data registered (" << timer.elapsedTimeInMilliSec() << " ms)" << std::endl;
@@ -250,8 +257,11 @@ int runExample()
   RealT max_force = force.Max();
   std::cout << "Max force: " << max_force << std::endl;
 
+  // MFEM verification fails with this call on CUDA
+  #ifndef TRIBOL_USE_CUDA
   RealT min_force = force.Min();
   std::cout << "Min force: " << min_force << std::endl;
+  #endif
 
   RealT tot_force = force.Norml1();
   std::cout << "Total |force|: " << tot_force << std::endl;

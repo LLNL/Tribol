@@ -232,17 +232,6 @@ MeshData::MeshData( IndexT mesh_id, IndexT num_elements, IndexT num_nodes,
     }
   }
 
-  // Find unique surface node ids
-  if (num_elements > 0)
-  {
-#ifdef TRIBOL_USE_UMPIRE
-    if (mem_space != MemorySpace::Device)
-#endif
-    {
-      sortSurfaceNodeIds();
-    }
-  }
-
   getElementData().m_num_cells = num_elements;
   getNodalFields().m_num_nodes = num_nodes;
 }
@@ -327,7 +316,7 @@ ArrayViewT<const IndexT, 2> MeshData::createConnectivity(IndexT num_elements, co
 }
 
 //------------------------------------------------------------------------------
-void MeshData::sortSurfaceNodeIds()
+Array1D<IndexT> MeshData::sortSurfaceNodeIds()
 {
   ArrayT<IndexT> sorted_conn(0, m_connectivity.size());
   for (auto node_id : m_connectivity)
@@ -355,19 +344,19 @@ void MeshData::sortSurfaceNodeIds()
                 "only single unique id in connectivity array.");
 
   // allocate array to store unique, sorted node ids on mesh object
-  m_sorted_surface_node_ids = ArrayT<IndexT>(0, unique_size);
+  auto sorted_surface_node_ids = ArrayT<IndexT>(0, unique_size);
 
   // populate sorted node id list
-  m_sorted_surface_node_ids.push_back(sorted_conn[0]);
+  sorted_surface_node_ids.push_back(sorted_conn[0]);
   for (IndexT i{1}; i < sorted_conn.size(); ++i)
   {
     if ( sorted_conn[i] != sorted_conn[i-1] )
     { 
-      m_sorted_surface_node_ids.push_back(sorted_conn[i]);
+      sorted_surface_node_ids.push_back(sorted_conn[i]);
     }
   }
 
-  return;
+  return sorted_surface_node_ids;
 } // end MeshData::sortSurfaceNodeIds()
 
 //------------------------------------------------------------------------------
