@@ -58,7 +58,7 @@ int main( int argc, char** argv )
 
   int err = 0;
 
-  for (int i{0}; i < 10; ++i)
+  for (int i{0}; i < 11; ++i)
   {
     int num_elems_1d = std::pow(2, i);
     int num_contact_elems = std::pow(num_elems_1d, 2);
