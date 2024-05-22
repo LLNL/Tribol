@@ -172,6 +172,112 @@ inline ExecutionMode getExecutionMode(MemorySpace mem_space)
   }
 }
 
+inline ExecutionMode getExecutionMode(MemorySpace mem_space, ExecutionMode suggested_exec_mode)
+{
+  auto exec_mode = ExecutionMode::Sequential;
+#ifdef TRIBOL_USE_RAJA
+  switch (mem_space)
+  {
+    case MemorySpace::Dynamic:
+  #ifdef TRIBOL_USE_UMPIRE
+      // trust the user here...
+      exec_mode = suggested_exec_mode;
+      if (exec_mode == ExecutionMode::Dynamic)
+      {
+        SLIC_WARNING_ROOT("Dynamic execution with dynamic memory space. "
+          "Assuming sequential execution on host.");
+        exec_mode = ExecutionMode::Sequential;
+      }
+  #else
+      // if we have RAJA but no Umpire, execute serially on host
+      exec_mode = ExecutionMode::Sequential;
+  #endif
+      break;
+  #ifdef TRIBOL_USE_UMPIRE
+    case MemorySpace::Unified:
+      // this should be able to run anywhere. let the user decide.
+      exec_mode = suggested_exec_mode;
+      if (exec_mode == ExecutionMode::Dynamic)
+      {
+    #if defined(TRIBOL_USE_CUDA)
+        SLIC_INFO_ROOT("Dynamic execution with unified memory space. "
+          "Assuming CUDA parallel execution.");
+        exec_mode = ExecutionMode::Cuda;
+    #elif defined(TRIBOL_USE_HIP)
+        SLIC_INFO_ROOT("Dynamic execution with unified memory space. "
+          "Assuming HIP parallel execution.");
+        exec_mode = ExecutionMode::Hip;
+    #elif defined(TRIBOL_USE_OPENMP)
+        SLIC_INFO_ROOT("Dynamic execution with unified memory space. "
+          "Assuming OpenMP parallel execution.");
+        exec_mode = ExecutionMode::OpenMP;
+    #else
+        SLIC_INFO_ROOT("Dynamic execution with unified memory space. "
+          "Assuming sequential execution.");
+        exec_mode = ExecutionMode::Sequential;
+    #endif
+      }
+      break;
+  #endif
+    case MemorySpace::Host:
+      switch (suggested_exec_mode)
+      {
+        case ExecutionMode::Sequential:
+  #ifdef TRIBOL_USE_OPENMP
+        case ExecutionMode::OpenMP:
+  #endif
+          exec_mode = suggested_exec_mode;
+          break;
+        case ExecutionMode::Dynamic:
+  #ifdef TRIBOL_USE_OPENMP
+          SLIC_INFO_ROOT("Dynamic execution with a host memory space. "
+            "Assuming OpenMP parallel execution.");
+          exec_mode = ExecutionMode::OpenMP;
+  #else
+          SLIC_INFO_ROOT("Dynamic execution with a host memory space. "
+            "Assuming sequential execution.");
+          exec_mode = ExecutionMode::Sequential;
+  #endif
+          break;
+        default:
+          SLIC_WARNING_ROOT("Unsupported execution mode for host memory. "
+            "Switching to sequential execution.");
+          exec_mode = ExecutionMode::Sequential;
+          break;
+      }
+      break;
+  #ifdef TRIBOL_USE_UMPIRE
+    case MemorySpace::Device:
+      switch (suggested_exec_mode)
+      {
+    #ifdef TRIBOL_USE_CUDA
+        case ExecutionMode::Cuda:
+    #endif
+    #ifdef TRIBOL_USE_HIP
+        case ExecutionMode::Hip:
+    #endif
+          exec_mode = suggested_exec_mode;
+          break;
+        case ExecutionMode::Dynamic:
+    #if defined(TRIBOL_USE_CUDA)
+          exec_mode = ExecutionMode::Cuda;
+          break;
+    #elif defined(TRIBOL_USE_HIP)
+          exec_mode = ExecutionMode::Hip;
+          break;
+    #endif
+        default:
+          SLIC_WARNING_ROOT("Unknown execution mode for device memory. "
+            "Trying host sequential execution.");
+          exec_mode = ExecutionMode::Sequential;
+          break;
+      }
+  #endif
+  }
+#endif
+  return exec_mode;
+}
+
 inline bool isOnDevice(ExecutionMode exec)
 {
   switch (exec)
