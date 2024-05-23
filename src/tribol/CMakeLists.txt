@@ -115,6 +115,8 @@ blt_add_library(
 # Add separable compilation flag
 if(ENABLE_HIP)
     target_compile_options(tribol PRIVATE -fgpu-rdc)
+    target_link_options(tribol PRIVATE -fgpu-rdc)
+    target_link_options(tribol PRIVATE --hip-link)
 endif()
 
 # Don't propagate internal dependencies

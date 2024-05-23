@@ -58,6 +58,7 @@ foreach( test ${tribol_tests} )
 
   if (ENABLE_HIP)
     target_compile_options(${test_name}_test PRIVATE -fgpu-rdc)
+    target_link_options(${test_name}_test PRIVATE -fgpu-rdc)
     target_link_options(${test_name}_test PRIVATE --hip-link)
   endif()
 
@@ -134,6 +135,12 @@ if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
 
     if (ENABLE_CUDA)
       set_target_properties(${test_name}_test PROPERTIES CUDA_SEPARABLE_COMPILATION On)
+    endif()
+    
+    if (ENABLE_HIP)
+      target_compile_options(${test_name}_test PRIVATE -fgpu-rdc)
+      target_link_options(${test_name}_test PRIVATE -fgpu-rdc)
+      target_link_options(${test_name}_test PRIVATE --hip-link)
     endif()
 
   endforeach()

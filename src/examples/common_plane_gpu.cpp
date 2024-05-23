@@ -74,6 +74,15 @@ int main( int argc, char** argv )
     }
     else
 #endif
+#ifdef TRIBOL_USE_HIP
+    auto mem_space = tribol::MemorySpace::Device;
+
+    if (mem_space == tribol::MemorySpace::Device)
+    {
+      err = runExample<tribol::MemorySpace::Device, tribol::ExecutionMode::Hip>(mesh_file, num_contact_elems);
+    }
+    else
+#endif
     {
 #ifdef TRIBOL_USE_OPENMP
       auto exec_mode = tribol::ExecutionMode::Sequential;

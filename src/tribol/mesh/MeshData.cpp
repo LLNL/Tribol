@@ -380,7 +380,7 @@ bool MeshData::computeFaceData()
   // allocate face_radius (initialized to 0.0)
   m_face_radius = Array1D<RealT>(numberOfElements(), numberOfElements(), m_allocator_id);
   
-  ArrayT<bool> face_data_ok_data({true}, m_allocator_id);
+  ArrayT<IndexT> face_data_ok_data({static_cast<IndexT>(true)}, m_allocator_id);
 
   // loop over all elements in the mesh
   Array2DView<RealT> c = m_c;
@@ -390,7 +390,7 @@ bool MeshData::computeFaceData()
   Array1DView<RealT> radius = m_face_radius;
   auto dim = m_dim;
   auto conn = m_connectivity;
-  ArrayViewT<bool> face_data_ok = face_data_ok_data;
+  ArrayViewT<IndexT> face_data_ok = face_data_ok_data;
   forAllExec(getExecutionMode(m_mem_space), numberOfElements(), 
     [c, x, n, area, radius, dim, conn, face_data_ok] TRIBOL_HOST_DEVICE (IndexT i) {
 
@@ -526,7 +526,7 @@ bool MeshData::computeFaceData()
         if (mag >= nrml_mag_tol) {
           inv_mag = 1.0 / mag;
         } else {
-          face_data_ok[0] = false;
+          face_data_ok[0] = static_cast<IndexT>(false);
         }
 
         // normalize the average normal
@@ -538,7 +538,7 @@ bool MeshData::computeFaceData()
 
   }); // end element loop
 
-  ArrayT<bool, 1, MemorySpace::Host> face_data_ok_host(face_data_ok_data);
+  ArrayT<IndexT, 1, MemorySpace::Host> face_data_ok_host(face_data_ok_data);
   SLIC_WARNING_IF(!face_data_ok_host[0], 
       fmt::format("There are faces with a normal magnitude less than tolerance ({:e}).", nrml_mag_tol));
 

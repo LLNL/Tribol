@@ -6,6 +6,7 @@
 ## examples
 set( contact_examples
      gpu_test.cpp
+     hip_test.cpp
      common_plane_gpu.cpp
      common_plane.cpp
      mortar_lm_patch_test.cpp
@@ -32,6 +33,7 @@ foreach( example ${contact_examples} )
 
   if (ENABLE_HIP)
     target_compile_options(${example_name}_ex PRIVATE -fgpu-rdc)
+    target_link_options(${example_name}_ex PRIVATE -fgpu-rdc)
     target_link_options(${example_name}_ex PRIVATE --hip-link)
   endif()
 
@@ -65,6 +67,12 @@ if(ENABLE_FORTRAN AND TRIBOL_USE_MPI)
 
   if (ENABLE_CUDA)
     set_target_properties(simple_tribol_interface_ex PROPERTIES CUDA_SEPARABLE_COMPILATION On)
+  endif()
+
+  if (ENABLE_HIP)
+    target_compile_options(simple_tribol_interface_ex PRIVATE -fgpu-rdc)
+    target_link_options(simple_tribol_interface_ex PRIVATE -fgpu-rdc)
+    target_link_options(simple_tribol_interface_ex PRIVATE --hip-link)
   endif()
 
 endif()
@@ -119,6 +127,12 @@ if ( BUILD_REDECOMP )
 
     if (ENABLE_CUDA)
       set_target_properties(${example_name}_ex PROPERTIES CUDA_SEPARABLE_COMPILATION On)
+    endif()
+
+    if (ENABLE_HIP)
+      target_compile_options(${example_name}_ex PRIVATE -fgpu-rdc)
+      target_link_options(${example_name}_ex PRIVATE -fgpu-rdc)
+      target_link_options(${example_name}_ex PRIVATE --hip-link)
     endif()
 
   endforeach()
