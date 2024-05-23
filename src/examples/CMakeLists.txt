@@ -30,6 +30,11 @@ foreach( example ${contact_examples} )
     set_target_properties(${example_name}_ex PROPERTIES CUDA_SEPARABLE_COMPILATION On)
   endif()
 
+  if (ENABLE_HIP)
+    target_compile_options(${example_name}_ex PRIVATE -fgpu-rdc)
+    target_link_options(${example_name}_ex PRIVATE --hip-link)
+  endif()
+
 endforeach()
 
 ## Run examples as tests, when testing enabled
