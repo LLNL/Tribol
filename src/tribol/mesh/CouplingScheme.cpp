@@ -1363,8 +1363,6 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
   // [0]: exceed_max_gap1, [1]: exceed_max_gap2, [2]: neg_dt_gap_msg, [3]: neg_dt_vel_proj_msg
   ArrayT<bool> msg_data({false, false, false, false}, getAllocatorId());
   ArrayViewT<bool> msg = msg_data;
-  //  for (IndexT kp = 0; kp < numPairs; ++kp)
-  //  {
   forAllExec(getExecutionMode(), getNumActivePairs(),
     [cs_view, dim, proj_ratio, msg, dt_temp, dt] TRIBOL_HOST_DEVICE (IndexT i)
     {

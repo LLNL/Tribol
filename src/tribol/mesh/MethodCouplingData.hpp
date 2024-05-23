@@ -8,6 +8,7 @@
 
 #include "tribol/common/ArrayTypes.hpp"
 #include "tribol/common/Parameters.hpp"
+#include "tribol/common/Containers.hpp"
 #include "tribol/mesh/MeshData.hpp"
 
 // Axom includes
@@ -64,6 +65,7 @@ struct SurfaceContactElem
      , mortarWts(nullptr)
      , numWts(0)
      , numActiveGaps(0)
+     , blockJ(3)
 
    { }
 
@@ -93,7 +95,7 @@ struct SurfaceContactElem
 
    int numActiveGaps;  ///< Number of local face-pair active gaps
 
-   StackArrayT<mfem::DenseMatrix, 9> blockJ;
+   StackArray<DeviceArray2D<RealT>, 9> blockJ;
 
    /// routine to allocate space to store mortar weights
    void allocateMortarWts();
@@ -225,7 +227,7 @@ public:
     */
    void storeElemBlockJ( 
       ArrayT<int>&& blockJElemIds,
-      StackArrayT<mfem::DenseMatrix, 9>& blockJ
+      const StackArray<DeviceArray2D<RealT>, 9>& blockJ
    );
 
    /*!

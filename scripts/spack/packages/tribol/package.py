@@ -95,7 +95,7 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
         ext_cuda_dep = f"+cuda cuda_arch={val}"
         depends_on(f"mfem{ext_cuda_dep}", when=f"{ext_cuda_dep}")
         depends_on(f"axom{ext_cuda_dep}", when=f"{ext_cuda_dep}")
-        # Tribol requires RAJA and Umpire for CUDA support
+        # NOTE: Tribol requires RAJA and Umpire for CUDA support
         depends_on(f"raja{ext_cuda_dep}", when=f"{ext_cuda_dep}")
         depends_on(f"umpire{ext_cuda_dep}", when=f"{ext_cuda_dep}")
 
@@ -103,7 +103,7 @@ class Tribol(CachedCMakePackage, CudaPackage, ROCmPackage):
         ext_rocm_dep = f"+rocm amdgpu_target={val}"
         depends_on(f"mfem{ext_rocm_dep}", when=f"{ext_rocm_dep}")
         depends_on(f"axom{ext_rocm_dep}", when=f"{ext_rocm_dep}")
-        # Tribol requires RAJA and Umpire for HIP support
+        # NOTE: Tribol requires RAJA and Umpire for HIP support
         depends_on(f"raja{ext_rocm_dep}", when=f"{ext_rocm_dep}")
         depends_on(f"umpire{ext_rocm_dep}", when=f"{ext_rocm_dep}")
 

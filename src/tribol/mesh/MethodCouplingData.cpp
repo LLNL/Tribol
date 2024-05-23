@@ -56,11 +56,11 @@ void SurfaceContactElem::allocateBlockJ( EnforcementMethod enf )
 {
   //  if (enf == LAGRANGE_MULTIPLIER)
   //  {
-  //     this->blockJ.resize(3, 3);
+  //     blockJ = DeviceArray2D<DeviceArray2D<RealT>>(3, 3);
   //  }
   //  else
   //  {
-  //     this->blockJ.resize(2, 2);
+  //     blockJ = DeviceArray2D<DeviceArray2D<RealT>>(2, 2);
   //  }
 
    // number of element displacement degrees of freedom
@@ -69,7 +69,7 @@ void SurfaceContactElem::allocateBlockJ( EnforcementMethod enf )
    {
       for (int j{}; j < 2; ++j)
       {
-         blockJ[3*i+j].SetSize(nPrimal, nPrimal);
+         blockJ(i, j) = DeviceArray2D<RealT>(nPrimal, nPrimal);
       }
    }
 
@@ -79,11 +79,11 @@ void SurfaceContactElem::allocateBlockJ( EnforcementMethod enf )
       int nDual = this->numFaceVert;
       for (int i{}; i < 2; ++i)
       {
-         blockJ[3*i+2].SetSize(nPrimal, nDual);
+         blockJ(i, 2) = DeviceArray2D<RealT>(nPrimal, nDual);
          // transpose
-         blockJ[6+i].SetSize(nDual, nPrimal);
+         blockJ(2, i) = DeviceArray2D<RealT>(nDual, nPrimal);
       }
-      blockJ[8].SetSize(nDual, nDual);
+      blockJ(2, 2) = DeviceArray2D<RealT>(nDual, nDual);
    }
 }
 
@@ -215,7 +215,7 @@ void MethodData::reserveBlockJ(
 //------------------------------------------------------------------------------
 void MethodData::storeElemBlockJ( 
    ArrayT<int>&& blockJElemIds,
-   StackArrayT<mfem::DenseMatrix, 9>& blockJ
+   const StackArray<DeviceArray2D<RealT>, 9>& blockJ
 )
 {
    SLIC_ASSERT_MSG(blockJElemIds.size() == getNSpaces(),
@@ -227,7 +227,12 @@ void MethodData::storeElemBlockJ(
       for (IndexT j{}; j < getNSpaces(); ++j)
       {
          IndexT blockIdxJ = static_cast<IndexT>(m_blockJSpaces[j]);
-         m_blockJ(blockIdxI, blockIdxJ).push_back(blockJ[i*3+j]);
+         // convert to mfem::DenseMatrix
+         auto& block = blockJ(i, j);
+         // this DenseMatrix is a "view" of block
+         mfem::DenseMatrix block_densemat(block.data(), block.height(), block.width());
+         // deep copy should happen here
+         m_blockJ(blockIdxI, blockIdxJ).push_back(block_densemat);
       }
    }
 } 
@@ -320,33 +325,33 @@ void MortarData::assembleJacobian( SurfaceContactElem & elem, SparseMode s_mode 
          // Add() will "set" if a nonzero entry hasn't been 
          // introduced at the (i,j) element
          // Mortar-Lagrange multiplier block (0, 2)
-         this->m_smat->Add( i, j, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::MORTAR)*3 +
+         this->m_smat->Add( i, j, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::MORTAR),
             static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)
-         ].Data()[ localId ]);
-         this->m_smat->Add( i+1, j, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::MORTAR)*3 +
+         )[ localId ]);
+         this->m_smat->Add( i+1, j, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::MORTAR),
             static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)
-         ].Data()[ localId + dimOffset ]);
-         this->m_smat->Add( i+2, j, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::MORTAR)*3 +
+         )[ localId + dimOffset ]);
+         this->m_smat->Add( i+2, j, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::MORTAR),
             static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)
-         ].Data()[ localId + 2*dimOffset ]); // assume 3D for now
+         )[ localId + 2*dimOffset ]); // assume 3D for now
 
          // Nonmortar-Lagrange Multiplier block (1, 2)
          i = elem.dim * nonmortarNodeIdA; // nonmortar row contributions
-         this->m_smat->Add( i, j, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::NONMORTAR)*3 +
+         this->m_smat->Add( i, j, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::NONMORTAR),
             static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)
-         ].Data()[ localId  ]);
-         this->m_smat->Add( i+1, j, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::NONMORTAR)*3 +
+         )[ localId  ]);
+         this->m_smat->Add( i+1, j, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::NONMORTAR),
             static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)
-         ].Data()[ localId + dimOffset ]);
-         this->m_smat->Add( i+2, j, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::NONMORTAR)*3 +
+         )[ localId + dimOffset ]);
+         this->m_smat->Add( i+2, j, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::NONMORTAR),
             static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)
-         ].Data()[ localId + 2*dimOffset ]); // assume 3D for now
+         )[ localId + 2*dimOffset ]); // assume 3D for now
 
          ////////////////////////////////////////////////////////////////
          // Assemble Jgu contributions (lower-left off-diagonal block) //
@@ -361,33 +366,33 @@ void MortarData::assembleJacobian( SurfaceContactElem & elem, SparseMode s_mode 
          dimOffset = elem.getJacobianDimOffset(SurfaceContactElem::JguBlock);
 
          // Lagrange-multiplier-mortar block (2, 0)
-         this->m_smat->Add( i, j, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)*3 +
+         this->m_smat->Add( i, j, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER),
             static_cast<IndexT>(BlockSpace::MORTAR)
-         ].Data()[ localId ]);
-         this->m_smat->Add( i, j+1, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)*3 +
+         )[ localId ]);
+         this->m_smat->Add( i, j+1, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER),
             static_cast<IndexT>(BlockSpace::MORTAR)
-         ].Data()[ localId + dimOffset ]);
-         this->m_smat->Add( i, j+2, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)*3 +
+         )[ localId + dimOffset ]);
+         this->m_smat->Add( i, j+2, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER),
             static_cast<IndexT>(BlockSpace::MORTAR)
-         ].Data()[ localId + 2*dimOffset ]); // assume 3D for now
+         )[ localId + 2*dimOffset ]); // assume 3D for now
 
          // Lagrange multiplier-nonmortar block (2, 1)
          j = elem.dim * nonmortarNodeIdA; // nonmortar column contributions
-         this->m_smat->Add( i, j, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)*3 +
+         this->m_smat->Add( i, j, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER),
             static_cast<IndexT>(BlockSpace::NONMORTAR)
-         ].Data()[ localId  ]);
-         this->m_smat->Add( i, j+1, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)*3 +
+         )[ localId  ]);
+         this->m_smat->Add( i, j+1, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER),
             static_cast<IndexT>(BlockSpace::NONMORTAR)
-         ].Data()[ localId + dimOffset ]);
-         this->m_smat->Add( i, j+2, elem.blockJ[
-            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER)*3 +
+         )[ localId + dimOffset ]);
+         this->m_smat->Add( i, j+2, elem.blockJ(
+            static_cast<IndexT>(BlockSpace::LAGRANGE_MULTIPLIER),
             static_cast<IndexT>(BlockSpace::NONMORTAR)
-         ].Data()[ localId + 2*dimOffset ]); // assume 3D for now
+         )[ localId + 2*dimOffset ]); // assume 3D for now
 
          //////////////////////////////////////////////////
          // Assemble Jru contributions (matrix 11-block) //
