@@ -112,6 +112,11 @@ blt_add_library(
     FOLDER tribol
     )
 
+# Add separable compilation flag
+if(ENABLE_HIP)
+    target_compile_options(tribol PRIVATE -fgpu-rdc)
+endif()
+
 # Don't propagate internal dependencies
 target_link_libraries(tribol PRIVATE axom::quest)
 

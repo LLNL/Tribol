@@ -1190,9 +1190,9 @@ void ContactPlane3D::globalTo2DLocalCoords( RealT pX, RealT pY, RealT pZ,
 } // end ContactPlane3D::globalTo2DLocalCoords()
 
 //------------------------------------------------------------------------------
-void ContactPlane3D::computeAreaTol( const MeshData::Viewer& m1,
-                                     const MeshData::Viewer& m2,
-                                     const Parameters& params )
+TRIBOL_HOST_DEVICE void ContactPlane3D::computeAreaTol( const MeshData::Viewer& m1,
+                                                        const MeshData::Viewer& m2,
+                                                        const Parameters& params )
 {
    if (m_areaFrac < params.overlap_area_frac ) {
       // SLIC_DEBUG( "ContactPlane3D::computeAreaTol() the overlap area fraction too small or negative; " << 
@@ -1902,9 +1902,10 @@ void ContactPlane2D::computeIntegralGap()
 } // end ContactPlane2D::computeIntegralGap()
 
 //------------------------------------------------------------------------------
-void ContactPlane2D::computeAreaTol( const MeshData::Viewer& m1,
-                                     const MeshData::Viewer& m2,
-                                     const Parameters& params )
+TRIBOL_HOST_DEVICE void ContactPlane2D::computeAreaTol( const MeshData::Viewer& m1,
+                                                        const MeshData::Viewer& m2,
+                                                        const Parameters& params )
+
 {
    if (m_areaFrac < params.overlap_area_frac)
    {
@@ -1987,12 +1988,12 @@ void ContactPlane2D::centroidGap( const MeshData::Viewer& m1,
 } // end ContactPlane2D::centroidGap()
 
 //------------------------------------------------------------------------------
-void ContactPlane2D::checkSegOverlap( const MeshData::Viewer& m1,
-                                      const MeshData::Viewer& m2,
-                                      const Parameters& params,
-                                      const RealT* const pX1, const RealT* const pY1, 
-                                      const RealT* const pX2, const RealT* const pY2, 
-                                      const int nV1, const int nV2 )
+TRIBOL_HOST_DEVICE void ContactPlane2D::checkSegOverlap( const MeshData::Viewer& m1,
+                                                         const MeshData::Viewer& m2,
+                                                         const Parameters& params,
+                                                         const RealT* const pX1, const RealT* const pY1, 
+                                                         const RealT* const pX2, const RealT* const pY2, 
+                                                         const int nV1, const int nV2 )
 {
    SLIC_ASSERT( nV1 == 2 );
    SLIC_ASSERT( nV2 == 2 );

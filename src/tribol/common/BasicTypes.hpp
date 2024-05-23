@@ -52,9 +52,9 @@ using RealT = double;
 #define TRIBOL_UNUSED_PARAM AXOM_UNUSED_PARAM
 
 // Execution space specifiers
-#ifdef TRIBOL_USE_CUDA
+#if defined(TRIBOL_USE_CUDA) || defined(TRIBOL_USE_HIP)
   #ifndef __device__
-    #error "TRIBOL_USE_CUDA but __device__ is undefined.  Check include files"
+    #error "TRIBOL_USE_CUDA or TRIBOL_USE_HIP but __device__ is undefined.  Check include files"
   #endif
   #define TRIBOL_DEVICE __device__
   #define TRIBOL_HOST_DEVICE __host__ __device__
