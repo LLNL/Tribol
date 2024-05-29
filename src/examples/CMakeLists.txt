@@ -33,6 +33,11 @@ foreach( example ${contact_examples} )
 
   if (ENABLE_HIP)
     target_compile_options(${example_name}_ex PRIVATE -fgpu-rdc)
+    target_compile_options(${example_name}_ex PRIVATE
+        $<$<CONFIG:Debug>:
+            -ggdb
+        >
+    )
     target_link_options(${example_name}_ex PRIVATE -fgpu-rdc)
     target_link_options(${example_name}_ex PRIVATE --hip-link)
   endif()
@@ -71,6 +76,11 @@ if(ENABLE_FORTRAN AND TRIBOL_USE_MPI)
 
   if (ENABLE_HIP)
     target_compile_options(simple_tribol_interface_ex PRIVATE -fgpu-rdc)
+    target_compile_options(simple_tribol_interface_ex PRIVATE
+        $<$<CONFIG:Debug>:
+            -ggdb
+        >
+    )
     target_link_options(simple_tribol_interface_ex PRIVATE -fgpu-rdc)
     target_link_options(simple_tribol_interface_ex PRIVATE --hip-link)
   endif()
@@ -131,6 +141,11 @@ if ( BUILD_REDECOMP )
 
     if (ENABLE_HIP)
       target_compile_options(${example_name}_ex PRIVATE -fgpu-rdc)
+      target_compile_options(${example_name}_ex PRIVATE
+          $<$<CONFIG:Debug>:
+              -ggdb
+          >
+      )
       target_link_options(${example_name}_ex PRIVATE -fgpu-rdc)
       target_link_options(${example_name}_ex PRIVATE --hip-link)
     endif()

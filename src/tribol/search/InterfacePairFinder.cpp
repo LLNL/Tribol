@@ -799,6 +799,11 @@ InterfacePairFinder::InterfacePairFinder(CouplingScheme* cs)
                m_search = new BvhSearch<2, axom::CUDA_EXEC<TRIBOL_BLOCK_SIZE>>(m_coupling_scheme);
                break;
             #endif
+            #ifdef TRIBOL_USE_HIP
+            case(ExecutionMode::Hip):
+               m_search = new BvhSearch<2, axom::HIP_EXEC<TRIBOL_BLOCK_SIZE>>(m_coupling_scheme);
+               break;
+            #endif
             default:
                SLIC_ERROR("Invalid execution mode.");
                break;
@@ -819,6 +824,11 @@ InterfacePairFinder::InterfacePairFinder(CouplingScheme* cs)
             #ifdef TRIBOL_USE_CUDA
             case(ExecutionMode::Cuda):
                m_search = new BvhSearch<3, axom::CUDA_EXEC<TRIBOL_BLOCK_SIZE>>(m_coupling_scheme);
+               break;
+            #endif
+            #ifdef TRIBOL_USE_HIP
+            case(ExecutionMode::Hip):
+               m_search = new BvhSearch<3, axom::HIP_EXEC<TRIBOL_BLOCK_SIZE>>(m_coupling_scheme);
                break;
             #endif
             default:
