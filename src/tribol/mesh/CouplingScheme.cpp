@@ -517,14 +517,6 @@ bool CouplingScheme::isValidCase()
       this->m_contactCase = NO_CASE;
    }
 
-   // catch incorrectly specified AUTO contact case
-   if (this->m_contactCase == AUTO &&
-       (this->m_meshId1 != this->m_meshId2))
-   {
-      this->m_couplingSchemeInfo.cs_case_info = SPECIFYING_NONE_WITH_TWO_REGISTERED_MESHES;
-      this->m_contactCase = NO_CASE;
-   }
-
    // specify auto-contact specific interpenetration check and verify 
    // element thicknesses have been registered
    parameters_t& params = parameters_t::getInstance();
