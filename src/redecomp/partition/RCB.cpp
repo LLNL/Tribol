@@ -118,8 +118,12 @@ BisecTree<RCBInfo<NDIMS>> RCB<NDIMS>::BuildProblemTree(
   total_ents = TotalEntities(total_ents);
   // set max_out_of_balance based on number of elements in the mesh
   auto mesh_max_out_of_balance = std::max(
-    std::pow(2.0/static_cast<double>(total_ents), 1.0/static_cast<double>(NDIMS - 1)), 
+    std::pow(2.0*static_cast<double>(n_parts)/static_cast<double>(total_ents), 1.0/static_cast<double>(NDIMS - 1)), 
     max_out_of_balance_
+  );
+  SLIC_DEBUG_ROOT_IF(mesh_max_out_of_balance != max_out_of_balance_, 
+    axom::fmt::format("Entity out of balance tolerance modified from {} to {}.",
+    max_out_of_balance_, mesh_max_out_of_balance)
   );
   // construct an AABB of the whole domain in the root node
   (*problem_tree.begin())[0].bbox_ = DomainBoundingBox(coords_by_mesh);
@@ -154,6 +158,7 @@ BisecTree<RCBInfo<NDIMS>> RCB<NDIMS>::BuildProblemTree(
         [&bbox_range](int i, int j) {return bbox_range[i] > bbox_range[j];});
 
       auto axis_ok = false;
+      auto actual_left_prop = 0.0;
       for (auto cut_ax : best_axes)
       {
         auto bbox_min = (*node_it).bbox_.getMin();
@@ -176,7 +181,7 @@ BisecTree<RCBInfo<NDIMS>> RCB<NDIMS>::BuildProblemTree(
           (*right_it.second).bbox_ = BoundingBox<NDIMS>(right_min, bbox_max);
 
           auto n_ents = CountEntities((*left_it.second).bbox_, (*right_it.second).bbox_, coords_by_mesh);
-          auto actual_left_prop = static_cast<double>(n_ents.first) 
+          actual_left_prop = static_cast<double>(n_ents.first) 
             / static_cast<double>(n_ents.first + n_ents.second);
           if (actual_left_prop < left_prop  - mesh_max_out_of_balance)
           {
@@ -219,11 +224,13 @@ BisecTree<RCBInfo<NDIMS>> RCB<NDIMS>::BuildProblemTree(
 
         if (axis_ok) break;
       }
-      // none of the axes worked.  terminate the program
-      if (!axis_ok)
-      {
-        SLIC_ERROR("RCB domain decomposition unsuccessful.");
-      }
+      // none of the axes worked.  issue a warning but continue.
+      SLIC_WARNING_ROOT_IF(!axis_ok, 
+        axom::fmt::format("RCB domain decomposition unsuccessful.\n"
+        "  Max out of balance tolerance: {}\n"
+        "  Proportion of entities on left of cut: {}\n"
+        "  Desired proportion of entites on left of cut: {}\n",
+        mesh_max_out_of_balance, left_prop, actual_left_prop));
     }
   }
 
