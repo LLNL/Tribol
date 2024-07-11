@@ -67,14 +67,14 @@ void registerMfemCouplingScheme( integer cs_id,
       {
          pressure_vdim = 1;
       }
-      else if (contact_model == TIED || contact_model == COULOMB)
+      else if (contact_model == TIED_NORMAL || contact_model == COULOMB)
       {
          pressure_vdim = mesh.SpaceDimension();
       }
       else
       {
          SLIC_ERROR_ROOT("Unsupported contact model. "
-           "Only FRICTIONLESS, TIED, and COULOMB supported.");
+           "Only FRICTIONLESS, TIED_NORMAL, and COULOMB supported.");
       }
       // create pressure field on the parent-linked boundary submesh and
       // transfer operators to the redecomp level

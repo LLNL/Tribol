@@ -97,6 +97,8 @@ enum ContactCase
 {
   NO_CASE,       ///! No case specified for chosen mode and/or method
   AUTO,          ///! Auto contact
+  TIED_NORMAL,   ///! Tied in the surface normal direction
+  TIED_FULL,     ///! Tied in the surface normal and tangential directions
   NO_SLIDING,    ///! User may specify no sliding, simplifying search update
   NUM_CONTACT_CASES
 };
@@ -118,11 +120,11 @@ enum ContactMethod // all mortar methods go first
  */
 enum ContactModel
 {
-  NO_CONTACT,   ///! No contact
-  FRICTIONLESS, ///! Frictionless, normal contact only
-  TIED,         ///! Tied contact, not supported
-  COULOMB,      ///! Coulomb friction model, not supported
-  NULL_MODEL,   ///! Null model, for use with ContactMethod = MORTAR_WEIGHTS
+  NO_CONTACT,                     ///! No contact
+  FRICTIONLESS,                   ///! Frictionless, normal contact only
+  COULOMB,                        ///! Coulomb friction model, not supported
+  ADHESION_SEPARATION_SCALAR_LAW, ///! Scalar pressure law for the separation of adhered surfaces (Used with tied contact)
+  NULL_MODEL,                     ///! Null model, for use with ContactMethod = MORTAR_WEIGHTS
   NUM_CONTACT_MODELS
 };
 

@@ -672,7 +672,7 @@ bool CouplingScheme::isValidModel()
       {
          if ( this->m_contactModel != FRICTIONLESS &&
               this->m_contactModel != NULL_MODEL   &&
-              this->m_contactModel != TIED )
+              this->m_contactModel != TIED_NORMAL )
          {
             this->m_couplingSchemeErrors.cs_model_error = NO_MODEL_IMPLEMENTATION_FOR_REGISTERED_METHOD;
             return false;
@@ -1157,7 +1157,7 @@ real CouplingScheme::getGapTol( int fid1, int fid2 ) const
 
          switch ( m_contactModel ) {
 
-            case TIED :
+            case TIED_NORMAL :
                gap_tol = params.gap_tied_tol *
                          axom::utilities::max( mesh1.m_faceRadius[fid1],
                                                mesh2.m_faceRadius[fid2] );

@@ -48,7 +48,7 @@ int ApplyInterfacePhysics( CouplingScheme const * cs,
                   // gap penalty enforcement routine
                   err_nrml = ApplyNormal< COMMON_PLANE, PENALTY >( cs );
                   break;
-               case TIED :
+               case TIED_NORMAL :
                   err_nrml = ApplyNormal< COMMON_PLANE, PENALTY >( cs );
                   break;
                default:
