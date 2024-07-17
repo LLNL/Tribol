@@ -517,29 +517,39 @@ bool CouplingScheme::isValidCase()
       this->m_contactCase = NO_CASE;
    }
 
-   // specify auto-contact specific interpenetration check and verify 
-   // element thicknesses have been registered
    parameters_t& params = parameters_t::getInstance();
-   if (this->m_contactCase == AUTO)
-   { 
-      params.auto_interpen_check = true;
-
-      MeshManager & meshManager = MeshManager::getInstance(); 
-      MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
-      MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
-
-      if (!mesh1.m_elemData.m_is_element_thickness_set ||
-          !mesh2.m_elemData.m_is_element_thickness_set)
-      {
-         this->m_couplingSchemeErrors.cs_case_error = INVALID_CASE_DATA;
-         return false;
-      }
-   }
-   else // reset params.auto_interpen_check if true from previous coupling scheme
+   if (this->m_contactMethod == COMMON_PLANE)
    {
-      params.auto_interpen_check = false;
-   }
-   
+      switch (this->m_contactCase)
+      {
+         case AUTO:
+         {
+            // specify auto-contact specific interpenetration check and verify 
+            // element thicknesses have been registered
+            params.auto_interpen_check = true;
+
+            MeshManager & meshManager = MeshManager::getInstance(); 
+            MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
+            MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
+
+            if (!mesh1.m_elemData.m_is_element_thickness_set ||
+                !mesh2.m_elemData.m_is_element_thickness_set)
+            {
+               this->m_couplingSchemeErrors.cs_case_error = INVALID_CASE_DATA;
+               return false;
+            }
+            break;
+         }
+         case TIED_FULL:
+         {
+            this->m_couplingSchemeErrors.cs_case_error = NO_CASE_IMPLEMENTATION;
+            break;
+         }
+         default:
+            params.auto_interpen_check = false;
+      } // end switch on case
+   } // end if check on common-plane
+
    // if we are here we have modified the case with no error.
    this->m_couplingSchemeErrors.cs_case_error = NO_CASE_ERROR;
 
@@ -671,10 +681,14 @@ bool CouplingScheme::isValidModel()
       case COMMON_PLANE:
       {
          if ( this->m_contactModel != FRICTIONLESS &&
-              this->m_contactModel != NULL_MODEL   &&
-              this->m_contactModel != TIED_NORMAL )
+              this->m_contactModel != NULL_MODEL )
          {
             this->m_couplingSchemeErrors.cs_model_error = NO_MODEL_IMPLEMENTATION_FOR_REGISTERED_METHOD;
+            return false;
+         }   
+         if ( this->m_contactCase == TIED_NORMAL && this->m_contactModel == ADHESION_SEPARATION_SCALAR_LAW )
+         {
+            this->m_couplingSchemeErrors.cs_model_error = NO_MODEL_IMPLEMENTATION;
             return false;
          }   
          break;
@@ -1155,7 +1169,7 @@ real CouplingScheme::getGapTol( int fid1, int fid2 ) const
 
       case COMMON_PLANE :
 
-         switch ( m_contactModel ) {
+         switch ( m_contactCase ) {
 
             case TIED_NORMAL :
                gap_tol = params.gap_tied_tol *
