@@ -29,7 +29,7 @@ variables:
       - _tribol_build_and_test_*/build-*/junit.xml
 
 include:
-  - local: .gitlab/build_quartz.yml
+  - local: .gitlab/build_ruby.yml
   - local: .gitlab/build_lassen.yml
   # ID token requirement for Gitlab 17.0+
   - project: 'lc-templates/id_tokens'
