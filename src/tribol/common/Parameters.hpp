@@ -73,7 +73,8 @@ enum VisType
 };
 
 /*!
- * \brief Tribol supports the following different contact modes:
+ * \brief Enumerates the contact modes that specify paired topologies in an interaction
+ *
  *
  * The contact mode enumerates the two-sided pairing of mesh entities 
  * (element topologies) in an interaction. These may be combinations 
@@ -92,7 +93,12 @@ enum ContactMode
  * \brief Enumerates the available contact cases  
  *
  * The contact case enumerates specializations, or Tribol use-cases that require
- * special algorithmic considerations beyond standard Lagrangian contact.
+ * special algorithmic considerations beyond standard Lagrangian contact. Note,
+ * the use of auto-contact cannot be used with the tied contact variants. This 
+ * may be a limitation down the road, but for now, the very use case of TIED_*
+ * implies that a host-code knows what two surfaces are tied in a given interaction,
+ * and is able to explicitly specify these when registering the meshes, coupling schemes,
+ * and/or boundary attributes.
  */
 enum ContactCase
 {
