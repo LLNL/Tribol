@@ -74,12 +74,10 @@ enum VisType
 
 /*!
  * \brief Tribol supports the following different contact modes:
- *  <ul>
- *    <li> <b>SURFACE_TO_SURFACE</b>: surfaces coming to contact. </li>
- *    <li> <b>SURFACE_TO_VOLUME</b>: a surface coming into contact with a
- *          volumetric mesh description </li>
- *    <li> <b>VOLUME_TO_VOLUME</b>: two volumetric
- *  </ul>
+ *
+ * The contact mode enumerates the two-sided pairing of mesh entities 
+ * (element topologies) in an interaction. These may be combinations 
+ * of surface and volume interactions.
  */
 enum ContactMode
 {
@@ -92,6 +90,9 @@ enum ContactMode
 
 /*!
  * \brief Enumerates the available contact cases  
+ *
+ * The contact case enumerates specializations, or Tribol use-cases that require
+ * special algorithmic considerations beyond standard Lagrangian contact.
  */
 enum ContactCase
 {
@@ -105,6 +106,9 @@ enum ContactCase
 
 /*!
  * \brief Enumerates the available contact method options.
+ *
+ * The contact method is the numerical method used to discretize the
+ * contact surface in order to integrate the weak form contact integrals.
  */
 enum ContactMethod // all mortar methods go first
 {
@@ -117,6 +121,10 @@ enum ContactMethod // all mortar methods go first
 
 /*!
  * \brief Enumerates the available contact model options.
+ *
+ * The contact model enumerates interface constitutive modeling options.
+ * These may be paired exclusively with certain contact cases and methods
+ * depending on appropriate physics and/or available implementations.
  */
 enum ContactModel
 {
@@ -130,6 +138,9 @@ enum ContactModel
 
 /*!
  * \brief Enumerates the available enforcement method options.
+ *
+ * The enforcement method is the method used to enforce the contact
+ * constraints paired with a given contact numerical method.
  */
 enum EnforcementMethod
 {
