@@ -483,11 +483,15 @@ bool CouplingScheme::isValidMode()
 //------------------------------------------------------------------------------
 bool CouplingScheme::isValidCase()
 {
+   // set to no error until otherwise noted
+   this->m_couplingSchemeErrors.cs_case_error = NO_CASE_ERROR;
+   bool isValid = true; // pre-set to a valid case
+
    // check if contactCase is not an existing option
    if ( !in_range(this->m_contactCase, NUM_CONTACT_CASES) )  
    {
       this->m_couplingSchemeErrors.cs_case_error = INVALID_CASE;
-      return false;
+      isValid = false;
    }
 
    // modify incompatible case with SURFACE_TO_SURFACE_CONFORMING to 
@@ -536,13 +540,16 @@ bool CouplingScheme::isValidCase()
                 !mesh2.m_elemData.m_is_element_thickness_set)
             {
                this->m_couplingSchemeErrors.cs_case_error = INVALID_CASE_DATA;
-               return false;
+               isValid = false;
             }
             break;
          }
          case TIED_FULL:
          {
+            // uncomment when there is an implementation
+            //params.auto_interpen_check = false;
             this->m_couplingSchemeErrors.cs_case_error = NO_CASE_IMPLEMENTATION;
+            isValid = false;
             break;
          }
          default:
@@ -550,10 +557,7 @@ bool CouplingScheme::isValidCase()
       } // end switch on case
    } // end if check on common-plane
 
-   // if we are here we have modified the case with no error.
-   this->m_couplingSchemeErrors.cs_case_error = NO_CASE_ERROR;
-
-   return true;
+   return isValid;
 } // end CouplingScheme::isValidCase()
 
 //------------------------------------------------------------------------------
