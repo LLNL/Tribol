@@ -41,18 +41,23 @@ int ApplyInterfacePhysics( CouplingScheme const * cs,
       switch ( cs->getEnforcementMethod() )
       {
          case PENALTY:
+            switch ( cs->getContactCase() )
+            {
+               // apply normal physics for ALL cases
+               default:
+               {
+                  err_nrml = ApplyNormal< COMMON_PLANE, PENALTY >( cs );
+                  break;
+               }
+            }
+            // query the model for application of tangential physics
             switch ( cs->getContactModel() )
             {
-               case FRICTIONLESS :
-                  // Note: gap rate pressure contributions checked in regular
-                  // gap penalty enforcement routine
-                  err_nrml = ApplyNormal< COMMON_PLANE, PENALTY >( cs );
-                  break;
-               case TIED :
-                  err_nrml = ApplyNormal< COMMON_PLANE, PENALTY >( cs );
-                  break;
+               // no tangential physics implemented yet
                default:
+               {
                   break;
+               }
             } // end switch on contact model
             break;
          default: 
