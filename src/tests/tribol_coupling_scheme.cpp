@@ -449,7 +449,7 @@ TEST_F( CouplingSchemeTest, mortar_tied )
                                   tribol::SURFACE_TO_SURFACE,
                                   tribol::NO_CASE,
                                   tribol::SINGLE_MORTAR,
-                                  tribol::TIED,
+                                  tribol::TIED_NORMAL,
                                   tribol::LAGRANGE_MULTIPLIER,
                                   tribol::BINNING_GRID );
 
@@ -515,9 +515,9 @@ TEST_F( CouplingSchemeTest, common_plane_tied )
 
    tribol::registerCouplingScheme(0, 0, 1, 
                                   tribol::SURFACE_TO_SURFACE,
-                                  tribol::NO_CASE,
+                                  tribol::TIED_NORMAL,
                                   tribol::COMMON_PLANE,
-                                  tribol::TIED,
+                                  tribol::FRICTIONLESS,
                                   tribol::PENALTY,
                                   tribol::BINNING_GRID );
 
