@@ -224,7 +224,7 @@ BisecTree<RCBInfo<NDIMS>> RCB<NDIMS>::BuildProblemTree(
         if (axis_ok) break;
       }
       // none of the axes worked.  issue a warning but continue.
-      SLIC_DEBUG_ROOT_IF(!axis_ok, 
+      SLIC_WARNING_ROOT_IF(!axis_ok, 
         axom::fmt::format("RCB domain decomposition unsuccessful.\n"
         "  Max out of balance tolerance: {}\n"
         "  Total entities to split: {}\n"
