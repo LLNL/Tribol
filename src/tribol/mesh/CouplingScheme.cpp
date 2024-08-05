@@ -389,6 +389,9 @@ bool CouplingScheme::isValidCouplingScheme()
    MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
    MeshData & mesh2 = meshManager.GetMeshInstance( this->m_meshId2 );
 
+   // set boolean for null meshes
+   this->m_nullMeshes = mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0;
+
    // check for invalid mesh topology matches in a coupling scheme
    if (mesh1.m_elementType != mesh2.m_elementType)
    {
@@ -402,13 +405,6 @@ bool CouplingScheme::isValidCouplingScheme()
    if (!mesh1.m_isValid || !mesh2.m_isValid)
    {
       return false;
-   }
-   
-   // set boolean for null meshes
-   if ( mesh1.m_numCells <= 0 || mesh2.m_numCells <= 0 )
-   {
-      this->m_nullMeshes = true;
-      valid = true; // a null-mesh coupling scheme should still be valid
    }
 
    // check valid contact mode. Not all modes have an implementation
