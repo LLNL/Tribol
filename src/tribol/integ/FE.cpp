@@ -345,9 +345,9 @@ void InvIso( const real  x[3],
 
 //       check to make sure point is inside isoparametric quad
          bool in_quad = true;
-         if(std::abs(xi[0]) > 1. || std::abs(xi[0]) > 1.) 
+         if(std::abs(xi[0]) > 1. || std::abs(xi[1]) > 1.) 
          {
-           if(std::abs(xi[0]) > 1.+100*xtol || std::abs(xi[0]) > 1.+100*xtol) // should have some tolerance dependent conv tol?
+           if(std::abs(xi[0]) > 1.+100*xtol || std::abs(xi[1]) > 1.+100*xtol) // should have some tolerance dependent conv tol?
            {
               in_quad = false;
            }
