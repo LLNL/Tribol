@@ -192,7 +192,7 @@ void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
                EXPECT_LE( force_mag, 0. );
             }
             else {
-               // no-op, TIED is a special case where we 
+               // no-op, TIED_NORMAL is a special case where we 
                // support all force 'sense' (i.e. tension AND compression)
             }
          }

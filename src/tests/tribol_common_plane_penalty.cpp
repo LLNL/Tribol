@@ -191,7 +191,7 @@ void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
                EXPECT_LE( force_mag, 0. );
             }
             else {
-               // no-op, TIED is a special case where we support 
+               // no-op, TIED_NORMAL is a special case where we support 
                // all force 'senses' (i.e. tension and compression)
             }
          }
@@ -558,7 +558,7 @@ TEST_F( CommonPlaneTest, tied_contact_check )
 
    int test_mesh_update_err = 
       this->m_mesh.tribolSetupAndUpdate( tribol::COMMON_PLANE, tribol::PENALTY, 
-                                         tribol::TIED, tribol::NO_CASE, false, parameters );
+                                         tribol::FRICTIONLESS, tribol::TIED_NORMAL, false, parameters );
 
    EXPECT_EQ( test_mesh_update_err, 0 );
 

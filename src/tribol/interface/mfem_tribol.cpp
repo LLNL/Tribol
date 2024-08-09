@@ -57,6 +57,10 @@ void registerMfemCouplingScheme( IndexT cs_id,
    );
    auto& coupling_scheme = CouplingSchemeManager::getInstance().at(cs_id);
    coupling_scheme.setMPIComm(mesh.GetComm());
+
+   // Set data required for use with Lagrange multiplier enforcement option.
+   // Coupling scheme validity will be checked later, but here some initial 
+   // data is created/initialized for use with LMs.
    if (enforcement_method == LAGRANGE_MULTIPLIER)
    {
       std::unique_ptr<mfem::FiniteElementCollection> pressure_fec 
@@ -65,18 +69,21 @@ void registerMfemCouplingScheme( IndexT cs_id,
             mesh.SpaceDimension()
          );
       int pressure_vdim = 0;
-      if (contact_model == FRICTIONLESS)
+      if (contact_model == FRICTIONLESS) // only contact model supported with Lagrange multipliers now
       {
          pressure_vdim = 1;
       }
-      else if (contact_model == TIED || contact_model == COULOMB)
-      {
-         pressure_vdim = mesh.SpaceDimension();
-      }
+      // TODO add the following if they are implemented with Lagrange multipliers:
+      //
+      // 1) contact_model == COULOMB
+      // 2) contact_case == TIED_NORMAL
+      // 3) contact_case == TIED_FULL
+      //
+      // and set pressure_vdim = mesh.SpaceDimension();
       else
       {
          SLIC_ERROR_ROOT("Unsupported contact model. "
-           "Only FRICTIONLESS, TIED, and COULOMB supported.");
+           "Only FRICTIONLESS is supported with Lagrange multipliers.");
       }
       // create pressure field on the parent-linked boundary submesh and
       // transfer operators to the redecomp level

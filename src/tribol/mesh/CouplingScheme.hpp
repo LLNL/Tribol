@@ -119,7 +119,7 @@ public:
 
   private:
     PARAM m_parameters;
-    ContactModel m_contact_model;
+    ContactCase m_contact_case;
     EnforcementOptions m_enforcement_options;
     MESH m_mesh1;
     MESH m_mesh2;

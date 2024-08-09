@@ -72,13 +72,12 @@ enum VisType
 };
 
 /*!
- * \brief Tribol supports the following different contact modes:
- *  <ul>
- *    <li> <b>SURFACE_TO_SURFACE</b>: surfaces coming to contact. </li>
- *    <li> <b>SURFACE_TO_VOLUME</b>: a surface coming into contact with a
- *          volumetric mesh description </li>
- *    <li> <b>VOLUME_TO_VOLUME</b>: two volumetric
- *  </ul>
+ * \brief Enumerates the contact modes that specify paired topologies in an interaction
+ *
+ *
+ * The contact mode enumerates the two-sided pairing of mesh entities 
+ * (element topologies) in an interaction. These may be combinations 
+ * of surface and volume interactions.
  */
 enum ContactMode
 {
@@ -91,17 +90,30 @@ enum ContactMode
 
 /*!
  * \brief Enumerates the available contact cases  
+ *
+ * The contact case enumerates specializations, or Tribol use-cases that require
+ * special algorithmic considerations beyond standard Lagrangian contact. Note,
+ * the use of auto-contact cannot be used with the tied contact variants. This 
+ * may be a limitation down the road, but for now, the very use case of TIED_*
+ * implies that a host-code knows what two surfaces are tied in a given interaction,
+ * and is able to explicitly specify these when registering the meshes, coupling schemes,
+ * and/or boundary attributes.
  */
 enum ContactCase
 {
   NO_CASE,       ///! No case specified for chosen mode and/or method
   AUTO,          ///! Auto contact
+  TIED_NORMAL,   ///! Tied in the surface normal direction
+  TIED_FULL,     ///! Tied in the surface normal and tangential directions
   NO_SLIDING,    ///! User may specify no sliding, simplifying search update
   NUM_CONTACT_CASES
 };
 
 /*!
  * \brief Enumerates the available contact method options.
+ *
+ * The contact method is the numerical method used to discretize the
+ * contact surface in order to integrate the weak form contact integrals.
  */
 enum ContactMethod // all mortar methods go first
 {
@@ -114,19 +126,26 @@ enum ContactMethod // all mortar methods go first
 
 /*!
  * \brief Enumerates the available contact model options.
+ *
+ * The contact model enumerates interface constitutive modeling options.
+ * These may be paired exclusively with certain contact cases and methods
+ * depending on appropriate physics and/or available implementations.
  */
 enum ContactModel
 {
-  NO_CONTACT,   ///! No contact
-  FRICTIONLESS, ///! Frictionless, normal contact only
-  TIED,         ///! Tied contact, not supported
-  COULOMB,      ///! Coulomb friction model, not supported
-  NULL_MODEL,   ///! Null model, for use with ContactMethod = MORTAR_WEIGHTS
+  NO_CONTACT,                     ///! No contact
+  FRICTIONLESS,                   ///! Frictionless, normal contact only
+  COULOMB,                        ///! Coulomb friction model, not supported
+  ADHESION_SEPARATION_SCALAR_LAW, ///! Scalar pressure law for the separation of adhered surfaces (Used with tied contact)
+  NULL_MODEL,                     ///! Null model, for use with ContactMethod = MORTAR_WEIGHTS
   NUM_CONTACT_MODELS
 };
 
 /*!
  * \brief Enumerates the available enforcement method options.
+ *
+ * The enforcement method is the method used to enforce the contact
+ * constraints paired with a given contact numerical method.
  */
 enum EnforcementMethod
 {
