@@ -318,7 +318,7 @@ TRIBOL_HOST_DEVICE void Local2DToGlobalCoords( RealT xloc, RealT yloc,
 } // end Local2DToGlobalCoords()
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE void GlobalTo2DLocalCoords( const RealT* const pX, 
+TRIBOL_HOST_DEVICE bool GlobalTo2DLocalCoords( const RealT* const pX, 
                                                const RealT* const pY, 
                                                const RealT* const pZ,
                                                RealT e1X, RealT e1Y, RealT e1Z,
@@ -327,9 +327,13 @@ TRIBOL_HOST_DEVICE void GlobalTo2DLocalCoords( const RealT* const pX,
                                                RealT* const pLX, 
                                                RealT* const pLY, int size )
 {
-
-  //  SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
-  //                "GlobalTo2DLocalCoords: local coordinate pointers are null");
+   // TODO: Refactor such that the check isn't needed
+   // SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
+   //               "GlobalTo2DLocalCoords: local coordinate pointers are null");
+   if (size > 0 && (pLX == nullptr || pLY == nullptr))
+   {
+      return false;
+   }
 
    // loop over projected nodes
    for (int i=0; i<size; ++i) {
@@ -346,7 +350,7 @@ TRIBOL_HOST_DEVICE void GlobalTo2DLocalCoords( const RealT* const pX,
     
    }
 
-   return;
+   return true;
 
 } // end GlobalTo2DLocalCoords()
 
@@ -372,13 +376,17 @@ void GlobalTo2DLocalCoords( RealT pX, RealT pY, RealT pZ,
 } // end GlobalTo2DLocalCoords()
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x, 
+TRIBOL_HOST_DEVICE bool VertexAvgCentroid( const RealT* const x, 
                         const RealT* const y, 
                         const RealT* const z, 
                         const int numVert,
                         RealT& cX, RealT& cY, RealT& cZ )
 {
    //SLIC_ERROR_IF (numVert==0, "VertexAvgCentroid: numVert = 0.");
+   if (numVert == 0)
+   {
+      return false;
+   }
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -401,17 +409,21 @@ TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x,
    cY *= fac;
    cZ *= fac;
 
-   return;
+   return true;
 
 } // end VertexAvgCentroid()
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x, 
+TRIBOL_HOST_DEVICE bool VertexAvgCentroid( const RealT* const x, 
                                            const int dim,
                                            const int numVert,
                                            RealT& cX, RealT& cY, RealT& cZ )
 {
-  //  SLIC_ERROR_IF(numVert==0, "VertexAvgCentroid: numVert = 0.");
+   // SLIC_ERROR_IF(numVert==0, "VertexAvgCentroid: numVert = 0.");
+   if (numVert == 0)
+   {
+      return false;
+   }
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -434,17 +446,21 @@ TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x,
    cY *= fac;
    cZ *= fac;
 
-   return;
+   return true;
 
 } // end VertexAvgCentroid()
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE void PolyAreaCentroid( const RealT* const x, 
+TRIBOL_HOST_DEVICE bool PolyAreaCentroid( const RealT* const x, 
                                           const int dim,
                                           const int numVert,
                                           RealT& cX, RealT& cY, RealT& cZ )
 {
-  //  SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
+   // SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
+   if (numVert == 0)
+   {
+      return false;
+   }
 
    // (re)initialize the input/output centroid components
    cX = 0.0;
@@ -499,7 +515,7 @@ TRIBOL_HOST_DEVICE void PolyAreaCentroid( const RealT* const x,
    cY /= area_sum;
    cZ /= area_sum;
 
-   return;
+   return true;
 
 } // end PolyAreaCentroid()
 
@@ -549,10 +565,6 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // overlap between two polygons (faces) exists. This routine does not perform a 
    // "proximity" check to determine if the faces are "close enough" to proceed with 
    // the full calculation. This can and probably should be added.
-
-   // check to make sure the intersection polygon vertex pointers are null
-  //  SLIC_ERROR_IF(*polyX != nullptr || *polyY != nullptr, 
-  //                "Intersection2DPolygon: expecting nullptr input arguments polyX, polyY.");
 
    // check numVertexA and numVertexB to make sure they are 3 (triangle) or more
    if (numVertexA < 3 || numVertexB < 3) 
@@ -914,12 +926,13 @@ TRIBOL_HOST_DEVICE bool Point2DInFace( const RealT xPoint, const RealT yPoint,
                                        const RealT xC, const RealT yC, 
                                        const int numPolyVert )
 {
-  //  SLIC_ERROR_IF(numPolyVert<3, "Point2DInFace: number of face vertices is less than 3");
-
-  //  SLIC_ERROR_IF(xPoly == nullptr || yPoly == nullptr, "Point2DInFace: input pointer not set");
-
+   // SLIC_ERROR_IF(numPolyVert<3, "Point2DInFace: number of face vertices is less than 3");
+   if (numPolyVert < 3)
+   {
+      return false;
+   }
    // if face is triangle (numPolyVert), call Point2DInTri once
-   if (numPolyVert == 3)
+   else if (numPolyVert == 3)
    {
       return Point2DInTri( xPoint, yPoint, xPoly, yPoly );
    }
@@ -1272,13 +1285,13 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const Real
 } // end CheckPolySegs()
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE void PolyReorder( RealT* const x, RealT* const y, const int numPoints )
+TRIBOL_HOST_DEVICE bool PolyReorder( RealT* const x, RealT* const y, const int numPoints )
 {
 
    if (numPoints<3)
    {
       // SLIC_DEBUG("PolyReorder: numPoints (" << numPoints << ") < 3.");
-      return;
+      return false;
    }
 
    RealT xC, yC, zC;
@@ -1449,7 +1462,7 @@ TRIBOL_HOST_DEVICE void PolyReorder( RealT* const x, RealT* const y, const int n
       y[i] = ytemp[ newIDs[i] ];
    }
 
-   return;
+   return true;
 
 } // end PolyReorder()
 

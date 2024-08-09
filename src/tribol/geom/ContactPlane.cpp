@@ -5,6 +5,7 @@
 
 #include "ContactPlane.hpp"
 #include "GeomUtilities.hpp"
+#include "tribol/common/ArrayTypes.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
@@ -104,6 +105,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
 
     case ALIGNED_MORTAR:
     {
+      // Note: this is checked by CouplingScheme::isValidMethod()
       if (mesh1.spatialDimension() == 3)
       {
         // TODO refactor to make consistent with CheckFacePair, SRW
@@ -123,6 +125,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
       }
       else
       {
+        // Note: this is checked by CouplingScheme::isValidMethod()
         // SLIC_ERROR_IF(true, "2D ALIGNED_MORTAR not yet implemented.");
       }
       break;
@@ -424,7 +427,8 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
                                                 const MeshData::Viewer& mesh1,
                                                 const MeshData::Viewer& mesh2,
                                                 const Parameters& params,
-                                                bool fullOverlap )
+                                                bool fullOverlap,
+                                                StackArray<bool, 2> errors )
 {
    // Note: Checks #1-#4 are done in the binning
 
@@ -663,11 +667,6 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
                          cp.m_overlapCY, z );
 
    } // end if (interpenOverlap)
-
-   // check to make sure the pointers to the polygonal overlap vertices 
-   // have been set
-  //  SLIC_ERROR_IF(cp.m_polyLocX == nullptr || cp.m_polyLocY == nullptr, 
-  //     "cp.m_polyLocX or cp.m_polyLocY not allocated");
 
    // handle the case where the actual polygon with connectivity 
    // and computed vertex coordinates becomes degenerate due to 
@@ -1995,8 +1994,14 @@ TRIBOL_HOST_DEVICE void ContactPlane2D::checkSegOverlap( const MeshData::Viewer&
                                                          const RealT* const pX2, const RealT* const pY2, 
                                                          const int nV1, const int nV2 )
 {
+   // TODO: Re-write in a way where the assert isn't needed
+#ifdef TRIBOL_USE_CUDA
+   assert(nV1 == 2);
+   assert(nV2 == 2);
+#else
    SLIC_ASSERT( nV1 == 2 );
    SLIC_ASSERT( nV2 == 2 );
+#endif
 
    // get edge ids
    int e1Id = getCpElementId1();

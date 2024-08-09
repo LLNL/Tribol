@@ -37,15 +37,16 @@ TRIBOL_HOST_DEVICE void GalerkinEval( const RealT* const x,
                                       FaceOrderType order_type, BasisEvalType basis_type, 
                                       int dim, int galerkinDim, RealT* nodeVals, RealT* galerkinVal )
 {
-  //  SLIC_ERROR_IF(x==nullptr, "GalerkinEval(): input pointer, x, is NULL.");
-  //  SLIC_ERROR_IF(nodeVals==nullptr, "GalerkinEval(): input pointer, nodeVals, is NULL.");
-  //  SLIC_ERROR_IF(galerkinVal==nullptr, "GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
-  //  SLIC_ERROR_IF(galerkinDim<1, "GalerkinEval(): scalar approximations not yet supported." );
+   // TODO: Refactor such that the checks aren't needed
+   // SLIC_ERROR_IF(x==nullptr, "GalerkinEval(): input pointer, x, is NULL.");
+   // SLIC_ERROR_IF(nodeVals==nullptr, "GalerkinEval(): input pointer, nodeVals, is NULL.");
+   // SLIC_ERROR_IF(galerkinVal==nullptr, "GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
+   // SLIC_ERROR_IF(galerkinDim<1, "GalerkinEval(): scalar approximations not yet supported." );
 
    int numNodes = GetNumFaceNodes( dim, order_type );
-   switch (basis_type)
-   {
-      case PHYSICAL :
+  //  switch (basis_type)
+  //  {
+  //     case PHYSICAL :
          for (int nd=0; nd<numNodes; ++nd)
          {
             RealT phi = 0.;
@@ -55,10 +56,11 @@ TRIBOL_HOST_DEVICE void GalerkinEval( const RealT* const x,
                galerkinVal[i] += nodeVals[i+nd*galerkinDim] * phi;
             } 
          }
-         break;
+        //  break;
       // default :
+        // TODO: Refactor such that the check isn't needed
         //  SLIC_ERROR( "GalerkinEval(): basis_type = PARENT not yet supported." );
-   }
+  //  }
 }
 
 TRIBOL_HOST_DEVICE void EvalBasis( const RealT* const x, 
@@ -76,6 +78,7 @@ TRIBOL_HOST_DEVICE void EvalBasis( const RealT* const x,
    }
    else
    {
+      // TODO: Refactor such that the check isn't needed
       // SLIC_ERROR("EvalBasis: invalid numPoints argument.");
    }
    return;
@@ -87,12 +90,14 @@ TRIBOL_HOST_DEVICE void SegmentBasis( const RealT* const x,
                                       const int numPoints, const int vertexId, 
                                       RealT& phi )
 {
-  //  SLIC_ERROR_IF(numPoints != 2, "SegmentBasis: numPoints is " << numPoints <<
-  //                " but should be 2.");
+   // TODO: Refactor such that the check isn't needed
+   //  SLIC_ERROR_IF(numPoints != 2, "SegmentBasis: numPoints is " << numPoints <<
+   //                " but should be 2.");
 
-  //  // note, vertexId is the index, 0 or 1.
-  //  SLIC_ERROR_IF(vertexId > numPoints-1, "SegmentBasis: vertexId is " << vertexId << 
-  //                " but should be 0 or 1.");
+   // TODO: Refactor such that the check isn't needed
+   //  // note, vertexId is the index, 0 or 1.
+   //  SLIC_ERROR_IF(vertexId > numPoints-1, "SegmentBasis: vertexId is " << vertexId << 
+   //                " but should be 0 or 1.");
 
    // compute length of segment
    RealT vx = x[numPoints*1] - x[numPoints*0];
@@ -139,7 +144,8 @@ TRIBOL_HOST_DEVICE void WachspressBasis( const RealT* const x,
                                          const RealT pX, const RealT pY, const RealT pZ, 
                                          const int numPoints, const int vertexId, RealT& phi )
 {
-  //  SLIC_ERROR_IF(numPoints<3, "WachspressBasis: numPoints < 3.");
+   // TODO: Refactor such that the check isn't needed
+   //  SLIC_ERROR_IF(numPoints<3, "WachspressBasis: numPoints < 3.");
 
    // first compute the areas of all the triangles formed by the i-1,i,i+1 vertices.
    // These consist of all the numerators in the Wachspress formulation
@@ -346,9 +352,9 @@ void InvIso( const RealT  x[3],
 
 //       check to make sure point is inside isoparametric quad
          bool in_quad = true;
-         if(std::abs(xi[0]) > 1. || std::abs(xi[0]) > 1.) 
+         if(std::abs(xi[0]) > 1. || std::abs(xi[1]) > 1.) 
          {
-           if(std::abs(xi[0]) > 1.+100*xtol || std::abs(xi[0]) > 1.+100*xtol) // should have some tolerance dependent conv tol?
+           if(std::abs(xi[0]) > 1.+100*xtol || std::abs(xi[1]) > 1.+100*xtol) // should have some tolerance dependent conv tol?
            {
               in_quad = false;
            }

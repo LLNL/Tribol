@@ -138,6 +138,8 @@ TRIBOL_HOST_DEVICE void Local2DToGlobalCoords( RealT xloc, RealT yloc,
  * \param [in] cZ global z coordinate of local basis shift
  * \param [in,out] pLX array of local x coordinates of input points
  * \param [in,out] pLY array of local y coordinates of input points
+ * 
+ * \return true if calculation successful, false if an error occurred
  *
  * \pre length(pX) >= size 
  * \pre length(pY) >= size 
@@ -148,7 +150,7 @@ TRIBOL_HOST_DEVICE void Local2DToGlobalCoords( RealT xloc, RealT yloc,
  * \note this assumes that the point lies in the plane defined by the 
  *  2D local basis vectors. 
  */
-TRIBOL_HOST_DEVICE void GlobalTo2DLocalCoords( const RealT* const pX, 
+TRIBOL_HOST_DEVICE bool GlobalTo2DLocalCoords( const RealT* const pX, 
                                                const RealT* const pY, 
                                                const RealT* const pZ,
                                                RealT e1X, RealT e1Y, RealT e1Z,
@@ -197,13 +199,15 @@ void GlobalTo2DLocalCoords( RealT pX, RealT pY, RealT pZ,
  * \param [in,out] cX x coordinate of vertex averaged centroid
  * \param [in,out] cY y coordinate of vertex averaged centroid
  * \param [in,out] cZ z coordinate of vertex averaged centroid
+ * 
+ * \return true if calculation successful, false if an error occurred
  *
  * \pre length(x) >= numVert
  * \pre length(y) >= numVert
  * \pre length(z) >= numVert
  *
  */
-TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x, 
+TRIBOL_HOST_DEVICE bool VertexAvgCentroid( const RealT* const x, 
                                            const RealT* const y, 
                                            const RealT* const z, 
                                            const int numVert,
@@ -219,11 +223,13 @@ TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x,
  * \param [in,out] cX x coordinate of vertex averaged centroid
  * \param [in,out] cY y coordinate of vertex averaged centroid
  * \param [in,out] cZ z coordinate of vertex averaged centroid
+ * 
+ * \return true if calculation successful, false if an error occurred
  *
  * \pre length(x) >= numVert
  *
  */
-TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x, 
+TRIBOL_HOST_DEVICE bool VertexAvgCentroid( const RealT* const x, 
                                            const int dim,
                                            const int numVert,
                                            RealT& cX, RealT& cY, RealT& cZ );
@@ -238,11 +244,13 @@ TRIBOL_HOST_DEVICE void VertexAvgCentroid( const RealT* const x,
  * \param [in,out] cX x coordinate of vertex averaged centroid
  * \param [in,out] cY y coordinate of vertex averaged centroid
  * \param [in,out] cZ z coordinate of vertex averaged centroid
+ * 
+ * \return true if calculation successful, false if an error occurred
  *
  * \pre length(x) >= numVert
  *
  */
-TRIBOL_HOST_DEVICE void PolyAreaCentroid( const RealT* const x, 
+TRIBOL_HOST_DEVICE bool PolyAreaCentroid( const RealT* const x, 
                                           const int dim,
                                           const int numVert,
                                           RealT& cX, RealT& cY, RealT& cZ );
@@ -477,13 +485,15 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const Real
  * \param [in,out] x array of local x vertex coordinates
  * \param [in,out] y array of local y vertex coordinates
  * \param [in] numPoints number of vertices
+ * 
+ * \return true if calculation successful, false if an error occurred
  *
  * \pre length(x), length(y) >= numPoints
  *
  * \note This routine takes the unordered set of vertex coordinates of a star convex 
  *  polygon and orders the vertices in counter-clockwise orientation.
  */
-TRIBOL_HOST_DEVICE void PolyReorder( RealT* const x, RealT* const y, const int numPoints );
+TRIBOL_HOST_DEVICE bool PolyReorder( RealT* const x, RealT* const y, const int numPoints );
 
 /*!
  *
