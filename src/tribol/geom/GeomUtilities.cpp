@@ -328,8 +328,10 @@ TRIBOL_HOST_DEVICE bool GlobalTo2DLocalCoords( const RealT* const pX,
                                                RealT* const pLY, int size )
 {
    // TODO: Refactor such that the check isn't needed
-   // SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
-   //               "GlobalTo2DLocalCoords: local coordinate pointers are null");
+#ifdef TRIBOL_USE_HOST
+   SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
+                 "GlobalTo2DLocalCoords: local coordinate pointers are null");
+#endif
    if (size > 0 && (pLX == nullptr || pLY == nullptr))
    {
       return false;
@@ -419,7 +421,9 @@ TRIBOL_HOST_DEVICE bool VertexAvgCentroid( const RealT* const x,
                                            const int numVert,
                                            RealT& cX, RealT& cY, RealT& cZ )
 {
-   // SLIC_ERROR_IF(numVert==0, "VertexAvgCentroid: numVert = 0.");
+#ifdef TRIBOL_USE_HOST
+   SLIC_ERROR_IF(numVert==0, "VertexAvgCentroid: numVert = 0.");
+#endif
    if (numVert == 0)
    {
       return false;
@@ -456,7 +460,9 @@ TRIBOL_HOST_DEVICE bool PolyAreaCentroid( const RealT* const x,
                                           const int numVert,
                                           RealT& cX, RealT& cY, RealT& cZ )
 {
-   // SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
+#ifdef TRIBOL_USE_HOST
+   SLIC_ERROR_IF(numVert==0, "PolyAreaCentroid: numVert = 0.");
+#endif
    if (numVert == 0)
    {
       return false;
@@ -569,7 +575,9 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // check numVertexA and numVertexB to make sure they are 3 (triangle) or more
    if (numVertexA < 3 || numVertexB < 3) 
    {
-      // SLIC_DEBUG( "Intersection2DPolygon(): one or more degenerate faces with < 3 vertices." );
+#ifdef TRIBOL_USE_HOST
+      SLIC_DEBUG( "Intersection2DPolygon(): one or more degenerate faces with < 3 vertices." );
+#endif
       area = 0.0;
       return INVALID_FACE_INPUT; 
    }
@@ -804,8 +812,10 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
          // debug
          if (k > numPolyVert)
          {
-            // SLIC_DEBUG("Intersection2DPolygon(): number of A vertices interior to B " << 
-            //            "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+#ifdef TRIBOL_USE_HOST
+            SLIC_DEBUG("Intersection2DPolygon(): number of A vertices interior to B " << 
+                       "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+#endif
             return FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
@@ -822,8 +832,10 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
          // debug
          if (k > numPolyVert)
          {
-            // SLIC_DEBUG("Intersection2DPolygon(): number of B vertices interior to A " << 
-            //            "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+#ifdef TRIBOL_USE_HOST
+            SLIC_DEBUG("Intersection2DPolygon(): number of B vertices interior to A " << 
+                       "polygon exceeds total number of overlap vertices. Check interior vertex id values.");
+#endif
             return FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
@@ -926,7 +938,9 @@ TRIBOL_HOST_DEVICE bool Point2DInFace( const RealT xPoint, const RealT yPoint,
                                        const RealT xC, const RealT yC, 
                                        const int numPolyVert )
 {
-   // SLIC_ERROR_IF(numPolyVert<3, "Point2DInFace: number of face vertices is less than 3");
+#ifdef TRIBOL_USE_HOST
+   SLIC_ERROR_IF(numPolyVert<3, "Point2DInFace: number of face vertices is less than 3");
+#endif
    if (numPolyVert < 3)
    {
       return false;
@@ -1270,7 +1284,9 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckPolySegs( const RealT* const x, const Real
       {
          if (k > numNewPoints)
          {
-            // SLIC_DEBUG("checkPolySegs(): index into polyX/polyY exceeds allocated space");
+#ifdef TRIBOL_USE_HOST
+            SLIC_DEBUG("checkPolySegs(): index into polyX/polyY exceeds allocated space");
+#endif
             return FACE_VERTEX_INDEX_EXCEEDS_OVERLAP_VERTICES;
          }
 
@@ -1290,7 +1306,9 @@ TRIBOL_HOST_DEVICE bool PolyReorder( RealT* const x, RealT* const y, const int n
 
    if (numPoints<3)
    {
-      // SLIC_DEBUG("PolyReorder: numPoints (" << numPoints << ") < 3.");
+#ifdef TRIBOL_USE_HOST
+      SLIC_DEBUG("PolyReorder: numPoints (" << numPoints << ") < 3.");
+#endif
       return false;
    }
 

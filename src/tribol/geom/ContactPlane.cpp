@@ -61,7 +61,9 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckInterfacePair( InterfacePair& pair,
         ContactPlane3D cpTemp( &pair, params.overlap_area_frac, interpenOverlap, intermediatePlane);
         FaceGeomError face_err = CheckFacePair( cpTemp, mesh1, mesh2, params, full );
 
-        // SLIC_DEBUG("face_err: " << face_err );
+#ifdef TRIBOL_USE_HOST
+        SLIC_DEBUG("face_err: " << face_err );
+#endif
 
         if (face_err != NO_FACE_GEOM_ERROR)
         {
@@ -427,8 +429,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
                                                 const MeshData::Viewer& mesh1,
                                                 const MeshData::Viewer& mesh2,
                                                 const Parameters& params,
-                                                bool fullOverlap,
-                                                StackArray<bool, 2> errors )
+                                                bool fullOverlap )
 {
    // Note: Checks #1-#4 are done in the binning
 
@@ -562,8 +563,10 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
   
    // compute the overlap area tolerance
    if (cp.m_areaFrac < params.overlap_area_frac ) {
-      // SLIC_DEBUG( "ContactPlane3D::computeAreaTol() the overlap area fraction too small or negative; " << 
-      //             "setting to overlap_area_frac parameter." );
+#ifdef TRIBOL_USE_HOST
+      SLIC_DEBUG( "ContactPlane3D::computeAreaTol() the overlap area fraction too small or negative; " << 
+                  "setting to overlap_area_frac parameter." );
+#endif
       cp.m_areaFrac = params.overlap_area_frac;
    }
 
@@ -674,7 +677,9 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
    // or length tolerances (intersecting polygon segment lengths)
    if (cp.m_numPolyVert < 3) 
    {
-      // SLIC_DEBUG( "degenerate polygon intersection detected.\n" );
+#ifdef TRIBOL_USE_HOST
+      SLIC_DEBUG( "degenerate polygon intersection detected.\n" );
+#endif
       cp.m_inContact = false;
       return DEGENERATE_OVERLAP;
    }
@@ -1194,8 +1199,10 @@ TRIBOL_HOST_DEVICE void ContactPlane3D::computeAreaTol( const MeshData::Viewer& 
                                                         const Parameters& params )
 {
    if (m_areaFrac < params.overlap_area_frac ) {
-      // SLIC_DEBUG( "ContactPlane3D::computeAreaTol() the overlap area fraction too small or negative; " << 
-      //             "setting to overlap_area_frac parameter." );
+#ifdef TRIBOL_USE_HOST
+      SLIC_DEBUG( "ContactPlane3D::computeAreaTol() the overlap area fraction too small or negative; " << 
+                  "setting to overlap_area_frac parameter." );
+#endif
       m_areaFrac = params.overlap_area_frac;
    }
 
@@ -1410,8 +1417,10 @@ TRIBOL_HOST_DEVICE FaceGeomError ContactPlane3D::computeLocalInterpenOverlap(
 
          if (k > 2)
          {
-            // SLIC_DEBUG("ContactPlane3D::computeInterpenOverlap(): too many segment-plane intersections; " << 
-            //            "check for degenerate face " << m_pair->m_element_id1 << "on mesh " << mesh[0]->meshId() << ".");
+#ifdef TRIBOL_USE_HOST
+            SLIC_DEBUG("ContactPlane3D::computeInterpenOverlap(): too many segment-plane intersections; " << 
+                       "check for degenerate face " << m_pair->m_element_id1 << "on mesh " << mesh[0]->meshId() << ".");
+#endif
             interpen = false;
             return DEGENERATE_OVERLAP;
          }
@@ -1908,8 +1917,10 @@ TRIBOL_HOST_DEVICE void ContactPlane2D::computeAreaTol( const MeshData::Viewer& 
 {
    if (m_areaFrac < params.overlap_area_frac)
    {
-      // SLIC_DEBUG( "ContactPlane2D::computeAreaTol() the overlap area fraction too small or negative; " << 
-      //             "setting to overlap_area_frac parameter." );
+#ifdef TRIBOL_USE_HOST
+      SLIC_DEBUG( "ContactPlane2D::computeAreaTol() the overlap area fraction too small or negative; " << 
+                  "setting to overlap_area_frac parameter." );
+#endif
       m_areaFrac = params.overlap_area_frac;
    }
 
@@ -2287,9 +2298,11 @@ TRIBOL_HOST_DEVICE FaceGeomError ContactPlane2D::computeLocalInterpenOverlap(
    // Debug check the number of interpenetrating vertices
    if (k > 2)
    {
-      // SLIC_DEBUG("ContactPlane2D::computeLocalInterpenOverlap() more than 2 interpenetrating vertices detected; " << 
-      //            "check for degenerate geometry for edges (" << edgeId1 << ", " << edgeId2 << ") on meshes (" << 
-      //            m1.meshId() << ", " << m2.meshId() << ").");
+#ifdef TRIBOL_USE_HOST
+      SLIC_DEBUG("ContactPlane2D::computeLocalInterpenOverlap() more than 2 interpenetrating vertices detected; " << 
+                 "check for degenerate geometry for edges (" << edgeId1 << ", " << edgeId2 << ") on meshes (" << 
+                 m1.meshId() << ", " << m2.meshId() << ").");
+#endif
       interpen = false;
       return DEGENERATE_OVERLAP;
    }

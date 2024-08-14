@@ -37,16 +37,18 @@ TRIBOL_HOST_DEVICE void GalerkinEval( const RealT* const x,
                                       FaceOrderType order_type, BasisEvalType basis_type, 
                                       int dim, int galerkinDim, RealT* nodeVals, RealT* galerkinVal )
 {
+#ifdef TRIBOL_USE_HOST
    // TODO: Refactor such that the checks aren't needed
-   // SLIC_ERROR_IF(x==nullptr, "GalerkinEval(): input pointer, x, is NULL.");
-   // SLIC_ERROR_IF(nodeVals==nullptr, "GalerkinEval(): input pointer, nodeVals, is NULL.");
-   // SLIC_ERROR_IF(galerkinVal==nullptr, "GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
-   // SLIC_ERROR_IF(galerkinDim<1, "GalerkinEval(): scalar approximations not yet supported." );
+   SLIC_ERROR_IF(x==nullptr, "GalerkinEval(): input pointer, x, is NULL.");
+   SLIC_ERROR_IF(nodeVals==nullptr, "GalerkinEval(): input pointer, nodeVals, is NULL.");
+   SLIC_ERROR_IF(galerkinVal==nullptr, "GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
+   SLIC_ERROR_IF(galerkinDim<1, "GalerkinEval(): scalar approximations not yet supported." );
+#endif
 
    int numNodes = GetNumFaceNodes( dim, order_type );
-  //  switch (basis_type)
-  //  {
-  //     case PHYSICAL :
+   switch (basis_type)
+   {
+      case PHYSICAL :
          for (int nd=0; nd<numNodes; ++nd)
          {
             RealT phi = 0.;
@@ -56,11 +58,13 @@ TRIBOL_HOST_DEVICE void GalerkinEval( const RealT* const x,
                galerkinVal[i] += nodeVals[i+nd*galerkinDim] * phi;
             } 
          }
-        //  break;
-      // default :
-        // TODO: Refactor such that the check isn't needed
-        //  SLIC_ERROR( "GalerkinEval(): basis_type = PARENT not yet supported." );
-  //  }
+         break;
+      default :
+#ifdef TRIBOL_USE_HOST
+         // TODO: Refactor such that the check isn't needed
+         SLIC_ERROR( "GalerkinEval(): basis_type = PARENT not yet supported." );
+#endif
+   }
 }
 
 TRIBOL_HOST_DEVICE void EvalBasis( const RealT* const x, 
@@ -78,8 +82,10 @@ TRIBOL_HOST_DEVICE void EvalBasis( const RealT* const x,
    }
    else
    {
+#ifdef TRIBOL_USE_HOST
       // TODO: Refactor such that the check isn't needed
-      // SLIC_ERROR("EvalBasis: invalid numPoints argument.");
+      SLIC_ERROR("EvalBasis: invalid numPoints argument.");
+#endif
    }
    return;
 }

@@ -63,6 +63,11 @@ using RealT = double;
   #define TRIBOL_HOST_DEVICE
 #endif
 
+// Define variable when loops are computed on host
+#if !(defined(TRIBOL_USE_CUDA) || defined(TRIBOL_USE_HIP))
+  #define TRIBOL_USE_HOST
+#endif
+
 } // namespace tribol
 
 #endif /* TRIBOL_COMMON_BASICTYPES_HPP_ */
