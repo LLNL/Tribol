@@ -88,12 +88,10 @@ TRIBOL_HOST_DEVICE void transpose( const ArrayT<T, 2, MSPACE>& in,
 {
   auto h_in = in.shape()[0];
   auto w_in = in.shape()[1];
-  // auto h_out = out.shape()[0];
-  // auto w_out = out.shape()[1];
 
 #ifdef TRIBOL_USE_HOST
-  SLIC_ERROR_IF(h_in != w_out, "Input number of rows does not equal output number of columns.");
-  SLIC_ERROR_IF(w_in != h_out, "Input number of columns does not equal output number of rows.");
+  SLIC_ERROR_IF(h_in != out.shape()[1], "Input number of rows does not equal output number of columns.");
+  SLIC_ERROR_IF(w_in != out.shape()[0], "Input number of columns does not equal output number of rows.");
 #endif
 
   for (IndexT i{0}; i < h_in; ++i)
