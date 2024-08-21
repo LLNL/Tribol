@@ -272,11 +272,6 @@ void CouplingSchemeInfo::printCaseInfo()
          SLIC_DEBUG_ROOT("Overriding with ContactCase=NO_CASE with registered ContactMethod."); 
          break;
       }
-      case SPECIFYING_NONE_WITH_TWO_REGISTERED_MESHES:
-      {
-         SLIC_DEBUG_ROOT("ContactCase=AUTO not supported with two different meshes; overriding with ContactCase=NO_CASE.");
-         break;
-      }
       case NO_CASE_INFO:
       {
          break;
