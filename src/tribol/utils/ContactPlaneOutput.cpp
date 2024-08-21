@@ -81,6 +81,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       int cpSize = cpMgr.size();
       bool overlaps { false };
       bool faces    { false };
+      bool meshes   { false };
 
       switch( v_type ) {
          case VIS_FACES :
@@ -91,6 +92,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
             break;
          case VIS_MESH_AND_OVERLAPS :
             overlaps = true;
+            meshes = true;
             break;
          case VIS_FACES_AND_OVERLAPS :
             faces = true;
@@ -99,6 +101,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          case VIS_MESH_FACES_AND_OVERLAPS :
             faces = true;
             overlaps = true;
+            meshes = true;
             break;
          default :
             // Can this be output on root? SRW
@@ -108,7 +111,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
             break;
       } // end switch( v_type )
 
-      if (faces)
+      if (faces && cpSize>0)
       {
          // Compose file name and open file
          std::string name = (nranks > 1)
@@ -244,7 +247,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       } // end if-faces
 
       // open contact plane output file. For now we just output the overlaps
-      if (overlaps)
+      if (overlaps && cpSize>0)
       {
          // Compose file name and open file
          std::string name = (nranks > 1)
@@ -273,7 +276,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
          // count the total number of vertices for all contact plane instances.
          int numPoints = 0;
-         for ( int k=0 ; k< cpSize; ++k )
+         for ( int k=0 ; k<cpSize; ++k )
          {
             // add the number of overlap vertices
             numPoints += cpMgr.m_numPolyVert[k];
@@ -359,141 +362,128 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
       } // end if-overlaps
 
-   } // end write faces and/or overlaps for non-null meshes
-
-   //////////////////////////////////////////////////////////////
-   //                                                          //
-   // Write registered contact meshes for this coupling scheme //
-   //                                                          //
-   //////////////////////////////////////////////////////////////
-   if (!couplingScheme->nullMeshes())
-   {
-      switch( v_type ) {
-        case VIS_MESH :
-           break;
-        case VIS_MESH_AND_OVERLAPS :
-           break;
-        case VIS_MESH_FACES_AND_OVERLAPS :
-           break;
-        default :
-           // no mesh output
-           return;
-      } // end switch( v_type )
-
-
-      std::string name = (nranks > 1)
-            ? axom::fmt::format("mesh_intrfc_cs{:02}_r{:04}_{:07}.vtk", csId, rank, cycle)
-            : axom::fmt::format("mesh_intrfc_cs{:02}_{:07}.vtk", csId, cycle);
-      std::string f_name = axom::utilities::filesystem::joinPath(dir,name);
-
-      std::ofstream mesh;
-      mesh.setf(std::ios::scientific);
-      mesh.open(f_name.c_str());
-
-      mesh << "# vtk DataFile Version 3.0\n";
-      mesh << "vtk output\n";
-      mesh << "ASCII\n";
-      mesh << "DATASET UNSTRUCTURED_GRID\n";
-
-      // Add the cycle and time to FieldData
-      mesh << "FIELD FieldData 3\n";
-      mesh << "TIME 1 1 double\n";
-      mesh << time << "\n";
-      mesh << "CYCLE 1 1 int\n";
-      mesh << cycle << "\n";
-      mesh << "COUPLING_SCHEME 1 1 int\n";
-      mesh << csId << "\n";
-
-      int numTotalNodes = mesh1.m_lengthNodalData +
-                          mesh2.m_lengthNodalData;
-      mesh << "POINTS " << numTotalNodes << " float\n";
-
-      for (int i=0; i<mesh1.m_lengthNodalData; ++i)
+      //////////////////////////////////////////////////////////////
+      //                                                          //
+      // Write registered contact meshes for this coupling scheme //
+      //                                                          //
+      //////////////////////////////////////////////////////////////
+      if (meshes)
       {
-         axom::fmt::print(mesh, "{} {} {}\n",
-            mesh1.m_positionX[i],
-            mesh1.m_positionY[i],
-            dim==3 ? mesh1.m_positionZ[i] : 0.);
-      }
+         std::string name = (nranks > 1)
+               ? axom::fmt::format("mesh_intrfc_cs{:02}_r{:04}_{:07}.vtk", csId, rank, cycle)
+               : axom::fmt::format("mesh_intrfc_cs{:02}_{:07}.vtk", csId, cycle);
+         std::string f_name = axom::utilities::filesystem::joinPath(dir,name);
 
-      for (int i=0; i<mesh2.m_lengthNodalData; ++i)
-      {
-         axom::fmt::print(mesh, "{} {} {}\n",
-            mesh2.m_positionX[i],
-            mesh2.m_positionY[i],
-            dim==3 ? mesh2.m_positionZ[i] : 0.);
-      }
+         std::ofstream mesh;
+         mesh.setf(std::ios::scientific);
+         mesh.open(f_name.c_str());
 
-      // print mesh element connectivity
-      int numTotalElements = mesh1.m_numCells + mesh2.m_numCells;
-      int numSurfaceNodes = mesh1.m_numCells * mesh1.m_numNodesPerCell
-                          + mesh2.m_numCells * mesh2.m_numNodesPerCell;
+         mesh << "# vtk DataFile Version 3.0\n";
+         mesh << "vtk output\n";
+         mesh << "ASCII\n";
+         mesh << "DATASET UNSTRUCTURED_GRID\n";
 
-      axom::fmt::print(mesh, "CELLS {} {}\n", numTotalElements, numTotalElements + numSurfaceNodes);
+         // Add the cycle and time to FieldData
+         mesh << "FIELD FieldData 3\n";
+         mesh << "TIME 1 1 double\n";
+         mesh << time << "\n";
+         mesh << "CYCLE 1 1 int\n";
+         mesh << cycle << "\n";
+         mesh << "COUPLING_SCHEME 1 1 int\n";
+         mesh << csId << "\n";
 
-      for (int i=0; i<mesh1.m_numCells; ++i)
-      {
-         mesh << mesh1.m_numNodesPerCell;
-         for (int a=0; a<mesh1.m_numNodesPerCell; ++a)
+         int numTotalNodes = mesh1.m_lengthNodalData +
+                             mesh2.m_lengthNodalData;
+         mesh << "POINTS " << numTotalNodes << " float\n";
+
+         for (int i=0; i<mesh1.m_lengthNodalData; ++i)
          {
-            int id = mesh1.m_numNodesPerCell * i + a;
-            mesh << " " << mesh1.m_connectivity[id];
-         } // end a-loop over nodes
-         mesh << std::endl;
-      } // end i-loop over cells
+            axom::fmt::print(mesh, "{} {} {}\n",
+               mesh1.m_positionX[i],
+               mesh1.m_positionY[i],
+               dim==3 ? mesh1.m_positionZ[i] : 0.);
+         }
 
-      const int m2_offset = mesh1.m_lengthNodalData;
-      for (int i=0; i<mesh2.m_numCells; ++i)
-      {
-         mesh << mesh2.m_numNodesPerCell;
-         for (int a=0; a<mesh2.m_numNodesPerCell; ++a)
+         for (int i=0; i<mesh2.m_lengthNodalData; ++i)
          {
-            int id = mesh2.m_numNodesPerCell * i + a;
-            mesh << " " << m2_offset + mesh2.m_connectivity[id];
-         } // end a-loop over nodes
+            axom::fmt::print(mesh, "{} {} {}\n",
+               mesh2.m_positionX[i],
+               mesh2.m_positionY[i],
+               dim==3 ? mesh2.m_positionZ[i] : 0.);
+         }
+
+         // print mesh element connectivity
+         int numTotalElements = mesh1.m_numCells + mesh2.m_numCells;
+         int numSurfaceNodes = mesh1.m_numCells * mesh1.m_numNodesPerCell
+                             + mesh2.m_numCells * mesh2.m_numNodesPerCell;
+
+         axom::fmt::print(mesh, "CELLS {} {}\n", numTotalElements, numTotalElements + numSurfaceNodes);
+
+         for (int i=0; i<mesh1.m_numCells; ++i)
+         {
+            mesh << mesh1.m_numNodesPerCell;
+            for (int a=0; a<mesh1.m_numNodesPerCell; ++a)
+            {
+               int id = mesh1.m_numNodesPerCell * i + a;
+               mesh << " " << mesh1.m_connectivity[id];
+            } // end a-loop over nodes
+            mesh << std::endl;
+         } // end i-loop over cells
+
+         const int m2_offset = mesh1.m_lengthNodalData;
+         for (int i=0; i<mesh2.m_numCells; ++i)
+         {
+            mesh << mesh2.m_numNodesPerCell;
+            for (int a=0; a<mesh2.m_numNodesPerCell; ++a)
+            {
+               int id = mesh2.m_numNodesPerCell * i + a;
+               mesh << " " << m2_offset + mesh2.m_connectivity[id];
+            } // end a-loop over nodes
+            mesh << std::endl;
+         } // end i-loop over cells
+
+         // specify integer id for each cell type.
+         // For 4-node quad, id = 9.
+         const int mesh1_element_id = GetVtkElementId( mesh1.m_elementType );
+         const int mesh2_element_id = GetVtkElementId( mesh2.m_elementType );
+
+         if (mesh1_element_id <= 0 || mesh2_element_id <= 0) {
+            SLIC_ERROR("WriteInterfaceMeshToVtk(): " <<
+                       "element type not supported by vtk.");
+         }
+
+         mesh << "CELL_TYPES " << numTotalElements << std::endl;
+         for (int i=0; i<mesh1.m_numCells; ++i)
+         {
+            axom::fmt::print(mesh, "{} ", mesh1_element_id);
+         }
+         for (int i=0; i<mesh2.m_numCells; ++i)
+         {
+            axom::fmt::print(mesh, "{} ", mesh2_element_id);
+         }
          mesh << std::endl;
-      } // end i-loop over cells
-
-      // specify integer id for each cell type.
-      // For 4-node quad, id = 9.
-      const int mesh1_element_id = GetVtkElementId( mesh1.m_elementType );
-      const int mesh2_element_id = GetVtkElementId( mesh2.m_elementType );
-
-      if (mesh1_element_id <= 0 || mesh2_element_id <= 0) {
-         SLIC_ERROR("WriteInterfaceMeshToVtk(): " <<
-                    "element type not supported by vtk.");
-      }
-
-      mesh << "CELL_TYPES " << numTotalElements << std::endl;
-      for (int i=0; i<mesh1.m_numCells; ++i)
-      {
-         axom::fmt::print(mesh, "{} ", mesh1_element_id);
-      }
-      for (int i=0; i<mesh2.m_numCells; ++i)
-      {
-         axom::fmt::print(mesh, "{} ", mesh2_element_id);
-      }
-      mesh << std::endl;
 
 
-      // Add a field to label each face with its source mesh
-      mesh << "CELL_DATA " << numTotalElements << std::endl;
-      mesh << "SCALARS mesh_id int 1" << std::endl;
-      mesh << "LOOKUP_TABLE default" << std::endl;
-      for (int i=0; i<mesh1.m_numCells; ++i)
-      {
-         axom::fmt::print(mesh,  "{} ", meshId1);
-      }
+         // Add a field to label each face with its source mesh
+         mesh << "CELL_DATA " << numTotalElements << std::endl;
+         mesh << "SCALARS mesh_id int 1" << std::endl;
+         mesh << "LOOKUP_TABLE default" << std::endl;
+         for (int i=0; i<mesh1.m_numCells; ++i)
+         {
+            axom::fmt::print(mesh,  "{} ", meshId1);
+         }
 
-      for (int i=0; i<mesh2.m_numCells; ++i)
-      {
-         axom::fmt::print(mesh,  "{} ", meshId2);
-      }
-      mesh << std::endl;
+         for (int i=0; i<mesh2.m_numCells; ++i)
+         {
+            axom::fmt::print(mesh,  "{} ", meshId2);
+         }
+         mesh << std::endl;
 
+         mesh.close();
 
-      mesh.close();
-   } // end write mesh for non-null meshes
+      } // end if (meshes)
+
+   } // end write data for non-null meshes 
 
    return;
 
