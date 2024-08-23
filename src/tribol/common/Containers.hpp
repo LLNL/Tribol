@@ -137,40 +137,40 @@ class DeviceArray2D : public DeviceArrayData<T>
 public:
   TRIBOL_HOST_DEVICE DeviceArray2D()
   : DeviceArrayData<T>(),
-    width_ {0},
-    height_ {0}
+    height_ {0},
+    width_ {0}
   {}
-  TRIBOL_HOST_DEVICE DeviceArray2D(IndexT width, IndexT height)
+  TRIBOL_HOST_DEVICE DeviceArray2D(IndexT height, IndexT width)
   : DeviceArrayData<T>(width * height),
-    width_ {width},
-    height_ {height}
+    height_ {height},
+    width_ {width}
   {}
   TRIBOL_HOST_DEVICE ~DeviceArray2D() = default;
 
   TRIBOL_HOST_DEVICE DeviceArray2D(const DeviceArray2D& other)
   : DeviceArrayData<T>(other),
-    width_ {other.width_},
-    height_ {other.height_}
+    height_ {other.height_},
+    width_ {other.width_}
   {}
   TRIBOL_HOST_DEVICE DeviceArray2D(DeviceArray2D&& other)
   : DeviceArrayData<T>(std::move(other)),
-    width_ {other.width_},
-    height_ {other.height_}
+    height_ {other.height_},
+    width_ {other.width_}
   {}
 
   TRIBOL_HOST_DEVICE DeviceArray2D& operator=(const DeviceArray2D& other)
   {
     DeviceArrayData<T>::operator=(other);
-    width_ = other.width_;
     height_ = other.height_;
+    width_ = other.width_;
     return *this;
   }
 
   TRIBOL_HOST_DEVICE DeviceArray2D& operator=(DeviceArray2D&& other)
   {
     DeviceArrayData<T>::operator=(std::move(other));
-    width_ = other.width_;
     height_ = other.height_;
+    width_ = other.width_;
     other.width_ = 0;
     other.height_ = 0;
     return *this;
@@ -188,25 +188,33 @@ public:
 
   TRIBOL_HOST_DEVICE T& operator()(IndexT i, IndexT j)
   {
-    return DeviceArrayData<T>::data_[i * width_ + j];
+    return DeviceArrayData<T>::data_[i + j * height_];
   }
 
   TRIBOL_HOST_DEVICE const T& operator()(IndexT i, IndexT j) const
   {
-    return DeviceArrayData<T>::data_[i * width_ + j];
+    return DeviceArrayData<T>::data_[i + j * height_];
   }
 
   TRIBOL_HOST_DEVICE IndexT size() const { return DeviceArrayData<T>::size_; }
 
   TRIBOL_HOST_DEVICE T* data() const { return DeviceArrayData<T>::data_; }
   
-  TRIBOL_HOST_DEVICE IndexT width() const { return width_; }
-  
   TRIBOL_HOST_DEVICE IndexT height() const { return height_; }
+  
+  TRIBOL_HOST_DEVICE IndexT width() const { return width_; }
+
+  TRIBOL_HOST_DEVICE void fill(T value)
+  {
+    for (int i{0}; i < size(); ++i)
+    {
+      data()[i] = value;
+    }
+  }
 
 private:
-  IndexT width_;
   IndexT height_;
+  IndexT width_;
 };
 
 template <typename T, IndexT N>

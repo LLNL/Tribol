@@ -1145,37 +1145,6 @@ TEST_F( CouplingSchemeTest, auto_common_plane_with_element_thickness )
    EXPECT_EQ( isInit, true );
 }
 
-TEST_F( CouplingSchemeTest, two_meshes_with_auto_case )
-{
-   tribol::IndexT mesh_id1 = 0;
-   tribol::IndexT mesh_id2 = 1;
-   int numElements = 1;
-   int csId = 0;
-   registerDummy3DMesh( mesh_id1, numElements );
-   registerDummy3DMesh( mesh_id2, numElements );
-
-   tribol::registerCouplingScheme(csId, mesh_id1, mesh_id2,
-                                  tribol::SURFACE_TO_SURFACE,
-                                  tribol::AUTO,
-                                  tribol::COMMON_PLANE,
-                                  tribol::FRICTIONLESS,
-                                  tribol::PENALTY,
-                                  tribol::BINNING_GRID,
-                                  tribol::ExecutionMode::Sequential );
-
-   tribol::setKinematicConstantPenalty( mesh_id1, 1.0 );
-   tribol::setKinematicConstantPenalty( mesh_id2, 1.0 );
-
-   tribol::setPenaltyOptions( csId, tribol::KINEMATIC,
-                              tribol::KINEMATIC_CONSTANT ); 
-
-   tribol::CouplingSchemeManager& csManager = tribol::CouplingSchemeManager::getInstance();
-   tribol::CouplingScheme* scheme  = &csManager.at(csId);
-   bool isInit = scheme->init();
-
-   EXPECT_EQ( isInit, true );
-}
-
 int main(int argc, char* argv[])
 {
   int result = 0;

@@ -64,6 +64,7 @@ TRIBOL_HOST_DEVICE void GalerkinEval( const RealT* const x,
          // TODO: Refactor such that the check isn't needed
          SLIC_ERROR( "GalerkinEval(): basis_type = PARENT not yet supported." );
 #endif
+         break;
    }
 }
 

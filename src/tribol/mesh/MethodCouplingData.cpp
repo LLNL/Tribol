@@ -70,6 +70,7 @@ void SurfaceContactElem::allocateBlockJ( EnforcementMethod enf )
       for (int j{}; j < 2; ++j)
       {
          blockJ(i, j) = DeviceArray2D<RealT>(nPrimal, nPrimal);
+         blockJ(i, j).fill(0.0);
       }
    }
 
@@ -80,10 +81,13 @@ void SurfaceContactElem::allocateBlockJ( EnforcementMethod enf )
       for (int i{}; i < 2; ++i)
       {
          blockJ(i, 2) = DeviceArray2D<RealT>(nPrimal, nDual);
+         blockJ(i, 2).fill(0.0);
          // transpose
          blockJ(2, i) = DeviceArray2D<RealT>(nDual, nPrimal);
+         blockJ(2, i).fill(0.0);
       }
       blockJ(2, 2) = DeviceArray2D<RealT>(nDual, nDual);
+      blockJ(2, 2).fill(0.0);
    }
 }
 
