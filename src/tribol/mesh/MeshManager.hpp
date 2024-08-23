@@ -6,101 +6,43 @@
 #ifndef SRC_MESH_MESHMANAGER_HPP_
 #define SRC_MESH_MESHMANAGER_HPP_
 
-// tribol includes
+// Tribol includes
+#include "tribol/utils/DataManager.hpp"
 #include "tribol/mesh/MeshData.hpp"
-
-// C/C++ includes
-#include <unordered_map> 
 
 namespace tribol
 {
-class MeshManager
-{
-public:
 
-  /*!
-   * \brief Constructor
-   */
-  MeshManager();
-
-  /*!
-   * \brief Destructor
-   */
-  ~MeshManager();
-
-  /*!
-   * \brief Get mesh manager instance 
-   *
-   * \return MeshManager Manager object
-   */
-  static MeshManager & getInstance();
+// template <MemorySpace MSPACE>
 
 
-  /*!
-   * \brief Get mesh data instance 
-   *
-   * \param [in] meshID Id of mesh
-   *
-   * \return MeshData object
-   */
-  MeshData & GetMeshInstance( integer meshID )
-  {
-    return m_meshInstances.at(meshID);
-  }
+// class MeshManager
+// {
+// public:
+//   MeshManager(const MeshManager& other) = delete;
+//   MeshManager(MeshManager&& other) = delete;
+//   void operator=(const MeshManager& other) = delete;
+//   void operator=(MeshManager&& other) = delete;
 
-  /*!
-   * \brief Get mesh data instance 
-   *
-   * \param [in] meshID Id of mesh
-   *
-   * \return MeshData object
-   */
-  MeshData const & GetMeshInstance( integer meshID ) const
-  {
-    return m_meshInstances.at(meshID);
-  }
+//   static MeshManager& getInstance()
+//   {
+//     static MeshManager instance_;
+//     return instance_;
+//   }
 
-  /*!
-   * \brief Creates new mesh data object 
-   *
-   * \param [in] meshID New mesh id
-   *
-   * \return MeshData object
-   */
-  MeshData & CreateMesh( integer meshID )
-  {
-    if ( hasMesh( meshID ) )
-    {
-       m_meshInstances.erase(meshID);
-    }
-    return m_meshInstances[meshID];
-  }
+//   template <MemorySpace MSPACE>
+//   MeshData<MSPACE>& at(IndexT id)
+//   {
+//     return DataManager<MeshData<MSPACE>>::getInstance().at(id);
+//   }
 
-  /*!
-   * \brief Returns std::unordered map mesh instance
-   *
-   * \return Mesh instance
-   */
-  std::unordered_map< integer, MeshData >& GetMeshInstances()
-  {
-    return m_meshInstances;
-  }
+//   template <MemorySpace
 
-  /*!
-   * \brief Returns true if the mesh with input argument id exists
-   *
-   * \param [in] meshID Id of mesh
-   *
-   * \return True if mesh exists
-   */
-  bool hasMesh( integer meshID) const
-  {
-     return m_meshInstances.find(meshID) != m_meshInstances.end();
-  }
+// private:
+//   MeshManager() = default;
+//   ~MeshManager() = default;
+// };
 
-private:
-  std::unordered_map< integer, MeshData > m_meshInstances; ///< Unordered map of mesh instances
+} // end namespace tribol
 
-};
-}
 #endif /* SRC_MESH_MESHMANAGER_HPP_ */

@@ -6,9 +6,14 @@
 #define TRIBOL_COUPLINGSCHEME_HPP_
 
 // Tribol includes
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
+#include "tribol/common/ExecModel.hpp"
 #include "tribol/common/Parameters.hpp"
+#include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/MfemData.hpp"
+#include "tribol/utils/DataManager.hpp"
+#include "tribol/mesh/InterfacePairs.hpp"
+#include "tribol/geom/ContactPlane.hpp"
 
 // Axom includes
 #include "axom/core.hpp"
@@ -60,7 +65,6 @@ public:
 
 // forward declaration
 class MethodData;
-class InterfacePairs;
 
 /*!
  * \brief The CouplingScheme class defines the coupling between two meshes
@@ -82,6 +86,58 @@ class InterfacePairs;
 class CouplingScheme
 {
 public:
+  template <typename T,
+            typename PARAM,
+            typename MESH,
+            typename CP,
+            typename CP2D,
+            typename CP3D>
+  class ViewerBase
+  {
+  public:
+    ViewerBase( T& cs );
+
+    TRIBOL_HOST_DEVICE int spatialDimension() const { return m_mesh1.spatialDimension(); }
+
+    TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh1() const { return m_mesh1; }
+
+    TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh2() const { return m_mesh2; }
+
+    TRIBOL_HOST_DEVICE const EnforcementOptions& getEnforcementOptions() const { return m_enforcement_options; }
+
+    TRIBOL_HOST_DEVICE CP& getContactPlane( IndexT id ) const;
+
+    TRIBOL_HOST_DEVICE RealT getTimestepScale() const { return m_parameters.timestep_scale; }
+
+    /*!
+    * Get the gap tolerance that determines in contact face-pairs for each
+    * supported interface method
+    *
+    * \return the gap tolerance based on the method
+    */
+    TRIBOL_HOST_DEVICE RealT getCommonPlaneGapTol( int fid1, int fid2 ) const;
+
+  private:
+    PARAM m_parameters;
+    ContactCase m_contact_case;
+    EnforcementOptions m_enforcement_options;
+    MESH m_mesh1;
+    MESH m_mesh2;
+    ArrayViewT<CP2D> m_contact_plane2d;
+    ArrayViewT<CP3D> m_contact_plane3d;
+  };
+  using Viewer = ViewerBase<CouplingScheme, 
+                            Parameters, 
+                            MeshData::Viewer,
+                            ContactPlane,
+                            ContactPlane2D,
+                            ContactPlane3D>;
+  using ConstViewer = ViewerBase<const CouplingScheme, 
+                                 const Parameters, 
+                                 const MeshData::Viewer,
+                                 const ContactPlane,
+                                 const ContactPlane2D,
+                                 const ContactPlane3D>;
 
   /*!
    * \brief Default constructor. Disabled.
@@ -91,9 +147,9 @@ public:
   /*!
    * \brief Creates a CouplingSchmeme instance between a pair of meshes
    *
-   * \param [in] params pointer to the parameters object
-   * \param [in] meshId1 ID of the mortar surface
-   * \param [in] meshId2 ID of the nonmortar surface, or ANY_MESH for multiple meshes
+   * \param [in] cs_id coupling scheme id
+   * \param [in] mesh_id1 ID of the mortar surface
+   * \param [in] mesh_id2 ID of the nonmortar surface, or ANY_MESH for multiple meshes
    * \param [in] contact_mode the type of contact, e.g. SURFACE_TO_SURFACE
    * \param [in] contact_case the specific case of contact application, e.g. auto
    * \param [in] contact_method the contact method, e.g. SINGLE_MORTAR
@@ -103,30 +159,43 @@ public:
    *
    * Per-cycle rebinning is enabled by default.
    */
-  CouplingScheme( integer couplingSchemeId, 
-                  integer meshId1,
-                  integer meshId2,
-                  integer contact_mode,
-                  integer contact_case,
-                  integer contact_method,
-                  integer contact_model,
-                  integer enforcement_method,
-                  integer binning_method);
+  CouplingScheme( IndexT cs_id, 
+                  IndexT mesh_id1,
+                  IndexT mesh_id2,
+                  int contact_mode,
+                  int contact_case,
+                  int contact_method,
+                  int contact_model,
+                  int enforcement_method,
+                  int binning_method,
+                  ExecutionMode given_exec_mode = ExecutionMode::Dynamic );
 
-  /*!
-   * \brief Destructor.
-   */
-  ~CouplingScheme();
+  // Prevent copying
+  CouplingScheme(const CouplingScheme& other) = delete;
+  CouplingScheme& operator=(const CouplingScheme& other) = delete;
+  // Enable moving
+  CouplingScheme(CouplingScheme&& other) = default;
+  CouplingScheme& operator=(CouplingScheme&& other) = default;
 
   /// \name Getters
   /// @{
 
-  integer getMeshId1() const { return m_meshId1; }
-  integer getMeshId2() const { return m_meshId2; }
+  int getId() const { return m_id; }
 
-  integer getId() const { return m_id; }
+  int getMeshId1() const { return m_mesh_id1; }
+  int getMeshId2() const { return m_mesh_id2; }
 
-  integer getNumTotalNodes() const { return m_numTotalNodes; }
+  Parameters& getParameters() { return m_parameters; }
+
+  MeshData::Viewer& getMesh1() { return *m_mesh1; }
+  const MeshData::Viewer& getMesh1() const { return *m_mesh1; }
+  MeshData::Viewer& getMesh2() { return *m_mesh2; }
+  const MeshData::Viewer& getMesh2() const { return *m_mesh2; }
+
+  ExecutionMode getExecutionMode() const { return m_exec_mode; }
+  int getAllocatorId() const { return m_allocator_id; }
+
+  int getNumTotalNodes() const { return m_numTotalNodes; }
 
   ContactMode getContactMode() const  { return m_contactMode; }
   ContactCase getContactCase() const  { return m_contactCase; }
@@ -134,6 +203,8 @@ public:
   ContactModel getContactModel() const { return m_contactModel; }
   EnforcementMethod getEnforcementMethod() const { return m_enforcementMethod; }
   BinningMethod getBinningMethod() const { return m_binningMethod; }
+
+  void setBinningMethod(BinningMethod binningMethod) { m_binningMethod = binningMethod; }
 
   MethodData* getMethodData() const { return m_methodData; }
 
@@ -144,11 +215,17 @@ public:
   CouplingSchemeErrors& getCouplingSchemeErrors() { return m_couplingSchemeErrors; }
   CouplingSchemeInfo&   getCouplingSchemeInfo()   { return m_couplingSchemeInfo; }
 
-  integer spatialDimension() const 
-  { 
-     parameters_t & params = parameters_t::getInstance();
-     return params.dimension; 
+  CouplingScheme::Viewer getView() { return *this; }
+  CouplingScheme::ConstViewer getView() const { return *this; }
+
+  int spatialDimension() const
+  {
+    // same for both meshes since meshes are required to have the same element
+    // types
+    return m_mesh1->spatialDimension();
   }
+
+  void updateMeshViews();
 
   /*!
    * Disable/Enable per-cycle rebinning of interface pairs
@@ -167,6 +244,8 @@ public:
         m_fixedBinning = true; 
      }
   }
+
+  void setMPIComm( CommT comm ) { m_parameters.problem_comm = comm; }
 
   /*!
    * Check whether the coupling scheme has been binned
@@ -190,18 +269,32 @@ public:
   bool hasFixedBinning() const { return m_fixedBinning; }
 
   /*!
-   * \brief Returns a pointer to the associated InterfacePairs
+   * \brief Returns a reference to the associated InterfacePairs
    *
-   * \return ptr pointer to the InterfacePairs instance.
+   * \return Reference to the InterfacePairs instance.
    */
-  InterfacePairs* getInterfacePairs( ) { return m_interfacePairs; }
+  ArrayT<InterfacePair>& getInterfacePairs() { return m_interface_pairs; }
 
   /*!
-   * \brief Returns a pointer to the associated InterfacePairs
+   * \brief Returns a const reference to the associated InterfacePairs
    *
-   * \return ptr pointer to the InterfacePairs instance.
+   * \return Reference to the InterfacePairs instance.
    */
-  InterfacePairs* getInterfacePairs( ) const { return m_interfacePairs; }
+  const ArrayT<InterfacePair>& getInterfacePairs() const { return m_interface_pairs; }
+
+  /*!
+   * \brief Returns a view to the associated InterfacePairs
+   *
+   * \return Reference to the InterfacePairs instance.
+   */
+  ArrayViewT<InterfacePair> getInterfacePairsView() { return m_interface_pairs.view(); }
+
+  /*!
+   * \brief Returns a view to the associated InterfacePairs
+   *
+   * \return Reference to the InterfacePairs instance.
+   */
+  const ArrayViewT<const InterfacePair> getInterfacePairsView() const { return m_interface_pairs.view(); }
 
   /// @}
 
@@ -210,7 +303,29 @@ public:
    *
    * \return number of active interface pairs
    */
-  integer getNumActivePairs( ) const { return m_numActivePairs; }
+  int getNumActivePairs( ) const
+  { 
+    return std::max(m_contact_plane2d.size(), m_contact_plane3d.size()); 
+  }
+
+  const ContactPlane& getContactPlane(IndexT id) const
+  {
+    if (spatialDimension() == 2)
+    {
+      return m_contact_plane2d[id];
+    }
+    else
+    {
+      return m_contact_plane3d[id];
+    }
+  }
+
+  /*!
+   * \brief Returns a reference to the associated InterfacePairs
+   *
+   * \return Reference to the InterfacePairs instance.
+   */
+  const ArrayViewT<const ContactPlane3D> get3DContactPlanesView() const { return m_contact_plane3d; }
 
   /*!
    * Get the gap tolerance that determines in contact face-pairs 
@@ -218,7 +333,7 @@ public:
    *
    * \return the gap tolerance based on the method
    */
-  real getGapTol( int fid1, int fid2 ) const;
+  RealT getGapTol( int fid1, int fid2 ) const;
 
   /*!
    * Set whether the coupling scheme has been binned
@@ -320,7 +435,7 @@ public:
    * \return 0 if successful apply
    *
    */
-  int apply( integer cycle, real t, real &dt );
+  int apply( int cycle, RealT t, RealT &dt );
 
   /*!
    * \brief Wrapper around method specific calculation of the Tribol timestep vote 
@@ -328,7 +443,12 @@ public:
    * \param [in/out] dt simulation timestep at given cycle
    *
    */
-  void computeTimeStep( real &dt );
+  void computeTimeStep( RealT &dt );
+
+  void setOutputDirectory( const std::string& directory )
+  {
+    m_output_directory = directory;
+  }
 
   /*!
    * \brief Wrapper to call method specific visualization output routines
@@ -341,8 +461,8 @@ public:
    */
   void writeInterfaceOutput( const std::string& dir,
                              const VisType v_type, 
-                             const integer cycle, 
-                             const real t );
+                             const int cycle, 
+                             const RealT t );
 
   /*!
    * \brief Sets the coupling scheme logging level member variable 
@@ -536,27 +656,36 @@ public:
 
 #endif /* BUILD_REDECOMP */
 
-private:
-
   /*!
    * \brief Computes common-plane specific time step vote
    *
    * \param [in/out] dt simulation timestep at given cycle
    *
    */
-  void computeCommonPlaneTimeStep( real &dt );
+  void computeCommonPlaneTimeStep( RealT &dt );
 
 private:
 
-  integer m_id; ///< Coupling Scheme id
+  IndexT m_id; ///< Coupling Scheme id
 
-  integer m_meshId1; ///< Integer id for mesh 1
-  integer m_meshId2; ///< Integer id for mesh 2
+  IndexT m_mesh_id1; ///< Integer id for mesh 1
+  IndexT m_mesh_id2; ///< Integer id for mesh 2
+
+  std::unique_ptr<MeshData::Viewer> m_mesh1; ///< Pointer to mesh 1 (reset every time init() is called)
+  std::unique_ptr<MeshData::Viewer> m_mesh2; ///< Pointer to mesh 2 (reset every time init() is called)
+
+  ExecutionMode m_given_exec_mode; ///< User preferred execution mode (set by ctor)
+
+  ExecutionMode m_exec_mode; ///< Execution mode for kernels (set when init() is called)
+  int m_allocator_id; ///< Allocator for arrays used in kernels (set when init() is called)
+
+  Parameters m_parameters;
+  std::string m_output_directory = "";     ///! Output directory for visualization dumps
 
   bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
   bool m_isValid {true}; ///< False if the coupling scheme is not valid per call to init()
 
-  integer m_numTotalNodes; ///< Total number of nodes in the coupling scheme
+  int m_numTotalNodes; ///< Total number of nodes in the coupling scheme
 
   ContactMode m_contactMode;             ///< Contact mode
   ContactCase m_contactCase;             ///< Contact case
@@ -571,9 +700,10 @@ private:
   bool m_isBinned; ///< True if binning has occured 
   bool m_isTied; ///< True if surfaces have been "tied" (Tied contact only)
 
-  InterfacePairs* m_interfacePairs; ///< List of interface pairs
+  ArrayT<InterfacePair> m_interface_pairs; ///< List of interface pairs
 
-  integer m_numActivePairs; ///< number of active interface pairs from InterfacePairs list
+  ArrayT<ContactPlane2D> m_contact_plane2d; ///< List of 2D contact planes
+  ArrayT<ContactPlane3D> m_contact_plane3d; ///< List of 3D contact planes
 
   MethodData* m_methodData; ///< method object holding required interface method data
 
@@ -590,11 +720,10 @@ private:
   std::unique_ptr<MfemJacobianData> m_mfemJacobianData;  ///< MFEM jacobian data
 
 #endif /* BUILD_REDECOMP */
-  
-  DISABLE_COPY_AND_ASSIGNMENT( CouplingScheme );
-  DISABLE_MOVE_AND_ASSIGNMENT( CouplingScheme );
 
 };
+
+using CouplingSchemeManager = DataManager<CouplingScheme>;
 
 } /* namespace tribol */
 

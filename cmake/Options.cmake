@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: (MIT)
 
 # Get value for some options from corresponding blt options
-cmake_dependent_option(TRIBOL_ENABLE_CUDA "Enables Tribol with CUDA support" ON "ENABLE_CUDA" OFF)
-cmake_dependent_option(TRIBOL_ENABLE_HIP "Enables Tribol with HIP support" ON "ENABLE_HIP" OFF)
+cmake_dependent_option(TRIBOL_USE_CUDA "Enables Tribol with CUDA support" ON "ENABLE_CUDA" OFF)
+cmake_dependent_option(TRIBOL_USE_HIP "Enables Tribol with HIP support" ON "ENABLE_HIP" OFF)
 cmake_dependent_option(TRIBOL_USE_MPI "Enables MPI in Tribol" ON "ENABLE_MPI" OFF)
+cmake_dependent_option(TRIBOL_USE_OPENMP "Enables Tribol with OpenMP support" ON "ENABLE_OPENMP" OFF)
 cmake_dependent_option(TRIBOL_ENABLE_TESTS "Enables Tribol Tests" ON "ENABLE_TESTS" OFF)
 cmake_dependent_option(TRIBOL_ENABLE_EXAMPLES "Enables Tribol Examples" ON "ENABLE_EXAMPLES" OFF)
 cmake_dependent_option(TRIBOL_ENABLE_DOCS "Enables Tribol Docs" ON "ENABLE_DOCS" OFF)

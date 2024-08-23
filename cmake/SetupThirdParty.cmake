@@ -16,11 +16,27 @@ include(CMakeFindDependencyMacro)
 #------------------------------------------------------------------------------
 # Create global variable to toggle between GPU targets
 #------------------------------------------------------------------------------
-if(TRIBOL_ENABLE_CUDA)
+if(TRIBOL_USE_CUDA)
   set(tribol_device_depends blt::cuda CACHE STRING "" FORCE)
 endif()
-if(TRIBOL_ENABLE_HIP)
+if(TRIBOL_USE_HIP)
   set(tribol_device_depends blt::hip CACHE STRING "" FORCE)
+endif()
+
+
+#------------------------------------------------------------------------------
+# RAJA
+#------------------------------------------------------------------------------
+
+if (DEFINED RAJA_DIR)
+  message(STATUS "Setting up external RAJA TPL...")
+
+  include(${RAJA_DIR}/lib/cmake/raja/RAJATargets.cmake)
+
+  list(APPEND TPL_DEPS RAJA)
+  set(TRIBOL_USE_RAJA TRUE)
+else()
+  message(STATUS "RAJA support is OFF")
 endif()
 
 
@@ -120,6 +136,7 @@ if(EXISTS ${SHROUD_EXECUTABLE})
 else()
     message(STATUS "Shroud support is OFF")
 endif()
+
 
 #---------------------------------------------------------------------------
 # Remove non-existant INTERFACE_INCLUDE_DIRECTORIES from imported targets

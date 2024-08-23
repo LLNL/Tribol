@@ -6,7 +6,6 @@
 #ifndef SRC_PHYSICS_MORTAR_HPP_
 #define SRC_PHYSICS_MORTAR_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "Physics.hpp"
 
@@ -44,7 +43,7 @@ void ComputeMortarWeights( SurfaceContactElem & elem );
  * \param [in] cs pointer to coupling scheme
  *
  */
-void ComputeSingleMortarGaps( CouplingScheme const * cs );
+void ComputeSingleMortarGaps( const CouplingScheme* cs );
 
 /*!
  *
@@ -102,7 +101,7 @@ void ComputeConstraintJacobian( SurfaceContactElem & elem );
  *
  */
 template< >
-int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme const * cs );
+int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs );
 
 /*!
  *

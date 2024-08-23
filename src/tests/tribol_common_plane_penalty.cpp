@@ -4,19 +4,21 @@
 // SPDX-License-Identifier: (MIT)
 
 // Tribol includes
-#include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/utils/TestUtils.hpp"
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/physics/CommonPlane.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
+
+#ifdef TRIBOL_USE_UMPIRE
+// Umpire includes
+#include "umpire/ResourceManager.hpp"
+#endif
 
 // Axom includes
 #include "axom/slic.hpp"
@@ -31,38 +33,30 @@
 #include <iomanip>
 #include <fstream>
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 void compareGaps( tribol::CouplingScheme const * cs, 
-                  real gap, const real tol,
+                  RealT gap, const RealT tol,
                   const char *gapType )
 {
-   tribol::ContactPlaneManager& cpManager = tribol::ContactPlaneManager::getInstance();
-   tribol::InterfacePairs const * const pairs = cs->getInterfacePairs();
-   tribol::IndexType const numPairs = pairs->getNumPairs();
+   tribol::IndexT const numPairs = cs->getNumActivePairs();
 
-   int cpID = 0;
-   for (tribol::IndexType kp = 0; kp < numPairs; ++kp)
+   for (tribol::IndexT cpID = 0; cpID < numPairs; ++cpID)
    {
-      tribol::InterfacePair pair = pairs->getInterfacePair(kp);
+      auto& plane = cs->getContactPlane(cpID);
 
-      if (!pair.isContactCandidate)
-      {
-         continue;
-      }
-
-      real my_gap = 0.;
+      RealT my_gap = 0.;
       if ( std::strcmp( gapType, "kinematic_penetration" ) == 0 ||
            std::strcmp( gapType, "kinematic_separation"  ) == 0 )
       {
-         my_gap = cpManager.m_gap[ cpID ];
+         my_gap = plane.m_gap;
       }
       else
       {
-         my_gap = cpManager.m_velGap[ cpID ];
+         my_gap = plane.m_velGap;
       }
 
-      double gap_tol = cs->getGapTol( pair.pairIndex1, pair.pairIndex2 );
+      RealT gap_tol = cs->getGapTol( plane.getCpElementId1(), plane.getCpElementId2() );
 
       // check gap sense
       if ( std::strcmp( gapType, "kinematic_penetration" ) == 0  ||
@@ -85,28 +79,26 @@ void compareGaps( tribol::CouplingScheme const * cs,
       }
 
       // check diffs
-      real diff = std::abs( my_gap - gap );
+      RealT diff = std::abs( my_gap - gap );
       EXPECT_LE( diff, tol );
-
-      ++cpID;
    }
 } // end compareGaps()
 
 void checkMeshPenalties( tribol::CouplingScheme const * cs,
-                         const real penalty, const real tol, 
+                         const RealT penalty, const RealT tol, 
                          const char * penaltyType )
 {
-   tribol::IndexType const meshId1 = cs->getMeshId1();
-   tribol::IndexType const meshId2 = cs->getMeshId2();
+   tribol::IndexT const meshId1 = cs->getMeshId1();
+   tribol::IndexT const meshId2 = cs->getMeshId2();
 
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mesh1 = meshManager.GetMeshInstance( meshId1 );
-   tribol::MeshData& mesh2 = meshManager.GetMeshInstance( meshId2 );
+   tribol::MeshData& mesh1 = meshManager.at( meshId1 );
+   tribol::MeshData& mesh2 = meshManager.at( meshId2 );
 
    if ( std::strcmp( penaltyType, "constant" ) == 0 )
    {
-      real penalty_diff_1 = std::abs( mesh1.m_elemData.m_penalty_stiffness - penalty );
-      real penalty_diff_2 = std::abs( mesh2.m_elemData.m_penalty_stiffness - penalty );
+      RealT penalty_diff_1 = std::abs( mesh1.getElementData().m_penalty_stiffness - penalty );
+      RealT penalty_diff_2 = std::abs( mesh2.getElementData().m_penalty_stiffness - penalty );
       EXPECT_LE( penalty_diff_1, tol );
       EXPECT_LE( penalty_diff_2, tol );
    }
@@ -116,17 +108,17 @@ void checkMeshPenalties( tribol::CouplingScheme const * cs,
    }
    else if ( std::strcmp( penaltyType, "constant_rate" ) == 0 )
    {
-      real penalty_diff_1 = std::abs( mesh1.m_elemData.m_rate_penalty_stiffness - penalty );
-      real penalty_diff_2 = std::abs( mesh2.m_elemData.m_rate_penalty_stiffness - penalty );
+      RealT penalty_diff_1 = std::abs( mesh1.getElementData().m_rate_penalty_stiffness - penalty );
+      RealT penalty_diff_2 = std::abs( mesh2.getElementData().m_rate_penalty_stiffness - penalty );
       EXPECT_LE( penalty_diff_1, tol );
       EXPECT_LE( penalty_diff_2, tol );
    }
    else if ( std::strcmp( penaltyType, "percent_rate" ) == 0 )
    {
-      real penalty1 = mesh1.m_elemData.m_rate_percent_stiffness * mesh1.m_elemData.m_penalty_stiffness; 
-      real penalty2 = mesh2.m_elemData.m_rate_percent_stiffness * mesh2.m_elemData.m_penalty_stiffness; 
-      real penalty_diff_1 = std::abs( penalty1 - penalty );
-      real penalty_diff_2 = std::abs( penalty2 - penalty );
+      RealT penalty1 = mesh1.getElementData().m_rate_percent_stiffness * mesh1.getElementData().m_penalty_stiffness; 
+      RealT penalty2 = mesh2.getElementData().m_rate_percent_stiffness * mesh2.getElementData().m_penalty_stiffness; 
+      RealT penalty_diff_1 = std::abs( penalty1 - penalty );
+      RealT penalty_diff_2 = std::abs( penalty2 - penalty );
       EXPECT_LE( penalty_diff_1, tol );
       EXPECT_LE( penalty_diff_2, tol );
    }
@@ -139,30 +131,22 @@ void checkMeshPenalties( tribol::CouplingScheme const * cs,
 } // end checkMeshPenalties()
 
 void checkPressures( tribol::CouplingScheme const * cs, 
-                     real pressure, const real tol, const char * pressureType = "kinematic"  )
+                     RealT pressure, const RealT tol, const char * pressureType = "kinematic"  )
 {
-   tribol::ContactPlaneManager& cpManager = tribol::ContactPlaneManager::getInstance();
-   tribol::InterfacePairs const * const pairs = cs->getInterfacePairs();
-   tribol::IndexType const numPairs = pairs->getNumPairs();
+   tribol::IndexT const numPairs = cs->getNumActivePairs();
 
-   int cpID = 0;
-   for (tribol::IndexType kp = 0; kp < numPairs; ++kp)
+   for (tribol::IndexT cpID = 0; cpID < numPairs; ++cpID)
    {
-      tribol::InterfacePair pair = pairs->getInterfacePair(kp);
+      auto& plane = cs->getContactPlane(cpID);
 
-      if (!pair.isContactCandidate)
-      {
-         continue;
-      }
-
-      real my_pressure = 0.;
+      RealT my_pressure = 0.;
       if ( std::strcmp( pressureType, "rate" ) == 0 )
       {
-         my_pressure = cpManager.m_ratePressure[ cpID ];
+         my_pressure = plane.m_ratePressure;
       }
       else if ( std::strcmp( pressureType, "kinematic" ) == 0 )
       {
-         my_pressure = cpManager.m_pressure[ cpID ];
+         my_pressure = plane.m_pressure;
       }
       else
       {
@@ -171,10 +155,8 @@ void checkPressures( tribol::CouplingScheme const * cs,
       }
 
       // check diffs
-      real press_diff = std::abs( my_pressure - pressure );
+      RealT press_diff = std::abs( my_pressure - pressure );
       EXPECT_LE( press_diff, tol );
-
-      ++cpID;
    }
 } // end checkPressures()
 
@@ -185,30 +167,25 @@ void checkPressures( tribol::CouplingScheme const * cs,
 // mesh configurations.
 void checkForceSense( tribol::CouplingScheme const * cs, bool isTied = false )
 {
-   tribol::IndexType const meshId1 = cs->getMeshId1();
-   tribol::IndexType const meshId2 = cs->getMeshId2();
-
-   tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::MeshData& mesh1 = meshManager.GetMeshInstance( meshId1 );
-   tribol::MeshData& mesh2 = meshManager.GetMeshInstance( meshId2 );
+   auto& mesh1 = cs->getMesh1();
+   auto& mesh2 = cs->getMesh1();
 
    for (int i=0; i<2; ++i) // loop over meshes
    { 
-      tribol::MeshData & mesh = (i==0) ? mesh1 : mesh2;
+      auto& mesh = (i==0) ? mesh1 : mesh2;
   
       // loop over faces and nodes
-      for (tribol::IndexType kf = 0; kf < mesh.m_numCells; ++kf)
+      for (tribol::IndexT kf = 0; kf < mesh.numberOfElements(); ++kf)
       {
-         for (tribol::IndexType a = 0; a<mesh.m_numNodesPerCell; ++a)
+         for (tribol::IndexT a = 0; a<mesh.numberOfNodesPerElement(); ++a)
          {
-            int idx = mesh.m_numNodesPerCell * kf + a;
-            int node_id = mesh.m_connectivity[ idx ];
-            real force_mag = tribol::dotProd( mesh.m_forceX[ node_id ],
-                                              mesh.m_forceY[ node_id ], 
-                                              mesh.m_forceZ[ node_id ],
-                                              mesh.m_nX[ kf ],
-                                              mesh.m_nY[ kf ],
-                                              mesh.m_nZ[ kf ] );
+            int node_id = mesh.getGlobalNodeId(kf, a);
+            RealT force_mag = tribol::dotProd( mesh.getResponse()[0][ node_id ],
+                                              mesh.getResponse()[1][ node_id ], 
+                                              mesh.getResponse()[2][ node_id ],
+                                              mesh.getElementNormals()[0][ kf ],
+                                              mesh.getElementNormals()[1][ kf ],
+                                              mesh.getElementNormals()[2][ kf ] );
             if (!isTied) {
                // <= catches interpenetration AND separation
                EXPECT_LE( force_mag, 0. );
@@ -264,19 +241,19 @@ TEST_F( CommonPlaneTest, penetration_gap_check )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -302,9 +279,9 @@ TEST_F( CommonPlaneTest, penetration_gap_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
-   real gap = z_min2 - z_max1;
+   RealT gap = z_min2 - z_max1;
 
    compareGaps( couplingScheme, gap, 1.E-8, "kinematic_penetration" );
 
@@ -328,19 +305,19 @@ TEST_F( CommonPlaneTest, separation_gap_check )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 separation gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 1.1;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 1.1;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -365,9 +342,9 @@ TEST_F( CommonPlaneTest, separation_gap_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
-   real gap = z_min2 - z_max1;
+   RealT gap = z_min2 - z_max1;
 
    compareGaps( couplingScheme, gap, 1.E-8, "kinematic_separation" );
 
@@ -390,19 +367,19 @@ TEST_F( CommonPlaneTest, constant_penalty_check )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -427,14 +404,14 @@ TEST_F( CommonPlaneTest, constant_penalty_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check mesh penalties
    checkMeshPenalties( couplingScheme, parameters.const_penalty, 1.E-8, "constant" );
 
    // check the pressures
-   real gap = z_min2 - z_max1;
-   real pressure = tribol::ComputePenaltyStiffnessPerArea( parameters.const_penalty, parameters.const_penalty ) * gap;
+   RealT gap = z_min2 - z_max1;
+   RealT pressure = tribol::ComputePenaltyStiffnessPerArea( parameters.const_penalty, parameters.const_penalty ) * gap;
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme );
 
@@ -457,23 +434,23 @@ TEST_F( CommonPlaneTest, element_penalty_check )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 interpenetration gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    // compute element thickness for each block
-   real element_thickness1 = (z_max1 - z_min1) / nElemsZM;
-   real element_thickness2 = (z_max2 - z_min2) / nElemsZS;
+   RealT element_thickness1 = (z_max1 - z_min1) / nElemsZM;
+   RealT element_thickness2 = (z_max2 - z_min2) / nElemsZS;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -483,15 +460,15 @@ TEST_F( CommonPlaneTest, element_penalty_check )
                                      x_max2, y_max2, z_max2,
                                      0., 0. );
 
-   real dt = 1.e-3;
-   real bulk_mod1 = 1.0; // something simple
-   real bulk_mod2 = 1.0;
-   real velX1 = 0.;
-   real velY1 = 0.;
-   real velZ1 = 0.; 
-   real velX2 = 0.;
-   real velY2 = 0.;
-   real velZ2 = 0.; 
+   RealT dt = 1.e-3;
+   RealT bulk_mod1 = 1.0; // something simple
+   RealT bulk_mod2 = 1.0;
+   RealT velX1 = 0.;
+   RealT velY1 = 0.;
+   RealT velZ1 = 0.; 
+   RealT velX2 = 0.;
+   RealT velY2 = 0.;
+   RealT velZ2 = 0.; 
 
    this->m_mesh.allocateAndSetVelocities( m_mesh.mortarMeshId, velX1, velY1, velZ1 );
    this->m_mesh.allocateAndSetVelocities( m_mesh.nonmortarMeshId,  velX2, velY2, -velZ2 ); 
@@ -518,17 +495,17 @@ TEST_F( CommonPlaneTest, element_penalty_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    checkMeshPenalties( couplingScheme, parameters.const_penalty, 1.E-8, "face" );
    
    /////////////////////////
    // check the pressures // 
    /////////////////////////
-   real gap = z_min2 - z_max1;
+   RealT gap = z_min2 - z_max1;
   
    // this uses the same face-springs-in-parallel calculation as the common plane + penalty method: K1/t_1 * K2/t_2 / (K1/t_1 + K2/t_2)
-   real pressure = (bulk_mod1 / element_thickness1 * bulk_mod2 / element_thickness2) /
+   RealT pressure = (bulk_mod1 / element_thickness1 * bulk_mod2 / element_thickness2) /
                    (bulk_mod1 / element_thickness1 + bulk_mod2 / element_thickness2) * gap;
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme );
@@ -552,19 +529,19 @@ TEST_F( CommonPlaneTest, tied_contact_check )
    int nElemsZS = nNonmortarElems;
 
    // mesh bounding box with 0.1 separation gap
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 1.01;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 1.01;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -589,11 +566,11 @@ TEST_F( CommonPlaneTest, tied_contact_check )
          tribol::CouplingSchemeManager::getInstance();
   
    tribol::CouplingScheme* couplingScheme = 
-      couplingSchemeManager.getCoupling( 0 );
+      &couplingSchemeManager.at( 0 );
 
    // check the pressures
-   real gap = z_min2 - z_max1;
-   real pressure = tribol::ComputePenaltyStiffnessPerArea( parameters.const_penalty, parameters.const_penalty ) * gap;
+   RealT gap = z_min2 - z_max1;
+   RealT pressure = tribol::ComputePenaltyStiffnessPerArea( parameters.const_penalty, parameters.const_penalty ) * gap;
    checkPressures( couplingScheme, pressure, 1.E-8 );
    checkForceSense( couplingScheme, true );
 
@@ -605,6 +582,10 @@ int main(int argc, char* argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+#ifdef TRIBOL_USE_UMPIRE
+  umpire::ResourceManager::getInstance();  // initialize umpire's ResouceManager
+#endif
 
   axom::slic::SimpleLogger logger;
   result = RUN_ALL_TESTS();

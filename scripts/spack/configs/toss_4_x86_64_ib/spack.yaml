@@ -305,9 +305,11 @@ spack:
         prefix: /collab/usr/gapps/axom/devtools/toss_4_x86_64_ib/latest/python-3.10.10
 
     # Globally lock version of third party libraries that work on this platform
+    axom:
+      variants: ~shared~examples~fortran~lua~tools
     conduit:
       variants: ~shared~test~examples~utilities
     raja:
-      require: "@2024.02.0~shared~examples~exercises~openmp"
+      require: "@2024.02.0~shared~examples~exercises"
     umpire:
-      require: "@2024.02.0~shared~examples~openmp"
+      require: "@2024.02.0~shared~examples"

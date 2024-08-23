@@ -16,6 +16,7 @@ set( tribol_tests
      tribol_coupling_scheme.cpp
      tribol_coupling_scheme_manager.cpp
      tribol_enforcement_options.cpp
+     tribol_execution_modes.cpp
      tribol_hex_mesh.cpp
      tribol_inv_iso.cpp
      tribol_iso_integ.cpp
@@ -53,6 +54,17 @@ foreach( test ${tribol_tests} )
 
   if (ENABLE_CUDA)
     set_target_properties(${test_name}_test PROPERTIES CUDA_SEPARABLE_COMPILATION On)
+  endif()
+
+  if (ENABLE_HIP)
+    target_compile_options(${test_name}_test PRIVATE -fgpu-rdc)
+    target_compile_options(${test_name}_test PRIVATE
+        $<$<CONFIG:Debug>:
+            -ggdb
+        >
+    )
+    target_link_options(${test_name}_test PRIVATE -fgpu-rdc)
+    target_link_options(${test_name}_test PRIVATE --hip-link)
   endif()
 
 endforeach()
@@ -128,6 +140,17 @@ if ( BUILD_REDECOMP AND TRIBOL_USE_MPI )
 
     if (ENABLE_CUDA)
       set_target_properties(${test_name}_test PROPERTIES CUDA_SEPARABLE_COMPILATION On)
+    endif()
+    
+    if (ENABLE_HIP)
+      target_compile_options(${test_name}_test PRIVATE -fgpu-rdc)
+      target_compile_options(${test_name}_test PRIVATE
+          $<$<CONFIG:Debug>:
+              -ggdb
+          >
+      )
+      target_link_options(${test_name}_test PRIVATE -fgpu-rdc)
+      target_link_options(${test_name}_test PRIVATE --hip-link)
     endif()
 
   endforeach()

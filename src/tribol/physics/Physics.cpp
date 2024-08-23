@@ -6,10 +6,8 @@
 // tribol includes
 #include "Physics.hpp"
 
-#include "tribol/types.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
-#include "tribol/geom/ContactPlaneManager.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 
 // Axom includes
@@ -18,9 +16,9 @@
 namespace tribol
 {
 
-int ApplyInterfacePhysics( CouplingScheme const * cs,
-                           integer TRIBOL_UNUSED_PARAM(cycle),
-                           real TRIBOL_UNUSED_PARAM(t) )
+int ApplyInterfacePhysics( CouplingScheme* cs,
+                           int TRIBOL_UNUSED_PARAM(cycle),
+                           RealT TRIBOL_UNUSED_PARAM(t) )
 {
    // call the appropriate normal and tangential interface physics
    // routines based on method, enforcement strategy, and interface

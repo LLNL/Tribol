@@ -6,7 +6,6 @@
 #ifndef SRC_INTEG_INTEGRATION_HPP_
 #define SRC_INTEG_INTEGRATION_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 
 namespace tribol
@@ -21,14 +20,14 @@ struct SurfaceContactElem;
 struct IntegPts
 {
    /// IntegPts constructor
-   IntegPts( integer numPoints, ///< [in] Number of integration points
-             integer IPDim      ///< [in] dimension of integration point coordinates
+   IntegPts( int numPoints, ///< [in] Number of integration points
+             int IPDim      ///< [in] dimension of integration point coordinates
            ) 
       : numIPs( numPoints )
       , ipDim(IPDim)
    { 
-      xy =  new real[ IPDim * numPoints ];
-      wts = new real[ numPoints ]; 
+      xy =  new RealT[ IPDim * numPoints ];
+      wts = new RealT[ numPoints ]; 
    }
 
    /// IntegPts overloaded constructor
@@ -55,29 +54,29 @@ struct IntegPts
       this->numIPs = numTotalIPs;
       if (this->xy == nullptr)
       {
-         this->xy = new real [dim * numTotalIPs];
+         this->xy = new RealT [dim * numTotalIPs];
       }
       else
       {
          delete [] this->xy;
-         this->xy = new real [dim * numTotalIPs];
+         this->xy = new RealT [dim * numTotalIPs];
       }
       if (this->wts == nullptr)
       {
-         this->wts = new real [numTotalIPs];
+         this->wts = new RealT [numTotalIPs];
       }
       else
       {
          delete [] this->wts;
-         this->wts = new real [numTotalIPs];
+         this->wts = new RealT [numTotalIPs];
       }
    }
 
    // member variables
-   integer numIPs; ///< number of integration points on entire overlap
-   integer ipDim;  ///< coordinate dimension of the integration points 
-   real* xy;       ///< coordinates of ALL integration points
-   real* wts;      ///< integration point weights
+   int numIPs; ///< number of integration points on entire overlap
+   int ipDim;  ///< coordinate dimension of the integration points 
+   RealT* xy;       ///< coordinates of ALL integration points
+   RealT* wts;      ///< integration point weights
 };
 
 /*!
@@ -95,9 +94,9 @@ struct IntegPts
  *
  */
 template< ContactMethod M, PolyInteg I > 
-void EvalWeakFormIntegral( SurfaceContactElem const & elem,
-                           real * const integ1,
-                           real * const integ2 );
+TRIBOL_HOST_DEVICE void EvalWeakFormIntegral( SurfaceContactElem const & elem,
+                                              RealT * const integ1,
+                                              RealT * const integ2 );
                         
 /*!
  *
@@ -120,7 +119,7 @@ void EvalWeakFormIntegral( SurfaceContactElem const & elem,
  */
 void TWBPolyInt( SurfaceContactElem const & elem,
                  IntegPts & integ,
-                 integer k );
+                 int k );
 
 /*!
  *
@@ -139,7 +138,7 @@ void TWBPolyInt( SurfaceContactElem const & elem,
  */
 void GaussPolyIntTri( SurfaceContactElem const & elem,
                       IntegPts & integ,
-                      integer k );
+                      int k );
 
 /*!
  *
@@ -159,7 +158,7 @@ void GaussPolyIntTri( SurfaceContactElem const & elem,
 
 void GaussPolyIntQuad( SurfaceContactElem const & elem,
                        IntegPts & integ,
-                       integer k );
+                       int k );
 /*!
  *
  * \brief returns the number of TWB integration points for polygonal overlap 
@@ -172,7 +171,7 @@ void GaussPolyIntQuad( SurfaceContactElem const & elem,
  *
  */
 int NumTWBPointsPoly( SurfaceContactElem const & elem,
-                      integer k );
+                      int k );
 
 /*!
  *
@@ -184,7 +183,7 @@ int NumTWBPointsPoly( SurfaceContactElem const & elem,
  * \pre order 2 <= k <= 3
  *
  */
-int NumTWBPointsPerTri( integer order );
+int NumTWBPointsPerTri( int order );
 
 } // end namespace tribol
 #endif /* SRC_INTEG_INTEGRATION_HPP_ */

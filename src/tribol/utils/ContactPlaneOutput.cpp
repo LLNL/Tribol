@@ -3,11 +3,7 @@
 //
 // SPDX-License-Identifier: (MIT)
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
-#include "tribol/geom/ContactPlaneManager.hpp"
-#include "tribol/mesh/MeshManager.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/utils/ContactPlaneOutput.hpp"
 
@@ -52,16 +48,14 @@ int GetVtkElementId( const InterfaceElementType type )
 
 //------------------------------------------------------------------------------
 void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
-                                 const integer csId, const integer meshId1,
-                                 const integer meshId2, const integer dim,
-                                 const integer cycle, const real time )
+                                 const IndexT cs_id, const IndexT mesh_id1,
+                                 const IndexT mesh_id2, const int dim,
+                                 const int cycle, const RealT time )
 {
-   ContactPlaneManager& cpMgr = ContactPlaneManager::getInstance();
-   MeshManager & meshManager = MeshManager::getInstance();
-   MeshData& mesh1 = meshManager.GetMeshInstance(meshId1);
-   MeshData& mesh2 = meshManager.GetMeshInstance(meshId2);
-   CouplingSchemeManager& csManager = CouplingSchemeManager::getInstance();
-   CouplingScheme* couplingScheme  = csManager.getCoupling(csId);
+   CouplingScheme* couplingScheme  = CouplingSchemeManager::getInstance().findData(cs_id);
+   auto& mesh1 = couplingScheme->getMesh1();
+   auto& mesh2 = couplingScheme->getMesh2();
+   SLIC_ERROR_ROOT_IF(!couplingScheme, "No coupling scheme registered with given cs_id.");
 
    int nranks = 1;
    int rank = -1;
@@ -78,7 +72,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
    /////////////////////////////////////////
    if (!couplingScheme->nullMeshes())
    {
-      int cpSize = cpMgr.size();
+      int cpSize = couplingScheme->getNumActivePairs();
       bool overlaps { false };
       bool faces    { false };
       bool meshes   { false };
@@ -136,13 +130,13 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          faces << "CYCLE 1 1 int\n";
          faces << cycle << "\n";
          faces << "COUPLING_SCHEME 1 1 int\n";
-         faces << csId << "\n";
+         faces << cs_id << "\n";
 
          // count the number of face points for all contact planes
          int numPoints = 0;
          for (int i=0; i<cpSize; ++i)
          {
-            numPoints += mesh1.m_numNodesPerCell + mesh2.m_numNodesPerCell;
+            numPoints += mesh1.numberOfNodesPerElement() + mesh2.numberOfNodesPerElement();
          } // end i-loop over contact planes
 
          // output the number of points
@@ -151,44 +145,45 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          // loop over all contact planes and output the face coordinates
          for (int i=0; i<cpSize; ++i)
          {
+            auto& cp = couplingScheme->getContactPlane(i);
             // if interpenOverlap, print interpenetrating portions of each face.
-            if (cpMgr.m_interpenOverlap[i])
+            if (cp.m_interpenOverlap)
             {
-               for (int j=0; j<cpMgr.m_numInterpenPoly1Vert[i]; ++j)
+               for (int j=0; j<cp.m_numInterpenPoly1Vert; ++j)
                {
                   axom::fmt::print(faces, "{} {} {}\n",
-                     cpMgr.m_interpenG1X[i][j],
-                     cpMgr.m_interpenG1Y[i][j],
-                     dim==3 ? cpMgr.m_interpenG1Z[i][j] : 0.);
+                     cp.m_interpenG1X[j],
+                     cp.m_interpenG1Y[j],
+                     dim==3 ? cp.m_interpenG1Z[j] : 0.);
                }
 
-               for (int j=0; j<cpMgr.m_numInterpenPoly2Vert[i]; ++j)
+               for (int j=0; j<cp.m_numInterpenPoly2Vert; ++j)
                {
                   axom::fmt::print(faces, "{} {} {}\n",
-                     cpMgr.m_interpenG2X[i][j],
-                     cpMgr.m_interpenG2Y[i][j],
-                     dim==3 ? cpMgr.m_interpenG2Z[i][j] : 0.);
+                     cp.m_interpenG2X[j],
+                     cp.m_interpenG2Y[j],
+                     dim==3 ? cp.m_interpenG2Z[j] : 0.);
                }
             } // end if-cpMrg.m_interpenOverlap[i]
 
             else // print the current configuration faces
             {
-               for (int j=0; j<mesh1.m_numNodesPerCell; ++j)
+               for (int j=0; j<mesh1.numberOfNodesPerElement(); ++j)
                {
-                  const int nodeId = mesh1.getFaceNodeId(cpMgr.m_fId1[i], j);
+                  const int nodeId = mesh1.getGlobalNodeId(cp.getCpElementId1(), j);
                   axom::fmt::print(faces, "{} {} {}\n",
-                     mesh1.m_positionX[nodeId],
-                     mesh1.m_positionY[nodeId],
-                     dim==3 ? mesh1.m_positionZ[nodeId] : 0.);
+                     mesh1.getPosition()[0][nodeId],
+                     mesh1.getPosition()[1][nodeId],
+                     dim==3 ? mesh1.getPosition()[2][nodeId] : 0.);
                }
 
-               for (int j=0; j<mesh2.m_numNodesPerCell; ++j)
+               for (int j=0; j<mesh2.numberOfNodesPerElement(); ++j)
                {
-                  const int nodeId = mesh2.getFaceNodeId(cpMgr.m_fId2[i], j);
+                  const int nodeId = mesh2.getGlobalNodeId(cp.getCpElementId2(), j);
                   axom::fmt::print(faces, "{} {} {}\n",
-                     mesh2.m_positionX[nodeId],
-                     mesh2.m_positionY[nodeId],
-                     dim==3 ? mesh2.m_positionZ[nodeId] : 0.);
+                     mesh2.getPosition()[0][nodeId],
+                     mesh2.getPosition()[1][nodeId],
+                     dim==3 ? mesh2.getPosition()[2][nodeId] : 0.);
                }
             } // end else
          } // end i-loop over contact planes outputting face coordinates
@@ -203,8 +198,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
          // loop over contact plane instances and print current configuration
          // face polygon connectivity
-         const int nNodes1 = mesh1.m_numNodesPerCell;
-         const int nNodes2 = mesh2.m_numNodesPerCell;
+         const int nNodes1 = mesh1.numberOfNodesPerElement();
+         const int nNodes2 = mesh2.numberOfNodesPerElement();
          for (int i=0; i<cpSize; ++i)
          {
             axom::fmt::print(faces, "{} {}\n", nNodes1, axom::fmt::join(RSet(connIter, connIter+nNodes1), " "));
@@ -215,7 +210,7 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          }
          faces << std::endl;
 
-         // print cell types as VTK integer IDs
+         // print cell types as VTK int IDs
          {
             axom::fmt::print(faces, "CELL_TYPES {}\n", 2*cpSize);
             const int vtkid1 = dim==3? 7 : 3; // 7 is VTK_POLYGON; 3 is VTK_LINE
@@ -236,10 +231,11 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
 
          for (int i=0; i<cpSize; ++i)
          {
+            auto& cp = couplingScheme->getContactPlane(i);
             // print face areas
             axom::fmt::print(faces, "{} {} ",
-               mesh1.m_area[cpMgr.m_fId1[i]],
-               mesh2.m_area[cpMgr.m_fId2[i]]);
+               mesh1.getElementAreas()[cp.getCpElementId1()],
+               mesh2.getElementAreas()[cp.getCpElementId2()]);
          } // end i-loop over contact planes
          faces << std::endl;
          faces.close();
@@ -272,40 +268,53 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          overlap << "CYCLE 1 1 int\n";
          overlap << cycle << "\n";
          overlap << "COUPLING_SCHEME 1 1 int\n";
-         overlap << csId << "\n";
+         overlap << cs_id << "\n";
 
          // count the total number of vertices for all contact plane instances.
-         int numPoints = 0;
-         for ( int k=0 ; k<cpSize; ++k )
+         int numPoints = 2 * cpSize;
+         if (dim == 3)
          {
-            // add the number of overlap vertices
-            numPoints += cpMgr.m_numPolyVert[k];
-         } // end k-loop over contact planes
+            numPoints = 0;
+            for ( int k=0 ; k< cpSize; ++k )
+            {
+               auto& cp = couplingScheme->getContactPlane(k);
+               auto& cp3 = static_cast<const ContactPlane3D&>(cp);
+               // add the number of overlap vertices
+               numPoints += cp3.m_numPolyVert;
+            } // end k-loop over contact planes
+         }
 
          axom::fmt::print(overlap, "POINTS {} float\n", numPoints);
 
          // loop over contact plane instances and output polygon vertices
          for( int k=0 ; k < cpSize; ++k )
          {
+            auto& cp = couplingScheme->getContactPlane(k);
             // output the overlap polygon. Whether interpenetrating overlap or full
             // overlap the vertex coordinates are stored in cp.m_polyX,Y,Z
-            for (int i=0; i<cpMgr.m_numPolyVert[k]; ++i)
+            if (dim == 2)
             {
-               if (dim == 3)
+               auto& cp2 = static_cast<const ContactPlane2D&>(cp);
+               for (int i=0; i<2; ++i)
                {
                   axom::fmt::print(overlap, "{} {} {}\n",
-                     cpMgr.m_polyX[k][i],
-                     cpMgr.m_polyY[k][i],
-                     cpMgr.m_polyZ[k][i]);
-               }
-               else
-               {
-                  axom::fmt::print(overlap, "{} {} {}\n",
-                     cpMgr.m_segX[k][i],
-                     cpMgr.m_segY[k][i],
+                     cp2.m_segX[i],
+                     cp2.m_segY[i],
                      0.);
-               }
-            } // end i-loop over overlap vertices
+               } // end i-loop over overlap vertices
+            }
+            else
+            {
+               auto& cp3 = static_cast<const ContactPlane3D&>(cp);
+               for (int i=0; i<cp3.m_numPolyVert; ++i)
+               {
+                  auto& cp3 = static_cast<const ContactPlane3D&>(cp);
+                  axom::fmt::print(overlap, "{} {} {}\n",
+                     cp3.m_polyX[i],
+                     cp3.m_polyY[i],
+                     cp3.m_polyZ[i]);
+               } // end i-loop over overlap vertices
+            }
          } // end i-loop over contact planes for overlap output
 
          // define the polygons
@@ -318,12 +327,16 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          int k = 0;
          for (int i=0; i<cpSize; ++i)
          {
-            const int nVerts = cpMgr.m_numPolyVert[i];
+            int nVerts = 2;
+            if (dim == 3)
+            {
+              nVerts = static_cast<const ContactPlane3D&>(couplingScheme->getContactPlane(i)).m_numPolyVert;
+            }
             axom::fmt::print(overlap, "{} {}\n", nVerts, axom::fmt::join(RSet(k, k+nVerts), " "));
             k += nVerts;
          }
 
-         // print cell types as VTK integer IDs
+         // print cell types as VTK int IDs
          {
             axom::fmt::print(overlap, "CELL_TYPES {}\n", cpSize);
             const int vtkid = dim==3? 7 : 3; // 7 is VTK_POLYGON; 3 is VTK_LINE
@@ -343,19 +356,20 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
             axom::fmt::print(overlap, "LOOKUP_TABLE default\n");
             for (int i=0; i<cpSize; ++i)
             {
+              auto& cp = couplingScheme->getContactPlane(i);
                axom::fmt::print(overlap, "{} ",
-               cpMgr.m_interpenOverlap[i] ? cpMgr.m_interpenArea[i] : cpMgr.m_area[i] );
+               cp.m_interpenOverlap ? cp.m_interpenArea : cp.m_area );
             }
             overlap << std::endl;
          }
 
          // print the contact plane pressure scalar data
-         {
-            axom::fmt::print(overlap, "SCALARS {} {}\n", "overlap_pressure", "float");
-            axom::fmt::print(overlap, "LOOKUP_TABLE default\n");
-            axom::fmt::print(overlap, "{}", axom::fmt::join(cpMgr.m_pressure.data(), cpMgr.m_pressure.data() + cpSize, " "));
-            overlap << std::endl;
-         }
+        //  {
+        //     axom::fmt::print(overlap, "SCALARS {} {}\n", "overlap_pressure", "float");
+        //     axom::fmt::print(overlap, "LOOKUP_TABLE default\n");
+        //     axom::fmt::print(overlap, "{}", axom::fmt::join(cp.m_pressure.data(), cpMgr.m_pressure.data() + cpSize, " "));
+        //     overlap << std::endl;
+        //  }
 
          // close file
          overlap.close();
@@ -370,8 +384,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
       if (meshes)
       {
          std::string name = (nranks > 1)
-               ? axom::fmt::format("mesh_intrfc_cs{:02}_r{:04}_{:07}.vtk", csId, rank, cycle)
-               : axom::fmt::format("mesh_intrfc_cs{:02}_{:07}.vtk", csId, cycle);
+               ? axom::fmt::format("mesh_intrfc_cs{:02}_r{:04}_{:07}.vtk", cs_id, rank, cycle)
+               : axom::fmt::format("mesh_intrfc_cs{:02}_{:07}.vtk", cs_id, cycle);
          std::string f_name = axom::utilities::filesystem::joinPath(dir,name);
 
          std::ofstream mesh;
@@ -390,62 +404,60 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          mesh << "CYCLE 1 1 int\n";
          mesh << cycle << "\n";
          mesh << "COUPLING_SCHEME 1 1 int\n";
-         mesh << csId << "\n";
+         mesh << cs_id << "\n";
 
-         int numTotalNodes = mesh1.m_lengthNodalData +
-                             mesh2.m_lengthNodalData;
+         int numTotalNodes = mesh1.numberOfNodes() +
+                             mesh2.numberOfNodes();
          mesh << "POINTS " << numTotalNodes << " float\n";
 
-         for (int i=0; i<mesh1.m_lengthNodalData; ++i)
+         for (int i=0; i<mesh1.numberOfNodes(); ++i)
          {
             axom::fmt::print(mesh, "{} {} {}\n",
-               mesh1.m_positionX[i],
-               mesh1.m_positionY[i],
-               dim==3 ? mesh1.m_positionZ[i] : 0.);
+               mesh1.getPosition()[0][i],
+               mesh1.getPosition()[1][i],
+               dim==3 ? mesh1.getPosition()[2][i] : 0.);
          }
 
-         for (int i=0; i<mesh2.m_lengthNodalData; ++i)
+         for (int i=0; i<mesh2.numberOfNodes(); ++i)
          {
             axom::fmt::print(mesh, "{} {} {}\n",
-               mesh2.m_positionX[i],
-               mesh2.m_positionY[i],
-               dim==3 ? mesh2.m_positionZ[i] : 0.);
+               mesh2.getPosition()[0][i],
+               mesh2.getPosition()[1][i],
+               dim==3 ? mesh2.getPosition()[2][i] : 0.);
          }
 
          // print mesh element connectivity
-         int numTotalElements = mesh1.m_numCells + mesh2.m_numCells;
-         int numSurfaceNodes = mesh1.m_numCells * mesh1.m_numNodesPerCell
-                             + mesh2.m_numCells * mesh2.m_numNodesPerCell;
+         int numTotalElements = mesh1.numberOfElements() + mesh2.numberOfElements();
+         int numSurfaceNodes = mesh1.numberOfNodes() * mesh1.numberOfNodesPerElement()
+                             + mesh2.numberOfNodes() * mesh2.numberOfNodesPerElement();
 
          axom::fmt::print(mesh, "CELLS {} {}\n", numTotalElements, numTotalElements + numSurfaceNodes);
 
-         for (int i=0; i<mesh1.m_numCells; ++i)
+         for (int i=0; i<mesh1.numberOfElements(); ++i)
          {
-            mesh << mesh1.m_numNodesPerCell;
-            for (int a=0; a<mesh1.m_numNodesPerCell; ++a)
+            mesh << mesh1.numberOfNodesPerElement();
+            for (int a=0; a<mesh1.numberOfNodesPerElement(); ++a)
             {
-               int id = mesh1.m_numNodesPerCell * i + a;
-               mesh << " " << mesh1.m_connectivity[id];
+               mesh << " " << mesh1.getConnectivity()(i, a);
             } // end a-loop over nodes
             mesh << std::endl;
          } // end i-loop over cells
 
-         const int m2_offset = mesh1.m_lengthNodalData;
-         for (int i=0; i<mesh2.m_numCells; ++i)
+         const int m2_offset = mesh1.numberOfNodes();
+         for (int i=0; i<mesh2.numberOfElements(); ++i)
          {
-            mesh << mesh2.m_numNodesPerCell;
-            for (int a=0; a<mesh2.m_numNodesPerCell; ++a)
+            mesh << mesh2.numberOfNodesPerElement();
+            for (int a=0; a<mesh2.numberOfNodesPerElement(); ++a)
             {
-               int id = mesh2.m_numNodesPerCell * i + a;
-               mesh << " " << m2_offset + mesh2.m_connectivity[id];
+               mesh << " " << m2_offset + mesh2.getConnectivity()(i, a);
             } // end a-loop over nodes
             mesh << std::endl;
          } // end i-loop over cells
 
          // specify integer id for each cell type.
          // For 4-node quad, id = 9.
-         const int mesh1_element_id = GetVtkElementId( mesh1.m_elementType );
-         const int mesh2_element_id = GetVtkElementId( mesh2.m_elementType );
+         const int mesh1_element_id = GetVtkElementId( mesh1.getElementType() );
+         const int mesh2_element_id = GetVtkElementId( mesh2.getElementType() );
 
          if (mesh1_element_id <= 0 || mesh2_element_id <= 0) {
             SLIC_ERROR("WriteInterfaceMeshToVtk(): " <<
@@ -453,11 +465,11 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          }
 
          mesh << "CELL_TYPES " << numTotalElements << std::endl;
-         for (int i=0; i<mesh1.m_numCells; ++i)
+         for (int i=0; i<mesh1.numberOfElements(); ++i)
          {
             axom::fmt::print(mesh, "{} ", mesh1_element_id);
          }
-         for (int i=0; i<mesh2.m_numCells; ++i)
+         for (int i=0; i<mesh2.numberOfElements(); ++i)
          {
             axom::fmt::print(mesh, "{} ", mesh2_element_id);
          }
@@ -468,14 +480,14 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
          mesh << "CELL_DATA " << numTotalElements << std::endl;
          mesh << "SCALARS mesh_id int 1" << std::endl;
          mesh << "LOOKUP_TABLE default" << std::endl;
-         for (int i=0; i<mesh1.m_numCells; ++i)
+         for (int i=0; i<mesh1.numberOfElements(); ++i)
          {
-            axom::fmt::print(mesh,  "{} ", meshId1);
+            axom::fmt::print(mesh,  "{} ", mesh_id1);
          }
 
-         for (int i=0; i<mesh2.m_numCells; ++i)
+         for (int i=0; i<mesh2.numberOfElements(); ++i)
          {
-            axom::fmt::print(mesh,  "{} ", meshId2);
+            axom::fmt::print(mesh,  "{} ", mesh_id2);
          }
          mesh << std::endl;
 

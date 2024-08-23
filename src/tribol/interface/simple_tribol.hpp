@@ -6,7 +6,6 @@
 #ifndef SIMPLE_TRIBOL_HPP_
 #define SIMPLE_TRIBOL_HPP_
 
-#include "tribol/types.hpp"
 #include "tribol/common/Parameters.hpp"
 
 #include <string>
@@ -22,12 +21,11 @@
 /*!
  * \brief Initializes tribol and optionally initializes slic (logging library)
  *
- * \param [in] dim dimension of problem
  * \param [in] init_slic indicates if we should initialize slic
  * \return 0 if no error has occurred 
  *
  */
-int Initialize(const int dim, bool init_slic = true);
+int Initialize(bool init_slic = true);
 
 /*!
  * \brief Finalizes tribol and optionally finalizes slic (logging library)

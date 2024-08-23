@@ -50,7 +50,7 @@ void SubmeshLORTransfer::SubmeshToLOR(
 std::unique_ptr<mfem::ParGridFunction> SubmeshLORTransfer::CreateLORGridFunction(
   mfem::ParMesh& lor_mesh,
   std::unique_ptr<mfem::FiniteElementCollection> lor_fec,
-  integer vdim
+  int vdim
 )
 {
   auto lor_gridfn = std::make_unique<mfem::ParGridFunction>( 
@@ -231,9 +231,9 @@ void ParentField::UpdateField(ParentRedecompTransfer& parent_redecomp_xfer)
   update_data_ = std::make_unique<UpdateData>(parent_redecomp_xfer, parent_gridfn_);
 }
 
-std::vector<const real*> ParentField::GetRedecompFieldPtrs() const
+std::vector<const RealT*> ParentField::GetRedecompFieldPtrs() const
 {
-  auto data_ptrs = std::vector<const real*>(3, nullptr);
+  auto data_ptrs = std::vector<const RealT*>(3, nullptr);
   if (GetRedecompGridFn().FESpace()->GetNDofs() > 0)
   {
     for (size_t i{}; i < static_cast<size_t>(GetRedecompGridFn().FESpace()->GetVDim()); ++i)
@@ -244,9 +244,9 @@ std::vector<const real*> ParentField::GetRedecompFieldPtrs() const
   return data_ptrs;
 }
 
-std::vector<real*> ParentField::GetRedecompFieldPtrs(mfem::GridFunction& redecomp_gridfn)
+std::vector<RealT*> ParentField::GetRedecompFieldPtrs(mfem::GridFunction& redecomp_gridfn)
 {
-  auto data_ptrs = std::vector<real*>(3, nullptr);
+  auto data_ptrs = std::vector<RealT*>(3, nullptr);
   if (redecomp_gridfn.FESpace()->GetNDofs() > 0)
   {
     for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
@@ -303,9 +303,9 @@ void PressureField::UpdateField(SubmeshRedecompTransfer& submesh_redecomp_xfer)
   update_data_ = std::make_unique<UpdateData>(submesh_redecomp_xfer, submesh_gridfn_);
 }
 
-std::vector<const real*> PressureField::GetRedecompFieldPtrs() const
+std::vector<const RealT*> PressureField::GetRedecompFieldPtrs() const
 {
-  auto data_ptrs = std::vector<const real*>(3, nullptr);
+  auto data_ptrs = std::vector<const RealT*>(3, nullptr);
   if (GetRedecompGridFn().FESpace()->GetNDofs() > 0)
   {
     for (size_t i{}; i < static_cast<size_t>(GetRedecompGridFn().FESpace()->GetVDim()); ++i)
@@ -316,9 +316,9 @@ std::vector<const real*> PressureField::GetRedecompFieldPtrs() const
   return data_ptrs;
 }
 
-std::vector<real*> PressureField::GetRedecompFieldPtrs(mfem::GridFunction& redecomp_gridfn)
+std::vector<RealT*> PressureField::GetRedecompFieldPtrs(mfem::GridFunction& redecomp_gridfn)
 {
-  auto data_ptrs = std::vector<real*>(3, nullptr);
+  auto data_ptrs = std::vector<RealT*>(3, nullptr);
   if (redecomp_gridfn.FESpace()->GetNDofs() > 0)
   {
     for (size_t i{}; i < static_cast<size_t>(redecomp_gridfn.FESpace()->GetVDim()); ++i)
@@ -359,12 +359,12 @@ PressureField::UpdateData::UpdateData(
 }
 
 MfemMeshData::MfemMeshData(
-  integer mesh_id_1,
-  integer mesh_id_2,
+  IndexT mesh_id_1,
+  IndexT mesh_id_2,
   const mfem::ParMesh& parent_mesh,
   const mfem::ParGridFunction& current_coords,
-  std::set<integer>&& attributes_1,
-  std::set<integer>&& attributes_2
+  std::set<int>&& attributes_1,
+  std::set<int>&& attributes_2
 )
 : mesh_id_1_ { mesh_id_1 },
   mesh_id_2_ { mesh_id_2 },
@@ -450,7 +450,7 @@ void MfemMeshData::UpdateMfemMeshData()
     *redecomp_elem_thickness_ = 0.0;
     redecomp_xfer.TransferToSerial(*elem_thickness_, *redecomp_elem_thickness_);
     // set element thickness on tribol mesh
-    tribol_elem_thickness_1_ = std::make_unique<axom::Array<double>>(
+    tribol_elem_thickness_1_ = std::make_unique<ArrayT<RealT>>(
       0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
     for (auto redecomp_e : GetElemMap1())
     {
@@ -458,7 +458,7 @@ void MfemMeshData::UpdateMfemMeshData()
       redecomp_elem_thickness_->GetValues(redecomp_e, quad_val);
       tribol_elem_thickness_1_->push_back(quad_val[0]);
     }
-    tribol_elem_thickness_2_ = std::make_unique<axom::Array<double>>(
+    tribol_elem_thickness_2_ = std::make_unique<ArrayT<RealT>>(
       0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
@@ -474,7 +474,7 @@ void MfemMeshData::UpdateMfemMeshData()
     *redecomp_material_modulus_ = 0.0;
     redecomp_xfer.TransferToSerial(*material_modulus_, *redecomp_material_modulus_);
     // set material modulus on tribol mesh
-    tribol_material_modulus_1_ = std::make_unique<axom::Array<double>>(
+    tribol_material_modulus_1_ = std::make_unique<ArrayT<RealT>>(
       0, GetElemMap1().empty() ? 1 : GetElemMap1().size());
     for (auto redecomp_e : GetElemMap1())
     {
@@ -482,7 +482,7 @@ void MfemMeshData::UpdateMfemMeshData()
       redecomp_material_modulus_->GetValues(redecomp_e, quad_val);
       tribol_material_modulus_1_->push_back(quad_val[0]);
     }
-    tribol_material_modulus_2_ = std::make_unique<axom::Array<double>>(
+    tribol_material_modulus_2_ = std::make_unique<ArrayT<RealT>>(
       0, GetElemMap2().empty() ? 1 : GetElemMap2().size());
     for (auto redecomp_e : GetElemMap2())
     {
@@ -535,7 +535,7 @@ void MfemMeshData::ClearRatePenaltyData()
   rate_percent_ratio_2_.reset(nullptr);
 }
 
-void MfemMeshData::SetLORFactor(integer lor_factor)
+void MfemMeshData::SetLORFactor(int lor_factor)
 {
   if (lor_factor <= 1)
   {
@@ -659,8 +659,8 @@ MfemMeshData::UpdateData::UpdateData(
   const mfem::ParFiniteElementSpace& parent_fes,
   mfem::ParGridFunction& submesh_gridfn,
   SubmeshLORTransfer* submesh_lor_xfer,
-  const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2
+  const std::set<int>& attributes_1,
+  const std::set<int>& attributes_2
 )
 : redecomp_mesh_ { lor_mesh ? 
     redecomp::RedecompMesh(*lor_mesh) :
@@ -675,8 +675,8 @@ MfemMeshData::UpdateData::UpdateData(
 }
 
 void MfemMeshData::UpdateData::UpdateConnectivity(
-  const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2
+  const std::set<int>& attributes_1,
+  const std::set<int>& attributes_2
 )
 {
   conn_1_.reserve(redecomp_mesh_.GetNE() * num_verts_per_elem_);
@@ -741,8 +741,8 @@ const MfemMeshData::UpdateData& MfemMeshData::GetUpdateData() const
 
 mfem::ParSubMesh MfemMeshData::CreateSubmesh(
   const mfem::ParMesh& parent_mesh,
-  const std::set<integer>& attributes_1,
-  const std::set<integer>& attributes_2
+  const std::set<int>& attributes_1,
+  const std::set<int>& attributes_2
 )
 {
   // TODO: Create PR for mfem::ParSubMesh::CreateFromBoundary taking a const
@@ -804,7 +804,7 @@ MfemSubmeshData::MfemSubmeshData(
   mfem::ParSubMesh& submesh,
   mfem::ParMesh* lor_mesh,
   std::unique_ptr<mfem::FiniteElementCollection> pressure_fec,
-  integer pressure_vdim
+  int pressure_vdim
 )
 : submesh_pressure_ {
     new mfem::ParFiniteElementSpace(
@@ -969,13 +969,13 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   const auto& elem_map_2 = parent_data_.GetElemMap2();
   // empty data structures are needed even when no meshes are on rank since TransferToParallelSparse() needs to be
   // called on all ranks (even those without data)
-  auto mortar_elems = axom::Array<integer>(0, 0);
-  auto nonmortar_elems = axom::Array<integer>(0, 0);
-  auto lm_elems = axom::Array<integer>(0, 0);
-  auto elem_J_1_ptr = std::make_unique<axom::Array<mfem::DenseMatrix>>(0, 0);
-  auto elem_J_2_ptr = std::make_unique<axom::Array<mfem::DenseMatrix>>(0, 0);
-  const axom::Array<mfem::DenseMatrix>* elem_J_1 = elem_J_1_ptr.get();
-  const axom::Array<mfem::DenseMatrix>* elem_J_2 = elem_J_2_ptr.get();
+  auto mortar_elems = ArrayT<int>(0, 0);
+  auto nonmortar_elems = ArrayT<int>(0, 0);
+  auto lm_elems = ArrayT<int>(0, 0);
+  auto elem_J_1_ptr = std::make_unique<ArrayT<mfem::DenseMatrix>>(0, 0);
+  auto elem_J_2_ptr = std::make_unique<ArrayT<mfem::DenseMatrix>>(0, 0);
+  const ArrayT<mfem::DenseMatrix>* elem_J_1 = elem_J_1_ptr.get();
+  const ArrayT<mfem::DenseMatrix>* elem_J_2 = elem_J_2_ptr.get();
   // this means both of the meshes exist
   if (method_data != nullptr && !elem_map_1.empty() && !elem_map_2.empty())
   {
@@ -1024,7 +1024,7 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   auto J = submesh_J.GetJ();
   auto submesh_vector_fes = parent_data_.GetSubmeshFESpace();
   auto mpi = redecomp::MPIUtility(submesh_vector_fes.GetComm());
-  auto submesh_dof_offsets = axom::Array<int>(mpi.NRanks() + 1, mpi.NRanks() + 1);
+  auto submesh_dof_offsets = ArrayT<int>(mpi.NRanks() + 1, mpi.NRanks() + 1);
   // we need the dof offsets of each rank.  check if mfem stores this or if we
   // need to create it.
   if (HYPRE_AssumedPartitionCheck())
@@ -1109,7 +1109,7 @@ std::unique_ptr<mfem::BlockOperator> MfemJacobianData::GetMfemBlockJacobian(
   block_J->owns_blocks = 1;
 
   // fill block operator
-  auto mpi_comm = parameters_t::getInstance().problem_comm;
+  auto mpi_comm = parent_data_.GetParentCoords().ParFESpace()->GetComm();
   auto& submesh_fes = submesh_data_.GetSubmeshFESpace();
   auto& parent_trial_fes = *parent_data_.GetParentCoords().ParFESpace();
   auto J_full = std::make_unique<mfem::HypreParMatrix>(

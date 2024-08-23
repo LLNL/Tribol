@@ -3,11 +3,6 @@
 #
 # SPDX-License-Identifier: (MIT)
 
-## configure types.hpp
-set(TRIBOL_DATA_DIR ${PROJECT_SOURCE_DIR}/data)
-tribol_configure_file(common/types.hpp.in
-                      ${PROJECT_BINARY_DIR}/include/tribol/types.hpp )
-
 # Add targets to generate C and Fortran interfaces
 if (SHROUD_FOUND)
      add_subdirectory(interface)
@@ -16,6 +11,10 @@ endif()
 ## list of headers
 set(tribol_headers
 
+    common/ArrayTypes.hpp
+    common/BasicTypes.hpp
+    common/ExecModel.hpp
+    common/LoopExec.hpp
     common/Parameters.hpp
 
     interface/mfem_tribol.hpp
@@ -28,16 +27,14 @@ set(tribol_headers
     mesh/InterfacePairs.hpp
     mesh/MethodCouplingData.hpp 
     mesh/CouplingScheme.hpp
-    mesh/CouplingSchemeManager.hpp
-    mesh/MeshManager.hpp
     mesh/MeshData.hpp
     mesh/MfemData.hpp
 
     geom/ContactPlane.hpp
     geom/GeomUtilities.hpp
-    geom/ContactPlaneManager.hpp
 
     utils/ContactPlaneOutput.hpp
+    utils/DataManager.hpp
     utils/Math.hpp
     utils/TestUtils.hpp
 
@@ -62,14 +59,11 @@ set(tribol_sources
     mesh/InterfacePairs.cpp
     mesh/MethodCouplingData.cpp
     mesh/CouplingScheme.cpp
-    mesh/CouplingSchemeManager.cpp
-    mesh/MeshManager.cpp
     mesh/MeshData.cpp
     mesh/MfemData.cpp
      
     geom/ContactPlane.cpp
     geom/GeomUtilities.cpp 
-    geom/ContactPlaneManager.cpp
 
     utils/ContactPlaneOutput.cpp
     utils/Math.cpp
@@ -103,9 +97,10 @@ endif()
 ## setup the dependency list for tribol
 set(tribol_depends axom::primal axom::slic mfem)
 blt_list_append(TO tribol_depends ELEMENTS blt::mpi IF TRIBOL_USE_MPI )
+blt_list_append(TO tribol_depends ELEMENTS blt::openmp IF TRIBOL_USE_OPENMP )
 blt_list_append(TO tribol_depends ELEMENTS redecomp IF BUILD_REDECOMP )
 blt_list_append(TO tribol_depends ELEMENTS umpire IF TRIBOL_USE_UMPIRE )
-blt_list_append(TO tribol_depends ELEMENTS RAJA IF RAJA_FOUND )
+blt_list_append(TO tribol_depends ELEMENTS RAJA IF TRIBOL_USE_RAJA )
 message(STATUS "Tribol library dependencies: ${tribol_depends}")
 
 ## create the library
@@ -116,6 +111,18 @@ blt_add_library(
     DEPENDS_ON ${tribol_depends} ${tribol_device_depends}
     FOLDER tribol
     )
+
+# Add separable compilation flag
+if(ENABLE_HIP)
+    target_compile_options(tribol PRIVATE -fgpu-rdc)
+    target_compile_options(tribol PRIVATE
+        $<$<CONFIG:Debug>:
+            -ggdb
+        >
+    )
+    target_link_options(tribol PRIVATE -fgpu-rdc)
+    target_link_options(tribol PRIVATE --hip-link)
+endif()
 
 # Don't propagate internal dependencies
 target_link_libraries(tribol PRIVATE axom::quest)

@@ -12,7 +12,6 @@
 #include "tribol/common/Parameters.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/interface/mfem_tribol.hpp"
-#include "tribol/types.hpp"
 
 // Redecomp includes
 #include "redecomp/redecomp.hpp"
@@ -33,9 +32,9 @@
  * @brief This tests the Tribol MFEM interface running a contact patch test.
  *
  */
-class MfemCommonPlaneTest : public testing::TestWithParam<int> {
+class MfemMortarTest : public testing::TestWithParam<int> {
 protected:
-  double max_disp_;
+  tribol::RealT max_disp_;
   void SetUp() override
   {
     // number of times to uniformly refine the serial mesh before constructing the
@@ -154,7 +153,6 @@ protected:
     a.FormSystemMatrix(ess_tdof_list, *A);
 
     // set up tribol
-    tribol::initialize(pmesh->SpaceDimension(), MPI_COMM_WORLD);
     int coupling_scheme_id = 0;
     int mesh1_id = 0;
     int mesh2_id = 1;
@@ -175,7 +173,7 @@ protected:
 
     // update tribol (compute contact contribution to force and stiffness)
     tribol::updateMfemParallelDecomposition();
-    double dt {1.0};  // time is arbitrary here (no timesteps)
+    tribol::RealT dt {1.0};  // time is arbitrary here (no timesteps)
     tribol::update(1, 1.0, dt);
 
     // retrieve block stiffness matrix
@@ -222,14 +220,14 @@ protected:
   }
 };
 
-TEST_P(MfemCommonPlaneTest, mass_matrix_transfer)
+TEST_P(MfemMortarTest, mass_matrix_transfer)
 {
   EXPECT_LT(std::abs(max_disp_ - 0.005), 1.0e-6);
 
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-INSTANTIATE_TEST_SUITE_P(tribol, MfemCommonPlaneTest, testing::Values(2));
+INSTANTIATE_TEST_SUITE_P(tribol, MfemMortarTest, testing::Values(2));
 
 //------------------------------------------------------------------------------
 #include "axom/slic/core/SimpleLogger.hpp"

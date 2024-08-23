@@ -6,7 +6,8 @@
 #ifndef SRC_UTILS_CONTACTPLANEOUTPUT_HPP_
 #define SRC_UTILS_CONTACTPLANEOUTPUT_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/common/BasicTypes.hpp"
+#include "tribol/common/Parameters.hpp"
 
 // AXOM includes
 #include "axom/slic.hpp" 
@@ -26,7 +27,7 @@ class ContactPlaneManager;
  *
  * \param [in] dir output directory
  * \param [in] v_type visualization type
- * \param [in] csId coupling scheme id
+ * \param [in] cs_id coupling scheme id
  * \param [in] meshId1 id for first mesh in interface
  * \param [in] meshId2 id for second mesh in interface
  * \param [in] dim spatial dimension
@@ -35,9 +36,9 @@ class ContactPlaneManager;
  *
  */
 void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type, 
-                                 const integer csId, const integer meshId1, 
-                                 const integer meshId2, const integer dim,
-                                 const integer cycle, const real t );
+                                 const IndexT cs_id, const IndexT mesh_id1, 
+                                 const IndexT mesh_id2, const int dim,
+                                 const int cycle, const RealT t );
 
 
 } // end of namespace "tribol"

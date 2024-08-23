@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: (MIT)
 
 // Tribol includes
-#include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/interface/simple_tribol.hpp"
 
@@ -12,10 +11,8 @@
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/physics/Mortar.hpp"
 #include "tribol/physics/AlignedMortar.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
@@ -41,31 +38,26 @@
 #include <iomanip>
 #include <fstream>
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
-void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
+void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, RealT * gaps )
 {
-   tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::parameters_t& parameters = tribol::parameters_t::getInstance();
-   tribol::integer const dim = parameters.dimension;
+   int const dim = cs->spatialDimension();
 
    ////////////////////////////////////////////////////////////////////////
    //
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   tribol::IndexType const mortarId = cs->getMeshId1();
-   tribol::IndexType const nonmortarId = cs->getMeshId2();
-
-   tribol::MeshData& mortarMesh = meshManager.GetMeshInstance( mortarId );
-   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+   auto& mortarMesh = cs->getMesh1();
+   auto& nonmortarMesh = cs->getMesh2();
 
    // get mortar weights in CSR format. Note this simple API function 
    // calls tribol::getCSRMatrix() so this API function in the Tribol 
    // namespace is getting tested.
    int *I = nullptr;
    int *J = nullptr;
-   real *wts = nullptr;
+   RealT *wts = nullptr;
    int nOffsets = 0;
    int nNonZeros = 0;
    int csr_err = GetSimpleCouplingCSR( &I, &J, &wts, &nOffsets, &nNonZeros );
@@ -75,12 +67,10 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
    SLIC_ERROR_IF(I==nullptr, "Mortar wts test, I is null.");
 
    // get mortar node id offset to distinguish mortar from nonmortar column contributions
-   if (mortarMesh.m_sortedSurfaceNodeIds == nullptr)
-   {
-      SLIC_DEBUG("computeGapsFromSparseWts(): sorting unique mortar surface node ids.");
-      mortarMesh.sortSurfaceNodeIds();
-   }
-   int nodeOffset = mortarMesh.m_sortedSurfaceNodeIds[ mortarMesh.m_numSurfaceNodes-1 ] + 1;
+   // sorts unique surface node ids from connectivity
+   auto mortar_id = mortarMesh.meshId();
+   auto sorted_surface_node_ids = tribol::MeshManager::getInstance().at(mortar_id).sortSurfaceNodeIds();
+   int nodeOffset = sorted_surface_node_ids.back() + 1;
 
    ////////////////////////////////////////////////////////////////
    // compute nonmortar gaps to determine active set of contact dofs //
@@ -91,20 +81,20 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
    for (int a=0; a<numTotalNodes; ++a)
    {
       // get nonmortar nodal normal
-      real nrml_a[dim];
-      nrml_a[0] = nonmortarMesh.m_node_nX[ a ]; // array is global length; no index out (?)
-      nrml_a[1] = nonmortarMesh.m_node_nY[ a ];
+      RealT nrml_a[dim];
+      nrml_a[0] = nonmortarMesh.getNodalNormals()[0][ a ]; // array is global length; no index out (?)
+      nrml_a[1] = nonmortarMesh.getNodalNormals()[1][ a ];
       if (dim == 3 )
       {
-         nrml_a[2] = nonmortarMesh.m_node_nZ[ a ];
+         nrml_a[2] = nonmortarMesh.getNodalNormals()[2][ a ];
       }
 
       // loop over range of nonzero column entries
       for (int b=I[a]; b<I[a+1]; ++b)
       {
          // get face coordinates for node J[b], i.e. column node id
-         real mortar_xyz[ dim ]; 
-         real nonmortar_xyz[ dim ]; 
+         RealT mortar_xyz[ dim ]; 
+         RealT nonmortar_xyz[ dim ]; 
 
          for (int i=0; i<dim; ++i)
          {
@@ -112,15 +102,15 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
             nonmortar_xyz[i]  = 0.;
          }
 
-         real n_ab = wts[b];
+         RealT n_ab = wts[b];
 
          if ( J[b] < nodeOffset ) // nonmortar/mortar  weight
          {
-            mortar_xyz[0] = mortarMesh.m_positionX[ J[b] ];
-            mortar_xyz[1] = mortarMesh.m_positionY[ J[b] ];
+            mortar_xyz[0] = mortarMesh.getPosition()[0][ J[b] ];
+            mortar_xyz[1] = mortarMesh.getPosition()[1][ J[b] ];
             if ( dim == 3 )
             { 
-               mortar_xyz[2] = mortarMesh.m_positionZ[ J[b] ];
+               mortar_xyz[2] = mortarMesh.getPosition()[2][ J[b] ];
             }
  
             gaps[a] += tribol::dotProd( &nrml_a[0], &mortar_xyz[0], dim ) *
@@ -129,11 +119,11 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
          }
          else // nonmortar/nonmortar weight
          {
-            nonmortar_xyz[0] = nonmortarMesh.m_positionX[ J[b] ];
-            nonmortar_xyz[1] = nonmortarMesh.m_positionY[ J[b] ];
+            nonmortar_xyz[0] = nonmortarMesh.getPosition()[0][ J[b] ];
+            nonmortar_xyz[1] = nonmortarMesh.getPosition()[1][ J[b] ];
             if ( dim == 3 )
             { 
-               nonmortar_xyz[2] = nonmortarMesh.m_positionZ[ J[b] ];
+               nonmortar_xyz[2] = nonmortarMesh.getPosition()[2][ J[b] ];
             }
             gaps[a] -= tribol::dotProd( &nrml_a[0], &nonmortar_xyz[0], dim ) * 
                        n_ab;
@@ -144,17 +134,17 @@ void computeGapsFromSparseWts( tribol::CouplingScheme const * cs, real * gaps )
 
 } // end ComputeGapsFromSparseWts()
 
-void compareGaps( tribol::CouplingScheme const * cs, real * gaps, const real tol )
+void compareGaps( tribol::CouplingScheme const * cs, RealT * gaps, const RealT tol )
 {
    tribol::MeshManager& meshManager = tribol::MeshManager::getInstance();
-   tribol::IndexType const nonmortarId = cs->getMeshId2();
-   tribol::MeshData& nonmortarMesh = meshManager.GetMeshInstance( nonmortarId );
+   tribol::IndexT const nonmortarId = cs->getMeshId2();
+   tribol::MeshData& nonmortarMesh = meshManager.at( nonmortarId );
 
    int numTotalNodes = cs->getNumTotalNodes();
 
    for (int i=0; i<numTotalNodes; ++i)
    {
-      real diff = nonmortarMesh.m_nodalFields.m_node_gap[i] - gaps[i];
+      RealT diff = nonmortarMesh.getNodalFields().m_node_gap[i] - gaps[i];
       EXPECT_LE( diff, tol );
    }
 
@@ -199,19 +189,19 @@ TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
 
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -232,12 +222,12 @@ TEST_F( MortarSparseWtsTest, mortar_weights_uniform )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    // allocate storage for gap computations using sparse mortar weights
-   real * gaps = nullptr;
+   RealT * gaps = nullptr;
    int size = static_cast<tribol::MortarData*>( couplingScheme->getMethodData() )->m_numTotalNodes;
-   gaps = new real[ size ];
+   gaps = new RealT[ size ];
 
    // initialize gap storage
    for (int i=0; i<size; ++i)
@@ -267,19 +257,19 @@ TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
 
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -300,12 +290,12 @@ TEST_F( MortarSparseWtsTest, simple_api_mortar_weights_uniform )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    // allocate storage for gap computations using sparse mortar weights
-   real * gaps = nullptr;
+   RealT * gaps = nullptr;
    int size = static_cast<tribol::MortarData*>( couplingScheme->getMethodData() )->m_numTotalNodes;
-   gaps = new real[ size ];
+   gaps = new RealT[ size ];
 
    // initialize gap storage
    for (int i=0; i<size; ++i)
@@ -335,19 +325,19 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_mortar_fine )
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
 
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -369,12 +359,12 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_mortar_fine )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    // allocate storage for gap computations using sparse mortar weights
-   real * gaps = nullptr;
+   RealT * gaps = nullptr;
    int size = static_cast<tribol::MortarData*>( couplingScheme->getMethodData() )->m_numTotalNodes;
-   gaps = new real[ size ];
+   gaps = new RealT[ size ];
 
    // initialize gap storage
    for (int i=0; i<size; ++i)
@@ -404,19 +394,19 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_nonmortar_fine )
    int nElemsYS = nNonmortarElems;
    int nElemsZS = nNonmortarElems;
 
-   real x_min1 = 0.;
-   real y_min1 = 0.;
-   real z_min1 = 0.; 
-   real x_max1 = 1.;
-   real y_max1 = 1.;
-   real z_max1 = 1.05;
+   RealT x_min1 = 0.;
+   RealT y_min1 = 0.;
+   RealT z_min1 = 0.; 
+   RealT x_max1 = 1.;
+   RealT y_max1 = 1.;
+   RealT z_max1 = 1.05;
 
-   real x_min2 = 0.;
-   real y_min2 = 0.;
-   real z_min2 = 0.95;
-   real x_max2 = 1.;
-   real y_max2 = 1.;
-   real z_max2 = 2.;
+   RealT x_min2 = 0.;
+   RealT y_min2 = 0.;
+   RealT z_min2 = 0.95;
+   RealT x_max2 = 1.;
+   RealT y_max2 = 1.;
+   RealT z_max2 = 2.;
 
    this->m_mesh.setupContactMeshHex( nElemsXM, nElemsYM, nElemsZM,
                                      x_min1, y_min1, z_min1,
@@ -438,12 +428,12 @@ TEST_F( MortarSparseWtsTest, mortar_weights_nonuniform_nonmortar_fine )
    tribol::CouplingSchemeManager& couplingSchemeManager = 
          tribol::CouplingSchemeManager::getInstance();
   
-   tribol::CouplingScheme* couplingScheme = couplingSchemeManager.getCoupling( 0 );
+   tribol::CouplingScheme* couplingScheme = &couplingSchemeManager.at( 0 );
 
    // allocate storage for gap computations using sparse mortar weights
-   real * gaps = nullptr;
+   RealT * gaps = nullptr;
    int size = static_cast<tribol::MortarData*>( couplingScheme->getMethodData() )->m_numTotalNodes;
-   gaps = new real[ size ];
+   gaps = new RealT[ size ];
 
    // initialize gap storage
    for (int i=0; i<size; ++i)

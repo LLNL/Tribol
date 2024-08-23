@@ -14,7 +14,6 @@
 #include "axom/fmt.hpp"
 
 // tribol includes
-#include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/utils/Math.hpp"
 #include "tribol/utils/TestUtils.hpp"
@@ -29,7 +28,7 @@ namespace slic      = axom::slic;
 namespace utilities = axom::utilities;
 namespace CLI       = axom::CLI;
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 //------------------------------------------------------------------------------
 // COMMON DATA STRUCTURE DEFINITIONS
@@ -100,12 +99,12 @@ struct Arguments
   bool dump_vis{false};          // should the example dump visualization files?
 
   /// input arguments for examples that use the TestMesh class
-  std::vector<tribol::integer> block1_res{4, 4, 4};      // block1 -- number of elements in each direction
-  std::vector<tribol::real> block1_min {0., 0., 0.};     // block1 -- bounding box min
-  std::vector<tribol::real> block1_max {1., 1., 1.05};   // block1 -- bounding box max
-  std::vector<tribol::integer> block2_res{4, 4, 4};      // block2 -- number of elements in each direction
-  std::vector<tribol::real> block2_min {0., 0., 0.95};   // block2 -- bounding box min
-  std::vector<tribol::real> block2_max {1., 1., 2.};     // block2 -- bounding box max
+  std::vector<int> block1_res{4, 4, 4};      // block1 -- number of elements in each direction
+  std::vector<tribol::RealT> block1_min {0., 0., 0.};     // block1 -- bounding box min
+  std::vector<tribol::RealT> block1_max {1., 1., 1.05};   // block1 -- bounding box max
+  std::vector<int> block2_res{4, 4, 4};      // block2 -- number of elements in each direction
+  std::vector<tribol::RealT> block2_min {0., 0., 0.95};   // block2 -- bounding box min
+  std::vector<tribol::RealT> block2_max {1., 1., 2.};     // block2 -- bounding box max
 };
 
 //------------------------------------------------------------------------------
@@ -227,14 +226,6 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
                                 bool visualization,
                                 tribol::TestControlParameters* params )
 {
-   ///////////////////////////////
-   //                           //
-   // STEP 0: initialize tribol //
-   //                           //
-   ///////////////////////////////
-   tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
-   tribol::initialize( mesh.dim, problem_comm );
-
    /////////////////////////////////////////////
    //                                         //
    // STEP 1: register the interacting meshes //
@@ -257,11 +248,11 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
    tribol::registerMesh( block1_id, mesh.numMortarFaces, 
                          mesh.numTotalNodes,
                          mesh.faceConn1, cellType, 
-                         mesh.x, mesh.y, mesh.z );
+                         mesh.x, mesh.y, mesh.z, tribol::MemorySpace::Host );
    tribol::registerMesh( block2_id, mesh.numNonmortarFaces, 
                          mesh.numTotalNodes,
                          mesh.faceConn2, cellType, 
-                         mesh.x, mesh.y, mesh.z );
+                         mesh.x, mesh.y, mesh.z, tribol::MemorySpace::Host );
    ///////////////////////////////////
    //                               //
    // STEP 2: register field arrays //
@@ -396,7 +387,8 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
                            method,
                            model,
                            enforcement,
-                           tribol::BINNING_GRID );
+                           tribol::BINNING_GRID,
+                           tribol::ExecutionMode::Sequential );
 
    //////////////////////////////////////////////////////////
    //                                                      //
@@ -457,8 +449,8 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
      ////////////////////////////////////////////////////////////////////
      if (visualization)
      {
-        tribol::setPlotCycleIncrement( 1 );
-        tribol::setPlotOptions( tribol::VIS_MESH_FACES_AND_OVERLAPS );
+        tribol::setPlotCycleIncrement( csIndex, 1 );
+        tribol::setPlotOptions( csIndex, tribol::VIS_MESH_FACES_AND_OVERLAPS );
      }
 
      //////////////////////////////////////////////////////////////
@@ -472,7 +464,7 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
      //  methods.                                                // 
      //                                                          //
      //////////////////////////////////////////////////////////////
-     tribol::setContactAreaFrac( 1.e-6 );
+     tribol::setContactAreaFrac( csIndex, 1.e-6 );
 
    } // end STEP 5 scope
 
@@ -503,7 +495,7 @@ int tribol_register_and_update( tribol::TestMesh &mesh,
  * \brief Initialize logger
  * \param [in] problem_comm MPI communicator
  */
-void initialize_logger( tribol::CommType problem_comm )
+void initialize_logger( tribol::CommT problem_comm )
 {
   slic::initialize();
   slic::setLoggingMsgLevel( slic::message::Debug );

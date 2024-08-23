@@ -6,7 +6,6 @@
 #ifndef SRC_PHYSICS_COMMONPLANE_HPP_
 #define SRC_PHYSICS_COMMONPLANE_HPP_
 
-#include "tribol/types.hpp"
 #include "Physics.hpp"
 
 namespace tribol
@@ -24,8 +23,8 @@ namespace tribol
  * \pre Bulk modulus and element thickness arrays are registered by host code 
  *
  */
-real ComputePenaltyStiffnessPerArea( const real K1_over_t1,
-                                     const real K2_over_t2 );
+TRIBOL_HOST_DEVICE RealT ComputePenaltyStiffnessPerArea( const RealT K1_over_t1,
+                                                         const RealT K2_over_t2 );
 
 /*!
  *
@@ -37,7 +36,7 @@ real ComputePenaltyStiffnessPerArea( const real K1_over_t1,
  *
  */
 template< >
-int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme const * cs );
+int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs );
 
 } // end namespace tribol
 

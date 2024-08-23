@@ -238,7 +238,7 @@ spack:
 
     # Globally lock version of third party libraries that work on this platform
     axom:
-      variants: ~examples~fortran~lua~tools~openmp
+      variants: ~shared~examples~fortran~lua~tools
     camp:
       require: "@2024.02.0"
     conduit:
@@ -246,6 +246,6 @@ spack:
     hdf5:
       variants: ~shared~mpi
     raja:
-      require: "@2024.02.0~openmp~shared~examples~exercises"
+      require: "@2024.02.0~shared~examples~exercises"
     umpire:
-      require: "@2024.02.0~openmp~shared~examples"
+      require: "@2024.02.0~shared~examples"

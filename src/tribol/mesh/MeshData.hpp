@@ -6,10 +6,12 @@
 #ifndef SRC_MESH_MESHDATA_HPP_
 #define SRC_MESH_MESHDATA_HPP_
 
-#include "tribol/types.hpp"
-#include "tribol/common/Parameters.hpp"
-
 #include <ostream>
+
+#include "tribol/common/ArrayTypes.hpp"
+#include "tribol/common/LoopExec.hpp"
+#include "tribol/common/Parameters.hpp"
+#include "tribol/utils/DataManager.hpp"
 
 namespace tribol
 {
@@ -19,29 +21,21 @@ namespace tribol
  */
 struct MeshNodalData 
 {
-   
-   /// Default constructor
-   MeshNodalData( );
+  int m_num_nodes;
 
-   /// Destructor
-   ~MeshNodalData() { }
+  /////////////////////////
+  // MORTAR NODAL FIELDS //
+  /////////////////////////
+  ArrayViewT<RealT>       m_node_gap;      ///< scalar nodal gap (used on nonmortar mesh) 
+  ArrayViewT<const RealT> m_node_pressure; ///< scalar nodal pressure (used on nonmortar mesh) 
 
-   int m_numNodes;
+  bool m_is_node_gap_set      {false}; ///< true if nodal gap field is set
+  bool m_is_node_pressure_set {false}; ///< true if nodal pressure field is set
+  /////////////////////////
 
-   /////////////////////////
-   // MORTAR NODAL FIELDS //
-   /////////////////////////
-   real * m_node_gap;            ///< scalar nodal gap (used on nonmortar mesh) 
-   const real * m_node_pressure; ///< scalar nodal pressure (used on nonmortar mesh) 
-
-   bool m_isGapComputed        {false}; ///< true if the nodal gaps have been computed
-   bool m_is_node_gap_set      {false}; ///< true if nodal gap field is set
-   bool m_is_node_pressure_set {false}; ///< true if nodal pressure field is set
-   /////////////////////////
-
-   bool m_is_velocity_set           {false}; ///< true if nodal velocities have been registered
-   bool m_is_nodal_displacement_set {false}; ///< true if nodal displacements have been registered
-   bool m_is_nodal_response_set     {false}; ///< true if the nodal responses have been registered
+  bool m_is_velocity_set           {false}; ///< true if nodal velocities have been registered
+  bool m_is_nodal_displacement_set {false}; ///< true if nodal displacements have been registered
+  bool m_is_nodal_response_set     {false}; ///< true if the nodal responses have been registered
 
 }; // end of struct MeshNodalData
 
@@ -50,247 +44,339 @@ struct MeshNodalData
  */
 struct MeshElemData 
 {
+  int m_num_cells;
 
-   /// Default constructor
-   MeshElemData();
+  //////////////////////////////////////
+  // PENALTY ENFORCEMENT ELEMENT DATA //
+  //////////////////////////////////////
+  ArrayViewT<const RealT> m_mat_mod;   ///< Bulk/Young's modulus for contact faces
+  ArrayViewT<const RealT> m_thickness; ///< Volume element thickness associated with each contact face
 
-   /// Destructor
-   ~MeshElemData();
+  RealT m_penalty_stiffness {0.};      ///< single scalar kinematic penalty stiffness for each mesh
+  RealT m_penalty_scale {1.};          ///< scale factor applied to kinematic penalty only
+  RealT m_rate_penalty_stiffness {0.}; ///< single scalar rate penalty stiffness for each mesh
+  RealT m_rate_percent_stiffness {0.}; ///< rate penalty is percentage of gap penalty
 
-   int m_numCells;
+  bool m_is_kinematic_constant_penalty_set {false}; ///< True if single kinematic constant penalty is set
+  bool m_is_kinematic_element_penalty_set  {false}; ///< True if the element-wise kinematic penalty is set
+  bool m_is_rate_constant_penalty_set      {false}; ///< True if the constant rate penalty is set
+  bool m_is_rate_percent_penalty_set       {false}; ///< True if the rate percent penalty is set
 
-   //////////////////////////////////////
-   // PENALTY ENFORCEMENT ELEMENT DATA //
-   //////////////////////////////////////
-   const real * m_mat_mod;             ///< Bulk/Young's modulus for contact faces
-   const real * m_thickness;           ///< Volume element thickness associated with each contact face
-
-   real m_penalty_stiffness {0.};      ///< single scalar kinematic penalty stiffness for each mesh
-   real m_penalty_scale {1.};          ///< scale factor applied to kinematic penalty only
-   real m_rate_penalty_stiffness {0.}; ///< single scalar rate penalty stiffness for each mesh
-   real m_rate_percent_stiffness {0.}; ///< rate penalty is percentage of gap penalty
-
-   bool m_is_kinematic_constant_penalty_set {false}; ///< True if single kinematic constant penalty is set
-   bool m_is_kinematic_element_penalty_set  {false}; ///< True if the element-wise kinematic penalty is set
-   bool m_is_rate_constant_penalty_set      {false}; ///< True if the constant rate penalty is set
-   bool m_is_rate_percent_penalty_set       {false}; ///< True if the rate percent penalty is set
-
-   bool m_is_element_thickness_set          {false}; ///< True if element thickness is set
+  bool m_is_element_thickness_set          {false}; ///< True if element thickness is set
 
   /*!
-   * \brief Checks if the kinematic penalty data is valid
-   *
-   * \param [in] pen_enfrc penalty enforcement option struct
-   *
-   * \Return True if the kinematic penalty option has valid data
-   */
-   bool isValidKinematicPenalty( PenaltyEnforcementOptions& pen_options );
+  * \brief Checks if the kinematic penalty data is valid
+  *
+  * \param [in] pen_enfrc penalty enforcement option struct
+  *
+  * \Return True if the kinematic penalty option has valid data
+  */
+  bool isValidKinematicPenalty( PenaltyEnforcementOptions& pen_options );
 
   /*!
-   * \brief Checks if the rate penalty data is valid
-   *
-   * \param [in] pen_enfrc to penalty enforcement option struct
-   *
-   * \Return True if the rate penalty option has valid data
-   */
-   bool isValidRatePenalty( PenaltyEnforcementOptions& pen_options ); ///< True if rate penalty option is valid
+  * \brief Checks if the rate penalty data is valid
+  *
+  * \param [in] pen_enfrc to penalty enforcement option struct
+  *
+  * \Return True if the rate penalty option has valid data
+  */
+  bool isValidRatePenalty( PenaltyEnforcementOptions& pen_options ); ///< True if rate penalty option is valid
 
 };
 
 class MeshData
 {
 public:
+  class Viewer
+  {
+  public:
+    Viewer(MeshData& mesh);
 
- /*!
+    TRIBOL_HOST_DEVICE IndexT meshId() const { return m_mesh_id; }
+    TRIBOL_HOST_DEVICE InterfaceElementType getElementType() const { return m_element_type; }
+    TRIBOL_HOST_DEVICE MemorySpace getMemorySpace() const { return m_mem_space; }
+    TRIBOL_HOST_DEVICE int getAllocatorId() const { return m_allocator_id; }
+
+    TRIBOL_HOST_DEVICE MeshNodalData& getNodalFields() { return m_nodal_fields; }
+    TRIBOL_HOST_DEVICE const MeshNodalData& getNodalFields() const { return m_nodal_fields; }
+    TRIBOL_HOST_DEVICE MeshElemData& getElementData() { return m_element_data; }
+    TRIBOL_HOST_DEVICE const MeshElemData& getElementData() const { return m_element_data; }
+
+    TRIBOL_HOST_DEVICE int spatialDimension() const { return m_position.size(); }
+    TRIBOL_HOST_DEVICE IndexT numberOfNodes() const { return m_num_nodes; }
+    TRIBOL_HOST_DEVICE IndexT numberOfElements() const { return m_connectivity.shape()[0]; }
+    TRIBOL_HOST_DEVICE IndexT numberOfNodesPerElement() const { return m_connectivity.shape()[1]; }
+    TRIBOL_HOST_DEVICE IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
+    {
+      return m_connectivity(element_id, local_node_id);
+    }
+
+    TRIBOL_HOST_DEVICE const MultiViewArrayView<const RealT>& getPosition() const
+    {
+      return m_position;
+    }
+    
+    TRIBOL_HOST_DEVICE bool hasDisplacement() const { return !m_disp.empty(); }
+    TRIBOL_HOST_DEVICE const MultiViewArrayView<const RealT>& getDisplacement() const
+    {
+      return m_disp;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasVelocity() const { return !m_vel.empty(); }
+    TRIBOL_HOST_DEVICE const MultiViewArrayView<const RealT>& getVelocity() const
+    {
+      return m_vel;
+    }
+    
+    TRIBOL_HOST_DEVICE bool hasResponse() const { return !m_response.empty(); }
+    TRIBOL_HOST_DEVICE const MultiViewArrayView<RealT>& getResponse() const
+    {
+      return m_response;
+    }
+    
+    TRIBOL_HOST_DEVICE bool hasNodalNormals() const { return !m_node_n.empty(); }
+    TRIBOL_HOST_DEVICE const Array2DView<RealT>& getNodalNormals() const
+    {
+      return m_node_n;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasElementCentroids() const { return !m_c.empty(); }
+    TRIBOL_HOST_DEVICE const Array2DView<RealT>& getElementCentroids() const
+    {
+      return m_c;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasElementNormals() const { return !m_n.empty(); }
+    TRIBOL_HOST_DEVICE const Array2DView<RealT>& getElementNormals() const
+    {
+      return m_n;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasFaceRadii() const { return !m_face_radius.empty(); }
+    TRIBOL_HOST_DEVICE const Array1DView<RealT>& getFaceRadii() const
+    {
+      return m_face_radius;
+    }
+
+    TRIBOL_HOST_DEVICE bool hasElementAreas() const { return !m_area.empty(); }
+    TRIBOL_HOST_DEVICE const Array1DView<RealT>& getElementAreas() const
+    {
+      return m_area;
+    }
+
+    TRIBOL_HOST_DEVICE const Array2DView<const IndexT>& getConnectivity() const 
+    {
+      return m_connectivity;
+    }
+  
+    /*!
+    *
+    * \brief returns pointer to array of stacked nodal coordinates for given face
+    *
+    * \param [in] face_id integer id of face
+    * \param [in/out] coords pointer to an array of stacked (x,y,z) nodal coordinates
+    *
+    */
+    TRIBOL_HOST_DEVICE void getFaceCoords( IndexT face_id, RealT* coords ) const;
+
+    /*!
+    *
+    * \brief returns pointer to array of stacked nodal velocities for given face
+    *
+    * \param [in] face_id integer id of face
+    * \param [in/out] nodalVel pointer to an array of stacked (x,y,z) nodal velocities
+    *
+    */
+    TRIBOL_HOST_DEVICE void getFaceVelocities( IndexT face_id, RealT* vels ) const;
+
+    /*!
+    *
+    * \brief returns pointer to array of stacked normal components 
+    *
+    * \param [in] face_id integer id of face
+    * \param [in/out] nrml pointer to array of stacked components of the face normal vector
+    *
+    */
+    TRIBOL_HOST_DEVICE void getFaceNormal( IndexT face_id, RealT* nrml ) const;
+    
+  private:
+    const IndexT m_mesh_id;
+    const InterfaceElementType m_element_type;
+    const IndexT m_num_nodes;
+
+    const MemorySpace m_mem_space;
+    const int m_allocator_id;
+
+    const MultiViewArrayView<const RealT> m_position;
+    const MultiViewArrayView<const RealT> m_disp;
+    const MultiViewArrayView<const RealT> m_vel;
+    const MultiViewArrayView<RealT> m_response;
+
+    const Array2DView<RealT> m_node_n;
+
+    const Array2DView<const IndexT> m_connectivity;
+
+    const Array2DView<RealT> m_c;
+    const Array2DView<RealT> m_n;
+    const ArrayViewT<RealT> m_face_radius;
+    const ArrayViewT<RealT> m_area;
+    
+    MeshNodalData m_nodal_fields; ///< method specific nodal fields
+    MeshElemData  m_element_data; ///< method/enforcement specific element data
+  };
+
+  /*!
   * \brief Constructor 
   *
   */
-  MeshData();
+  MeshData( IndexT mesh_id, IndexT num_elements, IndexT num_nodes,
+                   const IndexT* connectivity, InterfaceElementType element_type,
+                   const RealT* x, const RealT* y, const RealT* z,
+                   MemorySpace mem_space );
 
- /*!
-  * \brief Destructor
-  *
-  */
-  ~MeshData();
+  InterfaceElementType getElementType() const { return m_element_type; }
+  int spatialDimension() const { return m_dim; }
+  MemorySpace getMemorySpace() const { return m_mem_space; }
+  int getAllocatorId() const { return m_allocator_id; }
+  void updateAllocatorId(int allocator_id ) { m_allocator_id = allocator_id; }
 
-  InterfaceElementType m_elementType; ///< Type of interface element in mesh
-  int m_lengthNodalData;              ///< Total number of elements in data arrays (used to create new arrays an index in using connectivity ids)
-  int m_numSurfaceNodes;              ///< Total number of unique node ids in the surface connectivity (computed from MeshData::sortSurfaceNodeIds() )
-  int m_numCells;                     ///< Total number of SURFACE cells in the mesh
-  int m_numNodesPerCell;                 ///< Number of nodes per SURFACE cell based on cell type
-  int m_dim;                          ///< Dimension of mesh
-  int m_meshId;                       ///< Mesh Id associated with this data
-  bool m_isValid;                     ///< True if the mesh is valid
+  bool& isMeshValid() { return m_is_valid; }
 
-  const real* m_positionX; ///< X-coordinates of nodes in mesh 
-  const real* m_positionY; ///< Y-coordinates of nodes in mesh 
-  const real* m_positionZ; ///< Z-coordinates of nodes in mesh 
+  MeshNodalData& getNodalFields() { return m_nodal_fields; }
+  MeshElemData& getElementData() { return m_element_data; }
+  const MeshElemData& getElementData() const { return m_element_data; }
+  
+  IndexT numberOfNodes() const { return m_num_nodes; }
+  IndexT numberOfElements() const { return m_connectivity.shape()[0]; }
+  IndexT numberOfNodesPerElement() const { return m_connectivity.shape()[1]; }
+  IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
+  {
+    return m_connectivity(element_id, local_node_id);
+  }
 
-  const real* m_dispX; ///< X-component of nodal displacements 
-  const real* m_dispY; ///< Y-component of nodal displacements 
-  const real* m_dispZ; ///< Z-component of nodal displacements 
+  void setPosition( const RealT* x,
+                    const RealT* y,
+                    const RealT* z );
 
-  real * m_forceX; ///< X-component of nodal forces 
-  real * m_forceY; ///< Y-component of nodal forces 
-  real * m_forceZ; ///< Z-component of nodal forces 
+  void setDisplacement( const RealT* ux,
+                        const RealT* uy,
+                        const RealT* uz );
 
-  const real* m_velX; ///< X-component of nodal velocity 
-  const real* m_velY; ///< Y-component of nodal velocity
-  const real* m_velZ; ///< Z-component of nodal velocity
+  void setVelocity( const RealT* vx,
+                    const RealT* vy,
+                    const RealT* vz );
 
-  real* m_nX; ///< X-component of outward unit face normals
-  real* m_nY; ///< Y-component of outward unit face normals
-  real* m_nZ; ///< Z-component of outward unit face normals
+  void setResponse( RealT* rx, RealT* ry, RealT* rz );
 
-  real* m_cX; ///< X-component of vertex averaged cell centroids
-  real* m_cY; ///< Y-component of vertex averaged cell centroids
-  real* m_cZ; ///< Z-component of vertex averaged cell centroids
+  std::unique_ptr<Viewer> getView() { return std::make_unique<Viewer>(*this); }
 
-  real* m_faceRadius; ///< Face radius used in low level proximity check
+  /// sorts unique surface node ids from connectivity and stores them on the mesh object in ascending order
+  Array1D<IndexT> sortSurfaceNodeIds();
 
-  real* m_area; ///< Cell areas
+private:
+  int getDimFromElementType() const;
 
-  const IndexType* m_connectivity; ///< Cell connectivity arrays of length, m_numCells * m_numNodesPerCell
+  template <typename T>
+  MultiArrayView<T> createNodalVector( T* x, 
+                                        T* y,
+                                        T* z ) const;
 
-  IndexType* m_sortedSurfaceNodeIds; ///< List of sorted node ids from connectivity w/o duplicates, length = m_numSurfaceNodes.
+  ArrayViewT<const IndexT, 2> createConnectivity( IndexT num_elements, 
+                                                  const IndexT* connectivity );
 
-  real* m_node_nX; ///< X-component of outward unit node normals
-  real* m_node_nY; ///< Y-component of outward unit node normals
-  real* m_node_nZ; ///< Z-component of outward unit node normals
+  IndexT m_mesh_id;                    ///< Mesh Id associated with this data
+  InterfaceElementType m_element_type; ///< Type of interface element in mesh
+  int m_dim;                           ///< Spatial dimension of the mesh coordinates
+  IndexT m_num_nodes;
 
-  MeshNodalData m_nodalFields; ///< method specific nodal fields
-  MeshElemData  m_elemData;    ///< method/enforcement specific element data 
+  MemorySpace m_mem_space; ///< Memory space for mesh data
+  int m_allocator_id;      ///< Allocator for mesh data memory
+  
+  bool m_is_valid;                     ///< True if the mesh is valid
+
+  MeshNodalData m_nodal_fields; ///< method specific nodal fields
+  MeshElemData  m_element_data; ///< method/enforcement specific element data
+
+  // Nodal field data
+  MultiArrayView<const RealT> m_position; ///< Coordinates of nodes in mesh
+  MultiArrayView<const RealT> m_disp;     ///< Nodal displacements
+  MultiArrayView<const RealT> m_vel;      ///< Nodal velocity
+  MultiArrayView<RealT> m_response;       ///< Nodal responses (forces)
+
+  Array2D<RealT> m_node_n;             ///< Outward unit node normals
+
+  // Element field data
+  Array2DView<const IndexT> m_connectivity;  ///< Element connectivity arrays
+
+  Array2D<RealT> m_c;           ///< Vertex averaged element centroids
+  Array2D<RealT> m_n;           ///< Outward unit element normals
+  Array1D<RealT> m_face_radius; ///< Face radius used in low level proximity check
+  Array1D<RealT> m_area;        ///< Element areas
 
 public:
 
   /*!
-   * \brief Checks for valid Lagrange multiplier enforcement data
-   *
-   */
-   int checkLagrangeMultiplierData();
+  * \brief Checks for valid Lagrange multiplier enforcement data
+  *
+  */
+  int checkLagrangeMultiplierData();
 
   /*!
-   * \brief Checks for valid penalty enforcement data 
-   *
-   * \param [in] p_enfrc_options penalty enforcement options guiding check
-   */
-   int checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options );
-
-  /// \brief Returns the number of cells in this Mesh instance
-  int getNumberOfCells() const { return m_numCells; }
-
+  * \brief Checks for valid penalty enforcement data 
+  *
+  * \param [in] p_enfrc_options penalty enforcement options guiding check
+  */
+  int checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options );
 
   /*!
-   * \brief Computes the face normals and centroids for all faces in the mesh.
-   *
-   * \param [in] dim Dimension of the problem 
-   * \return true if face calculations do not encounter errors or warnings
-   * 
-   * This routine accounts for warped faces by computing an average normal.
-   */
-  bool computeFaceData( int const dim );
+  * \brief Computes the face normals and centroids for all faces in the mesh.
+  *
+  * \param [in] dim Dimension of the problem 
+  * \return true if face calculations do not encounter errors or warnings
+  * 
+  * This routine accounts for warped faces by computing an average normal.
+  */
+  bool computeFaceData();
   
   /*!
-   * \brief Computes average nodal normals for use with mortar methods
-   *
-   * \note this routine computes average nodal normals for all nodes in the mesh.
-   *
-   * \param [in] dim Dimension of the problem
-   */
+  * \brief Computes average nodal normals for use with mortar methods
+  *
+  * \note this routine computes average nodal normals for all nodes in the mesh.
+  *
+  * \param [in] dim Dimension of the problem
+  */
   void computeNodalNormals( int const dim );
-
-  /*!
-   * \brief Get face node id in mesh 
-   *
-   * \param [in] faceId Id of face in mesh 
-   * \param [in] localNodeId Local id (e.g. 0-3 for quad 4)
-   *
-   * \return Global mesh node id
-   */
-  int getFaceNodeId(int faceId, int localNodeId) const
-     { return m_connectivity[m_numNodesPerCell*faceId+localNodeId]; }
   
   /*!
-   *
-   * \brief compute the approximate radius of the face's enclosing circle
-   *
-   * \param [in] faceId face id
-   *
-   * \return radius
-   *
-   * \note this routine finds the largest magnitude vector between a given 
-   *  face vertex and the vertex averaged centroid and uses this as the 
-   *  enclosing circle's radius. This is not necessarily the smallest 
-   *  enclosing circle, but this computation is fast and serves the purpose 
-   *  of the tribol proximity check.
-   *
-   */
-  real computeFaceRadius( int faceId );
-  
-  /*!
-   *
-   * \brief compute the surface edge/segment length
-   *
-   * \param [in] edgeId edge id
-   *
-   * \return edge length
-   *
-   */
-  real computeEdgeLength( int edgeId );
-  
-  /*!
-   *
-   * \brief returns pointer to array of stacked nodal coordinates for given face
-   *
-   * \param [in/out] coords pointer to an array of stacked (x,y,z) nodal coordinates
-   *
-   */
-  void getFaceCoords( int const faceId, real * coords );
-
-  /*!
-   *
-   * \brief returns pointer to array of stacked nodal velocities for given face
-   *
-   * \param [in/out] nodalVel pointer to an array of stacked (x,y,z) nodal velocities
-   *
-   */
-  void getFaceNodalVelocities( int const faceId, real * nodalVel );
-
-  /*!
-   *
-   * \brief returns pointer to array of stacked normal components 
-   *
-   * \param [in] faceId integer id of face
-   * \param [in] dim dimension of the problem
-   * \param [in/out] nrml pointer to array of stacked components of the face normal vector
-   *
-   */
-  void getFaceNormal( int const faceId, int const dim, real * nrml );
-
-  /// sorts unique surface node ids from connectivity and stores them on the mesh object in ascending order
-  void sortSurfaceNodeIds();
-
-  // Note, this routine is not used at the moment
-  int localIdFromConn( const int connectivityId );
-                    
-  /*!
-   * \brief Allocates storage space for face normals, centroids and areas.
-   *
-   * \note This routine assumes the m_numCells has been set to the number of 
-   * mesh cells.
-   * \param dimension The dimension of the mesh
-   * \pre dimension is 2 or 3
-   */
-  void allocateArrays(int dimension);
-  
-  /*!
-   * \brief Deallocates storage space for face normals, centroids and areas
-   */
-  void deallocateArrays();
+  *
+  * \brief compute the surface edge/segment length
+  *
+  * \param [in] edgeId edge id
+  *
+  * \return edge length
+  *
+  */
+  RealT computeEdgeLength( int edgeId );
 
   /// Prints information associated with this mesh to \a os
   void print(std::ostream& os) const;
 };
+
+//------------------------------------------------------------------------------
+template <typename T>
+MultiArrayView<T> MeshData::createNodalVector( T* x, T* y, T* z ) const
+{
+  MultiArrayView<T> host_nodal_vector(m_dim, m_dim);
+  host_nodal_vector[0] = ArrayViewT<T>(x, m_num_nodes);
+  host_nodal_vector[1] = ArrayViewT<T>(y, m_num_nodes);
+  if (m_dim == 3)
+  {
+    host_nodal_vector[2] = ArrayViewT<T>(z, m_num_nodes);
+  }
+  return MultiArrayView<T>(host_nodal_vector, m_allocator_id);
+}
+
+using MeshManager = DataManager<MeshData>;
 
 } // end namespace tribol
 

@@ -6,17 +6,14 @@
 #include "examples_common.hpp" // for common functionality used in examples
 
 // Tribol includes
-#include "tribol/types.hpp"
 #include "tribol/interface/tribol.hpp"
 #include "tribol/utils/TestUtils.hpp"
 #include "tribol/utils/Math.hpp"
 #include "tribol/common/Parameters.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
-#include "tribol/mesh/CouplingSchemeManager.hpp"
 #include "tribol/mesh/CouplingScheme.hpp"
 #include "tribol/mesh/InterfacePairs.hpp"
 #include "tribol/mesh/MeshData.hpp"
-#include "tribol/mesh/MeshManager.hpp"
 #include "tribol/geom/GeomUtilities.hpp"
 
 // Axom includes
@@ -84,7 +81,7 @@ int main( int argc, char** argv )
 #ifdef TRIBOL_USE_MPI
   MPI_Init( &argc, &argv );
 #endif
-  tribol::CommType problem_comm = TRIBOL_COMM_WORLD;
+  tribol::CommT problem_comm = TRIBOL_COMM_WORLD;
 
 #ifdef TRIBOL_USE_UMPIRE
   umpire::ResourceManager::getInstance();         // initialize umpire's ResouceManager
@@ -184,8 +181,8 @@ int main( int argc, char** argv )
      ////////////////////////////////////////////////////
 
      // setup material properties
-     double nu_val {0.33}; // Poisson's ratio
-     double youngs_val {3.E7}; // Young's modulus (approximate, mild steel (psi))
+     RealT nu_val {0.33}; // Poisson's ratio
+     RealT youngs_val {3.E7}; // Young's modulus (approximate, mild steel (psi))
 
      /////////////////////////////////////////////////////////////////////////
      // compute equilibrium contributions and sum into Tribol sparse matrix //
@@ -205,7 +202,7 @@ int main( int argc, char** argv )
      // instantiate mfem vector for RHS contributions
      int rhs_size = mesh.dim * mesh.numTotalNodes + // equilibrium equations
                     mesh.numNonmortarSurfaceNodes;      // gap equations
-     double b[ rhs_size ];
+     RealT b[ rhs_size ];
      tribol::initRealArray( &b[0], rhs_size, 0. );
      mfem::Vector rhs( &b[0], rhs_size );
      rhs = 0.; // initialize
@@ -263,11 +260,11 @@ int main( int argc, char** argv )
      mfem::DenseMatrixInverse invA( A );
      mfem::Vector sol;
      invA.Mult( rhs, sol ); // solve the system
-     real * sol_data = sol.GetData(); // get solution data
+     RealT * sol_data = sol.GetData(); // get solution data
 
      SLIC_INFO( "Solved global system of equations." );
 
-     real pressureSum = 0.;
+     RealT pressureSum = 0.;
      for (int i=0; i<mesh.numNonmortarSurfaceNodes; ++i)
      {
         int offset = mesh.dim * mesh.numTotalNodes;

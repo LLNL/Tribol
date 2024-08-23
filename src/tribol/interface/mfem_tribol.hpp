@@ -6,7 +6,7 @@
 #ifndef MFEM_TRIBOL_HPP_
 #define MFEM_TRIBOL_HPP_
 
-#include "tribol/types.hpp"
+#include "tribol/config.hpp"
 
 #ifdef BUILD_REDECOMP
 
@@ -51,13 +51,13 @@ namespace tribol
  * @param [in] enforcement_method 
  * @param [in] binning_method 
  */
-void registerMfemCouplingScheme( integer cs_id,
-                                 integer mesh_id_1,
-                                 integer mesh_id_2,
+void registerMfemCouplingScheme( IndexT cs_id,
+                                 int mesh_id_1,
+                                 int mesh_id_2,
                                  const mfem::ParMesh& mesh,
                                  const mfem::ParGridFunction& current_coords,
-                                 std::set<integer> b_attributes_1,
-                                 std::set<integer> b_attributes_2,
+                                 std::set<int> b_attributes_1,
+                                 std::set<int> b_attributes_2,
                                  ContactMode contact_mode,
                                  ContactCase contact_case,
                                  ContactMethod contact_method,
@@ -89,7 +89,7 @@ void registerMfemCouplingScheme( integer cs_id,
  * @param [in] cs_id The ID of the coupling scheme
  * @param [in] lor_factor The refinement factor of the LOR mesh
  */
-void setMfemLORFactor( integer cs_id, integer lor_factor );
+void setMfemLORFactor( IndexT cs_id, int lor_factor );
 
 /**
  * @brief Clears existing penalty data and sets kinematic constant penalty
@@ -100,7 +100,7 @@ void setMfemLORFactor( integer cs_id, integer lor_factor );
  * @param mesh1_penalty Penalty parameter for the first contact surface mesh
  * @param mesh2_penalty Penalty parameter for the second contact surface mesh
  */
-void setMfemKinematicConstantPenalty( integer cs_id, real mesh1_penalty, real mesh2_penalty );
+void setMfemKinematicConstantPenalty( IndexT cs_id, RealT mesh1_penalty, RealT mesh2_penalty );
 
 /**
  * @brief Clears existing penalty data and sets kinematic element penalty
@@ -114,7 +114,7 @@ void setMfemKinematicConstantPenalty( integer cs_id, real mesh1_penalty, real me
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  * @param modulus_coefficient MFEM coefficient defining bulk modulus over the parent-linked boundary submesh
  */
-void setMfemKinematicElementPenalty( integer cs_id, mfem::Coefficient& modulus_coefficient );
+void setMfemKinematicElementPenalty( IndexT cs_id, mfem::Coefficient& modulus_coefficient );
 
 /**
  * @brief Adds constant gap rate penalty to the existing kinematic penalty
@@ -127,7 +127,7 @@ void setMfemKinematicElementPenalty( integer cs_id, mfem::Coefficient& modulus_c
  * @param mesh1_penalty Penalty parameter for the first contact surface mesh
  * @param mesh2_penalty Penalty parameter for the second contact surface mesh
  */
-void setMfemRateConstantPenalty( integer cs_id, real mesh1_penalty, real mesh2_penalty );
+void setMfemRateConstantPenalty( IndexT cs_id, RealT mesh1_penalty, RealT mesh2_penalty );
 
 /**
  * @brief Adds gap rate penalty as a scaling of the existing kinematic penalty
@@ -140,7 +140,7 @@ void setMfemRateConstantPenalty( integer cs_id, real mesh1_penalty, real mesh2_p
  * @param mesh1_ratio Scaling coefficient of the kinematic penalty for the first contact surface mesh
  * @param mesh2_ratio Scaling coefficient of the kinematic penalty for the second contact surface mesh
  */
-void setMfemRatePercentPenalty( integer cs_id, real mesh1_ratio, real mesh2_ratio );
+void setMfemRatePercentPenalty( IndexT cs_id, RealT mesh1_ratio, RealT mesh2_ratio );
 
 /**
  * @brief Adds a scale to the computed kinematic penalty
@@ -155,7 +155,7 @@ void setMfemRatePercentPenalty( integer cs_id, real mesh1_ratio, real mesh2_rati
  * @param mesh1_scale Scaling coefficient of the kinematic penalty for the first contact surface mesh
  * @param mesh2_scale Scaling coefficient of the kinematic penalty for the second contact surface mesh
  */
-void setMfemKinematicPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_scale );
+void setMfemKinematicPenaltyScale( IndexT cs_id, RealT mesh1_scale, RealT mesh2_scale );
 
 /**
  * @brief Computes element thickness for the volume elements associated with the contact surface mesh.
@@ -171,7 +171,7 @@ void setMfemKinematicPenaltyScale( integer cs_id, real mesh1_scale, real mesh2_s
  *
  * @param cs_id The ID of the coupling scheme with the MFEM mesh
  */
-void updateMfemElemThickness( integer cs_id );
+void updateMfemElemThickness( IndexT cs_id );
 
 /**
  * @brief Sets the bulk modulus for the volume elements associated with the contact surface mesh.
@@ -187,7 +187,7 @@ void updateMfemElemThickness( integer cs_id );
  * @note Material modulus is autoamtically set when setMfemKinematicElementPenalty() is called. Call this method to
  * update material bulk moduli.
  */
-void updateMfemMaterialModulus( integer cs_id, mfem::Coefficient& modulus_coefficient );
+void updateMfemMaterialModulus( IndexT cs_id, mfem::Coefficient& modulus_coefficient );
 
 /**
  * @brief Registers a velocity field on a MFEM mesh-defined coupling scheme
@@ -198,7 +198,7 @@ void updateMfemMaterialModulus( integer cs_id, mfem::Coefficient& modulus_coeffi
  * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh
  * @param [in] v MFEM velocity ParGridFunction defined over the parent mesh
  */
-void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
+void registerMfemVelocity( IndexT cs_id, const mfem::ParGridFunction& v );
 
 /**
  * @brief Returns the response (RHS) vector to a given mfem::Vector
@@ -212,7 +212,7 @@ void registerMfemVelocity( integer cs_id, const mfem::ParGridFunction& v );
  * @param [in] cs_id The ID of the coupling scheme with the MFEM mesh
  * @param [out] r mfem::Vector of the response (RHS) vector (properly sized, pre-allocated, and initialized)
  */
-void getMfemResponse( integer cs_id, mfem::Vector& r );
+void getMfemResponse( IndexT cs_id, mfem::Vector& r );
 
 /**
  * @brief Get assembled contact contributions for the Jacobian matrix
@@ -237,10 +237,10 @@ void getMfemResponse( integer cs_id, mfem::Vector& r );
  * Jacobian blocks that have empty rows of dg/du and empty columns of df/dp and ones on the diagonal of the dg/dp block
  * for all mortar node placeholders.
  *
- * @param csId Coupling scheme id with a registered MFEM mesh
+ * @param cs_id Coupling scheme id with a registered MFEM mesh
  * @return Jacobian contributions as an mfem::BlockOperator
  */
-std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
+std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( IndexT cs_id );
 
 /**
  * @brief Returns gap vector to a given mfem::Vector
@@ -255,7 +255,7 @@ std::unique_ptr<mfem::BlockOperator> getMfemBlockJacobian( integer csId );
  * @param [in] cs_id Coupling scheme id with a registered MFEM mesh
  * @param [out] g Nodal gap values (values do not have to be pre-allocated) on the parent-linked boundary submesh
  */
-void getMfemGap( integer cs_id, mfem::Vector& g );
+void getMfemGap( IndexT cs_id, mfem::Vector& g );
 
 /**
  * @brief Returns reference to nodal pressure vector on the submesh surface
@@ -267,7 +267,7 @@ void getMfemGap( integer cs_id, mfem::Vector& g );
  * @return mfem::ParGridFunction& Nodal pressure vector defined on the
  * parent-linked boundary submesh
  */
-mfem::ParGridFunction& getMfemPressure( integer cs_id );
+mfem::ParGridFunction& getMfemPressure( IndexT cs_id );
 
 /**
  * @brief Updates mesh parallel decomposition and related grid
@@ -285,7 +285,7 @@ void updateMfemParallelDecomposition();
  * 
  * @param output_id Unique identifier in the saved file name (usually cycle number)
  */
-void saveRedecompMesh( integer output_id );
+void saveRedecompMesh( int output_id );
 
 } /* namespace tribol */
 

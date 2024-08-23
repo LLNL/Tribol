@@ -15,7 +15,7 @@
 namespace tribol
 {
 
-int GetNumFaceNodes( int dim, FaceOrderType order_type )
+TRIBOL_HOST_DEVICE int GetNumFaceNodes( int dim, FaceOrderType order_type )
 {
    // SRW consider consolidating this to take a tribol topology and 
    // order for consistency
@@ -26,21 +26,24 @@ int GetNumFaceNodes( int dim, FaceOrderType order_type )
          numNodes = (dim == 3) ? 4 : 2; // segments and quads
          break;
       default : 
-         SLIC_ERROR("GetNumFaceNodes(): order_type not supported.");
+        //  SLIC_ERROR("GetNumFaceNodes(): order_type not supported.");
          break;
    } 
    return numNodes;
 }
 
-void GalerkinEval( const real* const RESTRICT x, 
-                   const real pX, const real pY, const real pZ, 
-                   FaceOrderType order_type, BasisEvalType basis_type, 
-                   int dim, int galerkinDim, real* nodeVals, real* galerkinVal )
+TRIBOL_HOST_DEVICE void GalerkinEval( const RealT* const x, 
+                                      const RealT pX, const RealT pY, const RealT pZ, 
+                                      FaceOrderType order_type, BasisEvalType basis_type, 
+                                      int dim, int galerkinDim, RealT* nodeVals, RealT* galerkinVal )
 {
+#ifdef TRIBOL_USE_HOST
+   // TODO: Refactor such that the checks aren't needed
    SLIC_ERROR_IF(x==nullptr, "GalerkinEval(): input pointer, x, is NULL.");
    SLIC_ERROR_IF(nodeVals==nullptr, "GalerkinEval(): input pointer, nodeVals, is NULL.");
    SLIC_ERROR_IF(galerkinVal==nullptr, "GalerkinEval(): input/output pointer, galerkinVal, is NULL.");
    SLIC_ERROR_IF(galerkinDim<1, "GalerkinEval(): scalar approximations not yet supported." );
+#endif
 
    int numNodes = GetNumFaceNodes( dim, order_type );
    switch (basis_type)
@@ -48,7 +51,7 @@ void GalerkinEval( const real* const RESTRICT x,
       case PHYSICAL :
          for (int nd=0; nd<numNodes; ++nd)
          {
-            real phi = 0.;
+            RealT phi = 0.;
             EvalBasis( x, pX, pY, pZ, numNodes, nd, phi );
             for (int i=0; i<galerkinDim; ++i)
             {
@@ -57,14 +60,18 @@ void GalerkinEval( const real* const RESTRICT x,
          }
          break;
       default :
+#ifdef TRIBOL_USE_HOST
+         // TODO: Refactor such that the check isn't needed
          SLIC_ERROR( "GalerkinEval(): basis_type = PARENT not yet supported." );
+#endif
+         break;
    }
 }
 
-void EvalBasis( const real* const RESTRICT x, 
-                const real pX, const real pY, const real pZ, 
-                const int numPoints, const int vertexId, 
-                real& phi )
+TRIBOL_HOST_DEVICE void EvalBasis( const RealT* const x, 
+                                   const RealT pX, const RealT pY, const RealT pZ, 
+                                   const int numPoints, const int vertexId, 
+                                   RealT& phi )
 {
    if (numPoints > 2)
    {
@@ -76,34 +83,39 @@ void EvalBasis( const real* const RESTRICT x,
    }
    else
    {
+#ifdef TRIBOL_USE_HOST
+      // TODO: Refactor such that the check isn't needed
       SLIC_ERROR("EvalBasis: invalid numPoints argument.");
+#endif
    }
    return;
 }
 
 //------------------------------------------------------------------------------
-void SegmentBasis( const real* const RESTRICT x, 
-                   const real pX, const real pY,
-                   const int numPoints, const int vertexId, 
-                   real& phi )
+TRIBOL_HOST_DEVICE void SegmentBasis( const RealT* const x, 
+                                      const RealT pX, const RealT pY,
+                                      const int numPoints, const int vertexId, 
+                                      RealT& phi )
 {
-   SLIC_ERROR_IF(numPoints != 2, "SegmentBasis: numPoints is " << numPoints <<
-                 " but should be 2.");
+   // TODO: Refactor such that the check isn't needed
+   //  SLIC_ERROR_IF(numPoints != 2, "SegmentBasis: numPoints is " << numPoints <<
+   //                " but should be 2.");
 
-   // note, vertexId is the index, 0 or 1.
-   SLIC_ERROR_IF(vertexId > numPoints-1, "SegmentBasis: vertexId is " << vertexId << 
-                 " but should be 0 or 1.");
+   // TODO: Refactor such that the check isn't needed
+   //  // note, vertexId is the index, 0 or 1.
+   //  SLIC_ERROR_IF(vertexId > numPoints-1, "SegmentBasis: vertexId is " << vertexId << 
+   //                " but should be 0 or 1.");
 
    // compute length of segment
-   real vx = x[numPoints*1] - x[numPoints*0];
-   real vy = x[numPoints*1+1] - x[numPoints*0+1];
-   real lambda = magnitude( vx, vy );
+   RealT vx = x[numPoints*1] - x[numPoints*0];
+   RealT vy = x[numPoints*1+1] - x[numPoints*0+1];
+   RealT lambda = magnitude( vx, vy );
 
    // compute the magnitude of the vector <pX,pY> - <x[vertexId],y[vertexId]>
-   real wx = pX - x[ numPoints*vertexId ];
-   real wy = pY - x[ numPoints*vertexId+1 ];
+   RealT wx = pX - x[ numPoints*vertexId ];
+   RealT wy = pY - x[ numPoints*vertexId+1 ];
 
-   real magW = magnitude( wx, wy );
+   RealT magW = magnitude( wx, wy );
 
    phi = 1.0 / lambda * (lambda - magW); // this calculation is inverted, (phi_a is actually phi_b and vice versa)
 
@@ -135,15 +147,17 @@ void SegmentBasis( const real* const RESTRICT x,
 }
 
 //------------------------------------------------------------------------------
-void WachspressBasis( const real* const RESTRICT x, 
-                      const real pX, const real pY, const real pZ, 
-                      const int numPoints, const int vertexId, real& phi )
+TRIBOL_HOST_DEVICE void WachspressBasis( const RealT* const x, 
+                                         const RealT pX, const RealT pY, const RealT pZ, 
+                                         const int numPoints, const int vertexId, RealT& phi )
 {
-   SLIC_ERROR_IF(numPoints<3, "WachspressBasis: numPoints < 3.");
+   // TODO: Refactor such that the check isn't needed
+   //  SLIC_ERROR_IF(numPoints<3, "WachspressBasis: numPoints < 3.");
 
    // first compute the areas of all the triangles formed by the i-1,i,i+1 vertices.
    // These consist of all the numerators in the Wachspress formulation
-   real triVertArea[ numPoints ];
+   constexpr int max_nodes_per_elem = 4;
+   RealT triVertArea[ max_nodes_per_elem ];
    for (int i=0; i<numPoints; ++i)
    {
       // determine the i-1, i, i+1 vertices
@@ -152,19 +166,19 @@ void WachspressBasis( const real* const RESTRICT x,
       int vIdPlus = (vId == (numPoints-1)) ? 0 : (vId+1);
 
       // construct segment between i-1,i and i-1,i+1
-      real vx = x[ 3*vId ]   - x[ 3*vIdMinus ];
-      real vy = x[ 3*vId+1 ] - x[ 3*vIdMinus+1 ];
-      real vz = x[ 3*vId+2 ] - x[ 3*vIdMinus+2 ];
+      RealT vx = x[ 3*vId ]   - x[ 3*vIdMinus ];
+      RealT vy = x[ 3*vId+1 ] - x[ 3*vIdMinus+1 ];
+      RealT vz = x[ 3*vId+2 ] - x[ 3*vIdMinus+2 ];
 
-      real wx = x[ 3*vIdPlus ] -   x[ 3*vIdMinus ];
-      real wy = x[ 3*vIdPlus+1 ] - x[ 3*vIdMinus+1 ];
-      real wz = x[ 3*vIdPlus+2 ] - x[ 3*vIdMinus+2 ];
+      RealT wx = x[ 3*vIdPlus ] -   x[ 3*vIdMinus ];
+      RealT wy = x[ 3*vIdPlus+1 ] - x[ 3*vIdMinus+1 ];
+      RealT wz = x[ 3*vIdPlus+2 ] - x[ 3*vIdMinus+2 ];
 
       // take the cross product between v and w to get the normal, and then obtain the 
       // area from the normal's magnitude
-      real nX = (vy * wz) - (vz * wy);
-      real nY = (vz * wx) - (vx * wz);
-      real nZ = (vx * wy) - (vy * wx);
+      RealT nX = (vy * wz) - (vz * wy);
+      RealT nY = (vz * wx) - (vx * wz);
+      RealT nZ = (vx * wy) - (vy * wx);
   
       triVertArea[i] = 0.5 * magnitude( nX, nY, nZ );
 
@@ -172,7 +186,7 @@ void WachspressBasis( const real* const RESTRICT x,
 
    // second, compute the areas of all triangles formed using edge segment vertices
    // and the specified interior point (pX,pY,pZ)
-   real triPointArea[ numPoints ];
+   RealT triPointArea[ max_nodes_per_elem ];
    for (int i=0; i<numPoints; ++i)
    {
       // determine the i,i+1 edge segment 
@@ -180,28 +194,28 @@ void WachspressBasis( const real* const RESTRICT x,
       int vIdPlus = (vId == (numPoints-1)) ? 0 : (vId+1);
 
       // construct segments between i+1,i and p,i 
-      real vx = x[ 3*vIdPlus ]   - x[ 3*vId ];
-      real vy = x[ 3*vIdPlus+1 ] - x[ 3*vId+1 ];
-      real vz = x[ 3*vIdPlus+2 ] - x[ 3*vId+2 ];
+      RealT vx = x[ 3*vIdPlus ]   - x[ 3*vId ];
+      RealT vy = x[ 3*vIdPlus+1 ] - x[ 3*vId+1 ];
+      RealT vz = x[ 3*vIdPlus+2 ] - x[ 3*vId+2 ];
 
-      real wx = pX - x[ 3*vId ];
-      real wy = pY - x[ 3*vId+1 ];
-      real wz = pZ - x[ 3*vId+2 ];
+      RealT wx = pX - x[ 3*vId ];
+      RealT wy = pY - x[ 3*vId+1 ];
+      RealT wz = pZ - x[ 3*vId+2 ];
 
       // take the cross product between v and w to get the normal, and then obtain the 
       // area from the normal's magnitude
-      real nX = (vy * wz) - (vz * wy);
-      real nY = (vz * wx) - (vx * wz);
-      real nZ = (vx * wy) - (vy * wx);
+      RealT nX = (vy * wz) - (vz * wy);
+      RealT nY = (vz * wx) - (vx * wz);
+      RealT nZ = (vx * wy) - (vy * wx);
   
       triPointArea[i] = 0.5 * magnitude( nX, nY, nZ );
 
    }
 
    // third, compute all of the weights per Wachspress formulation
-   real weight[ numPoints ];
-   real myWeight;
-   real weightSum = 0.;
+   RealT weight[ max_nodes_per_elem ];
+   RealT myWeight;
+   RealT weightSum = 0.;
    for (int i=0; i<numPoints; ++i)
    {
       int vId = i; 
@@ -220,97 +234,97 @@ void WachspressBasis( const real* const RESTRICT x,
 
    phi = myWeight / weightSum;
 
-   if (phi <= 0. || phi > 1.)
-   {
-      SLIC_ERROR("Wachspress Basis: phi is not between 0 and 1.");
-   }
+  //  if (phi <= 0. || phi > 1.)
+  //  {
+  //     SLIC_ERROR("Wachspress Basis: phi is not between 0 and 1.");
+  //  }
 
    return;
 }
 
 //------------------------------------------------------------------------------
-void InvIso( const real  x[3], 
-             const real* xA,
-             const real* yA,
-             const real* zA,
+void InvIso( const RealT  x[3], 
+             const RealT* xA,
+             const RealT* yA,
+             const RealT* zA,
              const int numNodes,
-             real  xi[2] )
+             RealT  xi[2] )
 {
 
    SLIC_ERROR_IF(numNodes!=4, "InvIso: routine only for 4 node quads.");
 
    bool convrg = false;
    int kmax = 15;
-   real xtol = 1.E-12;
+   RealT xtol = 1.E-12;
 
-   real x_sol[2] = {0., 0.};
+   RealT x_sol[2] = {0., 0.};
 
    // derivatives of the Jacobian wrt (xi,eta)
-   real djde_11   = 0.;
-   real djde_x_12 = 0.25 * (xA[0] - xA[1] + xA[2] - xA[3]);
-   real djde_y_12 = 0.25 * (yA[0] - yA[1] + yA[2] - yA[3]);
-   real djde_z_12 = 0.25 * (zA[0] - zA[1] + zA[2] - zA[3]);
-   real djde_22   = 0.;
+   RealT djde_11   = 0.;
+   RealT djde_x_12 = 0.25 * (xA[0] - xA[1] + xA[2] - xA[3]);
+   RealT djde_y_12 = 0.25 * (yA[0] - yA[1] + yA[2] - yA[3]);
+   RealT djde_z_12 = 0.25 * (zA[0] - zA[1] + zA[2] - zA[3]);
+   RealT djde_22   = 0.;
 
    // loop over newton iterations
    for (int k = 0; k < kmax; ++k)
    {
       // evaluate Jacobian
-      real j_x_1 = 0.25 * (xA[0] * (1. + x_sol[1]) - xA[1] * 
+      RealT j_x_1 = 0.25 * (xA[0] * (1. + x_sol[1]) - xA[1] * 
                    (1. + x_sol[1]) - xA[2] * (1. - x_sol[1]) + 
                    xA[3] * (1. - x_sol[1]));
 
-      real j_y_1 = 0.25 * (yA[0] * (1. + x_sol[1]) - yA[1] * 
+      RealT j_y_1 = 0.25 * (yA[0] * (1. + x_sol[1]) - yA[1] * 
                    (1. + x_sol[1]) - yA[2] * (1. - x_sol[1]) + 
                    yA[3] * (1. - x_sol[1]));
 
-      real j_z_1 = 0.25 * (zA[0] * (1. + x_sol[1]) - zA[1] * 
+      RealT j_z_1 = 0.25 * (zA[0] * (1. + x_sol[1]) - zA[1] * 
                    (1. + x_sol[1]) - zA[2] * (1. - x_sol[1]) + 
                    zA[3] * (1. - x_sol[1]));
 
-      real j_x_2 = 0.25 * (xA[0] * (1. + x_sol[0]) + xA[1] * 
+      RealT j_x_2 = 0.25 * (xA[0] * (1. + x_sol[0]) + xA[1] * 
                    (1. - x_sol[0]) - xA[2] * (1. - x_sol[0]) - 
                    xA[3] * (1. + x_sol[0]));
 
-      real j_y_2 = 0.25 * (yA[0] * (1. + x_sol[0]) + yA[1] * 
+      RealT j_y_2 = 0.25 * (yA[0] * (1. + x_sol[0]) + yA[1] * 
                    (1. - x_sol[0]) - yA[2] * (1. - x_sol[0]) - 
                    yA[3] * (1. + x_sol[0]));
 
-      real j_z_2 = 0.25 * (zA[0] * (1. + x_sol[0]) + zA[1] * 
+      RealT j_z_2 = 0.25 * (zA[0] * (1. + x_sol[0]) + zA[1] * 
                    (1. - x_sol[0]) - zA[2] * (1. - x_sol[0]) - 
                    zA[3] * (1. + x_sol[0]));
 
       // evaluate the residual
-      real f_x = x[0] - 0.25 * ((1. + x_sol[0]) * (1. + x_sol[1]) * xA[0]
+      RealT f_x = x[0] - 0.25 * ((1. + x_sol[0]) * (1. + x_sol[1]) * xA[0]
                  + (1. - x_sol[0]) * (1. + x_sol[1]) * xA[1]
                  + (1. - x_sol[0]) * (1. - x_sol[1]) * xA[2]
                  + (1. + x_sol[0]) * (1. - x_sol[1]) * xA[3]);
 
-      real f_y = x[1] - 0.25 * ((1. + x_sol[0]) * (1. + x_sol[1]) * yA[0]
+      RealT f_y = x[1] - 0.25 * ((1. + x_sol[0]) * (1. + x_sol[1]) * yA[0]
                  + (1. - x_sol[0]) * (1. + x_sol[1]) * yA[1]
                  + (1. - x_sol[0]) * (1. - x_sol[1]) * yA[2]
                  + (1. + x_sol[0]) * (1. - x_sol[1]) * yA[3]);
 
-      real f_z = x[2] - 0.25 * ((1. + x_sol[0]) * (1. + x_sol[1]) * zA[0]
+      RealT f_z = x[2] - 0.25 * ((1. + x_sol[0]) * (1. + x_sol[1]) * zA[0]
                  + (1. - x_sol[0]) * (1. + x_sol[1]) * zA[1]
                  + (1. - x_sol[0]) * (1. - x_sol[1]) * zA[2]
                  + (1. + x_sol[0]) * (1. - x_sol[1]) * zA[3]);
 
       // compute J' * J
-      real JTJ_11 = j_x_1 * j_x_1 + j_y_1 * j_y_1 + j_z_1 * j_z_1;
-      real JTJ_12 = j_x_1 * j_x_2 + j_y_1 * j_y_2 + j_z_1 * j_z_2;
-      //real JTJ_21 = JTJ_12;
-      real JTJ_22 = j_x_2 * j_x_2 + j_y_2 * j_y_2 + j_z_2 * j_z_2;;
+      RealT JTJ_11 = j_x_1 * j_x_1 + j_y_1 * j_y_1 + j_z_1 * j_z_1;
+      RealT JTJ_12 = j_x_1 * j_x_2 + j_y_1 * j_y_2 + j_z_1 * j_z_2;
+      //RealT JTJ_21 = JTJ_12;
+      RealT JTJ_22 = j_x_2 * j_x_2 + j_y_2 * j_y_2 + j_z_2 * j_z_2;;
 
       // compute J' * F
-      real JTF_1 = j_x_1 * f_x + j_y_1 * f_y + j_z_1 * f_z;
-      real JTF_2 = j_x_2 * f_x + j_y_2 * f_y + j_z_2 * f_z;
+      RealT JTF_1 = j_x_1 * f_x + j_y_1 * f_y + j_z_1 * f_z;
+      RealT JTF_2 = j_x_2 * f_x + j_y_2 * f_y + j_z_2 * f_z;
 
       // for first few steps don't do exact Newton.
-      real cm_11 = JTJ_11; //- (djde_11 * f_x + djde_11 * f_y + djde_11 * f_z);
-      real cm_12 = JTJ_12; //- (djde_x_12 * f_x + djde_y_12 * f_y + djde_z_12 * f_z);
-      real cm_21 = cm_12;
-      real cm_22 = JTJ_22; //- (djde_22 * f_x + djde_22 * f_y + djde_22 * f_z);
+      RealT cm_11 = JTJ_11; //- (djde_11 * f_x + djde_11 * f_y + djde_11 * f_z);
+      RealT cm_12 = JTJ_12; //- (djde_x_12 * f_x + djde_y_12 * f_y + djde_z_12 * f_z);
+      RealT cm_21 = cm_12;
+      RealT cm_22 = JTJ_22; //- (djde_22 * f_x + djde_22 * f_y + djde_22 * f_z);
 
       // do exact Newton for steps beyond first few
       if (k > 2)  // set to 2 per mortar method testing 
@@ -321,21 +335,21 @@ void InvIso( const real  x[3],
        cm_22 += - (djde_22 * f_x + djde_22 * f_y + djde_22 * f_z);
       }
 
-      real detI = 1. / (cm_11 * cm_22 - cm_12 * cm_21);
+      RealT detI = 1. / (cm_11 * cm_22 - cm_12 * cm_21);
 
-      real cmi_11 = cm_22 * detI;
-      real cmi_22 = cm_11 * detI;
-      real cmi_12 = -cm_12 * detI;
-      real cmi_21 = -cm_21 * detI;
+      RealT cmi_11 = cm_22 * detI;
+      RealT cmi_22 = cm_11 * detI;
+      RealT cmi_12 = -cm_12 * detI;
+      RealT cmi_21 = -cm_21 * detI;
 
-      real dxi_1 = cmi_11 * JTF_1 + cmi_12 * JTF_2;
-      real dxi_2 = cmi_21 * JTF_1 + cmi_22 * JTF_2;
+      RealT dxi_1 = cmi_11 * JTF_1 + cmi_12 * JTF_2;
+      RealT dxi_2 = cmi_21 * JTF_1 + cmi_22 * JTF_2;
 
       x_sol[0] += dxi_1;
       x_sol[1] += dxi_2;
 
-      real abs_dxi_1 = std::abs(dxi_1);
-      real abs_dxi_2 = std::abs(dxi_2);
+      RealT abs_dxi_1 = std::abs(dxi_1);
+      RealT abs_dxi_2 = std::abs(dxi_2);
 
       if (abs_dxi_1 <= xtol && abs_dxi_2 <= xtol)
       {
@@ -374,17 +388,17 @@ void InvIso( const real  x[3],
 }
 
 //------------------------------------------------------------------------------
-void FwdMapLinQuad( const real xi[2],
-                    real xa[4],
-                    real ya[4],
-                    real za[4],
-                    real x[3] )
+void FwdMapLinQuad( const RealT xi[2],
+                    RealT xa[4],
+                    RealT ya[4],
+                    RealT za[4],
+                    RealT x[3] )
 {
    // initialize output array
    initRealArray( &x[0], 3, 0. );
 
    // obtain shape function evaluations at (xi,eta)
-   real phi[4] = { 0., 0., 0., 0. };
+   RealT phi[4] = { 0., 0., 0., 0. };
    LinIsoQuadShapeFunc( xi[0], xi[1], 0, phi[0] );
    LinIsoQuadShapeFunc( xi[0], xi[1], 1, phi[1] );
    LinIsoQuadShapeFunc( xi[0], xi[1], 2, phi[2] );
@@ -400,17 +414,17 @@ void FwdMapLinQuad( const real xi[2],
 }
 
 //------------------------------------------------------------------------------
-void FwdMapLinTri( const real xi[2],
-                   real xa[3],
-                   real ya[3],
-                   real za[3],
-                   real x[3] )
+void FwdMapLinTri( const RealT xi[2],
+                   RealT xa[3],
+                   RealT ya[3],
+                   RealT za[3],
+                   RealT x[3] )
 {
    // initialize output array
    initRealArray( &x[0], 3, 0. );
 
    // obtain shape function evaluations at (xi,eta)
-   real phi[3] = { 0., 0., 0. };
+   RealT phi[3] = { 0., 0., 0. };
    LinIsoTriShapeFunc( xi[0], xi[1], 0, phi[0] );
    LinIsoTriShapeFunc( xi[0], xi[1], 1, phi[1] );
    LinIsoTriShapeFunc( xi[0], xi[1], 2, phi[2] );
@@ -425,10 +439,10 @@ void FwdMapLinTri( const real xi[2],
 }
 
 //------------------------------------------------------------------------------
-void LinIsoTriShapeFunc( const real xi, 
-                         const real eta,
+void LinIsoTriShapeFunc( const RealT xi, 
+                         const RealT eta,
                          const int a,
-                         real& phi )
+                         RealT& phi )
 {
    switch (a)
    {
@@ -450,12 +464,12 @@ void LinIsoTriShapeFunc( const real xi,
 }
 
 //------------------------------------------------------------------------------
-void LinIsoQuadShapeFunc( const real xi, 
-                          const real eta,
+void LinIsoQuadShapeFunc( const RealT xi, 
+                          const RealT eta,
                           const int a,
-                          real& phi )
+                          RealT& phi )
 {
-   real xi_node, eta_node;
+   RealT xi_node, eta_node;
    switch (a)
    {
       case 0:
@@ -487,20 +501,20 @@ void LinIsoQuadShapeFunc( const real xi,
 }
 
 //------------------------------------------------------------------------------
-void DetJQuad( const real xi,
-               const real eta,
-               const real* x,
+void DetJQuad( const RealT xi,
+               const RealT eta,
+               const RealT* x,
                const int dim,
-               real& detJ )
+               RealT& detJ )
 {
    
-   real J[4] = { 0., 0., 0., 0. }; // column major ordering
+   RealT J[4] = { 0., 0., 0., 0. }; // column major ordering
 
    // loop over nodes
    for (int a=0; a<4; ++a)
    {
       // determine (xi,eta) coord of node a
-      real xi_node, eta_node;
+      RealT xi_node, eta_node;
       switch (a)
       {
          case 0:

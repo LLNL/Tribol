@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: (MIT)
 
 // Tribol includes
-#include "tribol/types.hpp"
 #include "tribol/mesh/MeshData.hpp"
 #include "tribol/mesh/MethodCouplingData.hpp"
 #include "tribol/integ/Integration.hpp"
@@ -20,7 +19,7 @@
 // c++ includes
 #include <cmath> // std::abs
 
-using real = tribol::real;
+using RealT = tribol::RealT;
 
 /*!
  * Test fixture class with some setup necessary to use the
@@ -39,29 +38,29 @@ public:
    int numNodes;
    int dim;
 
-   real* getXCoords() 
+   RealT* getXCoords() 
    {
       return x;
    }
 
-   real* getYCoords() 
+   RealT* getYCoords() 
    {
       return y;
    }
 
-   real* getZCoords() 
+   RealT* getZCoords() 
    {
       return z;
    }
 
-   bool integrate ( real const tol )
+   bool integrate ( RealT const tol )
    {
-      real xyz[ this->dim * this->numNodes ];
-      real* xy = xyz;
+      RealT xyz[ this->dim * this->numNodes ];
+      RealT* xy = xyz;
 
-      real * x = this->x;
-      real * y = this->y;
-      real * z = this->z;
+      RealT * x = this->x;
+      RealT * y = this->y;
+      RealT * z = this->z;
 
       // generate stacked coordinate array
       for (int j=0; j<this->numNodes; ++j)
@@ -88,7 +87,7 @@ public:
       // is ok.
       tribol::SurfaceContactElem elem ( this->dim, xy, xy, xy, 
                                         this->numNodes, this->numNodes, 
-                                        0, 1, 0, 0);
+                                        nullptr, nullptr, 0, 0);
 
       // instantiate integration object
       tribol::IntegPts integ;
@@ -98,8 +97,8 @@ public:
 
       // evaluate sum_a (integral_face (phi_a) da) with outer loop over nodes, a, and 
       // inner loop over number of integration points
-      real areaTest = 0.;
-      real phi = 0.;
+      RealT areaTest = 0.;
+      RealT phi = 0.;
 
       for (int a=0; a<this->numNodes; ++a)
       {
@@ -107,8 +106,8 @@ public:
          {
             // perform inverse isoparametric mapping of current configuration 
             // integration point to four node quad parent space
-            real xp[3] = { integ.xy[dim*ip], integ.xy[dim*ip+1], integ.xy[dim*ip+2] };
-            real xi[2] = { 0., 0. };
+            RealT xp[3] = { integ.xy[dim*ip], integ.xy[dim*ip+1], integ.xy[dim*ip+2] };
+            RealT xi[2] = { 0., 0. };
             tribol::InvIso( xp, x, y, z, this->numNodes, xi );
             tribol::LinIsoQuadShapeFunc( xi[0], xi[1], a, phi );
        
@@ -117,7 +116,7 @@ public:
          }
       }
 
-      real area = tribol::Area2DPolygon( x, y, this->numNodes );
+      RealT area = tribol::Area2DPolygon( x, y, this->numNodes );
 
       bool convrg = (std::abs(areaTest - area) <= tol) ? true : false;
   
@@ -134,32 +133,32 @@ protected:
 
       if (this->x == nullptr)
       {
-         this->x = new real [this->numNodes];
+         this->x = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->x;
-         this->x = new real [this->numNodes];
+         this->x = new RealT [this->numNodes];
       }
 
       if (this->y == nullptr)
       {
-         this->y = new real [this->numNodes];
+         this->y = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->y;
-         this->y = new real [this->numNodes];
+         this->y = new RealT [this->numNodes];
       }
 
       if (this->z == nullptr)
       {
-         this->z = new real [this->numNodes];
+         this->z = new RealT [this->numNodes];
       }
       else
       {
          delete [] this->z;
-         this->z = new real [this->numNodes];
+         this->z = new RealT [this->numNodes];
       }
    }
 
@@ -184,9 +183,9 @@ protected:
 
 protected:
 
-   real* x {nullptr};
-   real* y {nullptr};
-   real* z {nullptr};
+   RealT* x {nullptr};
+   RealT* y {nullptr};
+   RealT* z {nullptr};
 
 };
 
@@ -194,9 +193,9 @@ protected:
 TEST_F( IsoIntegTest, square )
 {
 
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
    x[0] = -0.5;
    x[1] =  0.5;
@@ -221,9 +220,9 @@ TEST_F( IsoIntegTest, square )
 TEST_F( IsoIntegTest, rect )
 {
 
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
    x[0] = -0.5;
    x[1] =  0.5;
@@ -247,9 +246,9 @@ TEST_F( IsoIntegTest, rect )
 
 TEST_F( IsoIntegTest, affine )
 {
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
    x[0] = -0.5;
    x[1] =  0.5;
@@ -273,9 +272,9 @@ TEST_F( IsoIntegTest, affine )
 
 TEST_F( IsoIntegTest, nonaffine )
 {
-   real* x = this->getXCoords();
-   real* y = this->getYCoords();
-   real* z = this->getZCoords();
+   RealT* x = this->getXCoords();
+   RealT* y = this->getYCoords();
+   RealT* z = this->getZCoords();
 
    x[0] = -0.5;
    x[1] =  0.5;
