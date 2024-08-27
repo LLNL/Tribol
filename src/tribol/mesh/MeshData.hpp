@@ -97,6 +97,67 @@ struct MeshElemData
 
 };
 
+struct MeshParticleData 
+{
+   
+   /// Default constructor
+   MeshParticleData( );
+
+   /// Destructor
+   ~MeshParticleData() { }
+
+   int m_numParticles;
+
+   /////////////////////////
+   // PARTICLE FIELDS //
+   /////////////////////////
+   real * m_particle_gap;            ///< scalar particle gap
+   const real * m_particle_pressure; ///< scalar particle pressure
+
+   bool m_isGapComputed        {false}; ///< true if the particle gaps have been computed
+   bool m_is_particle_gap_set      {false}; ///< true if particle gap field is set
+   bool m_is_particle_pressure_set {false}; ///< true if particle pressure field is set
+   /////////////////////////
+
+   bool m_is_velocity_set           {false}; ///< true if particle velocities have been registered
+   bool m_is_particle_displacement_set {false}; ///< true if particle displacements have been registered
+   bool m_is_particle_response_set     {false}; ///< true if the particle responses have been registered
+
+   const real * m_mat_mod;             ///< Bulk/Young's modulus for contacting particles or particle with mesh
+   const real * m_thickness;           ///< Volume element thickness associated with each contact face ( not used )
+
+   real m_penalty_stiffness {0.};      ///< single scalar kinematic penalty stiffness for each mesh
+   real m_penalty_scale {1.};          ///< scale factor applied to kinematic penalty only
+   real m_rate_penalty_stiffness {0.}; ///< single scalar rate penalty stiffness for each mesh
+   real m_rate_percent_stiffness {0.}; ///< rate penalty is percentage of gap penalty
+
+   bool m_is_kinematic_constant_penalty_set {false}; ///< True if single kinematic constant penalty is set
+   bool m_is_kinematic_particle_penalty_set {false}; ///< True if the particle-wise kinematic penalty is set
+   bool m_is_rate_constant_penalty_set      {false}; ///< True if the constant rate penalty is set
+   bool m_is_rate_percent_penalty_set       {false}; ///< True if the rate percent penalty is set
+
+   bool m_is_element_thickness_set          {false}; ///< True if element thickness is set
+
+  /*!
+   * \brief Checks if the kinematic penalty data is valid
+   *
+   * \param [in] pen_enfrc penalty enforcement option struct
+   *
+   * \Return True if the kinematic penalty option has valid data
+   */
+   bool isValidKinematicPenalty( PenaltyEnforcementOptions& pen_options );
+
+  /*!
+   * \brief Checks if the rate penalty data is valid
+   *
+   * \param [in] pen_enfrc to penalty enforcement option struct
+   *
+   * \Return True if the rate penalty option has valid data
+   */
+   bool isValidRatePenalty( PenaltyEnforcementOptions& pen_options ); ///< True if rate penalty option is valid
+
+}; // end of struct MeshParticleData
+
 class MeshData
 {
 public:
@@ -116,8 +177,9 @@ public:
   InterfaceElementType m_elementType; ///< Type of interface element in mesh
   int m_lengthNodalData;              ///< Total number of elements in data arrays (used to create new arrays an index in using connectivity ids)
   int m_numSurfaceNodes;              ///< Total number of unique node ids in the surface connectivity (computed from MeshData::sortSurfaceNodeIds() )
+  int m_numParticles;                 ///< Total number of unique node ids in the particle mesh
   int m_numCells;                     ///< Total number of SURFACE cells in the mesh
-  int m_numNodesPerCell;                 ///< Number of nodes per SURFACE cell based on cell type
+  int m_numNodesPerCell;              ///< Number of nodes per SURFACE cell based on cell type
   int m_dim;                          ///< Dimension of mesh
   int m_meshId;                       ///< Mesh Id associated with this data
   bool m_isValid;                     ///< True if the mesh is valid
@@ -134,9 +196,17 @@ public:
   real * m_forceY; ///< Y-component of nodal forces 
   real * m_forceZ; ///< Z-component of nodal forces 
 
+  real * m_momentX; ///< X-component of nodal moments
+  real * m_momentY; ///< Y-component of nodal moments
+  real * m_momentZ; ///< Z-component of nodal moments
+
   const real* m_velX; ///< X-component of nodal velocity 
   const real* m_velY; ///< Y-component of nodal velocity
   const real* m_velZ; ///< Z-component of nodal velocity
+
+  const real* m_angVelX; ///< X-component of particle angular velocity 
+  const real* m_angVelY; ///< Y-component of particle angular velocity
+  const real* m_angVelZ; ///< Z-component of particle angular velocity
 
   real* m_nX; ///< X-component of outward unit face normals
   real* m_nY; ///< Y-component of outward unit face normals
@@ -147,6 +217,7 @@ public:
   real* m_cZ; ///< Z-component of vertex averaged cell centroids
 
   real* m_faceRadius; ///< Face radius used in low level proximity check
+  real* m_particleRadius; ///< Particle radius used in low level proximity check
 
   real* m_area; ///< Cell areas
 
@@ -158,8 +229,9 @@ public:
   real* m_node_nY; ///< Y-component of outward unit node normals
   real* m_node_nZ; ///< Z-component of outward unit node normals
 
-  MeshNodalData m_nodalFields; ///< method specific nodal fields
-  MeshElemData  m_elemData;    ///< method/enforcement specific element data 
+  MeshNodalData     m_nodalFields;  ///< method specific nodal fields
+  MeshElemData      m_elemData;     ///< method/enforcement specific element data 
+  MeshParticleData  m_particleData; ///< method/enforcement specific particle data 
 
 public:
 
