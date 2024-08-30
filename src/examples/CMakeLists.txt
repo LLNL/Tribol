@@ -97,6 +97,7 @@ if ( BUILD_REDECOMP )
   set( examples
       mfem_mortar_lm_patch.cpp
       mfem_common_plane.cpp
+      mfem_contact_detect.cpp
       )
 
   foreach( example ${examples} )
