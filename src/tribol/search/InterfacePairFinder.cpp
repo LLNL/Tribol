@@ -50,28 +50,36 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    // get instance of mesh manager
    MeshManager & meshManager = MeshManager::getInstance();
 
+   // get instance of parameters
+   parameters_t & parameters = parameters_t::getInstance();
+
    // get instance of mesh data
    MeshData& mesh1 = meshManager.GetMeshInstance(meshId1);
    MeshData& mesh2 = meshManager.GetMeshInstance(meshId2);
    int dim = mesh1.m_dim;
 
-   /// CHECK #2: Check to make sure faces don't share a common
+   /// CHECK #2: Auto-contact precludes faces that share a common
    ///           node(s). We want to preclude two adjacent faces from interacting 
    //            due to problematic configurations, such as corners where the
    //            configuration and opposing normals appear to be in contact, but 
-   //            are not. This will preclude two adjacent faces from being in self-contact,
-   //            but self-contact should be adequately resolved beyond this local face-pair
-   //            check.
-   for (int i=0; i<mesh1.m_numNodesPerCell; ++i)
+   //            are not.
+   //
+   //            Note: non-auto-contact coupling schemes should typically be amongst
+   //                  topologically disconnected surfaces unless it is known apriori that
+   //                  face-pairs with shared nodes can in fact contact.
+   if (parameters.auto_contact_check)
    {
-      int node1 = mesh1.getFaceNodeId(faceId1, i);
-      for (int j=0; j<mesh2.m_numNodesPerCell; ++j)
+      for (int i=0; i<mesh1.m_numNodesPerCell; ++i)
       {
-         int node2 = mesh2.getFaceNodeId(faceId2, j);
-         if (node1 == node2)
+         int node1 = mesh1.getFaceNodeId(faceId1, i);
+         for (int j=0; j<mesh2.m_numNodesPerCell; ++j)
          {
-           iPair.isContactCandidate = false;
-           return iPair.isContactCandidate;
+            int node2 = mesh2.getFaceNodeId(faceId2, j);
+            if (node1 == node2)
+            {
+              iPair.isContactCandidate = false;
+              return iPair.isContactCandidate;
+            }
          }
       }
    }
