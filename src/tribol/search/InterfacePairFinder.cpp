@@ -56,21 +56,22 @@ bool geomFilter( InterfacePair & iPair, ContactMode const mode )
    int dim = mesh1.m_dim;
 
    /// CHECK #2: Check to make sure faces don't share a common
-   ///           node for the case where meshId1 = meshId2.
-   ///           We want to preclude two adjacent faces from interacting.
-   if (meshId1 == meshId2)
+   ///           node(s). We want to preclude two adjacent faces from interacting 
+   //            due to problematic configurations, such as corners where the
+   //            configuration and opposing normals appear to be in contact, but 
+   //            are not. This will preclude two adjacent faces from being in self-contact,
+   //            but self-contact should be adequately resolved beyond this local face-pair
+   //            check.
+   for (int i=0; i<mesh1.m_numNodesPerCell; ++i)
    {
-      for (int i=0; i<mesh1.m_numNodesPerCell; ++i)
+      int node1 = mesh1.getFaceNodeId(faceId1, i);
+      for (int j=0; j<mesh2.m_numNodesPerCell; ++j)
       {
-         int node1 = mesh1.getFaceNodeId(faceId1, i);
-         for (int j=0; j<mesh2.m_numNodesPerCell; ++j)
+         int node2 = mesh2.getFaceNodeId(faceId2, j);
+         if (node1 == node2)
          {
-            int node2 = mesh2.getFaceNodeId(faceId2, j);
-            if (node1 == node2)
-            {
-              iPair.isContactCandidate = false;
-              return iPair.isContactCandidate;
-            }
+           iPair.isContactCandidate = false;
+           return iPair.isContactCandidate;
          }
       }
    }
