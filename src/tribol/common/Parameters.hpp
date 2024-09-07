@@ -517,7 +517,7 @@ struct parameters_t
   bool enable_timestep_vote;     ///! True if host-code desires the timestep vote to be calculated and returned
 
   double auto_contact_len_scale_factor; ///! Sacle factor applied to element thickness for auto contact length scale
-  bool auto_contact_check;              ///! True for auto contact enabled checks (e.g. geometry specific checks etc.)
+  bool auto_contact_check;              ///! True if auto-contact checks should be enabled
 
 private:
 
