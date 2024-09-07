@@ -308,7 +308,7 @@ bool ExceedsMaxAutoInterpen( const MeshData& meshDat1, const MeshData& meshDat2,
                              const int faceId1, const int faceId2, const real gap )
 {
    parameters_t& params = parameters_t::getInstance();
-   if (params.auto_interpen_check)
+   if (params.auto_contact_check)
    {
       real max_interpen = -1. * params.auto_contact_pen_frac * 
                           axom::utilities::min( meshDat1.m_elemData.m_thickness[ faceId1 ],

@@ -519,9 +519,10 @@ bool CouplingScheme::isValidCase()
       {
          case AUTO:
          {
-            // specify auto-contact specific interpenetration check and verify 
-            // element thicknesses have been registered
-            params.auto_interpen_check = true;
+            // enable auto-contact specific checks through boolean, and check to 
+            // make sure element thicknesses have been registered for auto-contact 
+            // length scale calculations
+            params.auto_contact_check = true;
 
             MeshManager & meshManager = MeshManager::getInstance(); 
             MeshData & mesh1 = meshManager.GetMeshInstance( this->m_meshId1 );
@@ -538,13 +539,13 @@ bool CouplingScheme::isValidCase()
          case TIED_FULL:
          {
             // uncomment when there is an implementation
-            //params.auto_interpen_check = false;
+            //params.auto_contact_check = false;
             this->m_couplingSchemeErrors.cs_case_error = NO_CASE_IMPLEMENTATION;
             isValid = false;
             break;
          }
          default:
-            params.auto_interpen_check = false;
+            params.auto_contact_check = false;
       } // end switch on case
    } // end if check on common-plane
 
