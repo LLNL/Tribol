@@ -54,7 +54,9 @@ enum InterfaceElementType
    LINEAR_QUAD,       ///! 2D linear quadrilateral
    LINEAR_TET,        ///! 3D linear tetrahedron (volume methods and test mesh class)
    LINEAR_HEX,        ///! 3D linear hexahedron (volume methods and test mesh class)
-   NUM_CONTACT_ELEMENTS = LINEAR_HEX
+   PARTICLE_CIRCLE,   ///! 2D computational geometry (volume methods and test mesh class)
+   PARTICLE_SPHERE,   ///! 3D computational geometry (volume methods and test mesh class)
+   NUM_CONTACT_ELEMENTS = PARTICLE_SPHERE
 };
 
 /*!
@@ -86,6 +88,7 @@ enum ContactMode
   SURFACE_TO_SURFACE_CONFORMING, ///! conforming surface-to-surface interaction
   SURFACE_TO_VOLUME,             ///! surface-to-volume interaction
   VOLUME_TO_VOLUME,              ///! volume-to-volume interaction
+  PARTICLE_TO_PARTICLE,          ///! particle-to-particle interaction
   NUM_CONTACT_MODES
 };
 
@@ -184,6 +187,7 @@ enum KinematicPenaltyCalculation
 {
    KINEMATIC_CONSTANT, ///! Constant penalty stiffness applied to all contacting face-pairs
    KINEMATIC_ELEMENT,  ///! Element-wise penalty stiffness calculation
+   KINEMATIC_PARTICLE, ///! Particle-wise penalty stiffness calculation
    NUM_KINEMATIC_PENALTY_CALCULATION
 };
 

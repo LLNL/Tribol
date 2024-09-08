@@ -219,6 +219,188 @@ bool MeshElemData::isValidRatePenalty( PenaltyEnforcementOptions& pen_options )
 
 } // end MeshElemData::isValidRatePenalty()
 
+///////////////////////////////////////////
+//                                       //
+// Routines for the MeshElemData struct //
+//                                       //
+///////////////////////////////////////////
+MeshParticleData::MeshParticleData()
+{
+   this->m_mat_mod   = nullptr;
+   this->m_thickness = nullptr;
+   return;
+}
+
+//------------------------------------------------------------------------------
+MeshParticleData::~MeshParticleData()
+{
+   // Don't delete any pointers to host code data (e.g. force, velocity, 
+   // penalty data, etc.). Don't nullify pointers as the host code 
+   // could register these pointers at the very beginning of a simulation 
+   // and not every cycle.
+}
+
+
+//------------------------------------------------------------------------------
+bool MeshParticleData::isValidKinematicPenalty( PenaltyEnforcementOptions& pen_options )
+{
+   // Note, this routine is, and should be called only for non-null meshes
+   KinematicPenaltyCalculation kin_calc = pen_options.kinematic_calculation;
+
+   // check kinematic penalty calculation data
+   if ( !in_range( kin_calc, NUM_KINEMATIC_PENALTY_CALCULATION) )
+   {
+      // warning already issued when penalty options were set. If penalty options 
+      // were not set, the following else-if will catch this
+      return false;
+   }
+   // a kinematic penalty should always be set. Right now Tribol does not support 
+   // rate only enforcement
+   else if ( !pen_options.is_kinematic_calculation_set() )
+   {
+      SLIC_WARNING( "MeshParticleData::isValidKinematic(): kinematic penalty calculation data not set; " << 
+                    "call tribol::setPenaltyOptions()." );
+      return false;
+   }
+
+   switch (kin_calc)
+   {
+      case KINEMATIC_CONSTANT:
+      {
+         if ( !this->m_is_kinematic_constant_penalty_set )
+         {
+            SLIC_WARNING("MeshParticleData::isValidKinematicPenalty(): " << 
+                         "single stiffness penalty not set.");
+            return false;
+         }
+         else if ( this->m_penalty_stiffness < pen_options.tiny_penalty )
+         {
+            SLIC_WARNING("MeshParticleData::isValidKinematicPenalty(): " << 
+                         "single stiffness penalty less than threshold (" << 
+                         pen_options.tiny_penalty << "). Consider increasing " << 
+                         "for your problem.");
+            return false;
+         }
+         break;
+      } // end case KINEMATIC_CONSTANT
+      case KINEMATIC_PARTICLE:
+      {
+         if ( !this->m_is_kinematic_particle_penalty_set )
+         {
+            SLIC_WARNING("MeshParticleData::isValidKinematicPenalty(): " << 
+                         "particle-wise penalty data not set.");
+            return false;
+         }
+
+         // check for positive material modulus and thickness values
+         bool isValidMatMod = true;
+         for (int i=0; i<this->m_numParticles; ++i)
+         {
+            if (this->m_mat_mod[i] <= 0.)
+            {
+               isValidMatMod = false;
+            }
+
+            SLIC_WARNING_IF(!isValidMatMod, "MeshParticleData::isValidKinematicPenalty(): " << 
+                            "invalid nonpositive particle material modulus encountered.");
+
+            if (!isValidMatMod)
+            {
+               return false;
+            }
+         } // end for loop over particles
+         break;
+      } // end case KINEMATIC_PARTICLE
+      default:
+         // no-op, quiet compiler
+         break;
+   } // end switch over kinematic calculation
+
+   return true;
+ 
+} // end MeshParticleData::isValidKinematicPenalty()
+
+//------------------------------------------------------------------------------
+bool MeshParticleData::isValidRatePenalty( PenaltyEnforcementOptions& pen_options )
+{
+   // Note, this method is and should only be called for non-null meshes
+   RatePenaltyCalculation rate_calc = pen_options.rate_calculation; 
+
+   // check rate penalty calculation data
+   if ( !in_range( rate_calc, NUM_RATE_PENALTY_CALCULATION) )
+   {
+      // warning already issued when penalty options were set. If penalty options 
+      // were not set, the following else-if will catch this
+      return false;
+   }
+   // the rate_calc could be set to NONE and this boolean will be true
+   else if ( !pen_options.is_rate_calculation_set() )
+   {
+      SLIC_WARNING( "MeshParticleData::isValidRatePenalty(): rate penalty calculation data not set. " << 
+                    "call tribol::setPenaltyOptions()." );
+      return false;
+   }
+
+   switch (rate_calc)
+   {
+      case NO_RATE_PENALTY:
+      {
+         // double check that mesh booleans are consistent with rate penalty 
+         // calculation option
+         if (this->m_is_rate_constant_penalty_set)
+         {
+            this->m_is_rate_constant_penalty_set = false;
+         }
+         else if (this->m_is_rate_percent_penalty_set)
+         {
+            this->m_is_rate_percent_penalty_set = false;
+         }
+         break;
+      } // end case NONE
+      case RATE_CONSTANT:
+      {
+         if ( !this->m_is_rate_constant_penalty_set )
+         {
+            SLIC_WARNING("MeshParticleData::isValidRatePenalty(): " << 
+                         "constant rate penalty data not set.");
+            return false;
+         }
+         else if ( this->m_rate_penalty_stiffness < pen_options.tiny_penalty )
+         {
+            SLIC_WARNING("MeshParticleData::isValidRatePenalty(): " << 
+                         "constant rate penalty less than threshold (" << 
+                         pen_options.tiny_penalty << "). Consider increasing " << 
+                         "for your problem.");
+            return false;
+         }
+         break;
+      } // end case RATE_CONSTANT
+      case RATE_PERCENT:
+      {
+         if ( !this->m_is_rate_percent_penalty_set )
+         {
+            SLIC_WARNING("MeshParticleData::isValidRatePenalty(): " << 
+                         "percent rate penalty data not set.");
+            return false;
+         }
+         else if ( this->m_rate_percent_stiffness < pen_options.tiny_penalty ||
+                   this->m_rate_percent_stiffness > (1.-pen_options.tiny_penalty) )
+         {
+            SLIC_WARNING("MeshParticleData::isValidRatePenalty(): " << 
+                         "rate percent penalty not in (0,1).");
+            return false;
+         }
+         break;
+      } // end case RATE_PERCENT
+      default:
+         // no-op, quiet compiler
+         break;
+   } // end switch on rate calculation
+
+   return true;
+
+} // end MeshParticleData::isValidRatePenalty()
+
 //------------------------------------------------------------------------------
 
 /////////////////////////////////
@@ -230,16 +412,19 @@ MeshData::MeshData()
   : m_elementType( tribol::UNDEFINED_ELEMENT )
   , m_lengthNodalData(0)
   , m_numSurfaceNodes(0)
+  , m_numParticles(0)
   , m_numCells(0)
   , m_numNodesPerCell(0)
   , m_isValid(true)
   , m_positionX(nullptr), m_positionY(nullptr), m_positionZ(nullptr)
   , m_dispX(nullptr), m_dispY(nullptr), m_dispZ(nullptr)
   , m_forceX(nullptr), m_forceY(nullptr), m_forceZ(nullptr)
+  , m_momentX(nullptr), m_momentY(nullptr), m_momentZ(nullptr)
   , m_velX(nullptr), m_velY(nullptr), m_velZ(nullptr)
   , m_nX(nullptr), m_nY(nullptr), m_nZ(nullptr)
   , m_cX(nullptr), m_cY(nullptr), m_cZ(nullptr)
   , m_faceRadius(nullptr)
+  , m_particleRadius(nullptr)
   , m_area(nullptr)
   , m_connectivity(nullptr)
   , m_sortedSurfaceNodeIds(nullptr)
@@ -256,6 +441,7 @@ void MeshData::allocateArrays(int dimension)
   m_cY = new   real[m_numCells];
   m_area = new real[m_numCells];
   m_faceRadius = new real[m_numCells];
+  m_particleRadius = new real[m_numParticles];
   m_nZ = nullptr;
   m_cZ = nullptr;
 
@@ -333,6 +519,12 @@ void MeshData::deallocateArrays()
   {
     delete[] m_faceRadius;
     m_faceRadius = nullptr;
+  }
+
+  if (m_particleRadius != nullptr)
+  {
+    delete[] m_particleRadius;
+    m_particleRadius = nullptr;
   }
 
   if (m_area != nullptr)
@@ -902,6 +1094,45 @@ int MeshData::checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options )
       } // end switch over constraint types
    } // end if-non-null mesh
 
+   if (this->m_numParticles>0)
+   {
+      PenaltyConstraintType constraint_type = p_enfrc_options.constraint_type;
+      // switch over penalty enforcement options and check for required data
+      switch (constraint_type)
+      {
+         case KINEMATIC:
+         {
+            if (!this->m_particleData.isValidKinematicPenalty( p_enfrc_options ))
+            {
+               err = 1;
+            }
+            break;
+         } // end KINEMATIC case
+
+         case KINEMATIC_AND_RATE:
+         {
+            if (!this->m_particleData.isValidKinematicPenalty( p_enfrc_options ))
+            {
+               err = 1;
+            }
+            if (!this->m_particleData.isValidRatePenalty( p_enfrc_options ))
+            {
+               err = 1;
+            }
+            if (!this->m_nodalFields.m_is_velocity_set)
+            {
+               SLIC_WARNING("Nodal velocities not set or null pointers; please set for " << 
+                            "use with gap rate penalty enforcement.");
+               err = 1;
+            }
+            break;
+         } // end case KINEMATIC_AND_RATE
+         default:
+            // no-op, quiet compiler
+            break;
+      } // end switch over constraint types
+   } // end if-non-null mesh
+
    return err;
 } // end MeshData::checkPenaltyData()
 
@@ -916,8 +1147,13 @@ int MeshData::localIdFromConn( const int connectivityId )
 //------------------------------------------------------------------------------
 void MeshData::print(std::ostream& os) const
 {
-   const int num_verts = m_lengthNodalData;
+   if ( m_lengthNodalData > 0 && m_numParticles > 0 )
+   {
+      SLIC_ERROR("MeshData::print(): Cannot have nodes and particles in same MeshData instance.");
+   }
+   const int num_verts = m_lengthNodalData + m_numParticles;
    const int num_elem = m_numCells;
+   const int num_particles = m_numParticles;
    const int dim = m_positionZ == nullptr ? 2 : 3;
 
    if(num_verts <= 0)
@@ -943,6 +1179,17 @@ void MeshData::print(std::ostream& os) const
       if(dim == 3)
       {  
          os << axom::fmt::format("\n\tfz: {}", axom::fmt::join(m_forceZ, m_forceZ+num_verts, ", "));
+      }
+   }
+   os << "\n  }";
+   // contact moment
+   if( m_momentX != nullptr )
+   {
+      os << axom::fmt::format("\n\tfx: {}", axom::fmt::join(m_momentX, m_momentX+num_verts, ", "));
+      os << axom::fmt::format("\n\tfy: {}", axom::fmt::join(m_momentY, m_momentY+num_verts, ", "));
+      if(dim == 3)
+      {  
+         os << axom::fmt::format("\n\tfz: {}", axom::fmt::join(m_momentZ, m_momentZ+num_verts, ", "));
       }
    }
    os << "\n  }";
