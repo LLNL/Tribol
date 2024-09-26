@@ -360,7 +360,7 @@ Array1D<IndexT> MeshData::sortSurfaceNodeIds()
 } // end MeshData::sortSurfaceNodeIds()
 
 //------------------------------------------------------------------------------
-bool MeshData::computeFaceData()
+bool MeshData::computeFaceData(ExecutionMode exec_mode)
 {
   constexpr RealT nrml_mag_tol = 1.0e-15;
 
@@ -391,7 +391,7 @@ bool MeshData::computeFaceData()
   auto dim = m_dim;
   auto conn = m_connectivity;
   ArrayViewT<IndexT> face_data_ok = face_data_ok_data;
-  forAllExec(getExecutionMode(m_mem_space), numberOfElements(), 
+  forAllExec(exec_mode, numberOfElements(), 
     [c, x, n, area, radius, dim, conn, face_data_ok] TRIBOL_HOST_DEVICE (IndexT i) {
 
       // compute the vertex average centroid. This will lie in the 

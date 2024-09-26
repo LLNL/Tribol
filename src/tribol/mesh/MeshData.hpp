@@ -265,10 +265,11 @@ public:
   void setVelocity( const RealT* vx,
                     const RealT* vy,
                     const RealT* vz );
+  bool hasVelocity() const { return !m_vel.empty(); }
 
   void setResponse( RealT* rx, RealT* ry, RealT* rz );
 
-  std::unique_ptr<Viewer> getView() { return std::make_unique<Viewer>(*this); }
+  Viewer getView() { return *this; }
 
   /// sorts unique surface node ids from connectivity and stores them on the mesh object in ascending order
   Array1D<IndexT> sortSurfaceNodeIds();
@@ -331,12 +332,12 @@ public:
   /*!
   * \brief Computes the face normals and centroids for all faces in the mesh.
   *
-  * \param [in] dim Dimension of the problem 
+  * \param [in] exec_mode defines where loops should be executed
   * \return true if face calculations do not encounter errors or warnings
   * 
   * This routine accounts for warped faces by computing an average normal.
   */
-  bool computeFaceData();
+  bool computeFaceData(ExecutionMode exec_mode);
   
   /*!
   * \brief Computes average nodal normals for use with mortar methods

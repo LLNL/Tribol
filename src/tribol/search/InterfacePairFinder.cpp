@@ -215,10 +215,10 @@ public:
 
   void findInterfacePairs() override
   {
-    auto& mesh1 = m_coupling_scheme->getMesh1();
+    const auto mesh1 = m_coupling_scheme->getMesh1().getView();
     IndexT mesh1NumElems = mesh1.numberOfElements();
 
-    auto& mesh2 = m_coupling_scheme->getMesh2();
+    const auto mesh2 = m_coupling_scheme->getMesh2().getView();
     IndexT mesh2NumElems = mesh2.numberOfElements();
 
     // Reserve memory for boolean array indicating which pairs
@@ -276,7 +276,7 @@ public:
     contactPairs.resize(countArray_host[0]);
 
     countArray.fill(0);
-    auto pairs_view = m_coupling_scheme->getInterfacePairsView();
+    auto pairs_view = m_coupling_scheme->getInterfacePairs().view();
     forAllExec(m_coupling_scheme->getExecutionMode(), numPairs,
       [inContact, pCount, pairs_view, mesh1NumElems, mesh2NumElems, is_symm] 
         TRIBOL_HOST_DEVICE (IndexT i)
@@ -345,7 +345,7 @@ public:
    */
   GridSearch( CouplingScheme* couplingScheme )
     : m_coupling_scheme( couplingScheme )
-    , m_mesh1( m_coupling_scheme->getMesh1() )
+    , m_mesh1( m_coupling_scheme->getMesh1().getView() )
     , m_mesh2( m_coupling_scheme->getMesh2() )
   {}
 
@@ -440,8 +440,8 @@ public:
     using BitsetType = typename ImplicitGridType::BitsetType;
 
     // Extract some mesh metadata from coupling scheme
-    auto& mesh1 = m_coupling_scheme->getMesh1();
-    auto& mesh2 = m_coupling_scheme->getMesh2();
+    const auto mesh1 = m_coupling_scheme->getMesh1().getView();
+    const auto mesh2 = m_coupling_scheme->getMesh2().getView();
     auto& contactPairs = m_coupling_scheme->getInterfacePairs();
 
     // Find matches in first mesh (with index 'fromIdx')
@@ -517,8 +517,8 @@ private:
   }
 
   CouplingScheme* m_coupling_scheme;
-  const MeshData::Viewer& m_mesh1;
-  const MeshData::Viewer& m_mesh2;
+  const MeshData::Viewer m_mesh1;
+  const MeshData::Viewer m_mesh2;
 
   ImplicitGridType m_grid;
   SpatialBoundingBox m_gridBBox;
@@ -559,8 +559,8 @@ public:
   */
   BvhSearch(CouplingScheme* coupling_scheme)
     : m_coupling_scheme( coupling_scheme )
-    , m_mesh1( m_coupling_scheme->getMesh1() )
-    , m_mesh2( m_coupling_scheme->getMesh2() )
+    , m_mesh1( m_coupling_scheme->getMesh1().getView() )
+    , m_mesh2( m_coupling_scheme->getMesh2().getView() )
     , m_boxes1( axom::ArrayOptions::Uninitialized{},
                 m_mesh1.numberOfElements(),
                 m_mesh1.numberOfElements(),
@@ -618,8 +618,8 @@ public:
     auto candidates_view = m_candidates.view();
     ArrayT<IndexT> filtered_candidates_data(1, 1, m_coupling_scheme->getAllocatorId());
     auto filtered_candidates = filtered_candidates_data.view();
-    auto& mesh1 = m_coupling_scheme->getMesh1();
-    auto& mesh2 = m_coupling_scheme->getMesh2();
+    const auto mesh1 = m_coupling_scheme->getMesh1().getView();
+    const auto mesh2 = m_coupling_scheme->getMesh2().getView();
     auto cmode = m_coupling_scheme->getContactMode();
     forAllExec(m_coupling_scheme->getExecutionMode(), m_candidates.size(),
       [mesh1, mesh2, offsets_view, counts_view, candidates_view, 
@@ -643,7 +643,7 @@ public:
     m_coupling_scheme->getInterfacePairs().resize(filtered_candidates_host[0]);
     filtered_candidates_data.fill(0);
 
-    auto pairs_view = m_coupling_scheme->getInterfacePairsView();
+    auto pairs_view = m_coupling_scheme->getInterfacePairs().view();
     forAllExec(m_coupling_scheme->getExecutionMode(), m_candidates.size(),
       [candidates_view, offsets_view, counts_view, filtered_candidates, 
         pairs_view] TRIBOL_HOST_DEVICE (IndexT i)
@@ -722,8 +722,8 @@ private:
    }
 
   CouplingScheme* m_coupling_scheme;
-  const MeshData::Viewer& m_mesh1;
-  const MeshData::Viewer& m_mesh2;
+  const MeshData::Viewer m_mesh1;
+  const MeshData::Viewer m_mesh2;
   ArrayT<BoxT> m_boxes1;
   ArrayT<BoxT> m_boxes2;
   ArrayT<IndexT> m_candidates;

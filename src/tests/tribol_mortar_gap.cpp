@@ -183,8 +183,8 @@ public:
       tribol::MeshData& mortarMesh = meshManager.at( mortarMeshId );
       tribol::MeshData& nonmortarMesh = meshManager.at( nonmortarMeshId );
 
-      mortarMesh.computeFaceData();
-      nonmortarMesh.computeFaceData();
+      mortarMesh.computeFaceData(tribol::ExecutionMode::Sequential);
+      nonmortarMesh.computeFaceData(tribol::ExecutionMode::Sequential);
 
       RealT* gaps;
       int size = 2*this->numNodesPerFace;
@@ -207,7 +207,7 @@ public:
       // equal to 0, and the face ids are 0 and 1, respectively.
       tribol::SurfaceContactElem elem ( this->dim, xy1, xy2, xyOverlap,
                                         this->numNodesPerFace, this->numOverlapNodes,
-                                        mortarView.get(), nonmortarView.get(), 0, 0);
+                                        &mortarView, &nonmortarView, 0, 0);
 
       // compute the mortar weights to be stored on
       // the surface contact element struct.

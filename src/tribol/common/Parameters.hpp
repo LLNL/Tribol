@@ -480,7 +480,6 @@ public:
     VisType vis_type            = VIS_OVERLAPS; ///! Type of interface physics visualization output
     bool enable_timestep_vote   = false;   ///! True if host-code desires the timestep vote to be calculated and returned
 
-    RealT auto_contact_len_scale_factor;   ///! Scale factor applied to element thickness for auto contact length scale
     bool auto_interpen_check    = false;   ///! True if the auto-contact interpenetration check is used for full-overlap pairs
   };
 

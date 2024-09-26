@@ -53,8 +53,8 @@ void WriteContactPlaneMeshToVtk( const std::string& dir, const VisType v_type,
                                  const int cycle, const RealT time )
 {
    CouplingScheme* couplingScheme  = CouplingSchemeManager::getInstance().findData(cs_id);
-   auto& mesh1 = couplingScheme->getMesh1();
-   auto& mesh2 = couplingScheme->getMesh2();
+   const auto mesh1 = couplingScheme->getMesh1().getView();
+   const auto mesh2 = couplingScheme->getMesh2().getView();
    SLIC_ERROR_ROOT_IF(!couplingScheme, "No coupling scheme registered with given cs_id.");
 
    int nranks = 1;

@@ -31,6 +31,18 @@ public:
    int numBadFaceGeometry {0};
 };
 
+/**
+ * @brief Enumerates execution mode errors 
+ */
+enum class ExecutionModeError
+{
+  UNKNOWN_MEMORY_SPACE,
+  NON_MATCHING_MEMORY_SPACE,
+  BAD_MODE_FOR_MEMORY_SPACE,
+  INCOMPATIBLE_METHOD,
+  NO_ERROR
+};
+
 // Helper struct to handle coupling scheme errors
 struct CouplingSchemeErrors
 {
@@ -42,6 +54,7 @@ public:
    ModelError            cs_model_error;
    EnforcementError      cs_enforcement_error;
    EnforcementDataErrors cs_enforcement_data_error;
+   ExecutionModeError    cs_execution_mode_error;
 
    void printModeErrors();
    void printCaseErrors();
@@ -49,18 +62,31 @@ public:
    void printModelErrors();
    void printEnforcementErrors();
    void printEnforcementDataErrors(); 
+   void printExecutionModeErrors(); 
 };
 
+/**
+ * @brief Enumerates execution mode informational messages
+ */
+enum class ExecutionModeInfo
+{
+  NONOPTIMAL_MODE_FOR_MEMORY_SPACE,
+  NO_INFO
+};
+
+// Helper struct to handle coupling scheme infomational messages
 struct CouplingSchemeInfo
 {
 public:
 
+   // Add info enums as needed
+   CaseInfo          cs_case_info;
+   EnforcementInfo   cs_enforcement_info;
+   ExecutionModeInfo cs_execution_mode_info;
+
    void printCaseInfo();
    void printEnforcementInfo();
-
-   // Add info enums as needed
-   CaseInfo cs_case_info;
-   EnforcementInfo cs_enforcement_info;
+   void printExecutionModeInfo();
 };
 
 // forward declaration
@@ -86,16 +112,10 @@ class MethodData;
 class CouplingScheme
 {
 public:
-  template <typename T,
-            typename PARAM,
-            typename MESH,
-            typename CP,
-            typename CP2D,
-            typename CP3D>
-  class ViewerBase
+  class Viewer
   {
   public:
-    ViewerBase( T& cs );
+    Viewer( CouplingScheme& cs );
 
     TRIBOL_HOST_DEVICE int spatialDimension() const { return m_mesh1.spatialDimension(); }
 
@@ -105,7 +125,7 @@ public:
 
     TRIBOL_HOST_DEVICE const EnforcementOptions& getEnforcementOptions() const { return m_enforcement_options; }
 
-    TRIBOL_HOST_DEVICE CP& getContactPlane( IndexT id ) const;
+    TRIBOL_HOST_DEVICE ContactPlane& getContactPlane( IndexT id ) const;
 
     TRIBOL_HOST_DEVICE RealT getTimestepScale() const { return m_parameters.timestep_scale; }
 
@@ -118,26 +138,14 @@ public:
     TRIBOL_HOST_DEVICE RealT getCommonPlaneGapTol( int fid1, int fid2 ) const;
 
   private:
-    PARAM m_parameters;
+    Parameters m_parameters;
     ContactCase m_contact_case;
     EnforcementOptions m_enforcement_options;
-    MESH m_mesh1;
-    MESH m_mesh2;
-    ArrayViewT<CP2D> m_contact_plane2d;
-    ArrayViewT<CP3D> m_contact_plane3d;
+    MeshData::Viewer m_mesh1;
+    MeshData::Viewer m_mesh2;
+    ArrayViewT<ContactPlane2D> m_contact_plane2d;
+    ArrayViewT<ContactPlane3D> m_contact_plane3d;
   };
-  using Viewer = ViewerBase<CouplingScheme, 
-                            Parameters, 
-                            MeshData::Viewer,
-                            ContactPlane,
-                            ContactPlane2D,
-                            ContactPlane3D>;
-  using ConstViewer = ViewerBase<const CouplingScheme, 
-                                 const Parameters, 
-                                 const MeshData::Viewer,
-                                 const ContactPlane,
-                                 const ContactPlane2D,
-                                 const ContactPlane3D>;
 
   /*!
    * \brief Default constructor. Disabled.
@@ -187,10 +195,10 @@ public:
 
   Parameters& getParameters() { return m_parameters; }
 
-  MeshData::Viewer& getMesh1() { return *m_mesh1; }
-  const MeshData::Viewer& getMesh1() const { return *m_mesh1; }
-  MeshData::Viewer& getMesh2() { return *m_mesh2; }
-  const MeshData::Viewer& getMesh2() const { return *m_mesh2; }
+  MeshData& getMesh1() { return *m_mesh1; }
+  const MeshData& getMesh1() const { return *m_mesh1; }
+  MeshData& getMesh2() { return *m_mesh2; }
+  const MeshData& getMesh2() const { return *m_mesh2; }
 
   ExecutionMode getExecutionMode() const { return m_exec_mode; }
   int getAllocatorId() const { return m_allocator_id; }
@@ -216,7 +224,6 @@ public:
   CouplingSchemeInfo&   getCouplingSchemeInfo()   { return m_couplingSchemeInfo; }
 
   CouplingScheme::Viewer getView() { return *this; }
-  CouplingScheme::ConstViewer getView() const { return *this; }
 
   int spatialDimension() const
   {
@@ -224,8 +231,6 @@ public:
     // types
     return m_mesh1->spatialDimension();
   }
-
-  void updateMeshViews();
 
   /*!
    * Disable/Enable per-cycle rebinning of interface pairs
@@ -282,20 +287,6 @@ public:
    */
   const ArrayT<InterfacePair>& getInterfacePairs() const { return m_interface_pairs; }
 
-  /*!
-   * \brief Returns a view to the associated InterfacePairs
-   *
-   * \return Reference to the InterfacePairs instance.
-   */
-  ArrayViewT<InterfacePair> getInterfacePairsView() { return m_interface_pairs.view(); }
-
-  /*!
-   * \brief Returns a view to the associated InterfacePairs
-   *
-   * \return Reference to the InterfacePairs instance.
-   */
-  const ArrayViewT<const InterfacePair> getInterfacePairsView() const { return m_interface_pairs.view(); }
-
   /// @}
 
   /*!
@@ -326,14 +317,6 @@ public:
    * \return Reference to the InterfacePairs instance.
    */
   const ArrayViewT<const ContactPlane3D> get3DContactPlanesView() const { return m_contact_plane3d; }
-
-  /*!
-   * Get the gap tolerance that determines in contact face-pairs 
-   * for each supported interface method
-   *
-   * \return the gap tolerance based on the method
-   */
-  RealT getGapTol( int fid1, int fid2 ) const;
 
   /*!
    * Set whether the coupling scheme has been binned
@@ -405,6 +388,14 @@ public:
    * \return 0 for correct enforcement data, 1 otherwise
    */
   int checkEnforcementData();
+
+  /*!
+   * \brief Check for correct execution mode for given memory spaces
+   *
+   * \return 0 for valid execution mode, 1 for invalid execution mode, 2 for
+   * execution mode related informational messages
+   */
+  int checkExecutionModeData();
 
   /*!
    * \brief Initializes the coupling scheme
@@ -671,8 +662,8 @@ private:
   IndexT m_mesh_id1; ///< Integer id for mesh 1
   IndexT m_mesh_id2; ///< Integer id for mesh 2
 
-  std::unique_ptr<MeshData::Viewer> m_mesh1; ///< Pointer to mesh 1 (reset every time init() is called)
-  std::unique_ptr<MeshData::Viewer> m_mesh2; ///< Pointer to mesh 2 (reset every time init() is called)
+  MeshData* m_mesh1; ///< Pointer to mesh 1 (reset every time init() is called)
+  MeshData* m_mesh2; ///< Pointer to mesh 2 (reset every time init() is called)
 
   ExecutionMode m_given_exec_mode; ///< User preferred execution mode (set by ctor)
 

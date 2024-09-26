@@ -170,7 +170,7 @@ void ComputeSingleMortarJacobian( SurfaceContactElem & elem );
  *
  */
 template< >
-int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme const * cs );
+int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme* cs );
 
 }
 

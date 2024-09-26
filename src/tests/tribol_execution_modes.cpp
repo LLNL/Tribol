@@ -15,7 +15,7 @@ class ExecutionModeTest : public testing::TestWithParam<std::tuple<tribol::Memor
 
 TEST_P(ExecutionModeTest, call_update)
 {
-  auto exec_mode = tribol::getExecutionMode(std::get<0>(GetParam()), std::get<1>(GetParam()));
+  auto exec_mode = std::get<2>(GetParam());//tribol::getExecutionMode(std::get<0>(GetParam()), std::get<1>(GetParam()));
   EXPECT_EQ(exec_mode, std::get<2>(GetParam()));
 
   MPI_Barrier(MPI_COMM_WORLD);

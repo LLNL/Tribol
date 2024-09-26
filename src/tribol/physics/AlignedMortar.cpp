@@ -160,7 +160,7 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 } // end of ComputeNodalGap<>()
 
 //------------------------------------------------------------------------------
-void ComputeAlignedMortarGaps( const CouplingScheme* cs )
+void ComputeAlignedMortarGaps( CouplingScheme* cs )
 {
    MeshManager& meshManager = MeshManager::getInstance();
    MeshData& nonmortarMeshBase = meshManager.at( cs->getMeshId2() );
@@ -168,12 +168,8 @@ void ComputeAlignedMortarGaps( const CouplingScheme* cs )
    // compute nodal normals (do this outside the element loop)
    // This routine is guarded against a null mesh
    nonmortarMeshBase.computeNodalNormals( dim );
-   // mesh data has changed.  update coupling scheme mesh view
-   // TODO: get rid of the const cast
-   auto cs_mutable = const_cast<CouplingScheme*>(cs);
-   cs_mutable->updateMeshViews();
 
-   auto pairs = cs->getInterfacePairsView();
+   auto pairs = cs->getInterfacePairs().view();
    const IndexT numPairs = pairs.size();
    auto planes = cs->get3DContactPlanesView();
 
@@ -183,8 +179,8 @@ void ComputeAlignedMortarGaps( const CouplingScheme* cs )
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   auto& mortarMesh = cs->getMesh1();
-   auto& nonmortarMesh = cs->getMesh2();
+   auto mortarMesh = cs->getMesh1().getView();
+   auto nonmortarMesh = cs->getMesh2().getView();
 
    const IndexT numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
@@ -286,7 +282,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
    ///////////////////////////////////////////////////////
    ComputeAlignedMortarGaps( cs );
    
-   auto pairs = cs->getInterfacePairsView();
+   auto pairs = cs->getInterfacePairs().view();
    const IndexT numPairs = pairs.size();
    auto planes = cs->get3DContactPlanesView();
 
@@ -297,8 +293,8 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
    // Grab pointers to mesh data
    //
    ////////////////////////////////////////////////////////////////////////
-   auto& mortarMesh = cs->getMesh1();
-   auto& nonmortarMesh = cs->getMesh2();
+   auto mortarMesh = cs->getMesh1().getView();
+   auto nonmortarMesh = cs->getMesh2().getView();
 
    const IndexT numNodesPerFace = mortarMesh.numberOfNodesPerElement();
 
