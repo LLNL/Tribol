@@ -85,6 +85,9 @@ private:
   }
 };
 
+/**
+ * @brief Simple free store (heap) allocated array that can be created on device
+ */
 template <typename T>
 class DeviceArray : public DeviceArrayData<T>
 {
@@ -131,6 +134,10 @@ public:
   TRIBOL_HOST_DEVICE T* data() const { return DeviceArrayData<T>::data_; }
 };
 
+/**
+ * @brief Simple free store (heap) allocated two-dimensional array that can be
+ * created on device
+ */
 template <typename T>
 class DeviceArray2D : public DeviceArrayData<T>
 {
@@ -217,6 +224,10 @@ private:
   IndexT width_;
 };
 
+/**
+ * @brief Simple automatic storage (stack) allocated array that can be
+ * created on device
+ */
 template <typename T, IndexT N>
 class StackArray
 {
