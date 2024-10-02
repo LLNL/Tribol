@@ -51,6 +51,12 @@ enum class ExecutionMode
   Dynamic
 };
 
+/**
+ * @brief SFINAE struct to deduce axom memory space from a Tribol memory space
+ * at compile time
+ * 
+ * @tparam MSPACE 
+ */
 template <MemorySpace MSPACE>
 struct toAxomMemorySpace
 {
@@ -120,22 +126,20 @@ inline bool isOnDevice(ExecutionMode exec)
 {
   switch (exec)
   {
-#ifdef TRIBOL_USE_RAJA
-  #if defined(TRIBOL_USE_CUDA)
+#if defined(TRIBOL_USE_CUDA)
     case ExecutionMode::Cuda:
       return true;
-  #elif defined(TRIBOL_USE_HIP)
+#elif defined(TRIBOL_USE_HIP)
     case ExecutionMode::Hip:
       return true;
-  #endif
-  #ifdef TRIBOL_USE_OPENMP
+#endif
+#ifdef TRIBOL_USE_OPENMP
     case ExecutionMode::OpenMP:
       return false;
-  #endif
+#endif
     case ExecutionMode::Dynamic:
       SLIC_ERROR_ROOT("Dynamic execution mode does not define a memory space location.");
       return false;
-#endif
     case ExecutionMode::Sequential:
       return false;
     default:
