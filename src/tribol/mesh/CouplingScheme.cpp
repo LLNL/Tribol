@@ -1154,8 +1154,8 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   }
   auto planes_2d = m_contact_plane2d.view();
   auto planes_3d = m_contact_plane3d.view();
-  auto& mesh1 = getMesh1();
-  auto& mesh2 = getMesh2();
+  auto mesh1 = getMesh1().getView();
+  auto mesh2 = getMesh2().getView();
   ArrayT<IndexT> planes_ct_data(1, 1, getAllocatorId());
   auto planes_ct = planes_ct_data.view();
   forAllExec(getExecutionMode(), numPairs,
