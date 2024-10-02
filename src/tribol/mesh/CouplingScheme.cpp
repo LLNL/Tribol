@@ -1664,7 +1664,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
           RAJA::atomicMin<RAJA::auto_atomic>( &dt_temp[0],
                                               axom::utilities::min(dt1, 1.e6) );
 #else
-          dt_temp[0] = axom::utilities::min(dt1, 1.e6);
+          dt_temp[0] = axom::utilities::min(dt_temp[0], axom::utilities::min(dt1, 1.e6));
 #endif
         }
         if (dt2 > 0.)
@@ -1673,7 +1673,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
           RAJA::atomicMin<RAJA::auto_atomic>( &dt_temp[0],
                                               axom::utilities::min(1.e6, dt2) );
 #else
-          dt_temp[0] = axom::utilities::min(1.e6, dt2);
+          dt_temp[0] = axom::utilities::min(dt_temp[0], axom::utilities::min(1.e6, dt2));
 #endif
         }
 
@@ -1762,7 +1762,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
           RAJA::atomicMin<RAJA::auto_atomic>( &dt_temp[1],
                                               axom::utilities::min(dt1, 1.e6) );
 #else
-          dt_temp[1] = axom::utilities::min(dt1, 1.e6);
+          dt_temp[1] = axom::utilities::min(dt_temp[1], axom::utilities::min(dt1, 1.e6));
 #endif
         }
         if (dt2 > 0.)
@@ -1771,7 +1771,7 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
           RAJA::atomicMin<RAJA::auto_atomic>( &dt_temp[1],
                                               axom::utilities::min(1.e6, dt2) );
 #else
-          dt_temp[1] = axom::utilities::min(1.e6, dt2);
+          dt_temp[1] = axom::utilities::min(dt_temp[1], axom::utilities::min(1.e6, dt2));
 #endif
         }
         if (dt1 < 0. || dt2 < 0.)
