@@ -12,6 +12,12 @@
 namespace tribol
 {
 
+/**
+ * @brief Storage base class for device-compatible free store (heap) allocated
+ * arrays
+ * 
+ * @tparam T Datatype stored in array
+ */
 template <typename T>
 class DeviceArrayData
 {
@@ -87,6 +93,8 @@ private:
 
 /**
  * @brief Simple free store (heap) allocated array that can be created on device
+ * 
+ * @tparam T Datatype stored in array
  */
 template <typename T>
 class DeviceArray : public DeviceArrayData<T>
@@ -137,6 +145,8 @@ public:
 /**
  * @brief Simple free store (heap) allocated two-dimensional array that can be
  * created on device
+ * 
+ * @tparam T Datatype stored in array
  */
 template <typename T>
 class DeviceArray2D : public DeviceArrayData<T>
