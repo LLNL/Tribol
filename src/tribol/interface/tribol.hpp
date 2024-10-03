@@ -452,16 +452,16 @@ void registerIntElementField( IndexT mesh_id,
 /*!
  * \brief Registers a contact coupling scheme between two contact surfaces.
  *
- * \param [in] cs_id   coupling scheme id
- * \param [in] mesh_id1 Id of the first contact surface.
- * \param [in] mesh_id2 Id of the second contact surface.
- * \param [in] contact_mode
- * \param [in] contact_case
- * \param [in] contact_method
- * \param [in] contact_model
- * \param [in] enforcement_method
- * \param [in] binning_method
- * \param [in] given_exec_mode Preferred execution mode for RAJA kernels
+ * \param [in] cs_id coupling scheme id
+ * \param [in] mesh_id1 id of the first contact surface
+ * \param [in] mesh_id2 id of the second contact surface
+ * \param [in] contact_mode the type of contact, e.g. SURFACE_TO_SURFACE
+ * \param [in] contact_case the specific case of contact application, e.g. auto
+ * \param [in] contact_method the contact method, e.g. SINGLE_MORTAR
+ * \param [in] contact_model the contact model, e.g. COULOMB
+ * \param [in] enforcement_method the enforcement method, e.g. PENALTY
+ * \param [in] binning_method the binning method, e.g. BINNING_GRID
+ * \param [in] given_exec_mode preferred execution mode for RAJA kernels
  *
  * \note A mesh for the given contact surface must have already been registered
  *  prior to calling this method.
