@@ -758,11 +758,23 @@ void MeshData::print(std::ostream& os) const
    // normals
    if( !m_n.empty() )
    {
-      os << axom::fmt::format("\n\tnx: {}", axom::fmt::join(m_n[0].data(), m_n[0].data()+num_elem, ", "));
-      os << axom::fmt::format("\n\tny: {}", axom::fmt::join(m_n[1].data(), m_n[1].data()+num_elem, ", "));
+      os << "\n\tnx: " << m_n(0, 0);
+      for (int e{1}; e < num_elem; ++e)
+      {
+         os << ", " <<  m_n(e, 0);
+      }
+      os << "\n\tny: " << m_n(0, 1);
+      for (int e{1}; e < num_elem; ++e)
+      {
+         os << ", " <<  m_n(e, 1);
+      }
       if(m_dim == 3)
       {  
-         os << axom::fmt::format("\n\tnz: {}", axom::fmt::join(m_n[2].data(), m_n[2].data()+num_elem, ", "));
+         os << "\n\tnz: " << m_n(0, 2);
+         for (int e{1}; e < num_elem; ++e)
+         {
+            os << ", " <<  m_n(e, 2);
+         }
       }
    }
    os << "\n  }";
