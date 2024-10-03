@@ -69,7 +69,7 @@ struct MeshElemData
   *
   * \param [in] pen_enfrc penalty enforcement option struct
   *
-  * \Return True if the kinematic penalty option has valid data
+  * \return true if the kinematic penalty option has valid data
   */
   bool isValidKinematicPenalty( PenaltyEnforcementOptions& pen_options );
 
@@ -78,7 +78,7 @@ struct MeshElemData
   *
   * \param [in] pen_enfrc to penalty enforcement option struct
   *
-  * \Return True if the rate penalty option has valid data
+  * \return true if the rate penalty option has valid data
   */
   bool isValidRatePenalty( PenaltyEnforcementOptions& pen_options ); ///< True if rate penalty option is valid
 
@@ -103,7 +103,7 @@ public:
     /**
      * @brief Obtain the mesh ID for the current mesh view
      * 
-     * @return Mesh ID
+     * @return mesh ID
      */
     TRIBOL_HOST_DEVICE IndexT meshId() const { return m_mesh_id; }
 
@@ -112,14 +112,14 @@ public:
      *
      * @note Tribol supports a single element type for each mesh
      * 
-     * @return Element type
+     * @return element type
      */
     TRIBOL_HOST_DEVICE InterfaceElementType getElementType() const { return m_element_type; }
 
     /**
      * @brief Get the memory space of the data for the current mesh view
      * 
-     * @return Memory space
+     * @return memory space
      */
     TRIBOL_HOST_DEVICE MemorySpace getMemorySpace() const { return m_mem_space; }
 
@@ -129,14 +129,14 @@ public:
      * @note Corresponds to an umpire allocator ID if Tribol is built with
      * Umpire; zero otherwise
      * 
-     * @return Allocator ID
+     * @return allocator ID
      */
     TRIBOL_HOST_DEVICE int getAllocatorId() const { return m_allocator_id; }
 
     /**
      * @brief Get the mesh nodal field data
      * 
-     * @return Nodal data for the mesh
+     * @return nodal data for the mesh
      */
     TRIBOL_HOST_DEVICE MeshNodalData& getNodalFields() { return m_nodal_fields; }
 
@@ -146,7 +146,7 @@ public:
     /**
      * @brief Get the mesh element data
      * 
-     * @return Element data for the mesh
+     * @return element data for the mesh
      */
     TRIBOL_HOST_DEVICE MeshElemData& getElementData() { return m_element_data; }
 
@@ -156,37 +156,37 @@ public:
     /**
      * @brief Spatial dimension of the mesh
      * 
-     * @return Spatial dimension
+     * @return spatial dimension
      */
     TRIBOL_HOST_DEVICE int spatialDimension() const { return m_position.size(); }
 
     /**
      * @brief Number of nodes in the mesh
      * 
-     * @return Node count
+     * @return node count
      */
     TRIBOL_HOST_DEVICE IndexT numberOfNodes() const { return m_num_nodes; }
 
     /**
      * @brief Number of elements in the mesh
      * 
-     * @return Element count
+     * @return element count
      */
     TRIBOL_HOST_DEVICE IndexT numberOfElements() const { return m_connectivity.shape()[0]; }
 
     /**
      * @brief Number of nodes in each element of the mesh
      * 
-     * @return Nodes per element
+     * @return nodes per element
      */
     TRIBOL_HOST_DEVICE IndexT numberOfNodesPerElement() const { return m_connectivity.shape()[1]; }
 
     /**
      * @brief Get the global node ID
      * 
-     * @param element_id Which element the node belongs to
-     * @param local_node_id Node ID for the local element
-     * @return Global node ID
+     * @param element_id which element the node belongs to
+     * @param local_node_id node ID for the local element
+     * @return global node ID
      */
     TRIBOL_HOST_DEVICE IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
     {
@@ -196,7 +196,7 @@ public:
     /**
      * @brief Get the nodal position array views
      * 
-     * @return Array view of the nodal position arrays
+     * @return array view of the nodal position arrays
      */
     TRIBOL_HOST_DEVICE const MultiViewArrayView<const RealT>& getPosition() const
     {
@@ -206,14 +206,14 @@ public:
     /**
      * @brief Is the displacement vector populated?
      * 
-     * @return True if non-empty; false otherwise
+     * @return true if non-empty; false otherwise
      */
     TRIBOL_HOST_DEVICE bool hasDisplacement() const { return !m_disp.empty(); }
 
     /**
      * @brief Get the nodal displacement array views
      * 
-     * @return Array view of the nodal displacement arrays
+     * @return array view of the nodal displacement arrays
      */
     TRIBOL_HOST_DEVICE const MultiViewArrayView<const RealT>& getDisplacement() const
     {
@@ -223,14 +223,14 @@ public:
     /**
      * @brief Is the velocity vector populated?
      * 
-     * @return True if non-empty; false otherwise
+     * @return true if non-empty; false otherwise
      */
     TRIBOL_HOST_DEVICE bool hasVelocity() const { return !m_vel.empty(); }
 
     /**
      * @brief Get the nodal velocity array views
      * 
-     * @return Array view of the nodal velocity arrays
+     * @return array view of the nodal velocity arrays
      */
     TRIBOL_HOST_DEVICE const MultiViewArrayView<const RealT>& getVelocity() const
     {
@@ -240,14 +240,14 @@ public:
     /**
      * @brief Is the nodal response vector populated?
      * 
-     * @return True if non-empty; false otherwise
+     * @return true if non-empty; false otherwise
      */
     TRIBOL_HOST_DEVICE bool hasResponse() const { return !m_response.empty(); }
 
     /**
      * @brief Get the nodal response array views
      * 
-     * @return Array view of the nodal response arrays
+     * @return array view of the nodal response arrays
      */
     TRIBOL_HOST_DEVICE const MultiViewArrayView<RealT>& getResponse() const
     {
@@ -257,14 +257,14 @@ public:
     /**
      * @brief Is the nodal normal vector populated?
      * 
-     * @return True if non-empty; false otherwise
+     * @return true if non-empty; false otherwise
      */
     TRIBOL_HOST_DEVICE bool hasNodalNormals() const { return !m_node_n.empty(); }
 
     /**
      * @brief Get an array view of the nodal normals
      * 
-     * @return Array view of the nodal normals
+     * @return array view of the nodal normals
      */
     TRIBOL_HOST_DEVICE const Array2DView<RealT>& getNodalNormals() const
     {
@@ -274,14 +274,14 @@ public:
     /**
      * @brief Is the element centroids vector populated?
      * 
-     * @return True if non-empty; false otherwise
+     * @return true if non-empty; false otherwise
      */
     TRIBOL_HOST_DEVICE bool hasElementCentroids() const { return !m_c.empty(); }
 
     /**
      * @brief Get an array view of the element centroids
      * 
-     * @return Array view of element centroids
+     * @return array view of element centroids
      */
     TRIBOL_HOST_DEVICE const Array2DView<RealT>& getElementCentroids() const
     {
@@ -291,14 +291,14 @@ public:
     /**
      * @brief Is the element normals vector populated?
      * 
-     * @return True if non-empty; false otherwise
+     * @return true if non-empty; false otherwise
      */
     TRIBOL_HOST_DEVICE bool hasElementNormals() const { return !m_n.empty(); }
 
     /**
      * @brief Get an array view of the element normals
      * 
-     * @return Array view of the element normals
+     * @return array view of the element normals
      */
     TRIBOL_HOST_DEVICE const Array2DView<RealT>& getElementNormals() const
     {
@@ -308,14 +308,14 @@ public:
     /**
      * @brief Is the element face radii vector populated?
      * 
-     * @return True if non-empty; false otherwise
+     * @return true if non-empty; false otherwise
      */
     TRIBOL_HOST_DEVICE bool hasFaceRadii() const { return !m_face_radius.empty(); }
 
     /**
      * @brief Get an array view of the element face radii
      * 
-     * @return Array view of the element face radii
+     * @return array view of the element face radii
      */
     TRIBOL_HOST_DEVICE const Array1DView<RealT>& getFaceRadii() const
     {
@@ -325,14 +325,14 @@ public:
     /**
      * @brief Is the element area vector populated?
      * 
-     * @return True if non-empty; false otherwise
+     * @return true if non-empty; false otherwise
      */
     TRIBOL_HOST_DEVICE bool hasElementAreas() const { return !m_area.empty(); }
 
     /**
      * @brief Get an array view of the element areas
      * 
-     * @return Array view of the element areas
+     * @return array view of the element areas
      */
     TRIBOL_HOST_DEVICE const Array1DView<RealT>& getElementAreas() const
     {
@@ -342,7 +342,7 @@ public:
     /**
      * @brief Get an array view of the element connectivity
      * 
-     * @return Array view of element connectivity
+     * @return array view of element connectivity
      */
     TRIBOL_HOST_DEVICE const Array2DView<const IndexT>& getConnectivity() const 
     {
@@ -446,6 +446,9 @@ public:
    * \pre x != nullptr
    * \pre y != nullptr
    * \pre z != nullptr (3D only)
+   *
+   * \note connectivity is a 2D array with num_elements rows and num_nodes
+   * columns with row-major ordering
    */
   MeshData( IndexT mesh_id,
             IndexT num_elements,
@@ -458,36 +461,36 @@ public:
             MemorySpace mem_space );
 
   /**
-  * @brief Get the element type
-  *
-  * @note Tribol supports a single element type for each mesh
-  * 
-  * @return Element type
-  */
+   * @brief Get the element type
+   *
+   * @note Tribol supports a single element type for each mesh
+   * 
+   * @return element type
+   */
   InterfaceElementType getElementType() const { return m_element_type; }
   
   /**
-  * @brief Spatial dimension of the mesh
-  * 
-  * @return Spatial dimension
-  */
+   * @brief Spatial dimension of the mesh
+   * 
+   * @return spatial dimension
+   */
   int spatialDimension() const { return m_dim; }
 
   /**
-  * @brief Get the memory space of nodal/element data stored in the mesh
-  * 
-  * @return Memory space
-  */
+   * @brief Get the memory space of nodal/element data stored in the mesh
+   * 
+   * @return memory space
+   */
   MemorySpace getMemorySpace() const { return m_mem_space; }
 
   /**
-  * @brief Get the allocator ID of the nodal/element data stored in the mesh
-  *
-  * @note Corresponds to an umpire allocator ID if Tribol is built with
-  * Umpire; zero otherwise
-  * 
-  * @return Allocator ID
-  */
+   * @brief Get the allocator ID of the nodal/element data stored in the mesh
+   *
+   * @note Corresponds to an umpire allocator ID if Tribol is built with
+   * Umpire; zero otherwise
+   * 
+   * @return allocator ID
+   */
   int getAllocatorId() const { return m_allocator_id; }
 
   /**
@@ -502,54 +505,154 @@ public:
    *
    * @note This data is not used within MeshData
    * 
-   * @return true Determined by calling function; usually indicates mesh is
+   * @return true determined by calling function; usually indicates mesh is
    * valid in some sense
-   * @return false Determined by calling function; usually indicates mesh is not
+   * @return false determined by calling function; usually indicates mesh is not
    * valid in some sense
    */
   bool& isMeshValid() { return m_is_valid; }
 
+  /**
+   * @brief Get the mesh nodal field data
+   * 
+   * @return nodal data for the mesh
+   */
   MeshNodalData& getNodalFields() { return m_nodal_fields; }
+  
+  /**
+   * @brief Get the mesh element data
+   * 
+   * @return element data for the mesh
+   */
   MeshElemData& getElementData() { return m_element_data; }
+
+  /// \overload
   const MeshElemData& getElementData() const { return m_element_data; }
   
+  /**
+   * @brief Number of nodes in the mesh
+   * 
+   * @return node count
+   */
   IndexT numberOfNodes() const { return m_num_nodes; }
+
+  /**
+   * @brief Number of elements in the mesh
+   * 
+   * @return element count
+   */
   IndexT numberOfElements() const { return m_connectivity.shape()[0]; }
+
+  /**
+   * @brief Number of nodes in each element of the mesh
+   * 
+   * @return nodes per element
+   */
   IndexT numberOfNodesPerElement() const { return m_connectivity.shape()[1]; }
+
+  /**
+   * @brief Get the global node ID
+   * 
+   * @param element_id which element the node belongs to
+   * @param local_node_id node ID for the local element
+   * @return global node ID
+   */
   IndexT getGlobalNodeId(IndexT element_id, IndexT local_node_id) const
   {
     return m_connectivity(element_id, local_node_id);
   }
 
+  /**
+   * @brief Set the pointers to the nodal position data
+   * 
+   * @param x array of x-components of the nodal position
+   * @param y array of y-components of the nodal position
+   * @param z array of z-components of the nodal position
+   */
   void setPosition( const RealT* x,
                     const RealT* y,
                     const RealT* z );
 
+  /**
+   * @brief Set the pointers to the nodal displacement data
+   * 
+   * @param ux array of x-components of the nodal displacement
+   * @param uy array of y-components of the nodal displacement
+   * @param uz array of z-components of the nodal displacement
+   */
   void setDisplacement( const RealT* ux,
                         const RealT* uy,
                         const RealT* uz );
 
+  /**
+   * @brief Set the pointers to the nodal velocity data
+   * 
+   * @param vx array of x-components of the nodal velocity
+   * @param vy array of y-components of the nodal velocity
+   * @param vz array of z-components of the nodal velocity
+   */
   void setVelocity( const RealT* vx,
                     const RealT* vy,
                     const RealT* vz );
+  
+  /**
+   * @brief Is the velocity vector populated?
+   * 
+   * @return true vector is non-empty
+   * @return false vector is empty
+   */
   bool hasVelocity() const { return !m_vel.empty(); }
 
+  /**
+   * @brief Set the pointers to the nodal response data
+   * 
+   * @param rx array of x-components of the nodal response
+   * @param ry array of y-components of the nodal response
+   * @param rz array of z-components of the nodal response
+   */
   void setResponse( RealT* rx, RealT* ry, RealT* rz );
 
+  /**
+   * @brief Construct a non-owned, shallow copy of the MeshData
+   * 
+   * @return MeshData::Viewer type
+   */
   Viewer getView() { return *this; }
 
   /// sorts unique surface node ids from connectivity and stores them on the mesh object in ascending order
   Array1D<IndexT> sortSurfaceNodeIds();
 
 private:
+  /**
+   * @brief Converts a Tribol element type to a mesh spatial dimension
+   * 
+   * @return spatial dimension
+   */
   int getDimFromElementType() const;
 
+  /**
+   * @brief Converts pointers to components of a vector to views of the vector
+   * components
+   * 
+   * @tparam T underlying type of the components
+   * @param x pointer to array of x-components
+   * @param y pointer to array of y-components
+   * @param z pointer to array of z-components
+   * @return Array of array views of vector components
+   */
   template <typename T>
   MultiArrayView<T> createNodalVector( T* x, 
-                                        T* y,
-                                        T* z ) const;
+                                       T* y,
+                                       T* z ) const;
 
-  ArrayViewT<const IndexT, 2> createConnectivity( IndexT num_elements, 
+  /**
+   * @brief Converts pointer to element connectivity to an array view
+   * 
+   * @param num_elements element count; number of rows in connectivity array
+   * @param connectivity pointer to array of connectivity data
+   * @return Array view of element connectivity
+   */
+  Array2DView<const IndexT> createConnectivity( IndexT num_elements, 
                                                   const IndexT* connectivity );
 
   IndexT m_mesh_id;                    ///< Mesh Id associated with this data
@@ -557,13 +660,13 @@ private:
   int m_dim;                           ///< Spatial dimension of the mesh coordinates
   IndexT m_num_nodes;
 
-  MemorySpace m_mem_space; ///< Memory space for mesh data
-  int m_allocator_id;      ///< Allocator for mesh data memory
+  MemorySpace m_mem_space;             ///< Memory space for mesh data
+  int m_allocator_id;                  ///< Allocator for mesh data memory
   
   bool m_is_valid;                     ///< True if the mesh is valid
 
-  MeshNodalData m_nodal_fields; ///< method specific nodal fields
-  MeshElemData  m_element_data; ///< method/enforcement specific element data
+  MeshNodalData m_nodal_fields;        ///< method specific nodal fields
+  MeshElemData  m_element_data;        ///< method/enforcement specific element data
 
   // Nodal field data
   MultiArrayView<const RealT> m_position; ///< Coordinates of nodes in mesh

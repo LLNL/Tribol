@@ -234,6 +234,9 @@ void enableTimestepVote( IndexT cs_id, const bool enable );
  * \pre x != nullptr
  * \pre y != nullptr
  * \pre z != nullptr (3D only)
+ *
+ * \note connectivity is a 2D array with num_elements rows and num_nodes columns
+ * with row-major ordering
  */
 void registerMesh( IndexT mesh_id,
                    IndexT num_elements,
