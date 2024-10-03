@@ -160,10 +160,7 @@ TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
  */
 class SearchBase
 {
-  public:
-  //using SpacePoint = typename ImplicitGridType::SpacePoint;
-  //using SpaceVec = typename ImplicitGridType::SpaceVec;
-  //using SpatialBoundingBox = typename ImplicitGridType::SpatialBoundingBox;
+public:
   SearchBase() {};
   virtual ~SearchBase() {};
   /*!
