@@ -825,7 +825,7 @@ private:
   MeshData* m_mesh1; ///< Pointer to mesh 1 (reset every time init() is called)
   MeshData* m_mesh2; ///< Pointer to mesh 2 (reset every time init() is called)
 
-  ExecutionMode m_given_exec_mode; ///< User preferred execution mode (set by ctor)
+  ExecutionMode m_given_exec_mode; ///< User preferred execution mode (set by constructor)
 
   ExecutionMode m_exec_mode; ///< Execution mode for kernels (set when init() is called)
   int m_allocator_id;        ///< Allocator for arrays used in kernels (set when init() is called)
