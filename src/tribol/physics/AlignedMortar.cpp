@@ -169,9 +169,9 @@ void ComputeAlignedMortarGaps( CouplingScheme* cs )
    // This routine is guarded against a null mesh
    nonmortarMeshBase.computeNodalNormals( dim );
 
-   auto pairs = cs->getInterfacePairs().view();
+   auto pairs = cs->getInterfacePairs();
    const IndexT numPairs = pairs.size();
-   auto planes = cs->get3DContactPlanes().view();
+   auto planes = cs->get3DContactPlanes();
 
 
    ////////////////////////////////////////////////////////////////////////
@@ -282,9 +282,9 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
    ///////////////////////////////////////////////////////
    ComputeAlignedMortarGaps( cs );
    
-   auto pairs = cs->getInterfacePairs().view();
+   auto pairs = cs->getInterfacePairs();
    const IndexT numPairs = pairs.size();
-   auto planes = cs->get3DContactPlanes().view();
+   auto planes = cs->get3DContactPlanes();
 
    int const dim = cs->spatialDimension();
 

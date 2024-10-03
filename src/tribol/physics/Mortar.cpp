@@ -182,9 +182,9 @@ void ComputeSingleMortarGaps( CouplingScheme* cs )
    int const dim = cs->spatialDimension();
    nonmortarMeshBase.computeNodalNormals( dim );
 
-   auto pairs = cs->getInterfacePairs().view();
+   auto pairs = cs->getInterfacePairs();
    const IndexT numPairs = pairs.size();
-   auto planes = cs->get3DContactPlanes().view();
+   auto planes = cs->get3DContactPlanes();
 
    ////////////////////////////////////////////////////////////////////////
    //
@@ -321,9 +321,9 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
    ///////////////////////////////////////////////////////
    ComputeSingleMortarGaps( cs );
 
-   auto pairs = cs->getInterfacePairs().view();
+   auto pairs = cs->getInterfacePairs();
    const IndexT numPairs = pairs.size();
-   auto planes = cs->get3DContactPlanes().view();
+   auto planes = cs->get3DContactPlanes();
 
    int const dim = cs->spatialDimension();
 
@@ -715,9 +715,9 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme* cs )
    ////////////////////////////////
    ComputeSingleMortarGaps( cs );
    
-   auto pairs = cs->getInterfacePairs().view();
+   auto pairs = cs->getInterfacePairs();
    IndexT const numPairs = pairs.size();
-   auto planes = cs->get3DContactPlanes().view();
+   auto planes = cs->get3DContactPlanes();
 
    const int dim = cs->spatialDimension();
 
