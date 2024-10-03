@@ -62,14 +62,11 @@ namespace detail
     SLIC_ERROR_ROOT("forAllExec not defined for the given ExecutionMode.");
   }
 
-#ifndef TRIBOL_USE_RAJA
-  // ExecutionMode::Dynamic maps to ExecutionMode::Sequential without RAJA
   template <typename BODY, bool ASYNC, int BLOCK_SIZE>
-  void forAllImpl(forAllType<ExecutionMode::Dynamic>, IndexT N, BODY&& body)
+  void forAllImpl(forAllType<ExecutionMode::Dynamic>, IndexT, BODY&&)
   {
-    forAllImpl(forAllType<ExecutionMode::Sequential>(), N, std::move(body));
+    SLIC_ERROR_ROOT("tribol::forAllExec requires an execution mode besides Dynamic.");
   }
-#endif
 
   template <typename BODY, bool ASYNC, int BLOCK_SIZE>
   void forAllImpl(forAllType<ExecutionMode::Sequential>, IndexT N, BODY&& body)

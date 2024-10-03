@@ -218,22 +218,17 @@ void enableTimestepVote( IndexT cs_id, const bool enable );
 /// @{
 
 /*!
- * \brief Registers the mesh description for a contact surface.
+ * \brief Registers the mesh description for a contact surface
  *
- * \param [in] mesh_id the ID of the contact surface.
- * \param [in] num_cells the number of cells on the contact surface.
- * \param [in] num_nodes length of the data arrays being registered.
- * \param [in] connectivity mesh connectivity array for the contact surface.
- * \param [in] element_type the cell type of the contact surface elements.
+ * \param [in] mesh_id the ID of the contact surface
+ * \param [in] num_elements the number of elements on the contact surface
+ * \param [in] num_nodes length of the data arrays being registered
+ * \param [in] connectivity mesh connectivity array for the contact surface
+ * \param [in] element_type the cell type of the contact surface elements
  * \param [in] x array of x-components of the mesh coordinates
  * \param [in] y array of y-components of the mesh coordinates
  * \param [in] z array of z-components of the mesh coordinates (3D only)
  * \param [in] m_space Memory space of the connectivity and coordinate arrays
- *
- * \note numMeshNodes may be the number of nodes on the surface 
- *       (i.e. surface mesh only), or they may include nodes in the volume, 
- *       but the number is specific to the contact body to which the surface 
- *       defined by the surface element connectivity array belongs.
  *
  * \pre connectivity != nullptr
  * \pre x != nullptr
@@ -241,7 +236,7 @@ void enableTimestepVote( IndexT cs_id, const bool enable );
  * \pre z != nullptr (3D only)
  */
 void registerMesh( IndexT mesh_id,
-                   IndexT num_cells,
+                   IndexT num_elements,
                    IndexT num_nodes,
                    const IndexT* connectivity,
                    int element_type,

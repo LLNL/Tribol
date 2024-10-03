@@ -124,7 +124,6 @@ void setMfemLORFactor( IndexT cs_id, int lor_factor )
    SLIC_ERROR_ROOT_IF( !coupling_scheme, 
                        "Coupling scheme with given cs_id does not exist. Call tribol::registerMfemCouplingScheme() " <<
                        "to create a coupling scheme with this cs_id." );
-   SLIC_ERROR_ROOT_IF(coupling_scheme == nullptr, "No coupling scheme defined with given cs_id.");
    SLIC_ERROR_ROOT_IF(
       !coupling_scheme->hasMfemData(),
       "Coupling scheme does not contain MFEM data. "
