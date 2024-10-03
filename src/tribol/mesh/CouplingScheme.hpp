@@ -137,14 +137,14 @@ public:
      * 
      * @return view of first mesh
      */
-    TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh1() const { return m_mesh1; }
+    TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh1View() const { return m_mesh1; }
 
     /**
      * @brief Return a view of the second mesh in the coupling scheme
      * 
      * @return view of second mesh
      */
-    TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh2() const { return m_mesh2; }
+    TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh2View() const { return m_mesh2; }
 
     /**
      * @brief Get the struct defining enforcement options

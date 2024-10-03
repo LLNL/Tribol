@@ -1466,8 +1466,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
     {
       auto& plane = cs_view.getContactPlane(i);
 
-      auto& mesh1 = cs_view.getMesh1();
-      auto& mesh2 = cs_view.getMesh2();
+      auto& mesh1 = cs_view.getMesh1View();
+      auto& mesh2 = cs_view.getMesh2View();
 
       // get pair indices
       IndexT index1 = plane.getCpElementId1();

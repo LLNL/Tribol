@@ -348,7 +348,7 @@ public:
   GridSearch( CouplingScheme* couplingScheme )
     : m_coupling_scheme( couplingScheme )
     , m_mesh1( m_coupling_scheme->getMesh1().getView() )
-    , m_mesh2( m_coupling_scheme->getMesh2() )
+    , m_mesh2( m_coupling_scheme->getMesh2().getView() )
   {}
 
   /*!
@@ -590,8 +590,8 @@ public:
   */
   void initialize() override
   {
-    buildMeshBBoxes(m_boxes1, m_coupling_scheme->getMesh1());
-    buildMeshBBoxes(m_boxes2, m_coupling_scheme->getMesh2());
+    buildMeshBBoxes(m_boxes1, m_coupling_scheme->getMesh1().getView());
+    buildMeshBBoxes(m_boxes2, m_coupling_scheme->getMesh2().getView());
   } // end initialize()
    
 
