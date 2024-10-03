@@ -447,15 +447,11 @@ public:
   /**
    * @brief Returns a reference to the associated InterfacePairs
    *
-   * @return reference to the InterfacePairs instance
+   * @return reference to the InterfacePairs array
    */
   ArrayT<InterfacePair>& getInterfacePairs() { return m_interface_pairs; }
 
-  /**
-   * @brief Returns a const reference to the associated InterfacePairs
-   *
-   * @return reference to the InterfacePairs instance
-   */
+  /// @overload
   const ArrayT<InterfacePair>& getInterfacePairs() const { return m_interface_pairs; }
 
   /**
@@ -477,11 +473,11 @@ public:
   const ContactPlane& getContactPlane(IndexT id) const;
 
   /**
-   * @brief Returns a reference to the associated InterfacePairs
+   * @brief Returns a reference to the 3D contact planes
    *
-   * @return reference to the InterfacePairs instance
+   * @return reference to the ContactPlane3D array
    */
-  const ArrayViewT<const ContactPlane3D> get3DContactPlanesView() const { return m_contact_plane3d; }
+  const ArrayT<ContactPlane3D>& get3DContactPlanes() const { return m_contact_plane3d; }
 
   /**
    * @brief Set whether the coupling scheme has been binned

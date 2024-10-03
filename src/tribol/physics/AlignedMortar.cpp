@@ -171,7 +171,7 @@ void ComputeAlignedMortarGaps( CouplingScheme* cs )
 
    auto pairs = cs->getInterfacePairs().view();
    const IndexT numPairs = pairs.size();
-   auto planes = cs->get3DContactPlanesView();
+   auto planes = cs->get3DContactPlanes().view();
 
 
    ////////////////////////////////////////////////////////////////////////
@@ -284,7 +284,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
    
    auto pairs = cs->getInterfacePairs().view();
    const IndexT numPairs = pairs.size();
-   auto planes = cs->get3DContactPlanesView();
+   auto planes = cs->get3DContactPlanes().view();
 
    int const dim = cs->spatialDimension();
 
