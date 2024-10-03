@@ -756,16 +756,16 @@ void MeshData::print(std::ostream& os) const
    }
 
    // normals
-  //  if( !m_n.empty() )
-  //  {
-  //     os << axom::fmt::format("\n\tnx: {}", axom::fmt::join(m_n[0].data(), m_n[0].data()+num_elem, ", "));
-  //     os << axom::fmt::format("\n\tny: {}", axom::fmt::join(m_n[1].data(), m_n[1].data()+num_elem, ", "));
-  //     if(m_dim == 3)
-  //     {  
-  //        os << axom::fmt::format("\n\tnz: {}", axom::fmt::join(m_n[2].data(), m_n[2].data()+num_elem, ", "));
-  //     }
-  //  }
-  //  os << "\n  }";
+   if( !m_n.empty() )
+   {
+      os << axom::fmt::format("\n\tnx: {}", axom::fmt::join(m_n[0].data(), m_n[0].data()+num_elem, ", "));
+      os << axom::fmt::format("\n\tny: {}", axom::fmt::join(m_n[1].data(), m_n[1].data()+num_elem, ", "));
+      if(m_dim == 3)
+      {  
+         os << axom::fmt::format("\n\tnz: {}", axom::fmt::join(m_n[2].data(), m_n[2].data()+num_elem, ", "));
+      }
+   }
+   os << "\n  }";
 
    os << "\n}";
 }
