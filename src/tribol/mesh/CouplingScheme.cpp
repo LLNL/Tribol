@@ -1920,14 +1920,14 @@ TRIBOL_HOST_DEVICE RealT CouplingScheme::Viewer::getCommonPlaneGapTol( int fid1,
 
     case TIED_NORMAL :
       gap_tol = m_parameters.gap_tied_tol *
-                axom::utilities::max( m_mesh1.getFaceRadii()[fid1],
-                                      m_mesh2.getFaceRadii()[fid2] );
+                axom::utilities::max( m_mesh1.getFaceRadius()[fid1],
+                                      m_mesh2.getFaceRadius()[fid2] );
       break;
 
     default :  
         gap_tol = -1. * m_parameters.gap_tol_ratio *  
-                  axom::utilities::max( m_mesh1.getFaceRadii()[fid1],
-                                        m_mesh2.getFaceRadii()[fid2] );
+                  axom::utilities::max( m_mesh1.getFaceRadius()[fid1],
+                                        m_mesh2.getFaceRadius()[fid2] );
         break;
 
   }

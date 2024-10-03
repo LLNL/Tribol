@@ -310,14 +310,14 @@ public:
      * 
      * @return true if non-empty; false otherwise
      */
-    TRIBOL_HOST_DEVICE bool hasFaceRadii() const { return !m_face_radius.empty(); }
+    TRIBOL_HOST_DEVICE bool hasFaceRadius() const { return !m_face_radius.empty(); }
 
     /**
      * @brief Get an array view of the element face radii
      * 
      * @return array view of the element face radii
      */
-    TRIBOL_HOST_DEVICE const Array1DView<RealT>& getFaceRadii() const
+    TRIBOL_HOST_DEVICE const Array1DView<RealT>& getFaceRadius() const
     {
       return m_face_radius;
     }
@@ -427,7 +427,8 @@ public:
     
     MeshNodalData m_nodal_fields; ///< method specific nodal fields
     MeshElemData  m_element_data; ///< method/enforcement specific element data
-  };
+    
+  }; // end class MeshData::Viewer
 
   /**
    * @brief Construct a new MeshData object
@@ -731,7 +732,8 @@ public:
 
   /// Prints information associated with this mesh to \a os
   void print(std::ostream& os) const;
-};
+
+}; // end class MeshData
 
 //------------------------------------------------------------------------------
 template <typename T>

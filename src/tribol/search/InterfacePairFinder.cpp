@@ -90,8 +90,8 @@ TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
   RealT offset_tol = 0.05;
   if (dim == 3)
   {
-    RealT r1 = mesh1.getFaceRadii()[ element1 ];
-    RealT r2 = mesh2.getFaceRadii()[ element2 ];
+    RealT r1 = mesh1.getFaceRadius()[ element1 ];
+    RealT r2 = mesh2.getFaceRadius()[ element2 ];
 
     // set maximum offset of face centroids for inclusion
     RealT distMax = r1 + r2; // default is sum of face radii
@@ -696,7 +696,7 @@ public:
         RealT vnorm[3];
         mesh.getFaceNormal(i, vnorm);
         VectorT faceNormal(vnorm);
-        RealT faceRadius = mesh.getFaceRadii()[i];
+        RealT faceRadius = mesh.getFaceRadius()[i];
         expandBBoxNormal(box, faceNormal, faceRadius);
         boxes1_view[i] = std::move(box);
       }
