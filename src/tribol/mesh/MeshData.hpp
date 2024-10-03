@@ -140,7 +140,7 @@ public:
      */
     TRIBOL_HOST_DEVICE MeshNodalData& getNodalFields() { return m_nodal_fields; }
 
-    /// \overload
+    /// @overload
     TRIBOL_HOST_DEVICE const MeshNodalData& getNodalFields() const { return m_nodal_fields; }
 
     /**
@@ -150,7 +150,7 @@ public:
      */
     TRIBOL_HOST_DEVICE MeshElemData& getElementData() { return m_element_data; }
 
-    /// \overload
+    /// @overload
     TRIBOL_HOST_DEVICE const MeshElemData& getElementData() const { return m_element_data; }
 
     /**
@@ -529,7 +529,7 @@ public:
    */
   MeshElemData& getElementData() { return m_element_data; }
 
-  /// \overload
+  /// @overload
   const MeshElemData& getElementData() const { return m_element_data; }
   
   /**

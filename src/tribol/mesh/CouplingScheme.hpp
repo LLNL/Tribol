@@ -112,58 +112,110 @@ class MethodData;
 class CouplingScheme
 {
 public:
+  /**
+   * @brief Nested class for holding views (non-owned, shallow copies) of coupling scheme data
+   */
   class Viewer
   {
   public:
+    /**
+     * @brief Construct a new CouplingScheme::Viewer object
+     * 
+     * @param cs CouplingScheme to create a view of
+     */
     Viewer( CouplingScheme& cs );
 
+    /**
+     * @brief Spatial dimension of the meshes in the coupling scheme
+     * 
+     * @return spatial dimension
+     */
     TRIBOL_HOST_DEVICE int spatialDimension() const { return m_mesh1.spatialDimension(); }
 
+    /**
+     * @brief Return a view of the first mesh in the coupling scheme
+     * 
+     * @return view of first mesh
+     */
     TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh1() const { return m_mesh1; }
 
+    /**
+     * @brief Return a view of the second mesh in the coupling scheme
+     * 
+     * @return view of second mesh
+     */
     TRIBOL_HOST_DEVICE const MeshData::Viewer& getMesh2() const { return m_mesh2; }
 
+    /**
+     * @brief Get the struct defining enforcement options
+     * 
+     * @return const reference to EnforcementOptions struct
+     */
     TRIBOL_HOST_DEVICE const EnforcementOptions& getEnforcementOptions() const { return m_enforcement_options; }
 
+    /**
+     * @brief Return the contact plane given by id
+     * 
+     * @param id identifier for a contact plane
+     * @return contact plane object
+     */
     TRIBOL_HOST_DEVICE ContactPlane& getContactPlane( IndexT id ) const;
 
+    /**
+     * @brief Get the timestep scale
+     * 
+     * @return timestep scale
+     */
     TRIBOL_HOST_DEVICE RealT getTimestepScale() const { return m_parameters.timestep_scale; }
 
-    /*!
-    * Get the gap tolerance that determines in contact face-pairs for each
-    * supported interface method
-    *
-    * \return the gap tolerance based on the method
-    */
+    /**
+     * @brief Get the gap tolerance that determines in contact face-pairs
+     *
+     * @return the gap tolerance for the common plane method
+     */
     TRIBOL_HOST_DEVICE RealT getCommonPlaneGapTol( int fid1, int fid2 ) const;
 
   private:
+    /// Struct holding parameters for the coupling scheme
     Parameters m_parameters;
-    ContactCase m_contact_case;
-    EnforcementOptions m_enforcement_options;
-    MeshData::Viewer m_mesh1;
-    MeshData::Viewer m_mesh2;
-    ArrayViewT<ContactPlane2D> m_contact_plane2d;
-    ArrayViewT<ContactPlane3D> m_contact_plane3d;
-  };
 
-  /*!
-   * \brief Default constructor. Disabled.
+    /// Defines the contact case: special algorithmic considerations
+    ContactCase m_contact_case;
+
+    /// Struct holding the enforcement options for the contact method
+    EnforcementOptions m_enforcement_options;
+
+    /// View of the first mesh
+    MeshData::Viewer m_mesh1;
+
+    /// View of the second mesh
+    MeshData::Viewer m_mesh2;
+
+    /// Array view of 2D contact planes
+    ArrayViewT<ContactPlane2D> m_contact_plane2d;
+
+    /// Array view of 3D contact planes
+    ArrayViewT<ContactPlane3D> m_contact_plane3d;
+
+  }; // end class CouplingScheme::Viewer
+
+  /**
+   * @brief Default constructor. Disabled.
    */
   CouplingScheme() = delete;
 
-  /*!
-   * \brief Creates a CouplingSchmeme instance between a pair of meshes
+  /**
+   * @brief Creates a CouplingScheme instance between a pair of meshes
    *
-   * \param [in] cs_id coupling scheme id
-   * \param [in] mesh_id1 ID of the mortar surface
-   * \param [in] mesh_id2 ID of the nonmortar surface, or ANY_MESH for multiple meshes
-   * \param [in] contact_mode the type of contact, e.g. SURFACE_TO_SURFACE
-   * \param [in] contact_case the specific case of contact application, e.g. auto
-   * \param [in] contact_method the contact method, e.g. SINGLE_MORTAR
-   * \param [in] contact_model the contact model, e.g. COULOMB,
-   * \param [in] enforcement_method the enforcement method, e.g. PENALTY
-   * \param [in] binning_method the binning method, e.g. BINNING_GRID
+   * @param [in] cs_id coupling scheme id
+   * @param [in] mesh_id1 id of the first contact surface mesh (corresponds to mortar surface with a mortar method)
+   * @param [in] mesh_id2 id of the second contact surface mesh (corresponds to nonmortar surface with a mortar method), or ANY_MESH for multiple meshes
+   * @param [in] contact_mode the type of contact, e.g. SURFACE_TO_SURFACE
+   * @param [in] contact_case the specific case of contact application, e.g. auto
+   * @param [in] contact_method the contact method, e.g. SINGLE_MORTAR
+   * @param [in] contact_model the contact model, e.g. COULOMB
+   * @param [in] enforcement_method the enforcement method, e.g. PENALTY
+   * @param [in] binning_method the binning method, e.g. BINNING_GRID
    *
    * Per-cycle rebinning is enabled by default.
    */
@@ -185,46 +237,162 @@ public:
   CouplingScheme(CouplingScheme&& other) = default;
   CouplingScheme& operator=(CouplingScheme&& other) = default;
 
-  /// \name Getters
-  /// @{
-
+  /**
+   * @brief Get the ID of the coupling scheme
+   * 
+   * @return unique coupling scheme ID
+   */
   int getId() const { return m_id; }
 
+  /**
+   * @brief Get the integer ID of the first mesh
+   * 
+   * @return unique ID of the first mesh
+   */
   int getMeshId1() const { return m_mesh_id1; }
+  
+  /**
+   * @brief Get the integer ID of the second mesh
+   * 
+   * @return unique ID of the second mesh
+   */
   int getMeshId2() const { return m_mesh_id2; }
 
+  /**
+   * @brief Get the Parameters struct
+   * 
+   * @return reference to the Parameters struct
+   */
   Parameters& getParameters() { return m_parameters; }
 
+  /**
+   * @brief Get a reference to the first mesh
+   * 
+   * @return MeshData reference
+   */
   MeshData& getMesh1() { return *m_mesh1; }
+
+  /// @overload
   const MeshData& getMesh1() const { return *m_mesh1; }
+  
+  /**
+   * @brief Get a reference to the second mesh
+   * 
+   * @return MeshData reference
+   */
   MeshData& getMesh2() { return *m_mesh2; }
+  
+  /// @overload
   const MeshData& getMesh2() const { return *m_mesh2; }
 
+  /**
+   * @brief Get the execution mode for the coupling scheme
+   * 
+   * @return ExecutionMode 
+   */
   ExecutionMode getExecutionMode() const { return m_exec_mode; }
+
+  /**
+   * @brief Get the Umpire allocator ID for mesh data (zero if built without Umpire)
+   * 
+   * @return allocator ID
+   */
   int getAllocatorId() const { return m_allocator_id; }
 
   int getNumTotalNodes() const { return m_numTotalNodes; }
 
+  /**
+   * @brief Get the contact mode (pairing of mesh types)
+   * 
+   * @return ContactMode 
+   */
   ContactMode getContactMode() const  { return m_contactMode; }
+
+  /**
+   * @brief Get the contact case (special algorithmic considerations for method)
+   * 
+   * @return ContactCase 
+   */
   ContactCase getContactCase() const  { return m_contactCase; }
+
+  /**
+   * @brief Get the contact method (algorithm to integrate contact weak form term)
+   * 
+   * @return ContactMethod 
+   */
   ContactMethod getContactMethod() const  { return m_contactMethod; }
+
+  /**
+   * @brief Get the contact model (constitutive modeling options)
+   * 
+   * @return ContactModel 
+   */
   ContactModel getContactModel() const { return m_contactModel; }
+
+  /**
+   * @brief Get the enforcement method (defines enforcement scheme for contact constraints)
+   * 
+   * @return EnforcementMethod 
+   */
   EnforcementMethod getEnforcementMethod() const { return m_enforcementMethod; }
+
+  /**
+   * @brief Get the spatial binning method
+   * 
+   * @return BinningMethod 
+   */
   BinningMethod getBinningMethod() const { return m_binningMethod; }
 
+  /**
+   * @brief Set the spatial binning method
+   * 
+   * @param binningMethod new enum value
+   */
   void setBinningMethod(BinningMethod binningMethod) { m_binningMethod = binningMethod; }
 
+  /**
+   * @brief Get the method data for the contact method
+   * 
+   * @return MethodData pointer
+   */
   MethodData* getMethodData() const { return m_methodData; }
 
-  // TODO test these getters
+  /**
+   * @brief Get the enforcement options for the enforcement method
+   * 
+   * @return reference to the EnforcementOptions struct
+   */
   EnforcementOptions& getEnforcementOptions() { return m_enforcementOptions; }
+
+  /// @overload
   const EnforcementOptions& getEnforcementOptions() const { return m_enforcementOptions; }
 
+  /**
+   * @brief Get struct holding errors during coupling scheme initialization
+   * 
+   * @return CouplingSchemeErrors reference
+   */
   CouplingSchemeErrors& getCouplingSchemeErrors() { return m_couplingSchemeErrors; }
+
+  /**
+   * @brief Get struct holding informational messages that happened during coupling scheme initialization
+   * 
+   * @return CouplingSchemeInfo& reference
+   */
   CouplingSchemeInfo&   getCouplingSchemeInfo()   { return m_couplingSchemeInfo; }
 
+  /**
+   * @brief Construct a non-owned, shallow copy of the CouplingScheme
+   * 
+   * @return CouplingScheme::Viewer type
+   */
   CouplingScheme::Viewer getView() { return *this; }
 
+  /**
+   * @brief Spatial dimension of the mesh
+   * 
+   * @return spatial dimension
+   */
   int spatialDimension() const
   {
     // same for both meshes since meshes are required to have the same element
@@ -232,17 +400,16 @@ public:
     return m_mesh1->spatialDimension();
   }
 
-  /*!
-   * Disable/Enable per-cycle rebinning of interface pairs
+  /**
+   * @brief Disable/enable per-cycle rebinning of interface pairs
    *
-   * \param [in] pred True to disable rebinning, false otherwise
+   * @param [in] pred True to disable rebinning, false otherwise
    */
   void setFixedBinning(bool pred) { m_fixedBinning = pred; }
 
-  /*!
-   * Disable/Enable per-cycle rebinning of interface pairs based 
-   * on contact mode
-   *
+  /**
+   * @brief Disable/Enable per-cycle rebinning of interface pairs based on
+   * contact mode
    */
   void setFixedBinningPerCase() { 
      if (m_isBinned && m_contactCase == NO_SLIDING) {
@@ -250,240 +417,238 @@ public:
      }
   }
 
+  /**
+   * @brief Set the MPI communicator for the coupling scheme
+   * 
+   * @param comm MPI communicator
+   */
   void setMPIComm( CommT comm ) { m_parameters.problem_comm = comm; }
 
-  /*!
-   * Check whether the coupling scheme has been binned
+  /**
+   * @brief Check whether the coupling scheme has been binned
    *
-   * \return True if the binning has occurred, otherwise false
-   *
+   * @return true if the binning has occurred, otherwise false
    */
   bool isBinned() const { return m_isBinned; }
 
-  /*!
-   * Check whether the coupling scheme is using tied contact
+  /**
+   * @brief Check whether the coupling scheme is using tied contact
    */
   bool isTied() const { return m_isTied; }
 
-  /*!
-   * Check if per-cycle rebinning is disabled
+  /**
+   * @brief Check if per-cycle rebinning is disabled
    *
-   * \return True if the binning is fixed, false, if the binning method
-   * requires per-cycle rebinning.
+   * @return true if the binning is fixed, false, if the binning method requires
+   * per-cycle rebinning
    */
   bool hasFixedBinning() const { return m_fixedBinning; }
 
-  /*!
-   * \brief Returns a reference to the associated InterfacePairs
+  /**
+   * @brief Returns a reference to the associated InterfacePairs
    *
-   * \return Reference to the InterfacePairs instance.
+   * @return reference to the InterfacePairs instance
    */
   ArrayT<InterfacePair>& getInterfacePairs() { return m_interface_pairs; }
 
-  /*!
-   * \brief Returns a const reference to the associated InterfacePairs
+  /**
+   * @brief Returns a const reference to the associated InterfacePairs
    *
-   * \return Reference to the InterfacePairs instance.
+   * @return reference to the InterfacePairs instance
    */
   const ArrayT<InterfacePair>& getInterfacePairs() const { return m_interface_pairs; }
 
-  /// @}
-
-  /*!
-   * Get the number of active pairs on the coupling scheme
+  /**
+   * @brief Get the number of active pairs on the coupling scheme
    *
-   * \return number of active interface pairs
+   * @return number of active interface pairs
    */
   int getNumActivePairs( ) const
   { 
     return std::max(m_contact_plane2d.size(), m_contact_plane3d.size()); 
   }
 
-  const ContactPlane& getContactPlane(IndexT id) const
-  {
-    if (spatialDimension() == 2)
-    {
-      return m_contact_plane2d[id];
-    }
-    else
-    {
-      return m_contact_plane3d[id];
-    }
-  }
+  /**
+   * @brief Return the contact plane given by id
+   * 
+   * @param id identifier for a contact plane
+   * @return contact plane object
+   */
+  const ContactPlane& getContactPlane(IndexT id) const;
 
-  /*!
-   * \brief Returns a reference to the associated InterfacePairs
+  /**
+   * @brief Returns a reference to the associated InterfacePairs
    *
-   * \return Reference to the InterfacePairs instance.
+   * @return reference to the InterfacePairs instance
    */
   const ArrayViewT<const ContactPlane3D> get3DContactPlanesView() const { return m_contact_plane3d; }
 
-  /*!
-   * Set whether the coupling scheme has been binned
+  /**
+   * @brief Set whether the coupling scheme has been binned
    *
-   * \param [in] pred True to indicate binning has occurred 
-   *
+   * @param [in] pred True to indicate binning has occurred 
    */
   void setBinned(bool pred) { m_isBinned = pred; }
 
-  /*!
-   * \brief Returns true if a valid coupling scheme, otherwise false
+  /**
+   * @brief Returns true if a valid coupling scheme, otherwise false
    *
-   * \return bool indicating if coupling scheme is valid;
+   * @return bool indicating if coupling scheme is valid
    */
   bool isValidCouplingScheme();
 
-  /*!
-   * \brief Returns true if one or both meshes are zero-element, null meshes 
+  /**
+   * @brief Returns true if one or both meshes are zero-element, null meshes 
    *
-   * \return true if one or both null meshes in coupling scheme
+   * @return true if one or both null meshes in coupling scheme
    */
   bool nullMeshes() { return m_nullMeshes; }
 
-  /*!
-   * \brief Returns true if one or both meshes are zero-element, null meshes 
+  /**
+   * @brief Returns true if one or both meshes are zero-element, null meshes 
    *
-   * \return true if one or both null meshes in coupling scheme
+   * @return true if one or both null meshes in coupling scheme
    */
   bool nullMeshes() const { return m_nullMeshes; }
 
-  /*!
-   * \brief Returns true if a valid mode is specified, otherwise false
+  /**
+   * @brief Returns true if a valid mode is specified, otherwise false
    *
-   * \return true indicating if the mode is valid;
+   * @return true indicating if the mode is valid
    */
   bool isValidMode();
 
-  /*!
-   * \brief Returns true if a valid case is specified, otherwise false
+  /**
+   * @brief Returns true if a valid case is specified, otherwise false
    *
-   * \return true indicating if the case is valid;
+   * @return true indicating if the case is valid
    */
   bool isValidCase();
 
-  /*!
-   * \brief Returns true if a valid method is specified, otherwise false
+  /**
+   * @brief Returns true if a valid method is specified, otherwise false
    *
-   * \return true indicating if the method is valid;
+   * @return true indicating if the method is valid
    */
   bool isValidMethod();
 
-  /*!
-   * \brief Returns true if a valid model is specified, otherwise false
+  /**
+   * @brief Returns true if a valid model is specified, otherwise false
    *
-   * \return true indicating if the model is valid;
+   * @return true indicating if the model is valid
    */
   bool isValidModel();
 
-  /*!
-   * \brief Returns true if a valid enforcement is specified, otherwise false
+  /**
+   * @brief Returns true if a valid enforcement is specified, otherwise false
    *
-   * \return true indicating if the enforcement is valid;
+   * @return true indicating if the enforcement is valid
    */
   bool isValidEnforcement();
 
-  /*!
-   * \brief Check for correct enforcement data for a given method
+  /**
+   * @brief Check for correct enforcement data for a given method
    *
-   * \return 0 for correct enforcement data, 1 otherwise
+   * @return 0 for correct enforcement data, 1 otherwise
    */
   int checkEnforcementData();
 
-  /*!
-   * \brief Check for correct execution mode for given memory spaces
+  /**
+   * @brief Check for correct execution mode for given memory spaces
    *
-   * \return 0 for valid execution mode, 1 for invalid execution mode, 2 for
+   * @return 0 for valid execution mode, 1 for invalid execution mode, 2 for
    * execution mode related informational messages
    */
   int checkExecutionModeData();
 
-  /*!
-   * \brief Initializes the coupling scheme
+  /**
+   * @brief Initializes the coupling scheme
    *
-   * \return true if the coupling scheme was successfully initialized
+   * @return true if the coupling scheme was successfully initialized
    */
   bool init();
 
-  /*!
-   * \brief Allocate method data on the coupling scheme
-   *
+  /**
+   * @brief Allocate method data on the coupling scheme
    */
   void allocateMethodData();
 
-  /*!
-   * \brief Performs the binning between mesh 1 and mesh 2 
-   *
+  /**
+   * @brief Performs the binning between mesh 1 and mesh 2 
    */
   void performBinning();
 
-  /*!
-   * \brief Applies the CouplingScheme
+  /**
+   * @brief Applies the CouplingScheme
    *
-   * \param [in] cycle the cycle at which this method is invoked.
-   * \param [in] t the simulation time at the given cycle
-   * \param [in/out] dt the simulation dt at the given cycle sent back as Tribol timestep vote
+   * @param [in] cycle the cycle at which this method is invoked.
+   * @param [in] t the simulation time at the given cycle
+   * @param [in/out] dt the simulation dt at the given cycle sent back as Tribol timestep vote
    *
-   * \return 0 if successful apply
-   *
+   * @return 0 if successful apply
    */
   int apply( int cycle, RealT t, RealT &dt );
 
-  /*!
-   * \brief Wrapper around method specific calculation of the Tribol timestep vote 
+  /**
+   * @brief Wrapper around method specific calculation of the Tribol timestep vote 
    *
-   * \param [in/out] dt simulation timestep at given cycle
-   *
+   * @param [in/out] dt simulation timestep at given cycle
    */
   void computeTimeStep( RealT &dt );
 
+  /**
+   * @brief Set the output directory for file output
+   * 
+   * @param directory string giving a file system path
+   */
   void setOutputDirectory( const std::string& directory )
   {
     m_output_directory = directory;
   }
 
-  /*!
-   * \brief Wrapper to call method specific visualization output routines
+  /**
+   * @brief Wrapper to call method specific visualization output routines
    *
-   * \param [in] dir the registered output directory
-   * \param [in] v_type visualization option type
-   * \param [in] cycle simulation cycle
-   * \param [in] t simulation time at given cycle
-   *
+   * @param [in] dir the registered output directory
+   * @param [in] v_type visualization option type
+   * @param [in] cycle simulation cycle
+   * @param [in] t simulation time at given cycle
    */
   void writeInterfaceOutput( const std::string& dir,
                              const VisType v_type, 
                              const int cycle, 
                              const RealT t );
 
-  /*!
-   * \brief Sets the coupling scheme logging level member variable 
+  /**
+   * @brief Sets the coupling scheme logging level member variable 
    *
-   * \param [in] log_level the LoggingLevel enum value 
-   *
+   * @param [in] log_level the LoggingLevel enum value
    */
   void setLoggingLevel( const LoggingLevel log_level ) { m_loggingLevel = log_level; }
 
-  /*!
-   * \brief Sets the SLIC logging level per the coupling scheme logging level 
+  /**
+   * @brief Sets the SLIC logging level per the coupling scheme logging level 
    *
-   * \pre must call setLoggingLevel() first
-   *
+   * @pre must call setLoggingLevel() first
    */
   void setSlicLoggingLevel();
 
+  /**
+   * @brief Get the SLIC logging level active for the coupling scheme
+   * 
+   * @return LoggingLevel
+   */
   LoggingLevel getLoggingLevel() const { return m_loggingLevel; }
 
-  /*!
-   * \brief This updates the total number of types of face geometry errors 
+  /**
+   * @brief This updates the total number of types of face geometry errors 
    *
-   * \pre The face_error is generated by calling CheckInterfacePair()
-   *
+   * @pre The face_error is generated by calling CheckInterfacePair()
    */
   void updatePairReportingData( const FaceGeomError face_error );
 
-  /*!
-   * \brief This debug prints the total number of types of face geometry errors 
-   *
+  /**
+   * @brief This debug prints the total number of types of face geometry errors
    */
   void printPairReportingData();
 
@@ -647,11 +812,10 @@ public:
 
 #endif /* BUILD_REDECOMP */
 
-  /*!
-   * \brief Computes common-plane specific time step vote
+  /**
+   * @brief Computes common-plane specific time step vote
    *
-   * \param [in/out] dt simulation timestep at given cycle
-   *
+   * @param [in/out] dt simulation timestep at given cycle
    */
   void computeCommonPlaneTimeStep( RealT &dt );
 
@@ -668,13 +832,13 @@ private:
   ExecutionMode m_given_exec_mode; ///< User preferred execution mode (set by ctor)
 
   ExecutionMode m_exec_mode; ///< Execution mode for kernels (set when init() is called)
-  int m_allocator_id; ///< Allocator for arrays used in kernels (set when init() is called)
+  int m_allocator_id;        ///< Allocator for arrays used in kernels (set when init() is called)
 
-  Parameters m_parameters;
-  std::string m_output_directory = "";     ///! Output directory for visualization dumps
+  Parameters m_parameters;             ///< Struct holding coupling scheme parameters
+  std::string m_output_directory = ""; ///< Output directory for visualization dumps
 
   bool m_nullMeshes {false}; ///< True if one or both meshes are zero-element (null) meshes
-  bool m_isValid {true}; ///< False if the coupling scheme is not valid per call to init()
+  bool m_isValid {true};     ///< False if the coupling scheme is not valid per call to init()
 
   int m_numTotalNodes; ///< Total number of nodes in the coupling scheme
 
@@ -688,8 +852,8 @@ private:
   LoggingLevel m_loggingLevel; ///< logging level enum for coupling scheme
 
   bool m_fixedBinning; ///< True if using fixed binning for all cycles
-  bool m_isBinned; ///< True if binning has occured 
-  bool m_isTied; ///< True if surfaces have been "tied" (Tied contact only)
+  bool m_isBinned;     ///< True if binning has occured 
+  bool m_isTied;       ///< True if surfaces have been "tied" (Tied contact only)
 
   ArrayT<InterfacePair> m_interface_pairs; ///< List of interface pairs
 
@@ -712,7 +876,7 @@ private:
 
 #endif /* BUILD_REDECOMP */
 
-};
+}; // end class CouplingScheme
 
 using CouplingSchemeManager = DataManager<CouplingScheme>;
 

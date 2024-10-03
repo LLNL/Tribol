@@ -390,6 +390,19 @@ CouplingScheme::CouplingScheme( IndexT cs_id,
 } // end CouplingScheme::CouplingScheme()
 
 //------------------------------------------------------------------------------
+const ContactPlane& CouplingScheme::getContactPlane( IndexT id ) const
+{
+  if (spatialDimension() == 2)
+  {
+    return m_contact_plane2d[id];
+  }
+  else
+  {
+    return m_contact_plane3d[id];
+  }
+}
+
+//------------------------------------------------------------------------------
 bool CouplingScheme::isValidCouplingScheme()
 {
    bool valid {true};
