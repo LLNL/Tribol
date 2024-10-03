@@ -427,7 +427,7 @@ public:
     
     MeshNodalData m_nodal_fields; ///< method specific nodal fields
     MeshElemData  m_element_data; ///< method/enforcement specific element data
-    
+
   }; // end class MeshData::Viewer
 
   /**
@@ -502,14 +502,16 @@ public:
   void updateAllocatorId(int allocator_id ) { m_allocator_id = allocator_id; }
 
   /**
-   * @brief Marker which can be set outside the class to indicate mesh validity
+   * @brief Marker which can indicate mesh validity
    *
-   * @note This data is not used within MeshData
+   * @note The MeshData constructor verifies coordinate data is not null for
+   * non-empty meshes. If null, the mesh is marked as not valid.
+   *
+   * @warning The marker can be updated outside MeshData so the definition of a
+   * valid mesh may not be consistent.
    * 
-   * @return true determined by calling function; usually indicates mesh is
-   * valid in some sense
-   * @return false determined by calling function; usually indicates mesh is not
-   * valid in some sense
+   * @return true the marker is set to true
+   * @return false the marker is set to false
    */
   bool& isMeshValid() { return m_is_valid; }
 
@@ -701,7 +703,7 @@ public:
   int checkPenaltyData( PenaltyEnforcementOptions& p_enfrc_options );
 
   /*!
-  * \brief Computes the face normals and centroids for all faces in the mesh.
+  * \brief Computes the face normals and centroids for all faces in the mesh
   *
   * \param [in] exec_mode defines where loops should be executed
   * \return true if face calculations do not encounter errors or warnings

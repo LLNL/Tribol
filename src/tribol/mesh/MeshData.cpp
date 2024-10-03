@@ -600,26 +600,15 @@ void MeshData::computeNodalNormals( int const dim )
          // piece of memory and there may be a memory issue when numFaceNrmlsToNodes is deleted
          // at the end of this routine.
          int nodeId = getGlobalNodeId(i, j);
-         m_node_n(0, nodeId) += this->m_n[0][ i ]; // m_n[0][i] is the ith face normal x-component
-         m_node_n(1, nodeId) += this->m_n[1][ i ]; // see above...
+         for (int d=0; d<this->spatialDimension(); ++d)
+         {
+            m_node_n(d, nodeId) += this->m_n(d, i); // m_n(d, i) is the ith face normal d-component
+         }
 
          // increment face-normal-to-node contribution counter
          ++numFaceNrmlsToNodes[ nodeId ];
 
       } // end loop over element nodes
-
-      // populate z-component for 3D problems
-      if (dim == 3)
-      {
-
-         // repeat loop over element nodes for z-component
-         for (int k=0; k<this->numberOfNodesPerElement(); ++k)
-         {
-            int nodeId = getGlobalNodeId(i, k); 
-            m_node_n[2][ nodeId ] += this->m_n[2][ i ];
-         } // end loop over element nodes
-
-      } // end if (dim == 3)
 
    } // end loop over elements
 
