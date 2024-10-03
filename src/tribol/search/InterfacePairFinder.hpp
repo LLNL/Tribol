@@ -17,7 +17,6 @@ namespace tribol
 
 // Forward Declarations
 class CouplingScheme;
-struct InterfacePair;
 class SearchBase;
 
 
@@ -28,14 +27,11 @@ class SearchBase;
  *
  * \param [in] pairIndex1 index of 1st element in pair
  * \param [in] pairIndex2 index of 2nd element in pair
- * \param [in] meshId1 mesh ID for 1st element in pair
- * \param [in] meshId2 mesh ID for 2nd element in pair
- * \param [in] pMesh1 pointer to data for mesh with ID meshId1
- * \param [in] pMesh2 pointer to data for mesh with ID meshId2
+ * \param [in] mesh1 mesh view for 1st element in pair
+ * \param [in] mesh2 mesh view for 2nd element in pair
  * \param [in] mode ContactMode
  *
  */
-//bool geomFilter( InterfacePair const & iPair, ContactMode const mode );
 TRIBOL_HOST_DEVICE bool geomFilter( const IndexT pairIndex1, const IndexT pairIndex2,
                                     const MeshData::Viewer& mesh1, const MeshData::Viewer& mesh2,
                                     ContactMode const mode );
