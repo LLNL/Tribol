@@ -1,11 +1,7 @@
-/*
- *******************************************************************************
- * Copyright (c) 2017-2020, Lawrence Livermore National Security, LLC.
- *
- * Produced at the Lawrence Livermore National Laboratory
- *
- *******************************************************************************
- */
+// Copyright (c) 2017-2023, Lawrence Livermore National Security, LLC and
+// other Tribol Project Developers. See the top-level LICENSE file for details.
+//
+// SPDX-License-Identifier: (MIT)
 
 #include "tribol/search/InterfacePairFinder.hpp"
 
@@ -33,13 +29,13 @@ namespace tribol
 /*!
  *  Perform geometry/proximity checks 1-4
  */
-TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
+TRIBOL_HOST_DEVICE bool geomFilter( IndexT element_id1, IndexT element_id2,
                                     const MeshData::Viewer& mesh1, const MeshData::Viewer& mesh2,
-                                    ContactMode const mode )
+                                    ContactMode mode )
 {
   /// CHECK #1: Check to make sure the two face ids are not the same 
   ///           and the two mesh ids are not the same.
-  if ((mesh1.meshId() == mesh2.meshId()) && (element1 == element2))
+  if ((mesh1.meshId() == mesh2.meshId()) && (element_id1 == element_id2))
   {
     return false;
   }
@@ -53,10 +49,10 @@ TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
   {
     for (IndexT i{0}; i < mesh1.numberOfNodesPerElement(); ++i)
     {
-      int node1 = mesh1.getGlobalNodeId(element1, i);
+      int node1 = mesh1.getGlobalNodeId(element_id1, i);
       for (IndexT j{0}; j < mesh2.numberOfNodesPerElement(); ++j)
       {
-        int node2 = mesh2.getGlobalNodeId(element2, j);
+        int node2 = mesh2.getGlobalNodeId(element_id2, j);
         if (node1 == node2)
         {
           return false;
@@ -72,8 +68,8 @@ TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
   RealT nrmlCheck = 0.0;
   for (int d{0}; d < dim; ++d)
   {
-    nrmlCheck += mesh1.getElementNormals()[d][element1]
-      * mesh2.getElementNormals()[d][element2];
+    nrmlCheck += mesh1.getElementNormals()[d][element_id1]
+      * mesh2.getElementNormals()[d][element_id2];
   }
 
   // check normal projection against tolerance
@@ -90,8 +86,8 @@ TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
   RealT offset_tol = 0.05;
   if (dim == 3)
   {
-    RealT r1 = mesh1.getFaceRadius()[ element1 ];
-    RealT r2 = mesh2.getFaceRadius()[ element2 ];
+    RealT r1 = mesh1.getFaceRadius()[ element_id1 ];
+    RealT r2 = mesh2.getFaceRadius()[ element_id2 ];
 
     // set maximum offset of face centroids for inclusion
     RealT distMax = r1 + r2; // default is sum of face radii
@@ -106,9 +102,9 @@ TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
     }
 
     // compute the distance between the two face centroids
-    RealT distX = mesh2.getElementCentroids()[0][ element2 ] - mesh1.getElementCentroids()[0][ element1 ];
-    RealT distY = mesh2.getElementCentroids()[1][ element2 ] - mesh1.getElementCentroids()[1][ element1 ];
-    RealT distZ = mesh2.getElementCentroids()[2][ element2 ] - mesh1.getElementCentroids()[2][ element1 ];
+    RealT distX = mesh2.getElementCentroids()[0][ element_id2 ] - mesh1.getElementCentroids()[0][ element_id1 ];
+    RealT distY = mesh2.getElementCentroids()[1][ element_id2 ] - mesh1.getElementCentroids()[1][ element_id1 ];
+    RealT distZ = mesh2.getElementCentroids()[2][ element_id2 ] - mesh1.getElementCentroids()[2][ element_id1 ];
     
     RealT distMag = magnitude(distX, distY, distZ );
 
@@ -119,8 +115,8 @@ TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
   else if (dim == 2)
   {
     // get 1/2 edge length off the mesh data
-    RealT e1 = 0.5 * mesh1.getElementAreas()[ element1 ];
-    RealT e2 = 0.5 * mesh2.getElementAreas()[ element2 ];
+    RealT e1 = 0.5 * mesh1.getElementAreas()[ element_id1 ];
+    RealT e2 = 0.5 * mesh2.getElementAreas()[ element_id2 ];
 
     // set maximum offset of edge centroids for inclusion
     RealT distMax = e1 + e2; // default is sum of 1/2 edge lengths
@@ -135,8 +131,8 @@ TRIBOL_HOST_DEVICE bool geomFilter( IndexT element1, IndexT element2,
     }
 
     // compute the distance between the two edge centroids
-    RealT distX = mesh2.getElementCentroids()[0][ element2 ] - mesh1.getElementCentroids()[0][ element1 ];
-    RealT distY = mesh2.getElementCentroids()[1][ element2 ] - mesh1.getElementCentroids()[1][ element1 ];
+    RealT distX = mesh2.getElementCentroids()[0][ element_id2 ] - mesh1.getElementCentroids()[0][ element_id1 ];
+    RealT distY = mesh2.getElementCentroids()[1][ element_id2 ] - mesh1.getElementCentroids()[1][ element_id1 ];
 
     RealT distMag = magnitude(distX, distY);
 

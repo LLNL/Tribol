@@ -254,6 +254,8 @@ public:
   TRIBOL_HOST_DEVICE StackArray& operator=(const StackArray& other) = default;
   TRIBOL_HOST_DEVICE StackArray& operator=(StackArray&& other) = default;
 
+  TRIBOL_HOST_DEVICE operator T*() noexcept { return &data_[0]; }
+  TRIBOL_HOST_DEVICE operator const T*() const noexcept { return &data_[0]; }
 
   TRIBOL_HOST_DEVICE T& operator[](IndexT i)
   {

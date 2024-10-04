@@ -611,7 +611,7 @@ bool CouplingScheme::isValidMethod()
       return false;
    }
 
-   int dim = this->m_mesh1->spatialDimension();
+   int dim = this->spatialDimension();
 
    // check all methods for basic validity issues for non-null meshes
    if (!this->m_nullMeshes)
@@ -1154,7 +1154,8 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   auto contact_case = m_contactCase;
   ArrayT<int> pair_err_data(1, 1, getAllocatorId());
   auto pair_err = pair_err_data.view();
-  // clear contact planes to be populated/allocated anew for this cycle
+  // clear contact planes to be populated/allocated anew for this cycle.
+  // initially allocate array of numPairs size, then shrink to the actual number of pairs
   if (spatialDimension() == 2)
   {
     m_contact_plane2d = ArrayT<ContactPlane2D>(numPairs, numPairs, getAllocatorId());
@@ -1169,6 +1170,7 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   auto planes_3d = m_contact_plane3d.view();
   auto mesh1 = getMesh1().getView();
   auto mesh2 = getMesh2().getView();
+  // array of size one for counting number of planes on device
   ArrayT<IndexT> planes_ct_data(1, 1, getAllocatorId());
   auto planes_ct = planes_ct_data.view();
   forAllExec(getExecutionMode(), numPairs,
@@ -1210,6 +1212,7 @@ int CouplingScheme::apply( int cycle, RealT t, RealT &dt )
   );
 
   ArrayT<int, 1, MemorySpace::Host> planes_ct_host(planes_ct_data);
+  // shrink array to actual number of contact planes
   if (spatialDimension() == 2)
   {
     m_contact_plane2d.resize(planes_ct_host[0]);
@@ -1452,9 +1455,12 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
   //int num_sides = 2; // always 2 sides in a single coupling scheme
   int dim = spatialDimension();
 
-  // loop over each interface pair. Even if pair is not in contact, 
-  // we still do a velocity projection for that proximate face-pair 
-  // to see if interpenetration next cycle 'may' be too much
+  // Loop over each contact plane. Even if pair is not in contact, we still do a
+  // velocity projection for that proximate face-pair to see if interpenetration
+  // next cycle 'may' be too much. Note, if a contact plane exists, then it is a
+  // contact candidate. For this calculation, we want to compute a timestep for
+  // all candidates, not necessarily ones that are deemed to be in contact per
+  // the gap constraint.
   auto cs_view = getView();
   ArrayT<RealT> dt_temp_data({dt, dt}, getAllocatorId());
   ArrayViewT<RealT> dt_temp = dt_temp_data;
@@ -1662,8 +1668,8 @@ void CouplingScheme::computeCommonPlaneTimeStep(RealT &dt)
         // in excess of the max allowable gap without causing timestep crashes.
         //
         // v1_dot_n1 > 0 and v2_dot_n2 > 0 for further interpen
-        dt1 = (dt1_check1) ? -alpha * max_delta1 / v1_dot_n1 : dt1;
-        dt2 = (dt2_check1) ? -alpha * max_delta2 / v2_dot_n2 : dt2;
+        dt1 = (dt1_check1) ? alpha * max_delta1 / v1_dot_n1 : dt1;
+        dt2 = (dt2_check1) ? alpha * max_delta2 / v2_dot_n2 : dt2;
 
         // Keep debug print statements. This routine is still in the testing phase
         //std::cout << "dt1_check1, delta1 and v1_dot_n1: " << dt1_check1 << ", " << max_delta1 << ", " << v1_dot_n1 << std::endl;
