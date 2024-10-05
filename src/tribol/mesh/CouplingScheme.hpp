@@ -457,6 +457,10 @@ public:
   /**
    * @brief Get the number of active pairs on the coupling scheme
    *
+   * @note an active interface pair is a proximate contact candidate with an
+   * associated contact plane. this includes face pairs in contact and in
+   * separation up to some criteria.
+   *
    * @return number of active interface pairs
    */
   int getNumActivePairs( ) const

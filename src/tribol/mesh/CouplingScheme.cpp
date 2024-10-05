@@ -105,6 +105,11 @@ void CouplingSchemeErrors::printMethodErrors()
 {
    switch(this->cs_method_error)
    {
+      case INVALID_ELEMENT_TYPE:
+      {
+         SLIC_WARNING_ROOT("The specified element type is invalid.");
+         break;
+      }
       case INVALID_METHOD:
       {
          SLIC_WARNING_ROOT("The specified ContactMethod is invalid.");
@@ -258,6 +263,7 @@ void CouplingSchemeErrors::printExecutionModeErrors()
          SLIC_WARNING_ROOT("Memory space is not compatible with execution mode; see warnings.");
          break;
       }
+      add more here
       default:
          break;
    } // end switch over execution mode errors
@@ -616,6 +622,15 @@ bool CouplingScheme::isValidMethod()
    // check all methods for basic validity issues for non-null meshes
    if (!this->m_nullMeshes)
    {
+      if ((this->m_mesh1->getElementType() != LINEAR_EDGE && 
+           this->m_mesh1->getElementType() != LINEAR_QUAD) ||
+          (this->m_mesh2->getElementType() != LINEAR_EDGE && 
+           this->m_mesh2->getElementType() != LINEAR_QUAD))
+      {
+         this->m_couplingSchemeErrors.cs_method_error = INVALID_ELEMENT_TYPE;
+         return false;
+      }
+
       if ( this->m_contactMethod == ALIGNED_MORTAR ||
            this->m_contactMethod == MORTAR_WEIGHTS ||
            this->m_contactMethod == SINGLE_MORTAR )

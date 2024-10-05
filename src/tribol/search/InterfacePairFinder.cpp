@@ -210,17 +210,18 @@ public:
     const auto mesh2 = m_coupling_scheme->getMesh2().getView();
     IndexT mesh2NumElems = mesh2.numberOfElements();
 
-    // Reserve memory for boolean array indicating which pairs
-    // are in contact
-    int numPairs = mesh1NumElems * mesh2NumElems;
+    // Reserve memory for boolean array indicating which pairs are proximate
+    int maxNumPairs = mesh1NumElems * mesh2NumElems;
     bool is_symm = m_coupling_scheme->getMeshId1() == m_coupling_scheme->getMeshId2();
     if (is_symm)
     {
-        // account for symmetry
-        numPairs = mesh1NumElems * (mesh1NumElems + 1) / 2;
+        // account for symmetry: the max number of pairs when the meshes are the
+        // same is the upper triangular portion of the cartesian product pair
+        // matrix
+        maxNumPairs = mesh1NumElems * (mesh1NumElems + 1) / 2;
     }
-    ArrayT<bool> contactArray(numPairs, numPairs, m_coupling_scheme->getAllocatorId());
-    bool* inContact = contactArray.data();
+    ArrayT<bool> proximityArray(maxNumPairs, maxNumPairs, m_coupling_scheme->getAllocatorId());
+    bool* isProximate = proximityArray.data();
 
     // Allocate memory for a counter
     ArrayT<int> countArray(1, 1, m_coupling_scheme->getAllocatorId());
@@ -228,54 +229,46 @@ public:
 
     ContactMode cmode = m_coupling_scheme->getContactMode();
 
-    try
-    {
-      forAllExec(m_coupling_scheme->getExecutionMode(), numPairs,
-        [mesh1NumElems, mesh2NumElems, is_symm, inContact, mesh1, mesh2, cmode, 
-          pCount] TRIBOL_HOST_DEVICE (IndexT i)
+    // count how many pairs are proximate
+    forAllExec(m_coupling_scheme->getExecutionMode(), maxNumPairs,
+      [mesh1NumElems, mesh2NumElems, is_symm, isProximate, mesh1, mesh2, cmode, 
+        pCount] TRIBOL_HOST_DEVICE (IndexT i)
+      {
+        IndexT fromIdx = i / mesh1NumElems;
+        IndexT toIdx = i % mesh2NumElems;
+        if (is_symm)
         {
-          IndexT fromIdx = i / mesh1NumElems;
-          IndexT toIdx = i % mesh2NumElems;
-          if (is_symm)
-          {
-            IndexT row = algorithm::symmMatrixRow(i, mesh1NumElems);
-            IndexT offset = row * (row + 1) / 2;
-            fromIdx = row;
-            toIdx = i - offset;
-          }
-          inContact[i] = geomFilter( fromIdx, toIdx, 
-                                     mesh1, mesh2,
-                                     cmode );
+          IndexT row = algorithm::symmMatrixRow(i, mesh1NumElems);
+          IndexT offset = row * (row + 1) / 2;
+          fromIdx = row;
+          toIdx = i - offset;
+        }
+        isProximate[i] = geomFilter( fromIdx, toIdx, 
+                                    mesh1, mesh2,
+                                    cmode );
 #ifdef TRIBOL_USE_RAJA
-          RAJA::atomicAdd<RAJA::auto_atomic>(pCount, static_cast<int>(inContact[i]));
+        RAJA::atomicAdd<RAJA::auto_atomic>(pCount, static_cast<int>(isProximate[i]));
 #else
-          if (inContact[i]) { ++(*pCount); }
+        if (isProximate[i]) { ++(*pCount); }
 #endif
       });
-    }  // End of profiling block
-    catch(const std::exception& e)
-    {
-      std::cerr << e.what() << std::endl;
-    }
-    catch(...)
-    {
-      std::cerr << "unknown exception encountered during findInterfacePairs/geomFilter" << std::endl;
-    }
     
     ArrayT<int, 1, MemorySpace::Host> countArray_host(countArray);
-    SLIC_INFO("Found " << countArray_host[0] << " pairs in contact" );
+    SLIC_INFO("Found " << countArray_host[0] << " proximate pairs" );
 
+    // allocate proximate pairs array
     auto& contactPairs = m_coupling_scheme->getInterfacePairs();
     contactPairs.resize(countArray_host[0]);
 
     countArray.fill(0);
     auto pairs_view = m_coupling_scheme->getInterfacePairs().view();
-    forAllExec(m_coupling_scheme->getExecutionMode(), numPairs,
-      [inContact, pCount, pairs_view, mesh1NumElems, mesh2NumElems, is_symm] 
+    // fill proximate pairs array
+    forAllExec(m_coupling_scheme->getExecutionMode(), maxNumPairs,
+      [isProximate, pCount, pairs_view, mesh1NumElems, mesh2NumElems, is_symm] 
         TRIBOL_HOST_DEVICE (IndexT i)
       {
         // Filtering removed this case
-        if (!inContact[i])
+        if (!isProximate[i])
         {
           return;
         }
@@ -303,7 +296,7 @@ public:
     );
 
     SLIC_INFO("Coupling scheme has " << contactPairs.size()
-          << " pairs out of a maximum possible of " << numPairs
+          << " pairs out of a maximum possible of " << maxNumPairs
           << " = " << mesh1NumElems << " * " << mesh2NumElems << ".");
   }
 private:
@@ -609,16 +602,19 @@ public:
                           m_mesh2.numberOfElements(),
                           m_boxes2.view());
 
-    // Apply geom filter to check if intersecting bounding boxes are in contact
+    // Apply geom filter to check if intersecting bounding boxes are proximate
     // Change candidate value to -1 if geom filter checks are failed
     auto counts_view = m_counts.view();
     auto offsets_view = m_offsets.view();
     auto candidates_view = m_candidates.view();
+    // array of size 1 to track the number of candidates in a way compatible
+    // with device kernels
     ArrayT<IndexT> filtered_candidates_data(1, 1, m_coupling_scheme->getAllocatorId());
     auto filtered_candidates = filtered_candidates_data.view();
     const auto mesh1 = m_coupling_scheme->getMesh1().getView();
     const auto mesh2 = m_coupling_scheme->getMesh2().getView();
     auto cmode = m_coupling_scheme->getContactMode();
+    // count the number of filtered proximate pairs
     forAllExec(m_coupling_scheme->getExecutionMode(), m_candidates.size(),
       [mesh1, mesh2, offsets_view, counts_view, candidates_view, 
         filtered_candidates, cmode] TRIBOL_HOST_DEVICE (IndexT i) 
@@ -640,12 +636,12 @@ public:
       }
     );
 
-    // Add filtered pairs to interface pairs
     ArrayT<IndexT, 1, MemorySpace::Host> filtered_candidates_host( filtered_candidates_data );
     m_coupling_scheme->getInterfacePairs().resize(filtered_candidates_host[0]);
     filtered_candidates_data.fill(0);
 
     auto pairs_view = m_coupling_scheme->getInterfacePairs().view();
+    // add filtered pairs to interface pairs array
     forAllExec(m_coupling_scheme->getExecutionMode(), m_candidates.size(),
       [candidates_view, offsets_view, counts_view, filtered_candidates, 
         pairs_view] TRIBOL_HOST_DEVICE (IndexT i)
@@ -796,8 +792,7 @@ InterfacePairFinder::InterfacePairFinder(CouplingScheme* cs)
                m_search = new BvhSearch<2, axom::SEQ_EXEC>(m_coupling_scheme);
                break;
             #ifdef TRIBOL_USE_OPENMP
-            case(ExecutionMode::OpenMP):  // This causes compiler to hang
-               //SLIC_ERROR("Unsupported execution mode: " << parameters.exec_mode );
+            case(ExecutionMode::OpenMP):  // This causes compiler to hang (EBC: Check if this is still true)
                m_search = new BvhSearch<2, axom::OMP_EXEC>(m_coupling_scheme);
                break;
             #endif
@@ -823,8 +818,7 @@ InterfacePairFinder::InterfacePairFinder(CouplingScheme* cs)
                m_search = new BvhSearch<3, axom::SEQ_EXEC>(m_coupling_scheme);
                break;
             #ifdef TRIBOL_USE_OPENMP
-            case(ExecutionMode::OpenMP): // This causes compiler to hang
-               //SLIC_ERROR("Unsupported execution mode: " << parameters.exec_mode );
+            case(ExecutionMode::OpenMP): // This causes compiler to hang (EBC: Check if this is still true)
                m_search = new BvhSearch<3, axom::OMP_EXEC>(m_coupling_scheme);
                break;
             #endif
