@@ -318,7 +318,7 @@ TRIBOL_HOST_DEVICE void Local2DToGlobalCoords( RealT xloc, RealT yloc,
 } // end Local2DToGlobalCoords()
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE bool GlobalTo2DLocalCoords( const RealT* const pX, 
+TRIBOL_HOST_DEVICE void GlobalTo2DLocalCoords( const RealT* const pX, 
                                                const RealT* const pY, 
                                                const RealT* const pZ,
                                                RealT e1X, RealT e1Y, RealT e1Z,
@@ -327,15 +327,10 @@ TRIBOL_HOST_DEVICE bool GlobalTo2DLocalCoords( const RealT* const pX,
                                                RealT* const pLX, 
                                                RealT* const pLY, int size )
 {
-   // TODO: Refactor such that the check isn't needed
 #ifdef TRIBOL_USE_HOST
    SLIC_ERROR_IF(size > 0 && (pLX == nullptr || pLY == nullptr),
                  "GlobalTo2DLocalCoords: local coordinate pointers are null");
 #endif
-   if (size > 0 && (pLX == nullptr || pLY == nullptr))
-   {
-      return false;
-   }
 
    // loop over projected nodes
    for (int i=0; i<size; ++i) {
@@ -352,7 +347,7 @@ TRIBOL_HOST_DEVICE bool GlobalTo2DLocalCoords( const RealT* const pX,
     
    }
 
-   return true;
+   return;
 
 } // end GlobalTo2DLocalCoords()
 
@@ -384,7 +379,9 @@ TRIBOL_HOST_DEVICE bool VertexAvgCentroid( const RealT* const x,
                         const int numVert,
                         RealT& cX, RealT& cY, RealT& cZ )
 {
-   //SLIC_ERROR_IF (numVert==0, "VertexAvgCentroid: numVert = 0.");
+#ifdef TRIBOL_USE_HOST
+   SLIC_ERROR_IF (numVert==0, "VertexAvgCentroid: numVert = 0.");
+#endif
    if (numVert == 0)
    {
       return false;
@@ -572,6 +569,12 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // "proximity" check to determine if the faces are "close enough" to proceed with 
    // the full calculation. This can and probably should be added.
 
+   // check to make sure the intersection polygon vertex pointers are null
+#ifdef TRIBOL_USE_HOST
+   SLIC_ERROR_IF(polyX != nullptr || polyY != nullptr, 
+                 "Intersection2DPolygon: expecting nullptr input arguments polyX, polyY.");
+#endif
+
    // check numVertexA and numVertexB to make sure they are 3 (triangle) or more
    if (numVertexA < 3 || numVertexB < 3) 
    {
@@ -594,18 +597,19 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
 
       if (!orientA || !orientB)
       {
-        //  SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face A." );
+#ifdef TRIBOL_USE_HOST
+         SLIC_DEBUG( "Intersection2DPolygon(): check face orientations for face A." );
+#endif
          return FACE_ORIENTATION;
       }
    }
 
-   // determine minimum number of vertices (for use later)
-   int numVertexMax = numVertexA >= numVertexB ? numVertexA : numVertexB;
+   // maximum number of vertices (for use later)
+   constexpr int max_nodes_per_element = 4;
 
    // allocate an array to hold ids of interior vertices
-   constexpr int max_nodes_per_overlap = 8;
-   int interiorVAId[ max_nodes_per_overlap ];
-   int interiorVBId[ max_nodes_per_overlap ];
+   int interiorVAId[ max_nodes_per_element ];
+   int interiorVBId[ max_nodes_per_element ];
 
    // initialize all entries in interior vertex array to -1
    initIntArray( &interiorVAId[0], numVertexA, -1 );
@@ -705,23 +709,22 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
 
    // determine the maximum number of intersection points
 
-   // maximum number of vertices between the two polygons.
-   int maxSegInter = numVertexMax * numVertexMax;
+   // maximum number of vertices between the two polygons.  assumes convex elements.
+   constexpr int max_nodes_per_overlap = 2*max_nodes_per_element;
 
    // allocate space to store the segment-segment intersection vertex coords. 
    // and a boolean array to indicate intersecting pairs
-   constexpr int max_seg_inter = max_nodes_per_overlap * max_nodes_per_overlap;
-   RealT interX[ max_seg_inter ];
-   RealT interY[ max_seg_inter ];
-   bool intersect[ max_seg_inter ];
+   RealT interX[ max_nodes_per_overlap ];
+   RealT interY[ max_nodes_per_overlap ];
+   bool intersect[ max_nodes_per_overlap ];
    bool dupl; // boolean to indicate a segment-segment intersection that 
               // duplicates an existing interior vertex.
    bool interior [4];
 
    // initialize the interX and interY entries
-   initRealArray( &interX[0], maxSegInter, 0. );
-   initRealArray( &interY[0], maxSegInter, 0. );
-   initBoolArray( &intersect[0], maxSegInter, false );
+   initRealArray( interX, max_nodes_per_overlap, 0. );
+   initRealArray( interY, max_nodes_per_overlap, 0. );
+   initBoolArray( intersect, max_nodes_per_overlap, false );
    dupl = false;
 
    // loop over segment-segment intersections to find the rest of the 
@@ -755,10 +758,12 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
          // if both segments are not defined by nodes interior to the other polygon
          if (checkA && checkB) 
          {
-            if (interId >= maxSegInter) 
+            if (interId >= max_nodes_per_overlap) 
             {
-              //  SLIC_DEBUG("Intersection2DPolygon: number of segment/segment intersections exceeds precomputed maximum; " << 
-              //             "check for degenerate overlap.");
+#ifdef TRIBOL_USE_HOST
+               SLIC_DEBUG("Intersection2DPolygon: number of segment/segment intersections exceeds precomputed maximum; " << 
+                          "check for degenerate overlap.");
+#endif
                return DEGENERATE_OVERLAP;
             }
 
@@ -773,7 +778,7 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
 
    // count the number of segment-segment intersections
    int numSegInter = 0;
-   for (int i=0; i<maxSegInter; ++i)
+   for (int i=0; i<interId; ++i)
    {
       if (intersect[i]) ++numSegInter; 
    }
@@ -789,12 +794,13 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // allocate temp intersection polygon vertex coordinate arrays to consist 
    // of segment-segment intersections and number of interior points in A and B
    numPolyVert = numSegInter + numVAI + numVBI;
-   RealT polyXTemp[ max_nodes_per_overlap ];
-   RealT polyYTemp[ max_nodes_per_overlap ];
+   constexpr int max_identified_points = max_nodes_per_overlap + 2*max_nodes_per_element;
+   RealT polyXTemp[ max_identified_points ];
+   RealT polyYTemp[ max_identified_points ];
 
    // fill polyXTemp and polyYTemp with the intersection points
    int k = 0;
-   for (int i=0; i<maxSegInter; ++i) 
+   for (int i=0; i<interId; ++i) 
    {
       if (intersect[i]) 
       {
@@ -810,7 +816,7 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
       if (interiorVAId[i] != -1)
       {
          // debug
-         if (k > numPolyVert)
+         if (k > max_identified_points)
          {
 #ifdef TRIBOL_USE_HOST
             SLIC_DEBUG("Intersection2DPolygon(): number of A vertices interior to B " << 
@@ -830,7 +836,7 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
       if (interiorVBId[i] != -1)
       {
          // debug
-         if (k > numPolyVert)
+         if (k > max_identified_points)
          {
 #ifdef TRIBOL_USE_HOST
             SLIC_DEBUG("Intersection2DPolygon(): number of B vertices interior to A " << 
@@ -940,13 +946,12 @@ TRIBOL_HOST_DEVICE bool Point2DInFace( const RealT xPoint, const RealT yPoint,
 {
 #ifdef TRIBOL_USE_HOST
    SLIC_ERROR_IF(numPolyVert<3, "Point2DInFace: number of face vertices is less than 3");
+
+   SLIC_ERROR_IF(xPoly == nullptr || yPoly == nullptr, "Point2DInFace: input pointer not set");
 #endif
-   if (numPolyVert < 3)
-   {
-      return false;
-   }
+
    // if face is triangle (numPolyVert), call Point2DInTri once
-   else if (numPolyVert == 3)
+   if (numPolyVert == 3)
    {
       return Point2DInTri( xPoint, yPoint, xPoly, yPoly );
    }
@@ -1146,8 +1151,10 @@ TRIBOL_HOST_DEVICE bool SegmentIntersection2D( const RealT xA1, const RealT yA1,
      yDiff = (yDiff < 0.) ? -1.0 * yDiff : yDiff;
 
      RealT diffTol = 1.0E-3;
-    //  SLIC_DEBUG_IF( xDiff > diffTol || yDiff > diffTol, 
-    //                "SegmentIntersection2D(): Intersection coordinates are not equally derived." );
+#ifdef TRIBOL_USE_HOST
+     SLIC_DEBUG_IF( xDiff > diffTol || yDiff > diffTol, 
+                    "SegmentIntersection2D(): Intersection coordinates are not equally derived." );
+#endif
    }
 
    // if we get here then it means we have an intersection point.
@@ -1314,7 +1321,7 @@ TRIBOL_HOST_DEVICE bool PolyReorder( RealT* const x, RealT* const y, const int n
 
    RealT xC, yC, zC;
    RealT * z = nullptr;
-   constexpr int max_nodes_per_overlap = 8;
+   constexpr int max_nodes_per_overlap = 8 + 2*4;
    RealT proj [max_nodes_per_overlap - 2];
 
    int newIDs[ max_nodes_per_overlap ];

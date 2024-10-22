@@ -138,8 +138,6 @@ TRIBOL_HOST_DEVICE void Local2DToGlobalCoords( RealT xloc, RealT yloc,
  * \param [in] cZ global z coordinate of local basis shift
  * \param [in,out] pLX array of local x coordinates of input points
  * \param [in,out] pLY array of local y coordinates of input points
- * 
- * \return true if calculation successful, false if an error occurred
  *
  * \pre length(pX) >= size 
  * \pre length(pY) >= size 
@@ -150,7 +148,7 @@ TRIBOL_HOST_DEVICE void Local2DToGlobalCoords( RealT xloc, RealT yloc,
  * \note this assumes that the point lies in the plane defined by the 
  *  2D local basis vectors. 
  */
-TRIBOL_HOST_DEVICE bool GlobalTo2DLocalCoords( const RealT* const pX, 
+TRIBOL_HOST_DEVICE void GlobalTo2DLocalCoords( const RealT* const pX, 
                                                const RealT* const pY, 
                                                const RealT* const pZ,
                                                RealT e1X, RealT e1Y, RealT e1Z,

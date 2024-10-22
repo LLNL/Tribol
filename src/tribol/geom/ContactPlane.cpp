@@ -727,7 +727,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
    // on opposite sides of thin structures/plates
    //
    // Recall that interpen gaps are negative
-   if (fullOverlap && params.auto_interpen_check)
+   if (fullOverlap)
    {
       if (ExceedsMaxAutoInterpen( mesh1, mesh2, element_id1, element_id2, 
                                   params, cp.m_gap ))
@@ -1192,7 +1192,7 @@ TRIBOL_HOST_DEVICE void ContactPlane3D::checkPolyOverlap( const MeshData::Viewer
 
    // reorder
    int k = 1;
-   for (int i=(m1.numberOfNodesPerElement()-1); i>0; --i)
+   for (int i=(m2.numberOfNodesPerElement()-1); i>0; --i)
    {
       x2Temp[k] = projLocX2[i];
       y2Temp[k] = projLocY2[i];
@@ -1379,7 +1379,7 @@ TRIBOL_HOST_DEVICE FaceGeomError ContactPlane3D::computeLocalInterpenOverlap(
          {
 #ifdef TRIBOL_USE_HOST
             SLIC_DEBUG("ContactPlane3D::computeInterpenOverlap(): too many segment-plane intersections; " << 
-                       "check for degenerate face " << m_pair->m_element_id1 << "on mesh " << mesh[0]->meshId() << ".");
+                       "check for degenerate face " << m_pair->m_element_id1 << "on mesh " << mesh[i]->meshId() << ".");
 #endif
             interpen = false;
             return DEGENERATE_OVERLAP;
