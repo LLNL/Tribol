@@ -173,7 +173,7 @@ public:
      *
      * @return the gap tolerance for the common plane method
      */
-    TRIBOL_HOST_DEVICE RealT getCommonPlaneGapTol( int fid1, int fid2 ) const;
+    TRIBOL_HOST_DEVICE RealT getGapTol( int fid1, int fid2 ) const;
 
   private:
     /// Struct holding parameters for the coupling scheme
@@ -181,6 +181,9 @@ public:
 
     /// Defines the contact case: special algorithmic considerations
     ContactCase m_contact_case;
+
+    /// Defines the contact method
+    ContactMethod m_contact_method;
 
     /// Struct holding the enforcement options for the contact method
     EnforcementOptions m_enforcement_options;

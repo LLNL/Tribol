@@ -308,10 +308,10 @@ private:
 /*!
  * \brief Implicit Grid helper class to compute the candidate pairs for a coupling scheme
  *
- * A GridSearch indexes the elements from the first mesh of
- * the coupling scheme in a spatial index that requires element bounding boxes.
- * Then, for each of the elements in the second mesh, we find the candidate
- * pairs and add them to the coupling scheme's list of contact pairs.
+ * A GridSearch indexes the elements from the first mesh of the coupling scheme
+ * in a spatial index that requires element bounding boxes. Then, for each of
+ * the elements in the second mesh, we find proximate faces and add them to the
+ * coupling scheme's list of candidate pairs.
  *
  * The spatial index is generated in \a initialize()
  * and the search is performed in \a findInterfacePairs()
@@ -523,13 +523,12 @@ private:
 /*!
  * \brief BVH helper class to compute the candidate pairs for a coupling scheme
  *
- * A BvhSearch indexes the elements from the first mesh of
- * the coupling scheme in a spatial index that requires element bounding boxes.
- * Then, for each of the elements in the second mesh, we find the candidate
- * pairs and add them to the coupling scheme's list of contact pairs.
+ * A BvhSearch constructs a BVH tree from the elements of the first mesh using
+ * element bounding boxes. Then, for each of the elements in the second mesh, we
+ * traverse the BVH tree, find proximate faces, and add them to the coupling
+ * scheme's list of candidate pairs.
  *
- * The spatial index is generated in \a generateSpatialIndex()
- * and the search is performed in \a findInterfacePairs()
+ * The search is performed in \a findInterfacePairs()
  * 
  * \tparam D The spatial dimension of the coupling scheme mesh vertices.
  */

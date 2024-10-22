@@ -184,7 +184,7 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
 
         //  don't proceed for gaps that don't violate the constraints. This check 
         //  allows for numerically zero interpenetration.
-         RealT gap_tol = cs_view.getCommonPlaneGapTol( index1, index2 );
+         RealT gap_tol = cs_view.getGapTol( index1, index2 );
 
         if ( gap > gap_tol )
         {

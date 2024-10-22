@@ -38,8 +38,8 @@ namespace
 //------------------------------------------------------------------------------
 inline bool validMeshID( IndexT mesh_id )
 {
-  MeshManager & meshManager = MeshManager::getInstance();
-  return (mesh_id==ANY_MESH) || meshManager.findData( mesh_id );
+   MeshManager & meshManager = MeshManager::getInstance();
+   return (mesh_id==ANY_MESH) || meshManager.findData( mesh_id );
 }
 
 } /* end anonymous namespace */
@@ -258,12 +258,21 @@ void CouplingSchemeErrors::printExecutionModeErrors()
 {
    switch(this->cs_execution_mode_error)
    {
+      case ExecutionModeError::NON_MATCHING_MEMORY_SPACE:
+      {
+         SLIC_WARNING_ROOT("Memory spaces for meshes do not match; see warnings.");
+         break;
+      }
       case ExecutionModeError::BAD_MODE_FOR_MEMORY_SPACE:
       {
          SLIC_WARNING_ROOT("Memory space is not compatible with execution mode; see warnings.");
          break;
       }
-      add more here
+      case ExecutionModeError::INCOMPATIBLE_METHOD:
+      {
+         SLIC_WARNING_ROOT("Contact method not compatible with execution mode; see warnings.");
+         break;
+      }
       default:
          break;
    } // end switch over execution mode errors
@@ -1926,6 +1935,7 @@ void CouplingScheme::printPairReportingData()
 CouplingScheme::Viewer::Viewer( CouplingScheme& cs )
   : m_parameters( cs.m_parameters )
   , m_contact_case( cs.m_contactCase )
+  , m_contact_method( cs.m_contactMethod )
   , m_enforcement_options( cs.m_enforcementOptions )
   , m_mesh1( cs.getMesh1().getView() )
   , m_mesh2( cs.getMesh2().getView() )
@@ -1947,24 +1957,56 @@ TRIBOL_HOST_DEVICE ContactPlane& CouplingScheme::Viewer::getContactPlane( IndexT
 }
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE RealT CouplingScheme::Viewer::getCommonPlaneGapTol( int fid1, int fid2 ) const
+TRIBOL_HOST_DEVICE RealT CouplingScheme::Viewer::getGapTol( int fid1, int fid2 ) const
 {
-  RealT gap_tol = 0.;
-  switch ( m_contact_case ) {
+   RealT gap_tol = 0.;
+   // add debug warning if this routine is called for interface methods 
+   // that do not require gap tolerances 
+   switch ( m_contact_method ) {
 
-    case TIED_NORMAL :
-      gap_tol = m_parameters.gap_tied_tol *
-                axom::utilities::max( m_mesh1.getFaceRadius()[fid1],
-                                      m_mesh2.getFaceRadius()[fid2] );
-      break;
+      case SINGLE_MORTAR :
+#ifdef TRIBOL_USE_HOST
+         SLIC_WARNING("CouplingScheme::getGapTol(): 'SINGLE_MORTAR' " << 
+                        "method does not require use of a gap tolerance." );
+#endif
+         break;
 
-    default :  
-        gap_tol = -1. * m_parameters.gap_tol_ratio *  
-                  axom::utilities::max( m_mesh1.getFaceRadius()[fid1],
-                                        m_mesh2.getFaceRadius()[fid2] );
-        break;
+      case ALIGNED_MORTAR :
+#ifdef TRIBOL_USE_HOST
+         SLIC_WARNING("CouplingScheme::getGapTol(): 'ALIGNED_MORTAR' " << 
+                        "method does not require use of a gap tolerance." );
+#endif
+         break;
 
-  }
+      case MORTAR_WEIGHTS :
+#ifdef TRIBOL_USE_HOST
+         SLIC_WARNING("CouplingScheme::getGapTol(): 'MORTAR_WEIGHTS' " << 
+                        "method does not require use of a gap tolerance." );
+#endif
+         break;
+
+      case COMMON_PLANE :
+
+         switch ( m_contact_case ) {
+
+            case TIED_NORMAL :
+               gap_tol = m_parameters.gap_tied_tol *
+                          axom::utilities::max( m_mesh1.getFaceRadius()[fid1],
+                                                m_mesh2.getFaceRadius()[fid2] );
+               break;
+
+            default :  
+               gap_tol = -1. * m_parameters.gap_tol_ratio *  
+                           axom::utilities::max( m_mesh1.getFaceRadius()[fid1],
+                                                 m_mesh2.getFaceRadius()[fid2] );
+               break;
+
+         } // end switch over m_contactModel
+         break;
+
+      default : 
+         break;
+   } // end switch over m_contactMethod
   
    return gap_tol;
 }

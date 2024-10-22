@@ -58,7 +58,7 @@ void compareGaps( tribol::CouplingScheme const * cs,
       }
 
       // gap tolerance per common-plane based calculation (see CouplingScheme::ViewerBase::getCommonPlaneGapTol)
-      RealT gap_tol = cs_view.getCommonPlaneGapTol( plane.getCpElementId1(), plane.getCpElementId2() );
+      RealT gap_tol = cs_view.getGapTol( plane.getCpElementId1(), plane.getCpElementId2() );
                       
       // check gap sense.
       if ( std::strcmp( gapType, "kinematic_penetration" ) == 0  || 
