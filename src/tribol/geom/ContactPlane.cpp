@@ -558,7 +558,7 @@ TRIBOL_HOST_DEVICE FaceGeomError CheckFacePair( ContactPlane3D& cp,
       // reorder face 2 vertices to be consistent with face 1. DO NOT CALL POLYREORDER() 
       // to do this. // TODO debug this; this may affect calculations later on. We may 
       // have to unreverse the ordering.
-      PolyReverse( X2, Y2, mesh2.numberOfNodesPerElement() );
+      ElemReverse( X2, Y2, mesh2.numberOfNodesPerElement() );
 
       // compute intersection polygon and area. Note, the polygon centroid 
       // is stored from the previous intersection calc that just computes 

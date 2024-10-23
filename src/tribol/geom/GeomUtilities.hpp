@@ -504,7 +504,7 @@ TRIBOL_HOST_DEVICE bool PolyReorder( RealT* const x, RealT* const y, const int n
  * \pre length(x), length(y) >= numPoints
  *
  */
-TRIBOL_HOST_DEVICE void PolyReverse( RealT* const x, RealT* const y, const int numPoints );
+TRIBOL_HOST_DEVICE void ElemReverse( RealT* const x, RealT* const y, const int numPoints );
 
 /*!
  *

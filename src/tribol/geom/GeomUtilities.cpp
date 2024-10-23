@@ -709,22 +709,21 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
 
    // determine the maximum number of intersection points
 
-   // maximum number of vertices between the two polygons.  assumes convex elements.
-   constexpr int max_nodes_per_overlap = 2*max_nodes_per_element;
 
    // allocate space to store the segment-segment intersection vertex coords. 
    // and a boolean array to indicate intersecting pairs
-   RealT interX[ max_nodes_per_overlap ];
-   RealT interY[ max_nodes_per_overlap ];
-   bool intersect[ max_nodes_per_overlap ];
+   constexpr int max_intersections = max_nodes_per_element*max_nodes_per_element;
+   RealT interX[ max_intersections ];
+   RealT interY[ max_intersections ];
+   bool intersect[ max_intersections ];
    bool dupl; // boolean to indicate a segment-segment intersection that 
               // duplicates an existing interior vertex.
    bool interior [4];
 
    // initialize the interX and interY entries
-   initRealArray( interX, max_nodes_per_overlap, 0. );
-   initRealArray( interY, max_nodes_per_overlap, 0. );
-   initBoolArray( intersect, max_nodes_per_overlap, false );
+   initRealArray( interX, max_intersections, 0. );
+   initRealArray( interY, max_intersections, 0. );
+   initBoolArray( intersect, max_intersections, false );
    dupl = false;
 
    // loop over segment-segment intersections to find the rest of the 
@@ -758,7 +757,7 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
          // if both segments are not defined by nodes interior to the other polygon
          if (checkA && checkB) 
          {
-            if (interId >= max_nodes_per_overlap) 
+            if (interId >= max_intersections) 
             {
 #ifdef TRIBOL_USE_HOST
                SLIC_DEBUG("Intersection2DPolygon: number of segment/segment intersections exceeds precomputed maximum; " << 
@@ -794,6 +793,8 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // allocate temp intersection polygon vertex coordinate arrays to consist 
    // of segment-segment intersections and number of interior points in A and B
    numPolyVert = numSegInter + numVAI + numVBI;
+   // maximum number of vertices between the two polygons.  assumes convex elements.
+   constexpr int max_nodes_per_overlap = 2*max_nodes_per_element;
    constexpr int max_identified_points = max_nodes_per_overlap + 2*max_nodes_per_element;
    RealT polyXTemp[ max_identified_points ];
    RealT polyYTemp[ max_identified_points ];
@@ -1492,7 +1493,7 @@ TRIBOL_HOST_DEVICE bool PolyReorder( RealT* const x, RealT* const y, const int n
 } // end PolyReorder()
 
 //------------------------------------------------------------------------------
-TRIBOL_HOST_DEVICE void PolyReverse( RealT* const x, RealT* const y, const int numPoints )
+TRIBOL_HOST_DEVICE void ElemReverse( RealT* const x, RealT* const y, const int numPoints )
 {
    constexpr int max_nodes_per_elem = 4;
    RealT xtemp[ max_nodes_per_elem ];
