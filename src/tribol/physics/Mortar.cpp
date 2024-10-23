@@ -176,11 +176,11 @@ void ComputeNodalGap< SINGLE_MORTAR >( SurfaceContactElem & elem )
 void ComputeSingleMortarGaps( CouplingScheme* cs )
 {
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMeshBase = meshManager.at( cs->getMeshId2() );
+   MeshData& nonmortarMeshData = meshManager.at( cs->getMeshId2() );
    // compute nodal normals (do this outside the element loop)
    // Note, this is guarded against zero element meshes
    int const dim = cs->spatialDimension();
-   nonmortarMeshBase.computeNodalNormals( dim );
+   nonmortarMeshData.computeNodalNormals( dim );
 
    auto pairs = cs->getInterfacePairs();
    const IndexT numPairs = pairs.size();
@@ -188,7 +188,7 @@ void ComputeSingleMortarGaps( CouplingScheme* cs )
 
    ////////////////////////////////////////////////////////////////////////
    //
-   // Grab pointers to mesh data
+   // Grab mesh views
    //
    ////////////////////////////////////////////////////////////////////////
    auto mortarMesh = cs->getMesh1().getView();
@@ -248,8 +248,10 @@ void ComputeSingleMortarGaps( CouplingScheme* cs )
       }
 
       // get projected face coordinates
+      // stores projected coordinates in row-major format
       ArrayT<RealT, 2> mortarX_bar(numNodesPerFace, dim);
       ArrayT<RealT, 2> nonmortarX_bar(numNodesPerFace, dim);
+      // stores projected coordinates in column-major format
       ArrayT<RealT, 2> mortarX_barT(dim, numNodesPerFace);
       ArrayT<RealT, 2> nonmortarX_barT(dim, numNodesPerFace);
       ProjectFaceNodesToPlane( mortarMesh, index1, 
@@ -264,6 +266,8 @@ void ComputeSingleMortarGaps( CouplingScheme* cs )
                                &nonmortarX_barT(0, 0), 
                                &nonmortarX_barT(1, 0), 
                                &nonmortarX_barT(2, 0) );
+      // populate row-major projected coordinates for the purpose of sending to
+      // the SurfaceContactElem struct
       algorithm::transpose<MemorySpace::Dynamic>(mortarX_barT, mortarX_bar);
       algorithm::transpose<MemorySpace::Dynamic>(nonmortarX_barT, nonmortarX_bar);
 
@@ -329,7 +333,7 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
 
    ////////////////////////////////////////////////////////////////////////
    //
-   // Grab pointers to mesh data
+   // Grab mesh views
    //
    ////////////////////////////////////////////////////////////////////////
    auto mortarMesh = cs->getMesh1().getView();
@@ -394,8 +398,10 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
       IndexT index2 = pair.m_element_id2;
 
       // get projected face coordinates
+      // stores projected coordinates in row-major format
       ArrayT<RealT, 2> mortarX_bar(numNodesPerFace, dim);
       ArrayT<RealT, 2> nonmortarX_bar(numNodesPerFace, dim);
+      // stores projected coordinates in column-major format
       ArrayT<RealT, 2> mortarX_barT(dim, numNodesPerFace);
       ArrayT<RealT, 2> nonmortarX_barT(dim, numNodesPerFace);
       ProjectFaceNodesToPlane( mortarMesh, index1, 
@@ -410,6 +416,8 @@ int ApplyNormal< SINGLE_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
                                &nonmortarX_barT(0, 0), 
                                &nonmortarX_barT(1, 0), 
                                &nonmortarX_barT(2, 0) );
+      // populate row-major projected coordinates for the purpose of sending to
+      // the SurfaceContactElem struct
       algorithm::transpose<MemorySpace::Dynamic>(mortarX_barT, mortarX_bar);
       algorithm::transpose<MemorySpace::Dynamic>(nonmortarX_barT, nonmortarX_bar);
 
@@ -751,8 +759,10 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme* cs )
       IndexT index2 = pair.m_element_id2;
 
       // get projected face coordinates
+      // stores projected coordinates in row-major format
       ArrayT<RealT, 2> mortarX_bar(numNodesPerFace, dim);
       ArrayT<RealT, 2> nonmortarX_bar(numNodesPerFace, dim);
+      // stores projected coordinates in column-major format
       ArrayT<RealT, 2> mortarX_barT(dim, numNodesPerFace);
       ArrayT<RealT, 2> nonmortarX_barT(dim, numNodesPerFace);
       ProjectFaceNodesToPlane( mortarMesh, index1, 
@@ -767,6 +777,8 @@ int GetMethodData< MORTAR_WEIGHTS >( CouplingScheme* cs )
                                &nonmortarX_barT(0, 0), 
                                &nonmortarX_barT(1, 0), 
                                &nonmortarX_barT(2, 0) );
+      // populate row-major projected coordinates for the purpose of sending to
+      // the SurfaceContactElem struct
       algorithm::transpose<MemorySpace::Dynamic>(mortarX_barT, mortarX_bar);
       algorithm::transpose<MemorySpace::Dynamic>(nonmortarX_barT, nonmortarX_bar);
 

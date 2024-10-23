@@ -339,10 +339,9 @@ TRIBOL_HOST_DEVICE bool ExceedsMaxAutoInterpen( const MeshData::Viewer& mesh1,
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE void ProjectFaceNodesToPlane( const MeshData::Viewer& mesh, int faceId, 
-                              RealT nrmlX, RealT nrmlY, RealT nrmlZ,
-                              RealT cX, RealT cY, RealT cZ,
-                              RealT* pX, RealT* pY, 
-                              RealT* pZ )
+                                                 RealT nrmlX, RealT nrmlY, RealT nrmlZ,
+                                                 RealT cX, RealT cY, RealT cZ,
+                                                 RealT* pX, RealT* pY, RealT* pZ )
 {
 
    // loop over nodes and project onto the plane defined by the point-normal 
@@ -360,9 +359,8 @@ TRIBOL_HOST_DEVICE void ProjectFaceNodesToPlane( const MeshData::Viewer& mesh, i
 
 //------------------------------------------------------------------------------
 TRIBOL_HOST_DEVICE void ProjectEdgeNodesToSegment( const MeshData::Viewer& mesh, int edgeId, 
-                                RealT nrmlX, RealT nrmlY, RealT cX, 
-                                RealT cY, RealT* pX, 
-                                RealT* pY )
+                                                   RealT nrmlX, RealT nrmlY, RealT cX, 
+                                                   RealT cY, RealT* pX, RealT* pY )
 {
    for (int i=0; i<mesh.numberOfNodesPerElement(); ++i)
    {

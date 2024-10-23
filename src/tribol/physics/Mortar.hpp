@@ -43,7 +43,7 @@ void ComputeMortarWeights( SurfaceContactElem & elem );
  * \param [in] cs pointer to coupling scheme
  *
  */
-void ComputeSingleMortarGaps( const CouplingScheme* cs );
+void ComputeSingleMortarGaps( CouplingScheme* cs );
 
 /*!
  *

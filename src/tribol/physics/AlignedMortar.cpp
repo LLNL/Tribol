@@ -83,7 +83,7 @@ void ComputeAlignedMortarWeights( SurfaceContactElem & elem )
 template< >
 void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 {
-   // get mesh instance to store gaps on mesh data object
+   // get pointer to mesh view to store gaps on mesh data object
    auto& nonmortarMesh = *elem.m_mesh2;
    const IndexT * const nonmortarConn = nonmortarMesh.getConnectivity().data();
 
@@ -163,11 +163,11 @@ void ComputeNodalGap< ALIGNED_MORTAR >( SurfaceContactElem & elem )
 void ComputeAlignedMortarGaps( CouplingScheme* cs )
 {
    MeshManager& meshManager = MeshManager::getInstance();
-   MeshData& nonmortarMeshBase = meshManager.at( cs->getMeshId2() );
+   MeshData& nonmortarMeshData = meshManager.at( cs->getMeshId2() );
    int const dim = cs->spatialDimension();
    // compute nodal normals (do this outside the element loop)
    // This routine is guarded against a null mesh
-   nonmortarMeshBase.computeNodalNormals( dim );
+   nonmortarMeshData.computeNodalNormals( dim );
 
    auto pairs = cs->getInterfacePairs();
    const IndexT numPairs = pairs.size();
@@ -176,7 +176,7 @@ void ComputeAlignedMortarGaps( CouplingScheme* cs )
 
    ////////////////////////////////////////////////////////////////////////
    //
-   // Grab pointers to mesh data
+   // Grab mesh views
    //
    ////////////////////////////////////////////////////////////////////////
    auto mortarMesh = cs->getMesh1().getView();
@@ -290,7 +290,7 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
 
    ////////////////////////////////////////////////////////////////////////
    //
-   // Grab pointers to mesh data
+   // Grab mesh views
    //
    ////////////////////////////////////////////////////////////////////////
    auto mortarMesh = cs->getMesh1().getView();
@@ -389,8 +389,10 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
       {
          auto& plane = planes[cpID];
 
+         // stores projected coordinates in row-major format
          ArrayT<RealT, 2> mortarX(numNodesPerFace, dim);
          ArrayT<RealT, 2> nonmortarX(numNodesPerFace, dim);
+         // stores projected coordinates in column-major format
          ArrayT<RealT, 2> mortarXT(dim, numNodesPerFace);
          ArrayT<RealT, 2> nonmortarXT(dim, numNodesPerFace);
          ProjectFaceNodesToPlane( mortarMesh, index1, 
@@ -405,6 +407,8 @@ int ApplyNormal< ALIGNED_MORTAR, LAGRANGE_MULTIPLIER >( CouplingScheme* cs )
                                   &nonmortarXT(0, 0), 
                                   &nonmortarXT(1, 0), 
                                   &nonmortarXT(2, 0) );
+         // populate row-major projected coordinates for the purpose of sending to
+         // the SurfaceContactElem struct
          algorithm::transpose<MemorySpace::Dynamic>(mortarXT, mortarX);
          algorithm::transpose<MemorySpace::Dynamic>(nonmortarXT, nonmortarX);
 

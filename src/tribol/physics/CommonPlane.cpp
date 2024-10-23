@@ -292,8 +292,10 @@ int ApplyNormal< COMMON_PLANE, PENALTY >( CouplingScheme* cs )
         int num_nodes_per_face = mesh1.numberOfNodesPerElement();
         initRealArray( xf1, dim * num_nodes_per_face, 0. );
         initRealArray( xf2, dim * num_nodes_per_face, 0. );
+        // initialize assuming 2d
         auto xVert_size = 4;
         auto numPolyVert = 2;
+        // update if we are in 3d
         if (dim == 3)
         {
           auto& cp3 = static_cast<ContactPlane3D&>(plane);
