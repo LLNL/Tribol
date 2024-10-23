@@ -156,6 +156,7 @@ TRIBOL_HOST_DEVICE void WachspressBasis( const RealT* const x,
 
    // first compute the areas of all the triangles formed by the i-1,i,i+1 vertices.
    // These consist of all the numerators in the Wachspress formulation
+   // NOTE: this limits the routine to 4 noded quadrilaterals
    constexpr int max_nodes_per_elem = 4;
    RealT triVertArea[ max_nodes_per_elem ];
    for (int i=0; i<numPoints; ++i)
