@@ -140,6 +140,8 @@ template <tribol::MemorySpace MSPACE, tribol::ExecutionMode EXEC>
 int runExample(int num_elems_1d)
 {
 
+  // This controls which device/programming model is targeted in MFEM. When set
+  // to "cuda" or "hip", on device pointers point to GPU memory.
   mfem::Device device;
   switch (MSPACE)
   {
@@ -300,6 +302,7 @@ int runExample(int num_elems_1d)
 
   mfem::GridFunction top_velocity(&top_fe_space);
   top_velocity = 0.0;
+  // Get a (device, if on GPU) pointer to read velocity data
   auto top_velocity_ptr = top_velocity.Read();
   auto top_x_velocity_ptr = &top_velocity_ptr[top_fe_space.DofToVDof(0, 0)];
   auto top_y_velocity_ptr = &top_velocity_ptr[top_fe_space.DofToVDof(0, 1)];
@@ -310,6 +313,7 @@ int runExample(int num_elems_1d)
 
   mfem::GridFunction bottom_velocity(&bottom_fe_space);
   bottom_velocity = 0.0;
+  // Get a (device, if on GPU) pointer to read velocity data
   auto bottom_velocity_ptr = bottom_velocity.Read();
   auto bottom_x_velocity_ptr = &bottom_velocity_ptr[bottom_fe_space.DofToVDof(0, 0)];
   auto bottom_y_velocity_ptr = &bottom_velocity_ptr[bottom_fe_space.DofToVDof(0, 1)];
@@ -319,8 +323,12 @@ int runExample(int num_elems_1d)
   );
 
   mfem::Vector top_force(top_fe_space.GetVSize());
+  // For mfem::Vectors, the assumption is a single vector on host. Calling
+  // UseDevice(true) creates a version on device. Note this call isn't needed
+  // for mfem::GridFunctions, which call UseDevice(true) in the constructor.
   top_force.UseDevice(true);
   top_force = 0.0;
+  // Get a (device, if on GPU) pointer to read and write to force data
   auto top_force_ptr = top_force.ReadWrite();
   auto top_x_force_ptr = &top_force_ptr[top_fe_space.DofToVDof(0, 0)];
   auto top_y_force_ptr = &top_force_ptr[top_fe_space.DofToVDof(0, 1)];
@@ -330,8 +338,12 @@ int runExample(int num_elems_1d)
   );
 
   mfem::Vector bottom_force(bottom_fe_space.GetVSize());
+  // For mfem::Vectors, the assumption is a single vector on host. Calling
+  // UseDevice(true) creates a version on device. Note this call isn't needed
+  // for mfem::GridFunctions, which call UseDevice(true) in the constructor.
   bottom_force.UseDevice(true);
   bottom_force = 0.0;
+  // Get a (device, if on GPU) pointer to read and write to force data
   auto bottom_force_ptr = bottom_force.ReadWrite();
   auto bottom_x_force_ptr = &bottom_force_ptr[bottom_fe_space.DofToVDof(0, 0)];
   auto bottom_y_force_ptr = &bottom_force_ptr[bottom_fe_space.DofToVDof(0, 1)];
