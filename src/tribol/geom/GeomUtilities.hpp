@@ -293,9 +293,8 @@ void PolyCentroid( const RealT* const x,
  * \pre length(xA), length(yA) >= numVertexA
  * \pre length(xB), length(yB) >= numVertexB
  *
- * \note this routine will allocate new dynamic memory for the polyX and polyY arrays 
- *  as the length of these arrays is not known a priori. One must take care to delete 
- *  this memory when necessary.
+ * \note polyX and polyY must be pre-allocated and sized to the maximum number
+ * of points for the intersection polygon
  *
  */
 TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA, 

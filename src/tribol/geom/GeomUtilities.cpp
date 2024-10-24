@@ -569,12 +569,6 @@ TRIBOL_HOST_DEVICE FaceGeomError Intersection2DPolygon( const RealT* const xA,
    // "proximity" check to determine if the faces are "close enough" to proceed with 
    // the full calculation. This can and probably should be added.
 
-   // check to make sure the intersection polygon vertex pointers are null
-#ifdef TRIBOL_USE_HOST
-   SLIC_ERROR_IF(polyX != nullptr || polyY != nullptr, 
-                 "Intersection2DPolygon: expecting nullptr input arguments polyX, polyY.");
-#endif
-
    // check numVertexA and numVertexB to make sure they are 3 (triangle) or more
    if (numVertexA < 3 || numVertexB < 3) 
    {
