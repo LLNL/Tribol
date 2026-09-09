@@ -71,7 +71,7 @@ to build Tribol.
 
 The Tribol contact physics library requires:
 - CMake 3.14 or higher
-- C++17 compiler
+- C++20 compiler
 - MPI
 - mfem
 - axom

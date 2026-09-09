@@ -128,6 +128,8 @@ blt_add_library(
     FOLDER tribol
     )
 
+target_compile_features(tribol PUBLIC cxx_std_20)
+
 # Add debug flag
 if(ENABLE_HIP)
     target_compile_options(tribol PRIVATE
@@ -145,6 +147,10 @@ target_include_directories(tribol PUBLIC
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:include>
     )
+
+if(TRIBOL_ENABLE_FUTURE)
+    add_subdirectory(future)
+endif()
 
 ## tribol install target
 tribol_install( SOURCE_HEADERS ${tribol_headers} )

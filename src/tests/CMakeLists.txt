@@ -246,6 +246,40 @@ if( TRIBOL_USE_ENZYME )
 endif()
 
 #------------------------------------------------------------------------------
+# Add standalone future contact tests
+#------------------------------------------------------------------------------
+
+if(TRIBOL_ENABLE_FUTURE)
+  blt_add_executable(
+    NAME tribol_future_contact_test
+    SOURCES tribol_future_contact.cpp
+    OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
+    DEPENDS_ON tribol::future gtest ${tribol_device_depends}
+    FOLDER tribol/future/tests)
+
+  blt_add_test(
+    NAME tribol_future_contact
+    COMMAND tribol_future_contact_test
+    NUM_MPI_TASKS 1)
+
+  blt_add_test(
+    NAME tribol_future_contact_2rank
+    COMMAND tribol_future_contact_test
+    NUM_MPI_TASKS 2)
+
+  if(ENABLE_HIP AND TRIBOL_USE_ENZYME)
+    blt_add_executable(
+      NAME tribol_future_enzyme_hip_smoke_test
+      SOURCES tribol_future_enzyme_hip_smoke.cpp
+      OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
+      DEPENDS_ON tribol::future gtest ${tribol_device_depends}
+      FOLDER tribol/future/tests)
+    blt_add_test(NAME tribol_future_enzyme_hip_smoke
+                 COMMAND tribol_future_enzyme_hip_smoke_test)
+  endif()
+endif()
+
+#------------------------------------------------------------------------------
 # Add smoke tests
 #------------------------------------------------------------------------------
 

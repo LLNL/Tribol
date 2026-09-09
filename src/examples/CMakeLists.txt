@@ -34,6 +34,14 @@ foreach( example ${contact_examples} )
 
 endforeach()
 
+if(TRIBOL_ENABLE_FUTURE)
+  blt_add_executable(
+    NAME conceptual_future_mfem_interface_ex
+    SOURCES conceptual_future_mfem_interface.cpp
+    OUTPUT_DIR ${EXAMPLE_OUTPUT_DIRECTORY}
+    DEPENDS_ON tribol::future ${tribol_device_depends})
+endif()
+
 ## Run examples as tests, when testing enabled
 if ( TRIBOL_ENABLE_TESTS AND ENABLE_TESTS )
 
